@@ -1,0 +1,406 @@
+/******************************************************************************
+ * @file    	InitSystem.c
+ * @author  	Phinht
+ * @version 	V1.0.0
+ * @date    	28/02/2016
+ * @brief   	
+ ******************************************************************************/
+
+
+/******************************************************************************
+                                   INCLUDES					    			 
+ ******************************************************************************/
+#include <string.h>
+#include <stdio.h>
+#include "InitSystem.h"
+#include "Version.h"
+#include "DataDefine.h"
+#include "Utilities.h"
+#include "InternalFlash.h"
+#include "HardwareManager.h"
+#include "Indicator.h"
+#include "Main.h"
+#include "GSM.h"
+#include "MQTTUser.h"
+#include "Measurement.h"
+#include "app_bkup.h"
+#include "InternalFlash.h"
+#include "ControlOutput.h"
+
+/******************************************************************************
+                                   GLOBAL VARIABLES					    			 
+ ******************************************************************************/
+System_t xSystem;
+//extern DriverUART_t DriverUART;
+//extern Debug_t	DriverDebug;
+//extern Driver_InternalFlash_t DriverInternalFlash;
+
+/******************************************************************************
+                                   GLOBAL FUNCTIONS					    			 
+ ******************************************************************************/
+
+/******************************************************************************
+                                   DATA TYPE DEFINE					    			 
+ ******************************************************************************/
+
+  
+/******************************************************************************
+                                   PRIVATE VARIABLES					    			 
+ ******************************************************************************/
+const char WelcomeStr[] = "\t\t\tCopyright by BYTECH JSC\r\n";
+//const char Bytech[] = {	
+//"\r    ______  ______________________  __       _______ ______\r"
+//"   / __ ) \\/ /_  __/ ____/ ____/ / / /      / / ___// ____/\r"
+//"  / __  |\\  / / / / __/ / /   / /_/ /  __  / /\\__ \\/ /     \r"
+//" / /_/ / / / / / / /___/ /___/ __  /  / /_/ /___/ / /___\r"   
+//"/_____/ /_/ /_/ /_____/\\____/_/ /_/   \\____//____/\\____/   \r"
+//};
+
+extern __IO uint16_t  adc_vin_value;
+extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
+
+/******************************************************************************
+                                   LOCAL FUNCTIONS					    			 
+ ******************************************************************************/
+static void RCC_Config(void) ;
+static void InitIO(void);
+static void ADC_Config(void);
+static void InitVariable(void) ;
+static void DrawScreen(void);
+
+
+
+void LockReadOutFlash(void)
+{
+//	if(FLASH_OB_GetRDP() != SET)
+//	{
+//		DEBUG_PRINTF("Flash: Chua Lock Read protection. Thuc hien Lock...");
+//		
+//		FLASH_Unlock();
+//		FLASH_OB_Unlock();
+//		FLASH_OB_RDPConfig(OB_RDP_Level_1);
+//		FLASH_OB_Launch();                   // Option Bytes programming		
+//		FLASH_OB_Lock();
+//		FLASH_Lock();
+//	}
+//	else
+//		DEBUG_PRINTF("Flash: Read protect is LOCKED!");
+}
+	
+/*****************************************************************************/
+/**
+ * @brief	:  
+ * @param	:  
+ * @retval	:
+ * @author	:	Phinht
+ * @created	:	15/03/2016
+ * @version	:
+ * @reviewer:	
+ */
+void InitSystem(void) 
+{ 
+	/* Set Vector table to offset address of main application - used with bootloader */
+//	RelocateVectorTable();
+
+	RCC_Config();
+	InitIO();
+	WatchDogInit();
+	InitVariable();
+	
+//	UART_Init(DEBUG_UART, 115200);
+//	UART_Init(RS485_UART, 9600);
+	
+	ADC_Config();
+	
+	/*Init RTC backup register */
+	app_bkup_init();
+	
+	//Read protection -> luc nap lai se mass erase chip -> mat luon cau hinh
+//	LockReadOutFlash();
+	
+	DrawScreen();	
+	DetectResetReason();
+	
+	InternalFlash_ReadConfig();
+	
+	Measure_Init();
+	Output_Init();
+	
+	GSM_InitHardware();
+	MQTT_Init();
+	
+	/* Khoi tao main Tcp_Net */ 
+	init_TcpNet();
+		
+	xSystem.Status.InitSystemDone = 1;
+}
+
+	
+/*****************************************************************************/
+/**
+ * @brief	:  	DrawScreen
+ * @param	:  	None
+ * @retval	:	None
+ * @author	:	Phinht
+ * @created	:	28/02/2016
+ * @version	:
+ * @reviewer:	
+ */
+static void DrawScreen(void)
+{		
+	DEBUG_RAW("\r\n");
+	DEBUG_RAW(WelcomeStr);
+	DEBUG_RAW("Device: HAWACO Gateway\r\n");	
+	DEBUG_RAW("Firmware: %s%02u\r\n", FIRMWARE_VERSION_HEADER, FIRMWARE_VERSION_CODE);
+	DEBUG_RAW("Released: %s - %s\r\n",__RELEASE_DATE_KEIL__,__RELEASE_TIME_KEIL__); 
+	
+	uint32_t clkSys = rcu_clock_freq_get(CK_SYS)/1000000;
+	uint32_t clkAHB = rcu_clock_freq_get(CK_AHB)/1000000;
+	uint32_t clkAPB1 = rcu_clock_freq_get(CK_APB1)/1000000;
+	uint32_t clkAPB2 = rcu_clock_freq_get(CK_APB2)/1000000;
+	DEBUG_RAW("\rClock: %u-%u-%u-%u", clkSys, clkAHB, clkAPB1, clkAPB2);
+}
+
+/*****************************************************************************/
+/**
+ * @brief	:  
+ * @param	:  
+ * @retval	:
+ * @author	:	Phinht
+ * @created	:	05/09/2015
+ * @version	:
+ * @reviewer:	
+ */
+static void RCC_Config(void) 
+{
+	/* Setup SysTick Timer for 1 msec interrupts */ 
+	if (SysTick_Config(SystemCoreClock / 1000))
+	{ 		
+		/* Capture error */
+		NVIC_SystemReset();
+	} 
+	NVIC_SetPriority(SysTick_IRQn, 0x00);		
+	
+#if 0
+//	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
+//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4 | RCC_APB1Periph_USART3, ENABLE);
+//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG | RCC_APB2Periph_USART1, ENABLE);
+#else
+	 /* enable the GPIO clock */
+    rcu_periph_clock_enable(RCU_GPIOA);
+	 rcu_periph_clock_enable(RCU_GPIOB);
+	
+	 /* enable the AF clock */
+	 rcu_periph_clock_enable(RCU_AF);
+	
+    /* enable ADC clock */
+    rcu_periph_clock_enable(RCU_ADC0);
+    /* enable DMA clock */
+    rcu_periph_clock_enable(RCU_DMA0);
+    /* config ADC clock */
+    rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
+#endif
+}
+
+/*****************************************************************************/
+/**
+ * @brief	:  Ham khoi tao cac chan I/O khac
+ * @param	:  
+ * @retval	:
+ * @author	:	Phinht
+ * @created	:	02/03/2016
+ * @version	:
+ * @reviewer:	
+ */
+static void InitIO(void)
+{		 
+    /* configure LED GPIO port */ 
+    gpio_init(LED1_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED1_PIN);
+	 gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
+	
+	 //Led on
+    LED1(0);
+	 LED2(0);
+}
+
+/**
+  * @brief  ADC1 channel configuration
+  * @param  None
+  * @retval None
+  */
+static void ADC_Config(void)
+{
+#if 0
+	ADC_InitTypeDef     ADC_InitStructure;
+	GPIO_InitTypeDef    GPIO_InitStructure;
+	DMA_InitTypeDef   DMA_InitStructure;
+	
+	/* ADC1 DeInit */  
+	ADC_DeInit(ADC1);
+
+	/* GPIOC Periph clock enable */
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+
+	/* ADC1 Periph clock enable */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
+
+	/* DMA1 clock enable */
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 , ENABLE);
+
+	/* DMA1 Channel1 Config */
+	DMA_DeInit(DMA1_Channel1);
+	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)ADC1_DR_Address;
+	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)&adc_vin_value;
+	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;
+	DMA_InitStructure.DMA_BufferSize = 1;
+	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Disable;
+	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+	DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+	DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;
+	DMA_InitStructure.DMA_Priority = DMA_Priority_High;
+	DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
+	DMA_Init(DMA1_Channel1, &DMA_InitStructure);
+	
+	/* DMA1 Channel1 enable */
+	DMA_Cmd(DMA1_Channel1, ENABLE);
+
+	/* Configure ADC Channel8 as analog input */
+	GPIO_InitStructure.GPIO_Pin = ADC_VIN_PIN ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL ;
+	GPIO_Init(ADC_VIN_PORT, &GPIO_InitStructure);
+
+	/* Initialize ADC structure */
+	ADC_StructInit(&ADC_InitStructure);
+
+	/* Configure the ADC1 in continuous mode withe a resolution equal to 12 bits  */
+	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
+	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; 
+	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
+	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+	ADC_InitStructure.ADC_ScanDirection = ADC_ScanDirection_Upward;
+	ADC_Init(ADC1, &ADC_InitStructure); 
+
+	/* Convert the ADC1 Channel8 with 55.5 Cycles as sampling time */ 
+	ADC_ChannelConfig(ADC1, ADC_VIN_CHANNEL , ADC_SampleTime_55_5Cycles); 
+
+	/* ADC Calibration */
+	ADC_GetCalibrationFactor(ADC1);
+
+	/* ADC DMA request in circular mode */
+	ADC_DMARequestModeConfig(ADC1, ADC_DMAMode_Circular);
+
+	/* Enable ADC_DMA */
+	ADC_DMACmd(ADC1, ENABLE);  
+
+	/* Enable the ADC peripheral */
+	ADC_Cmd(ADC1, ENABLE);     
+  
+	/* Wait the ADRDY flag */
+	uint32_t Timeout = 0xFFFFFFF;
+	while(!ADC_GetFlagStatus(ADC1, ADC_FLAG_ADRDY) && Timeout) {
+		Timeout--;
+		if(Timeout % 10000) ResetWatchdog();
+	}	  
+
+	/* ADC1 regular Software Start Conv */ 
+	ADC_StartOfConversion(ADC1);
+#else    
+	/* config the GPIO as analog mode */
+    gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
+	 gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
+	 
+	 /** ================= DMA config ==================== */
+	 /* ADC_DMA_channel configuration */
+    dma_parameter_struct dma_data_parameter;
+    
+    /* ADC DMA_channel configuration */
+    dma_deinit(DMA0, DMA_CH0);
+    
+    /* initialize DMA single data mode */
+    dma_data_parameter.periph_addr = (uint32_t)(&ADC_RDATA(ADC0));
+    dma_data_parameter.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_data_parameter.memory_addr = (uint32_t)&ADC_RegularConvertedValueTab[0];
+    dma_data_parameter.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_data_parameter.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+    dma_data_parameter.memory_width = DMA_MEMORY_WIDTH_16BIT;  
+    dma_data_parameter.direction = DMA_PERIPHERAL_TO_MEMORY;
+    dma_data_parameter.number = ADCMEM_MAXUNIT;
+    dma_data_parameter.priority = DMA_PRIORITY_HIGH;
+    dma_init(DMA0, DMA_CH0, &dma_data_parameter);
+
+    dma_circulation_enable(DMA0, DMA_CH0);
+  
+    /* enable DMA channel */
+    dma_channel_enable(DMA0, DMA_CH0);
+	 
+	 /** ================= ADC config ==================== */
+	 /* reset ADC */
+    adc_deinit(ADC0);
+    /* ADC mode config */
+    adc_mode_config(ADC_MODE_FREE);
+    /* ADC contineous function enable */
+    adc_special_function_config(ADC0, ADC_CONTINUOUS_MODE, ENABLE);
+    /* ADC scan mode disable */
+    adc_special_function_config(ADC0, ADC_SCAN_MODE, ENABLE);
+    /* ADC data alignment config */
+    adc_data_alignment_config(ADC0, ADC_DATAALIGN_RIGHT);
+    
+    /* ADC channel length config */
+    adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, ADCMEM_MAXUNIT);
+	 
+    /* ADC regular channel config */
+    adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);
+	 adc_regular_channel_config(ADC0, 1, ADC_VIN_CHANNEL, ADC_SAMPLETIME_55POINT5);
+	 
+    /* ADC trigger config */
+    adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL, ADC0_1_EXTTRIG_REGULAR_NONE); 
+    adc_external_trigger_config(ADC0, ADC_REGULAR_CHANNEL, ENABLE);
+    
+    /* enable ADC interface */
+    adc_enable(ADC0);
+    Delayms(1);
+	 
+    /* ADC calibration and reset calibration */
+    adc_calibration_enable(ADC0);
+
+    /* ADC DMA function enable */
+    adc_dma_mode_enable(ADC0);
+	 
+	 /* ADC software trigger enable */
+    adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL);
+#endif
+}
+
+/*****************************************************************************/
+/**
+ * @brief	:  
+ * @param	:  
+ * @retval	:
+ * @author	:	Phinht
+ * @created	:	05/09/2015
+ * @version	:
+ * @reviewer:	
+ */
+static void InitVariable(void)
+{
+//    xSystem.Driver.UART = &DriverUART;
+//    xSystem.Debug = &DriverDebug;
+//    xSystem.Driver.InternalFlash = &DriverInternalFlash;
+}
+
+
+///*****************************************************************************/
+///**
+//  * @brief  Retargets the C library DEBUG_PRINTF function to the USART.
+//  * @param  None
+//  * @retval None
+//  */
+//PUTCHAR_PROTOTYPE 
+//{	
+//	xSystem.Driver.UART->Putc(DEBUG_UART, ch);
+//	return ch;
+//}
+
+/********************************* END OF FILE *******************************/
