@@ -108,7 +108,7 @@ static void GuiBanTinDinhKiTick(void)
 	static uint8_t SendSubReqTick = 0;
 	static uint16_t SendKeepAliveTick = 0;
 	static uint16_t SendMessageTick = 0;
-	static uint8_t LastMinute = 0xFF;
+//	static uint8_t LastMinute = 0xFF;
 	uint8_t ThoiGianGuiSubscribe;
 	
 	//Test 10'

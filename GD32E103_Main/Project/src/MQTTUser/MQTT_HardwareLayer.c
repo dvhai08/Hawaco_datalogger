@@ -455,7 +455,7 @@ void MQTT_ProcThread(void)
 				DEBUG("\rMQTT received, payload leng: %d, QoS: %d, retain: %d, dup: %u"/*, msgid: %u"*/, payloadlen, qos, retained, dup/*, packageId*/);
 				
 				/* Xu ly ban tin tu Broker */
-				MQTT_ProcessDataFromServer(subPayload, payloadlen);
+				MQTT_ProcessDataFromServer((char*)subPayload, payloadlen);
 				
 				memset(MqttSendBuff, 0 , MqttSendBufflen);
 				subPayload = NULL;
