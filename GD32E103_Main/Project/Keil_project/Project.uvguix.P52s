@@ -3705,9 +3705,9 @@
       </Doc>
       <Doc>
         <Name>..\src\MQTTUser\MQTT_ClientMessage.c</Name>
-        <ColumnNumber>49</ColumnNumber>
-        <TopLine>165</TopLine>
-        <CurrentLine>115</CurrentLine>
+        <ColumnNumber>4</ColumnNumber>
+        <TopLine>189</TopLine>
+        <CurrentLine>198</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>
