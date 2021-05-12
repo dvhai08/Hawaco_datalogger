@@ -55,7 +55,7 @@ SmallBuffer_t SensorUartBuffer;
 uint8_t lastPulseState = 0;
 uint8_t curPulseState = 0;
 uint16_t pulseLengthInMs = 0;
-
+uint8_t isPulseTrigger = 0;
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
  ******************************************************************************/
@@ -81,30 +81,33 @@ uint16_t AVGVphoto(uint16_t curVphoto)
  */
 void Measure_PulseTick(void)
 {
-	curPulseState = getPulseState();
-	if(curPulseState != lastPulseState)
-	{
-		//begin of rising edge
-		if(curPulseState == 1) {
-			pulseLengthInMs = 1;
-		} else {
-			//end of falling edge
-			DEBUG("\rPulse length: %d ms", pulseLengthInMs);
-			
-			//valid pulse length: 10-1500ms
-			if(pulseLengthInMs >= 10 && pulseLengthInMs <= 1500)
-			{
-				xSystem.MeasureStatus.PulseCounterInBkup++;
-				DEBUG("\rPulse's valid: %d", xSystem.MeasureStatus.PulseCounterInBkup);
-				
-				//Store to BKP register
-				app_bkup_write_pulse_counter(xSystem.MeasureStatus.PulseCounterInBkup);
-			}
-			pulseLengthInMs = 0;
-		}
-		lastPulseState = curPulseState;
-	}
-	if(pulseLengthInMs) pulseLengthInMs++;
+//	curPulseState = getPulseState();
+//	if(curPulseState != lastPulseState)
+//	{
+//		//begin of rising edge
+//		if(curPulseState == 1) {
+//			pulseLengthInMs = 1;
+//		} else {
+//			//end of falling edge
+//			DEBUG("\rPulse length: %d ms", pulseLengthInMs);
+//			
+//			//valid pulse length: 10-1500ms
+//			if(pulseLengthInMs >= 10 && pulseLengthInMs <= 1500)
+//			{
+//				xSystem.MeasureStatus.PulseCounterInBkup++;
+//				DEBUG("\rPulse's valid: %d", xSystem.MeasureStatus.PulseCounterInBkup);
+				if (isPulseTrigger)
+				{
+					//Store to BKP register
+					app_bkup_write_pulse_counter(xSystem.MeasureStatus.PulseCounterInBkup);
+					isPulseTrigger = false;
+				}
+//			}
+//			pulseLengthInMs = 0;
+//		}
+//		lastPulseState = curPulseState;
+//	}
+//	if(pulseLengthInMs) pulseLengthInMs++;
 }
 	
 /*****************************************************************************/
@@ -205,7 +208,7 @@ void Measure_Init(void)
 	//Pulse input
 	gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
 	
-#if 0
+#if 1
 	 /* enable and set key user EXTI interrupt to the lowest priority */
     nvic_irq_enable(EXTI2_IRQn, 2U, 1U);
 
@@ -413,19 +416,28 @@ void RS485_UART_Handler(void)
     \param[out] none
     \retval     none
 */
-#if 0
+#if 1
 void EXTI2_IRQHandler(void)
 {
     /* check the Pulse input pin */
    if (RESET != exti_interrupt_flag_get(EXTI_2))
 	{
-		if(getPulseState()) {
-			beginPulseTime = sys_get_ms();
-		} else {
-			endPulseTime = sys_get_ms();
+#if 1
+		if(getPulseState()) 
+		{
+//			beginPulseTime = sys_get_ms();
+		} 
+		else 
+		{
+//			endPulseTime = sys_get_ms();
+//			isPulseTrigger = 1;
+//			DEBUG("\rPulse: %d - %d", endPulseTime, beginPulseTime);
 			isPulseTrigger = 1;
-			DEBUG("\rPulse: %d - %d", endPulseTime, beginPulseTime);
+			xSystem.MeasureStatus.PulseCounterInBkup++;
 		}
+#else
+		isPulseTrigger = 1;
+#endif
       exti_interrupt_flag_clear(EXTI_2);
    }
 }

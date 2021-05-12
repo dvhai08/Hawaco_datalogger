@@ -186,19 +186,19 @@ static void RCC_Config(void)
 //	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4 | RCC_APB1Periph_USART3, ENABLE);
 //	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG | RCC_APB2Periph_USART1, ENABLE);
 #else
-	 /* enable the GPIO clock */
-    rcu_periph_clock_enable(RCU_GPIOA);
-	 rcu_periph_clock_enable(RCU_GPIOB);
-	
-	 /* enable the AF clock */
-	 rcu_periph_clock_enable(RCU_AF);
-	
-    /* enable ADC clock */
-    rcu_periph_clock_enable(RCU_ADC0);
-    /* enable DMA clock */
-    rcu_periph_clock_enable(RCU_DMA0);
-    /* config ADC clock */
-    rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
+	/* enable the GPIO clock */
+	rcu_periph_clock_enable(RCU_GPIOA);
+	rcu_periph_clock_enable(RCU_GPIOB);
+
+	/* enable the AF clock */
+	rcu_periph_clock_enable(RCU_AF);
+
+	/* enable ADC clock */
+	rcu_periph_clock_enable(RCU_ADC0);
+	/* enable DMA clock */
+	rcu_periph_clock_enable(RCU_DMA0);
+	/* config ADC clock */
+	rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
 #endif
 }
 
@@ -214,13 +214,13 @@ static void RCC_Config(void)
  */
 static void InitIO(void)
 {		 
-    /* configure LED GPIO port */ 
-    gpio_init(LED1_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED1_PIN);
-	 gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
-	
-	 //Led on
-    LED1(0);
-	 LED2(0);
+	/* configure LED GPIO port */ 
+	gpio_init(LED1_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED1_PIN);
+	gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
+
+	//Led on
+	LED1(0);
+	LED2(0);
 }
 
 /**

@@ -109,7 +109,7 @@ static void DebugInit(void)
 static void ProcessNewDebugData(void)
 {	
 	uint8_t MaLenh; 
-	
+
 	DEBUG_PRINTF("DEBUG: %s\r\n", debugBuffer.Buffer);
 	
 	if(strstr((char *)debugBuffer.Buffer, "TEST,")) 
@@ -129,6 +129,14 @@ static void ProcessNewDebugData(void)
 			case 27:
 				xSystem.Status.ADCOut = 1 - xSystem.Status.ADCOut;
 				DEBUG("ADC out: %d", xSystem.Status.ADCOut);
+				break;
+			case 15:
+				{	
+					uint32_t voltage;
+					voltage = GetNumberFromString(8, (char*)debugBuffer.Buffer);
+					xSystem.Parameters.output420ma = voltage;
+					DEBUG_PRINTF("Set DAC %uMv\r\n", voltage);
+				}
 				break;
 		
 //			case 7: 	//TEST ISO output 1

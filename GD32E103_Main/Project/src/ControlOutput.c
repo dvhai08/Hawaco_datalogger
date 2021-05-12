@@ -67,6 +67,7 @@ void Output_Tick(void)
 		dacValue = voltage * 4096/3300;
 	}
 	dac_data_set(DAC1, DAC_ALIGN_12B_R, dacValue);
+	dac_software_trigger_enable(DAC1);
 }	
 
 /*!
