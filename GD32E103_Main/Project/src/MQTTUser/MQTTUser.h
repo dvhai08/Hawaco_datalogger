@@ -71,6 +71,7 @@ uint16_t MQTT_PublishDataMsg(void);
 
 uint16_t DataMessage(uint8_t LoaiBanTin);
 uint16_t SendBufferToServer(uint8_t* BufferToSend, uint16_t Length);
+void MqttClientSendFirstMessageWhenReset(void);
 
 #endif // __MQTTUSER_H__
 

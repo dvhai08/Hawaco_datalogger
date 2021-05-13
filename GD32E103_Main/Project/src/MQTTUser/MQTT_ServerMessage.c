@@ -57,7 +57,7 @@ uint8_t ValidAndDecodePacket(uint8_t* Buffer, uint16_t buffLength)
 	uint16_t Length = 0, AESMessageLength;
 
 	//Debug only
-//	DEBUG("\rEncode buffer: %s", Buffer);
+//	DEBUG ("\r\nEncode buffer: %s", Buffer);
 	
 	// Check header and tail
 //	if(Buffer[0] != '[' && Buffer[0] != '{' && Buffer[Length - 1] != '}' && Buffer[Length - 1] != ']') 
@@ -75,7 +75,7 @@ uint8_t ValidAndDecodePacket(uint8_t* Buffer, uint16_t buffLength)
 	// Check header and tail
 	if(Buffer[0] != '[' && Buffer[0] != '{' && Buffer[Length - 1] != '}' && Buffer[Length - 1] != ']') {
 		//NOTE: cu vua gui subscribe thi nhan duoc ban tin: 123bytech.buoymonitoring
-		//DEBUG("\rEncode buffer: %s", Buffer);
+		//DEBUG ("\r\nEncode buffer: %s", Buffer);
 		return VALID_NOTCOMPLETE;
 	}
 	
@@ -218,7 +218,7 @@ void ProcessSetParameters(char *buffer)
 	}
 	else
 	{
-		DEBUG("\rCFG: has no new config");
+		DEBUG ("\r\nCFG: has no new config");
 	}
 }
 
@@ -243,21 +243,21 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 	/** TEST: Check ban tin UDFW khong ma hoa */
 //	if(strstr(buffer, "UDFW,"))
 //	{
-//		DEBUG("\rSRV: Ban tin UDFW");
+//		DEBUG ("\r\nSRV: Ban tin UDFW");
 //		ProcessUpdateFirmwareCommand(buffer, 1);
 //		return length;
 //	}
 	
 	if(strstr(buffer, "SET,"))
 	{
-		DEBUG("\rSRV: SET config");
+		DEBUG ("\r\nSRV: SET config");
 		xSystem.Status.SendGPRSTimeout = 15;
 		ProcessSetParameters(buffer);
 		return length;
 	}
 //	if(strstr(buffer, "GET,"))
 //	{
-//		DEBUG("\rSRV: GET config");
+//		DEBUG ("\r\nSRV: GET config");
 //		xSystem.Status.SendGPRSTimeout = 15;
 //		ProcessGetParameters((char*)buffer, 1);
 //		return length;
@@ -273,19 +273,19 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 	/* Xu ly truong hop goi tin khong hop le, goi tin chua nhan xong */
 	if(CheckData == VALID_NOTCOMPLETE)
 	{
-		DEBUG("\rERROR.01: Packet sai dinh dang!");
+		DEBUG ("\r\nERROR.01: Packet sai dinh dang!");
 		return VALID_NOTCOMPLETE;
 	}
 	if(CheckData == VALID_FAILCHECK)
 	{
-		DEBUG("\rERROR.02: Packet sai checksum!");
+		DEBUG ("\r\nERROR.02: Packet sai checksum!");
 		return VALID_FAILCHECK;
 	}
 	
 	xSystem.Status.PingTimeout = 180;
 				
 	//Debug only
-	DEBUG("\rSRV plain: %s", MessageBufferAES128);
+	DEBUG ("\r\nSRV plain: %s", MessageBufferAES128);
 	
 	// [2018-12-16 10:00:00,S1,1,123] - Phan hoi ban tin !AIVDO,1
 	if(strstr((char*)MessageBufferAES128,"!AIVDO,1"))
@@ -339,7 +339,7 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 	// UDFW,<ftp IP>,<ftp username>,<ftp pass>,<filename>,<Size>,<CRC> - Ban tin update FW
 	if(strstr((char*)MessageBufferAES128,"UDFW"))
 	{
-		DEBUG("\rSRV: Ban tin UDFW");
+		DEBUG ("\r\nSRV: Ban tin UDFW");
 		ProcessUpdateFirmwareCommand((char*)MessageBufferAES128, CF_SERVER);
 	}
 #endif

@@ -37,7 +37,10 @@ extern GSM_Manager_t GSM_Manager;
 /******************************************************************************
                                    PRIVATE VARIABLES					    			 
  ******************************************************************************/
+#if __GSM_SMS_ENABLE__
 static char tmpBuffer[50] = {0};
+#endif
+
 static char LenhATCanGui[30] = {0};
 static uint8_t YeuCauGuiATC = 0;
 static uint8_t TimeOutGuiLenhAT = 0;
@@ -69,6 +72,9 @@ uint8_t CheckGSMIdle(void);
 uint8_t isGSMSleeping(void)
 {
 //	return GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN);
+	if (GSM_Manager.State == GSM_SLEEP)
+		return 1;
+	return 0;
 }
 
 void GSM_GotoSleep(void)
@@ -94,7 +100,7 @@ void gsmWakeUpPeriodically(void)
 //		xSystem.Status.GSMSleepTime = 0;
 
 //#if (__GSM_SLEEP_MODE__)		
-//		DEBUG("\rGSM: Wakeup to send msg");
+//		DEBUG ("\r\nGSM: Wakeup to send msg");
 //		xSystem.Status.YeuCauGuiTin = 2;
 //		ChangeGSMState(GSM_WAKEUP);
 //#else
@@ -158,24 +164,39 @@ void GSM_ManagerTick(void)
 			else SendATOPeriod = 0;
 //			QuerySMS();
 			
-////			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
-////#if (__GSM_SLEEP_MODE__)
-////			if(TimeoutToSleep++ >= 60)
-////			{
-////				TimeoutToSleep = 0;
-////				/* Chỉ sleep khi :
-////					- Đang không UDFW 
-////					- Đang không trong thời gian gửi tin
-////				*/
-////				if(xSystem.FileTransfer.Retry == 0 && xSystem.Status.SendGPRSTimeout == 0) {
-////					DEBUG("\rGSM: Het viec roi, ngu thoi em...");
-////					GSM_Manager.Step = 0;
-////					GSM_Manager.State = GSM_GOTOSLEEP;
-////				}
-////			}
-////#else
-////			gsmWakeUpPeriodically();
-////#endif
+//			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
+#if (__GSM_SLEEP_MODE__)
+			if(TimeoutToSleep++ >= 60)
+			{
+				if (xSystem.Status.TCPNeedToClose == 0)
+				{
+					DEBUG ("\r\nTCP close done");
+					xSystem.Status.TCPNeedToClose = 1;
+				}
+				
+				if (xSystem.Status.TCPCloseDone)
+				{
+					TimeoutToSleep = 81;
+					xSystem.Status.TCPCloseDone = 0;
+				}
+				
+				if (TimeoutToSleep > 80)
+				{
+					TimeoutToSleep = 0;
+					/* Chỉ sleep khi :
+						- Đang không UDFW 
+						- Đang không trong thời gian gửi tin
+					*/
+					if(xSystem.FileTransfer.Retry == 0 && xSystem.Status.SendGPRSTimeout == 0) {
+						DEBUG ("\r\nGSM: Het viec roi, ngu thoi em...");
+						GSM_Manager.Step = 0;
+						GSM_Manager.State = GSM_GOTOSLEEP;
+					}
+				}
+			}
+#else
+			gsmWakeUpPeriodically();
+#endif
 			break;
 		
 		case GSM_RESET:		/* Hard Reset */
@@ -243,7 +264,7 @@ void GSM_ManagerTick(void)
 			break;
 		case GSM_SLEEP:	/* Dang trong che do Sleep */
 			if(InSleepModeTick % 10 == 0) {
-				DEBUG("\rGSM is sleeping...");
+				DEBUG ("\r\nGSM is sleeping...");
 			}
 			InSleepModeTick++;
 			
@@ -257,13 +278,13 @@ void GSM_ManagerTick(void)
 			if(SendATInATModeIdle == 10)
 			{
 				//Lấy thông tin mạng
-				DEBUG("\rGet network info ...");
+				DEBUG ("\r\nGet network info ...");
 				com_put_at_string("AT+COPS?\r");
 				SendATInATModeIdle = 0;
 			}
 			else if(SendATInATModeIdle == 15) {
 				//Lấy thông tin CSQ
-				DEBUG("\rGet network CSQ...");
+				DEBUG ("\r\nGet network CSQ...");
 				com_put_at_string("AT+CSQ\r");
 				SendATInATModeIdle = 1;
 			}
@@ -279,7 +300,7 @@ void GSM_ManagerTick(void)
 		GSM_Manager.TimeOutOffAfterReset--;
 		if(GSM_Manager.TimeOutOffAfterReset == 0 && xSystem.Parameters.DenCauMode) {
 			if(GSM_Manager.isGSMOff == 0 && xSystem.Status.SendGPRSTimeout == 0) {
-				DEBUG("\rAfter reset: GSM/GPS OFF");
+				DEBUG ("\r\nAfter reset: GSM/GPS OFF");
 				ppp_close();
 				GSM_PowerControl(GSM_OFF);
 				GPS_PowerControl(GPS_OFF);
@@ -298,7 +319,7 @@ void GSM_ManagerTick(void)
 //	{
 //		xSystem.Status.GSMSendFailedTimeout = 0;
 //		
-//		DEBUG("\rGSM: Send Failed timeout...");
+//		DEBUG ("\r\nGSM: Send Failed timeout...");
 //		ChangeGSMState(GSM_RESET);
 //		return;
 //	}
@@ -336,7 +357,7 @@ void GSM_ManagerTick(void)
 			TimeOutGuiLenhAT--;
 			if(TimeOutGuiLenhAT == 0) {
 				YeuCauGuiATC = 0;
-				DEBUG("\rHet thoi gian thuc hien lenh AT!");
+				DEBUG ("\r\nHet thoi gian thuc hien lenh AT!");
 			}
 		}
 	}
@@ -417,7 +438,7 @@ void ChangeGSMState(GSM_State_t NewState)
 		}
 	}
 		
-	DEBUG("\rChange GSM state to: "); 
+	DEBUG ("\r\nChange GSM state to: "); 
 	switch ((uint8_t)NewState)
 	{
 		case 0: DEBUG("OK"); break;
@@ -454,56 +475,60 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 	{
 		case 1:
 			if(event == EVEN_OK) {
-				DEBUG("\rConnect modem OK");
+				DEBUG ("\r\nConnect modem OK");
 			} else {
-				DEBUG("\rConnect modem ERR!");
+				DEBUG ("\r\nConnect modem ERR!");
 			}
 			SendATCommand ("ATE0\r", "OK", 1000, 10, PowerOnModuleGSM);
 			break;
 		case 2:		/* Use AT+CMEE=2 to enable result code and use verbose values */
-			DEBUG("\rDisable AT echo : %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	            
+			DEBUG ("\r\nDisable AT echo : %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	            
 			SendATCommand ("AT+CMEE=2\r", "OK", 1000, 10, PowerOnModuleGSM);
 			break;
 		case 3:
-			DEBUG("\rSet CMEE report: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nSet CMEE report: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("ATI\r", "OK", 1000, 10, PowerOnModuleGSM);	
 		case 4:
-			DEBUG("\rGet module info: %s", ResponseBuffer);
+			DEBUG ("\r\nGet module info: %s", ResponseBuffer);
 			SendATCommand ("AT+QURCCFG=\"URCPORT\",\"uart1\"\r", "OK", 1000, 5, PowerOnModuleGSM);
 			break;
 		case 5:
-			DEBUG("\rSet URC port: %s", (event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nSet URC port: %s", (event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",2000\r", "OK", 1000, 10, PowerOnModuleGSM);
 			break;
 		case 6:
-			DEBUG("\rSet URC ringtype: %s", (event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nSet URC ringtype: %s", (event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CNMI=2,1,0,0,0\r", "OK", 1000, 10, PowerOnModuleGSM);
 			break;
 		case 7:
-			DEBUG("\rConfig SMS event report: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nConfig SMS event report: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CMGF=1\r", "OK", 1000, 10, PowerOnModuleGSM);	
 			break;	
 		case 8:
-			DEBUG("\rSet SMS text mode: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nSet SMS text mode: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CMGD=1,4\r", "OK", 2000, 5, PowerOnModuleGSM);
 			break;
 		case 9:
-			DEBUG("\rDelete all SMS: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nDelete all SMS: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CGSN\r", "OK", 1000, 5, PowerOnModuleGSM);
 			break;
 		case 10:
 			GSM_GetIMEI(GSMIMEI, ResponseBuffer);
-			DEBUG("\rGet GSM IMEI: %s", xSystem.Parameters.GSM_IMEI);
+			DEBUG ("\r\nGet GSM IMEI: %s", xSystem.Parameters.GSM_IMEI);
 			if(strlen(xSystem.Parameters.GSM_IMEI) < 15) {
 				DEBUG("IMEI's invalid!");
 				ChangeGSMState(GSM_RESET);	//Khong doc dung IMEI -> reset module GSM!
 				return;
 			}
+			else
+			{
+				xSystem.Parameters.GSM_IMEI[15] = 0;
+			}
 			SendATCommand ("AT+CIMI\r", "OK", 1000, 10, PowerOnModuleGSM);
 			break;	
 		case 11:		
 			GSM_GetIMEI(SIMIMEI,ResponseBuffer);
-			DEBUG("\rGet SIM IMSI: %s",xSystem.Parameters.SIM_IMEI);
+			DEBUG ("\r\nGet SIM IMSI: %s",xSystem.Parameters.SIM_IMEI);
 			if(strlen(xSystem.Parameters.SIM_IMEI) < 15) {
 				DEBUG("SIM's not inserted!");
 				ChangeGSMState(GSM_RESET);	//Neu ko nhan SIM -> reset module GSM!
@@ -512,32 +537,32 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			SendATCommand ("AT+QCCID\r", "OK", 1000, 3, PowerOnModuleGSM);
 			break;
 		case 12:
-			DEBUG("\rGet SIM IMEI: %s", (char*)ResponseBuffer);
+			DEBUG ("\r\nGet SIM IMEI: %s", (char*)ResponseBuffer);
 			SendATCommand ("AT+QIDEACT=1\r", "OK", 3000, 1, PowerOnModuleGSM);
 			break;
 		case 13:
-			DEBUG("\rDe-activate PDP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");		
+			DEBUG ("\r\nDe-activate PDP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");		
 			SendATCommand ("AT+QCFG=\"nwscanmode\",0\r", "OK", 5000, 2, PowerOnModuleGSM);	// Select mode AUTO
 			break;
 		case 14:
-			DEBUG("\rNetwork search mode AUTO: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nNetwork search mode AUTO: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CGDCONT=1,\"IP\",\"v-internet\"\r", "OK", 1000, 2, PowerOnModuleGSM);     /** <cid> = 1-24 */    
 			break;
 		case 15:
-			DEBUG("\rDefine PDP context: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nDefine PDP context: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 //			SendATCommand ("AT+QIACT=1\r", "OK", 5000, 5, PowerOnModuleGSM);	/** Bật QIACT lỗi gửi tin với 1 số SIM dùng gói cước trả sau! */
 			SendATCommand ("AT+CSQ\r", "OK", 1000, 5, PowerOnModuleGSM);
 			break;
 		case 16:
-			DEBUG("\rActivate PDP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nActivate PDP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CGREG=2\r", "OK", 1000, 3, PowerOnModuleGSM);		/** Query CGREG? => +CGREG: <n>,<stat>[,<lac>,<ci>[,<Act>]] */	
 			break;
 		case 17:
-			DEBUG("\rNetwork Registration Status: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nNetwork Registration Status: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CGREG?\r", "OK", 1000, 5, PowerOnModuleGSM);
 			break;
 		case 18:
-			DEBUG("\rQuery Network Status: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +CGREG: 2,1,"3279","487BD01",7 */
+			DEBUG ("\r\nQuery Network Status: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +CGREG: 2,1,"3279","487BD01",7 */
 			if(event == EVEN_OK)
 			{
 				GSM_GetNetworkStatus(ResponseBuffer);
@@ -545,31 +570,32 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			SendATCommand ("AT+COPS?\r", "OK", 1000, 5, PowerOnModuleGSM);	
 			break;
 		case 19:
-			DEBUG("\rQuery Network Operator: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +COPS: 0,0,"Viettel Viettel",7 */
+			DEBUG ("\r\nQuery Network Operator: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +COPS: 0,0,"Viettel Viettel",7 */
 			if(event == EVEN_OK)
 			{
-				DEBUG("\rNetwork operator: %s", (char*)ResponseBuffer);
+				DEBUG ("\r\nNetwork operator: %s", (char*)ResponseBuffer);
 				GSM_GetNetworkOperator(ResponseBuffer);
 			}
 #if (__GSM_SLEEP_MODE__)
-			SendATCommand ("AT+QSCLK=1\r", "OK", 1000, 5, PowerOnModuleGSM);
+//			SendATCommand ("AT+QSCLK=1\r", "OK", 1000, 5, PowerOnModuleGSM);
+			SendATCommand ("AT+QSCLK=0\r", "OK", 1000, 5, PowerOnModuleGSM);
 #else
 			SendATCommand ("AT+QSCLK=0\r", "OK", 1000, 5, PowerOnModuleGSM);
 #endif
 			break;
 		case 20:
-			DEBUG("\rEnable sleep mode: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nEnable sleep mode: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CSQ\r", "OK", 1000, 5, PowerOnModuleGSM);	
 			break;
 		case 21:
 			GSM_Manager.Step = 0;
 			if(event != EVEN_OK) {
-				DEBUG("\rGSM: init fail, reset modem...");
+				DEBUG ("\r\nGSM: init fail, reset modem...");
 				ChangeGSMState(GSM_RESET);
 				return;
 			}
 			GSM_GetSignalStrength(ResponseBuffer);
-			DEBUG("\rCuong do song: %d", xSystem.Status.CSQ);
+			DEBUG ("\r\nCuong do song: %d", xSystem.Status.CSQ);
 #if (__USED_HTTP__ == 0)
 			GSM_Manager.Step = 0;
 			SendATCommand("ATV1\r", "OK", 1000, 3, OpenPPPStack);
@@ -607,14 +633,14 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			if(event == EVEN_OK)
 			{
 				GSM_GetSignalStrength(ResponseBuffer);
-				DEBUG("\rCuong do song: %d", xSystem.Status.CSQ);
+				DEBUG ("\r\nCuong do song: %d", xSystem.Status.CSQ);
 			}
 			ppp_connect("*99#","","");
 			SendATCommand ("ATD*99***1#\r", "CONNECT", 1000, 10, OpenPPPStack);
 			GSM_Manager.Step = 3;
 			break;
 		case 3:
-			DEBUG("\rMo ket noi PPP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("\r\nMo ket noi PPP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 		
 			if(event != EVEN_OK)
 			{
@@ -623,7 +649,7 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
 				{
 					RetryCount = 0;
 						
-					DEBUG("\rMo ket noi PPP qua 5 lan. Reset GSM!");
+					DEBUG ("\r\nMo ket noi PPP qua 5 lan. Reset GSM!");
 #if	(__GSM_SLEEP_MODE__)
 					//Nếu đang sleep thì không reset module
 					if(!isGSMSleeping())
@@ -669,12 +695,15 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
 /**
 * Check RI pin every 10ms
 */
+#if __GSM_SMS_ENABLE__
 static uint8_t isNewSMSComing = 0;
 static uint8_t isRetryReadSMS = 0;
 static uint8_t RISignalTimeCount = 0;
 static uint8_t RILowLogicTime = 0;
+#endif
 void QuerySMSTick(void)
 {
+#if __GSM_SMS_ENABLE__
 	if(GSM_Manager.RISignal == 1)
 	{
 		uint8_t RIState = GPIO_ReadInputDataBit(GSM_RI_PORT, GSM_RI_PIN);
@@ -685,12 +714,12 @@ void QuerySMSTick(void)
 		{
 			if(RIState == 0)
 			{
-				DEBUG("\rNew SMS coming!");
+				DEBUG ("\r\nNew SMS coming!");
 				
 #if (__GSM_SLEEP_MODE__)
 				/* Neu dang sleep thi wake truoc */
 //				if(GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN)) {
-//					DEBUG("\rGSM is sleeping, wake up...");
+//					DEBUG ("\r\nGSM is sleeping, wake up...");
 //					ChangeGSMState(GSM_WAKEUP);
 //				}
 #endif	//__GSM_SLEEP_MODE__
@@ -699,7 +728,7 @@ void QuerySMSTick(void)
 				RISignalTimeCount = 0;
 				isNewSMSComing = 1;
 			} else {
-				DEBUG("\rRI by other URC: %ums", RILowLogicTime*10);
+				DEBUG ("\r\nRI by other URC: %ums", RILowLogicTime*10);
 				GSM_Manager.RISignal = 0;
 				RISignalTimeCount = 0;
 				isNewSMSComing = 0;
@@ -707,6 +736,7 @@ void QuerySMSTick(void)
 			RILowLogicTime = 0;
 		}
 	}
+#endif
 }
 
 #if __RI_WITHOUT_INTERRUPT__
@@ -738,10 +768,10 @@ void GSM_CheckSMSTick(void)
     {
         if (RILowCount >= 50 && RILowCount < 250)	// 500ms - 2500ms
         {
-            DEBUG("\rNew SMS coming...");
+            DEBUG ("\r\nNew SMS coming...");
             isNewSMSComing = 1;
         } else {
-			  //DEBUG("\rRI caused by other URCs: %ums", RILowCount*10);
+			  //DEBUG ("\r\nRI caused by other URCs: %ums", RILowCount*10);
 		  }
         RILowCount = 0xFFFF;
     }
@@ -782,7 +812,7 @@ void GSM_GetBTSInfor(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			{
 				GSM_GetSignalStrength(ResponseBuffer);
 				GSM_Manager.TimeOutCSQ = 0;
-				DEBUG("\rCSQ: %d", xSystem.Status.CSQ );
+				DEBUG ("\r\nCSQ: %d", xSystem.Status.CSQ );
 				
 				/* Lay thong tin Network access selected */
 				SendATCommand ("AT+CGREG?\r", "OK", 1000, 3, GSM_GetBTSInfor);
@@ -791,7 +821,7 @@ void GSM_GetBTSInfor(GSM_ResponseEvent_t event, void *ResponseBuffer)
 		case 4:
 			if(event == EVEN_OK)
 			{
-				DEBUG("\r%s", ResponseBuffer);
+				DEBUG ("\r\n%s", ResponseBuffer);
 				GSM_GetNetworkStatus(ResponseBuffer);
 			}
 			ChangeGSMState(GSM_OK);
@@ -883,7 +913,7 @@ void GSM_GotoSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			}
 			else
 			{		
-				DEBUG("\rKhong phan hoi lenh, bat buoc sleep!");
+				DEBUG ("\r\nKhong phan hoi lenh, bat buoc sleep!");
 				//Dieu khien chan DTR vao sleep
 				GSM_GotoSleep();
 				GSM_Manager.State = GSM_SLEEP;
@@ -893,11 +923,16 @@ void GSM_GotoSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer)
 		case 3:
 			if(event == EVEN_OK)
 			{
-				DEBUG("\rEntry Sleep OK!");
+				DEBUG ("\r\nEntry Sleep OK!");
 			}
 			//Dieu khien chan DTR vao sleep
 			GSM_GotoSleep();
 			GSM_Manager.State = GSM_SLEEP;
+			
+			// Tat nguon
+			GSM_PWR_EN(0);
+			GSM_PWR_RESET(0);
+			GSM_PWR_KEY(0);
 			break;
 			
 		default:
@@ -930,13 +965,13 @@ void GSM_ExitSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer)
 		case 3:
 			if(event == EVEN_OK)
 			{
-				DEBUG("\rExit Sleep!");
+				DEBUG ("\r\nExit Sleep!");
 				GetSignalLevelTimeOut = GET_BTS_INFOR_TIMEOUT - 3;
 				ChangeGSMState(GSM_OK);
 			}
 			else
 			{
-				DEBUG("\rKhong phan hoi lenh, reset module...");
+				DEBUG ("\r\nKhong phan hoi lenh, reset module...");
 				ChangeGSMState(GSM_RESET);
 			}
 			break;
@@ -949,11 +984,13 @@ void GSM_ExitSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer)
 	
 void GSM_TestReadSMS()
 {
+#if __GSM_SMS_ENABLE__
 	if(GSM_Manager.State == GSM_SLEEP) {
-		DEBUG("\rWakeup GSM to read SMS...");
+		DEBUG ("\r\nWakeup GSM to read SMS...");
 		ChangeGSMState(GSM_WAKEUP);
 	}
 	isNewSMSComing = 1;
+#endif
 }
 	
 /*
@@ -1018,7 +1055,7 @@ void QuerySMS(void)
 //        if(SMSMemory[iTemp].NeedToSent == 1 || SMSMemory[iTemp].NeedToSent == 2)
 //        {
 //            SMSMemory[iTemp].RetryCount++;
-//            DEBUG("\rGui SMS tai buffer %u", iTemp);
+//            DEBUG ("\r\nGui SMS tai buffer %u", iTemp);
 
 //            /* Neu gui thanh cong thi xoa di */
 //            if(SMSMemory[iTemp].RetryCount < 5)
@@ -1028,7 +1065,7 @@ void QuerySMS(void)
 //            }
 //            else 
 //            {
-//                DEBUG("\rBuffer SMS %u da gui qua %u lan, huy gui",iTemp,SMSMemory[iTemp].RetryCount);
+//                DEBUG ("\r\nBuffer SMS %u da gui qua %u lan, huy gui",iTemp,SMSMemory[iTemp].RetryCount);
 //                SMSMemory[iTemp].NeedToSent = 0;	
 
 //					//Add: 05/05/17
@@ -1066,7 +1103,7 @@ void GSM_ReadSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //				RetryRead = 3;
 //				isRetryReadSMS = 1;
 //				SMSIndex = 0xFF;
-//				DEBUG("\rRead SMS failed, reset modem...");
+//				DEBUG ("\r\nRead SMS failed, reset modem...");
 //				ChangeGSMState(GSM_RESET);
 //				return;
 //		}
@@ -1093,7 +1130,7 @@ void GSM_ReadSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 		if(SMSIndex == 10) SMSIndex = 0x55;
 	}
 			
-	DEBUG("\rRead SMS resp: %s", (char*)ResponseBuffer);
+	DEBUG ("\r\nRead SMS resp: %s", (char*)ResponseBuffer);
 	if(strstr(ResponseBuffer,"UNREAD") || strstr(ResponseBuffer,"READ")) //REC UNREAD | REC READ
 	{
 		SMSIndex = 0xAA;
@@ -1109,13 +1146,13 @@ void GSM_ReadSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 		{
 			sprintf(tmpBuffer,"AT+CMGR=%u\r",SMSIndex);
 			SendATCommand(tmpBuffer,"OK",1000,3,GSM_ReadSMS);
-			DEBUG("\rCheck SMS o buffer %u: %u,%s",SMSIndex, event, (char *)ResponseBuffer);
+			DEBUG ("\r\nCheck SMS o buffer %u: %u,%s",SMSIndex, event, (char *)ResponseBuffer);
 		}
 		else
 		{
 			if(RetryRead) RetryRead--;
 			
-			DEBUG("\rCannot read SMS, retry: %u", RetryRead);
+			DEBUG ("\r\nCannot read SMS, retry: %u", RetryRead);
 			SMSIndex = 0xFF;
 				
 //			if(RetryRead) {
@@ -1128,7 +1165,7 @@ void GSM_ReadSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			if(RetryRead == 3) {
 				//Doc 3 lan khong duoc -> reset module
 				isRetryReadSMS = 1;
-				DEBUG("\rRead SMS failed, reset modem...");
+				DEBUG ("\r\nRead SMS failed, reset modem...");
 				ChangeGSMState(GSM_RESET);
 				return;
 			}
@@ -1161,7 +1198,7 @@ void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //	uint8_t ucCount;
 //    static uint8_t RetryCount = 0;
 //		
-//    DEBUG("\rDebug SEND SMS: %u %u,%s",GSM_Manager.Step,event, (char *)ResponseBuffer);   
+//    DEBUG ("\r\nDebug SEND SMS: %u %u,%s",GSM_Manager.Step,event, (char *)ResponseBuffer);   
 //    
 //	switch(GSM_Manager.Step)
 //	{
@@ -1191,7 +1228,7 @@ void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //			{
 //				if(SMSMemory[ucCount].NeedToSent == 2)
 //				{
-//					DEBUG("\rNhan tin den so: %s. Noi dung: %s",
+//					DEBUG ("\r\nNhan tin den so: %s. Noi dung: %s",
 //						SMSMemory[ucCount].PhoneNumber,SMSMemory[ucCount].Message);
 //					
 //					sprintf(tmpBuffer,"AT+CMGS=\"%s\"\r",SMSMemory[ucCount].PhoneNumber);					
@@ -1211,7 +1248,7 @@ void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //						SMSMemory[ucCount].Message[strlen(SMSMemory[ucCount].Message)] = 13;
 //						
 //						SendATCommand (SMSMemory[ucCount].Message, "+CMGS", 15000, 1, GSM_SendSMS);
-//						DEBUG("\rBat dau gui SMS o buffer %u",ucCount);
+//						DEBUG ("\r\nBat dau gui SMS o buffer %u",ucCount);
 //						break;
 //					}
 //				}
@@ -1231,7 +1268,7 @@ void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //		case 4:
 //			if(event == EVEN_OK)			
 //			{
-//				DEBUG("\rSMS: Gui SMS thanh cong.");
+//				DEBUG ("\r\nSMS: Gui SMS thanh cong.");
 
 //				for(ucCount = 0; ucCount < 3; ucCount++)
 //				{
@@ -1258,7 +1295,7 @@ void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer)
 //			}
 //			else
 //			{
-//				DEBUG("\rSMS: Nhan tin khong thanh cong.");
+//				DEBUG ("\r\nSMS: Nhan tin khong thanh cong.");
 //				RetryCount++;
 //				if(RetryCount < 3)
 //				{
@@ -1317,7 +1354,7 @@ void ReconnectTCP(void)
 {
   uint8_t i;
     
-	DEBUG("\rKet noi lai Server...");
+	DEBUG ("\r\nKet noi lai Server...");
 	    
 	/* Clear het cac buffer */
 	for(i = 0; i < NUM_OF_MQTT_BUFFER; i++)

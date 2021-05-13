@@ -174,7 +174,7 @@ static void ProcessNewDebugData(void)
 		DEBUG((char*)debugBuffer.Buffer);
 		com_put_at_string((char*)debugBuffer.Buffer);
 #else
-		DEBUG("\rLenh AT: %s", debugBuffer.Buffer);
+		DEBUG ("\r\nLenh AT: %s", debugBuffer.Buffer);
 		ThucHienLenhAT((char*)debugBuffer.Buffer);
 #endif
 		return;

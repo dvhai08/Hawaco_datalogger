@@ -159,7 +159,7 @@ void DetectHardwareVersion(void)
 */
 void SystemReset(uint8_t NguyenNhanReset)
 { 
-	DEBUG("\r---- System reset: %d ----", NguyenNhanReset);
+	DEBUG ("\r\n---- System reset: %d ----", NguyenNhanReset);
     NVIC_SystemReset();
 }
 

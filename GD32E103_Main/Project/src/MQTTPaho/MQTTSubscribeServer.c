@@ -57,7 +57,7 @@ int MQTTDeserialize_subscribe(unsigned char* dup, unsigned short* packetid, int 
 	{
 		if (!readMQTTLenString(&topicFilters[*count], &curdata, enddata)) {
 		#if 0
-			DEBUG("\rKhong tim thay topic trong ban tin!");
+			DEBUG ("\r\nKhong tim thay topic trong ban tin!");
 		#endif
 			goto exit;
 		}

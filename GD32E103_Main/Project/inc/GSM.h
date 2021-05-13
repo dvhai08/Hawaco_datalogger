@@ -13,12 +13,10 @@
 #define 	MAX_GSMRESETSYSTEMCOUNT	600	//10 phut
 
 #define __HOPQUY_GSM__ 0
-#define	__GSM_SLEEP_MODE__	0
+#define	__GSM_SLEEP_MODE__	1	
 #define	__USED_HTTP__	0
+#define __GSM_SMS_ENABLE__	0
 
-#if (__GSM_SLEEP_MODE__)
-	#warning CHU Y DANG BUILD __GSM_SLEEP_MODE__ = 1
-#endif
 
 
 typedef enum {
@@ -95,7 +93,7 @@ void ThucHienLenhAT(char *Lenh);
 void ReconnectTCP(void);
 void GSM_GotoSleep(void);
 void GSM_TestReadSMS(void);
-
+uint8_t isGSMSleeping(void);
 void QuerySMSTick(void);
 void GSM_CheckSMSTick(void);
 

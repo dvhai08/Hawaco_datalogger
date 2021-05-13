@@ -191,7 +191,7 @@ uint8_t SendSMS(char* PhoneNumber, char* Message)
 			SMSMemory[ucCount].NeedToSent = 2;		//1
 			SMSMemory[ucCount].RetryCount = 0;
 
-			DEBUG("\rAdd tin nhan vao buffer %u: %s,SDT: %s", ucCount, Message, PhoneNumber);
+			DEBUG ("\r\nAdd tin nhan vao buffer %u: %s,SDT: %s", ucCount, Message, PhoneNumber);
 
 			return 1;
 		}
@@ -303,8 +303,8 @@ void NhanTin(char* Buffer, uint8_t CallFrom)
 
     if(strlen(SoDienThoai) < 3) return;
 
-    DEBUG("\rDen so: %s", SoDienThoai);
-    DEBUG("\rNoi dung: %s", SendSMSBuffer);
+    DEBUG ("\r\nDen so: %s", SoDienThoai);
+    DEBUG ("\r\nNoi dung: %s", SendSMSBuffer);
 
     SendSMS(SoDienThoai, SendSMSBuffer);
 }
@@ -1210,7 +1210,7 @@ void ProcessCMDfromSMS(char* Buffer)
 	//Gan lai noi dung
 	Buffer = SMSContent;
  
-	DEBUG("\rSMS: From %s, content: %s. ", SoDienThoai, Buffer);
+	DEBUG ("\r\nSMS: From %s, content: %s. ", SoDienThoai, Buffer);
 
 	if(strstr(Buffer, "SET,"))
 	{
@@ -1311,7 +1311,7 @@ void ProcessCMDfromSMS(char* Buffer)
 	/* Kiem tra so dien thoai nhan tin co thuoc danh sach cho phep */
 	if(!ValidSMSInListControl(SoDienThoai)) 
 	{
-		DEBUG("\rSDT khong duoc cho phep cau hinh");
+		DEBUG ("\r\nSDT khong duoc cho phep cau hinh");
 		return;
 	}
 	
@@ -1532,7 +1532,7 @@ void ProcessCMDfromSMS(char* Buffer)
 		}
 		xSystem.FileTransfer.FileCRC.value = GetNumberFromString(0, tmpBuff);
 		
-		DEBUG("\rUDFW: Download FW. IP:%s, User:%s, Pass:%s, Size:%d, CRC:%d", xSystem.FileTransfer.FTP_IPAddress, 
+		DEBUG ("\r\nUDFW: Download FW. IP:%s, User:%s, Pass:%s, Size:%d, CRC:%d", xSystem.FileTransfer.FTP_IPAddress, 
 			xSystem.FileTransfer.FTP_UserName, xSystem.FileTransfer.FTP_Pass,
 			xSystem.FileTransfer.FileSize.value, xSystem.FileTransfer.FileCRC.value);
 		

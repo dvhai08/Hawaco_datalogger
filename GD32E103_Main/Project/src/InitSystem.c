@@ -27,6 +27,12 @@
 #include "InternalFlash.h"
 #include "ControlOutput.h"
 
+#define ADC_DMA			1
+
+/* constant for adc threshold value 3.3V */
+#define ADC_VREF			3300
+#define DIODE_OFFSET	50
+#define RESISTOR_DIV	1
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
@@ -64,10 +70,9 @@ extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
  ******************************************************************************/
 static void RCC_Config(void) ;
 static void InitIO(void);
-static void ADC_Config(void);
 static void InitVariable(void) ;
 static void DrawScreen(void);
-
+static void RtcConfiguration(void);
 
 
 void LockReadOutFlash(void)
@@ -103,8 +108,9 @@ void InitSystem(void)
 //	RelocateVectorTable();
 
 	RCC_Config();
-	InitIO();
 	WatchDogInit();
+	RtcConfiguration();
+	InitIO();
 	InitVariable();
 	
 //	UART_Init(DEBUG_UART, 115200);
@@ -133,6 +139,7 @@ void InitSystem(void)
 	init_TcpNet();
 		
 	xSystem.Status.InitSystemDone = 1;
+	xSystem.Status.DisconnectTimeout = 1;
 }
 
 	
@@ -181,11 +188,20 @@ static void RCC_Config(void)
 	} 
 	NVIC_SetPriority(SysTick_IRQn, 0x00);		
 	
+	nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
+    nvic_irq_enable(LVD_IRQn, 0, 1);
+	
+	/* configure the lvd threshold to 2.9v */
+    pmu_lvd_select(PMU_LVDT_5);
+	
 #if 0
 //	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
 //	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4 | RCC_APB1Periph_USART3, ENABLE);
 //	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG | RCC_APB2Periph_USART1, ENABLE);
 #else
+	    /* PMU clock enable */
+    rcu_periph_clock_enable(RCU_PMU);
+	
 	/* enable the GPIO clock */
 	rcu_periph_clock_enable(RCU_GPIOA);
 	rcu_periph_clock_enable(RCU_GPIOB);
@@ -202,6 +218,47 @@ static void RCC_Config(void)
 #endif
 }
 
+static void RtcConfiguration(void)
+{
+    nvic_irq_enable(RTC_IRQn,1,0);
+    /* enable PMU and BKPI clocks */
+    rcu_periph_clock_enable(RCU_BKPI);
+    rcu_periph_clock_enable(RCU_PMU);
+    /* allow access to BKP domain */
+    pmu_backup_write_enable();
+
+    /* reset backup domain */
+    bkp_deinit();
+
+    /* enable LXTAL */
+    rcu_osci_on(RCU_LXTAL);
+    /* wait till LXTAL is ready */
+    rcu_osci_stab_wait(RCU_LXTAL);
+    
+    /* select RCU_LXTAL as RTC clock source */
+    rcu_rtc_clock_config(RCU_RTCSRC_LXTAL);
+
+    /* enable RTC Clock */
+    rcu_periph_clock_enable(RCU_RTC);
+
+    /* wait for RTC registers synchronization */
+    rtc_register_sync_wait();
+
+    /* wait until last write operation on RTC registers has finished */
+    rtc_lwoff_wait();
+
+    /* enable the RTC second and alarm interrupt*/
+    rtc_interrupt_enable(RTC_INT_SECOND);
+    rtc_interrupt_enable(RTC_INT_ALARM);
+    /* wait until last write operation on RTC registers has finished */
+    rtc_lwoff_wait();
+
+    /* set RTC prescaler: set RTC period to 1s */
+    rtc_prescaler_set(32767);
+
+    /* wait until last write operation on RTC registers has finished */
+    rtc_lwoff_wait();
+}
 /*****************************************************************************/
 /**
  * @brief	:  Ham khoi tao cac chan I/O khac
@@ -219,8 +276,8 @@ static void InitIO(void)
 	gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
 
 	//Led on
-	LED1(0);
-	LED2(0);
+	LED1(1);
+	LED2(1);
 }
 
 /**
@@ -228,7 +285,7 @@ static void InitIO(void)
   * @param  None
   * @retval None
   */
-static void ADC_Config(void)
+void ADC_Config(void)
 {
 #if 0
 	ADC_InitTypeDef     ADC_InitStructure;
@@ -307,10 +364,16 @@ static void ADC_Config(void)
 	/* ADC1 regular Software Start Conv */ 
 	ADC_StartOfConversion(ADC1);
 #else    
+
+	rcu_periph_clock_enable(RCU_ADC0);
+	/* enable DMA clock */
+	rcu_periph_clock_enable(RCU_DMA0);
+	
 	/* config the GPIO as analog mode */
-    gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
-	 gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
+	gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
+	gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
 	 
+#if ADC_DMA
 	 /** ================= DMA config ==================== */
 	 /* ADC_DMA_channel configuration */
     dma_parameter_struct dma_data_parameter;
@@ -334,7 +397,8 @@ static void ADC_Config(void)
   
     /* enable DMA channel */
     dma_channel_enable(DMA0, DMA_CH0);
-	 
+#endif
+
 	 /** ================= ADC config ==================== */
 	 /* reset ADC */
     adc_deinit(ADC0);
@@ -351,8 +415,8 @@ static void ADC_Config(void)
     adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, ADCMEM_MAXUNIT);
 	 
     /* ADC regular channel config */
-    adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);
-	 adc_regular_channel_config(ADC0, 1, ADC_VIN_CHANNEL, ADC_SAMPLETIME_55POINT5);
+	adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);
+	adc_regular_channel_config(ADC0, 1, ADC_VIN_CHANNEL, ADC_SAMPLETIME_55POINT5);
 	 
     /* ADC trigger config */
     adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL, ADC0_1_EXTTRIG_REGULAR_NONE); 
@@ -371,6 +435,22 @@ static void ADC_Config(void)
 	 /* ADC software trigger enable */
     adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL);
 #endif
+}
+
+void AdcStop(void)
+{
+	adc_disable(ADC0);
+    adc_interrupt_flag_clear(ADC0, ADC_INT_FLAG_EOIC);
+	dma_circulation_disable(DMA0, DMA_CH0);
+    dma_channel_disable(DMA0, DMA_CH0);
+	dma_deinit(DMA0, DMA_CH0);
+	rcu_periph_clock_disable(RCU_ADC0);
+	rcu_periph_clock_disable(RCU_DMA0);
+}
+
+uint32_t AdcUpdate(void)
+{
+	return RESISTOR_DIV*(ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF *8/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
 }
 
 /*****************************************************************************/

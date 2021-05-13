@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,GD32E10X,IRC8M_VALUE=8000000</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\Library\CMSIS\GD\GD32E10x\Include;..\..\Library\GD32E10x_standard_peripheral\Include;..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;..\inc;..\src\SEGGER_RTT_V698b\RTT;..\src\SEGGER_RTT_V698b\Syscalls;..\lwrb\lwrb\src\include\lwrb;..\..\Project;..\src\MQTTUser;..\src\MQTTPaho</IncludePath>
+              <IncludePath>..\..\Library\CMSIS\GD\GD32E10x\Include;..\..\Library\GD32E10x_standard_peripheral\Include;..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;..\inc;..\src\SEGGER_RTT_V698b\RTT;..\src\SEGGER_RTT_V698b\Syscalls;..\lwrb\lwrb\src\include\lwrb;..\..\Project;..\src\MQTTUser;..\src\MQTTPaho;..\lowpass_filter;..\src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -876,6 +876,36 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>lowpass_filter</GroupName>
+          <Files>
+            <File>
+              <FileName>lpf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\lowpass_filter\lpf.c</FilePath>
+            </File>
+            <File>
+              <FileName>lpf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\lowpass_filter\lpf.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_debug</GroupName>
+          <Files>
+            <File>
+              <FileName>app_debug.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\app_debug.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_debug.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\app_debug.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
@@ -894,5 +924,14 @@
     </components>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>Project</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

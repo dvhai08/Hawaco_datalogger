@@ -75,12 +75,12 @@ int MQTTSerialize_connect(unsigned char* buf, int buflen, MQTTPacket_connectData
 	writeChar(&ptr, header.byte); /* write header */
 	
 #if 0
-	DEBUG("\rConnect header: %d - %d", header.byte);
+	DEBUG ("\r\nConnect header: %d - %d", header.byte);
 #endif
 	ptr += MQTTPacket_encode(ptr, len); /* write remaining length */
 	
 #if 0
-	DEBUG("\rConnect remain length: %d", *ptr);
+	DEBUG ("\r\nConnect remain length: %d", *ptr);
 #endif
 	if (options->MQTTVersion == 4)
 	{

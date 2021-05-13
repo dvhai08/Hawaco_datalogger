@@ -178,7 +178,7 @@ void GSM_GetNetworkStatus(char *Buffer)
 		GSM_Manager.GSMReady = 1;
 		
 		if(GSM_Manager.AccessTechnology > 9) GSM_Manager.AccessTechnology = 9;
-//		DEBUG("\rNetwork status: %s - %u", tempBuff, GSM_Manager.AccessTechnology);
+//		DEBUG ("\r\nNetwork status: %s - %u", tempBuff, GSM_Manager.AccessTechnology);
 	}
 }
 
@@ -228,7 +228,7 @@ void GSM_GetNetworkOperator(char *Buffer)
 		memset(xSystem.Status.GSMOperator, 0, sizeof(xSystem.Status.GSMOperator));
 		memcpy(xSystem.Status.GSMOperator, &tempBuff[commaIndex[0] + 1], length - 1);
 		
-		DEBUG("\rOperator: %s", xSystem.Status.GSMOperator);
+		DEBUG ("\r\nOperator: %s", xSystem.Status.GSMOperator);
 	}
 #endif
 }

@@ -17,6 +17,11 @@
 #include "Measurement.h"
 #include "ControlOutput.h"
 #include "Debug.h"
+#include "lpf.h"
+
+#if (__GSM_SLEEP_MODE__)
+	#warning CHU Y DANG BUILD __GSM_SLEEP_MODE__ = 1
+#endif
 
 extern System_t xSystem;
 extern LOCALM localm[];   
@@ -24,8 +29,8 @@ extern LOCALM localm[];
 static uint8_t Timeout1ms = 0;
 static uint8_t TimeOut10ms = 0;
 static uint8_t TimeOut100ms = 0;
-static uint16_t TimeOut1000ms = 0;
-static uint16_t TimeOut3000ms = 0;
+uint16_t TimeOut1000ms = 0;
+uint16_t TimeOut3000ms = 0;
  
 __IO uint16_t TimingDelay = 0;
 volatile uint32_t m_sys_tick = 0;
@@ -36,7 +41,13 @@ static void ProcessTimeout100ms(void);
 static void ProcessTimeOut3000ms(void);
 static void ProcessTimeout1000ms(void);
 void getTimeNTP(void);
-
+uint32_t sntpTimeoutInverval = 5;
+uint8_t adcStarted = 0;
+lpf_data_t AdcFilterdValue = 
+{
+	.estimate_value = 0,
+	.gain = 0,
+};
 /*!
     \brief      main function
     \param[in]  none
@@ -46,11 +57,20 @@ void getTimeNTP(void);
 int main(void)
 {    
     InitSystem();
+	adcStarted = 1;
 	
     while (1)
     {
 		 main_TcpNet();
-		 
+		 xSystem.Status.TimeStamp = rtc_counter_get();
+		 if (xSystem.Parameters.input.name.rs485)
+		 {
+			 RS485_PWR_ON();
+		 }
+		 else
+		 {
+			 RS485_PWR_OFF();
+		 }
 		 if(Timeout1ms >= 1)
 		 {
 			 Timeout1ms = 0;
@@ -65,25 +85,57 @@ int main(void)
 
         if(TimeOut100ms >= 100)
         {
-			  timer_tick();
-			  
-            TimeOut100ms = 0;
-            ProcessTimeout100ms();
+			timer_tick();
+			TimeOut100ms = 0;
+			ProcessTimeout100ms();
+			if (adcStarted)
+			{
+				xSystem.MeasureStatus.Vin = AdcUpdate();
+				if (AdcFilterdValue.estimate_value == 0 && AdcFilterdValue.gain == 0)
+				{
+					AdcFilterdValue.gain = 1;		// 1 percent
+					AdcFilterdValue.estimate_value = xSystem.MeasureStatus.Vin * 100;
+				}
+				else
+				{
+					int32_t tmpVin = xSystem.MeasureStatus.Vin*100;
+					lpf_update_estimate(&AdcFilterdValue, &tmpVin);
+					xSystem.MeasureStatus.Vin = AdcFilterdValue.estimate_value/100;
+				}
+				AdcStop();
+				adcStarted = 0;
+			}
         }
 		  
-		  if(TimeOut3000ms >= 3000)
+		if(TimeOut3000ms >= 3000)
+		{
+			if (adcStarted == 0)
 			{
-				TimeOut3000ms = 0;
-				ProcessTimeOut3000ms();
+				ADC_Config();
+				adcStarted = 1;
 			}
+			TimeOut3000ms = 0;
+			ProcessTimeOut3000ms();
+		}
+
+		if(TimeOut1000ms >= 1000)
+		{
+			TimeOut1000ms = 0;
 			
-			if(TimeOut1000ms >= 1000)
+			if(!isGSMSleeping())
 			{
-				TimeOut1000ms = 0;
-				
-				xSystem.Status.TimeStamp++;		//virtual RTC
-				ProcessTimeout1000ms();
+				if (xSystem.Status.DisconnectTimeout++ > 60)
+				{
+					NVIC_SystemReset();
+				}
 			}
+			ProcessTimeout1000ms();
+		}
+		
+		if(isGSMSleeping())
+		{
+			xSystem.Status.DisconnectTimeout = 0;
+		}
     }
 }
 
@@ -126,30 +178,31 @@ static void ProcessTimeout1000ms(void)
 //	DownloadFileTick();
 	
 	Output_Tick();
-		
-	//Test LED
-	LED1(ledToggle);
-	LED2(ledToggle);
-	ledToggle = 1 - ledToggle;
+	LED1(1);
+	LED2(1);
 }
 
 static void ProcessTimeOut3000ms(void)
 {
 	static uint32_t SystemTickCount = 0;
+
 	  	
-	DEBUG("\rSystem tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV", ++SystemTickCount, ppp_is_up(),
+	DEBUG ("\r\nSystem tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
 		localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1], 
 		localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
 		xSystem.MeasureStatus.Vin);
 	
 	//get NTP time
-	if(ppp_is_up()) {
-		if(getNTPTimeout % 5 == 0) {
+	if(ppp_is_up() && (isGSMSleeping() == 0)) {
+		if(getNTPTimeout % sntpTimeoutInverval == 0) {
 			getTimeNTP();
 		}
 		getNTPTimeout++;
 	} else
+	{
+		sntpTimeoutInverval = 5;
 		getNTPTimeout = 0;
+	}
 }
 
 void SystemManagementTask(void)
@@ -159,8 +212,8 @@ void SystemManagementTask(void)
 	Timeout1ms++;
 	TimeOut10ms++;
 	TimeOut100ms++;
-	TimeOut1000ms++;
-	TimeOut3000ms++;
+//	TimeOut1000ms++;
+//	TimeOut3000ms++;
 }
 
 void Delay_Decrement(void)
@@ -183,11 +236,15 @@ void Delayms(uint16_t ms)
 static void time_cback (U32 time)
 {
   if (time == 0) {
-	  DEBUG ("\rNTP: Error, server not responding or bad response.");
+	  DEBUG ("\r\nNTP: Error, server not responding or bad response.");
   } else {
-	  DEBUG ("\rNTP: %d seconds elapsed since 1.1.1970", time);
+	  DEBUG ("\r\nNTP: %d seconds elapsed since 1.1.1970", time);
+	  sntpTimeoutInverval = 120;
 		
 	  xSystem.Status.TimeStamp = time;	  
+	  __disable_irq();
+	  rtc_counter_set(xSystem.Status.TimeStamp);
+	  __enable_irq();
 	  //Update RTC
 	  //xSystem.Rtc->UpdateTimeFromNTPServer(time);
   }
@@ -197,7 +254,7 @@ void getTimeNTP(void)
 {	
   U8 ntp_server[4] = {217,79,179,106};
   if (sntp_get_time (&ntp_server[0], time_cback) == __FALSE) {
-    DEBUG ("\rFailed, SNTP not ready or bad parameters");
+    DEBUG ("\r\nFailed, SNTP not ready or bad parameters");
   }
 }
 

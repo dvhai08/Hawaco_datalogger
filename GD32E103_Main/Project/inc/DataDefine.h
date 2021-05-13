@@ -9,7 +9,10 @@
 	
 #include "SEGGER_RTT.h"    
 #include "app_debug.h"
-#define 	DEBUG(String...) 	SEGGER_RTT_printf(0, String)
+#define DEBUG			DEBUG_PRINTF
+#define DEBUG_RAW		DEBUG_PRINTF
+
+//#define 	DEBUG(String...) 	SEGGER_RTT_printf(0, String)
 //#define DEBUG_RAW(String...)        SEGGER_RTT_printf(0, String)
 //#define DEBUG_PRINTF(String...)     { SEGGER_RTT_printf(0, "[%d] ", sys_get_ms()); SEGGER_RTT_printf(0, String);}
 
@@ -150,7 +153,7 @@ typedef struct {
 } HardwareInfo_t;
 
 typedef	struct {
-	uint16_t	Vin;
+	uint32_t	Vin;
 	uint16_t	Vsens;
 	uint8_t batteryLevel;
 	
@@ -173,6 +176,7 @@ typedef struct {
 	uint8_t MQTTServerState;
 	uint8_t TCPSocket;
 	uint8_t TCPNeedToClose;
+	uint8_t TCPCloseDone;
 	
 	uint8_t SendGPRSTimeout;
 	uint16_t GSMSleepTime;
@@ -182,6 +186,7 @@ typedef struct {
 	
 	//Time stamp
 	uint32_t TimeStamp;
+	uint32_t DisconnectTimeout;
 	
 	//Debug
 	uint8_t ADCOut;

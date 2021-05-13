@@ -41,6 +41,9 @@ OF SUCH DAMAGE.
 
 extern void Delay_Decrement(void);
 extern void SystemManagementTask(void);
+extern System_t xSystem;
+extern uint16_t TimeOut1000ms;
+extern uint16_t TimeOut3000ms;
 
 /*!
     \brief      this function handles NMI exception
@@ -60,7 +63,7 @@ void NMI_Handler(void)
 */
 void HardFault_Handler(void)
 {
-	DEBUG("\r!!!!! HARDFAULT !!!!!");
+	DEBUG ("\r\n!!!!! HARDFAULT !!!!!");
 	
     /* if Hard Fault exception occurs, go to infinite loop */
     while (1){
@@ -174,8 +177,45 @@ void EXTI10_15_IRQHandler(void)
     /* check the GSM_RI pin */
    if (RESET != exti_interrupt_flag_get(GSM_RI_EXTI_LINE))
 	{
-        exti_interrupt_flag_clear(EXTI_13);
+        exti_interrupt_flag_clear(GSM_RI_EXTI_LINE);
    }
+}
+
+void LVD_IRQHandler(void)
+{
+    if(RESET != exti_interrupt_flag_get(EXTI_16))
+	{
+        exti_interrupt_flag_clear(EXTI_16);
+    }
+	NVIC_SystemReset();
+	while (1);
+}
+
+/*!
+    \brief      this function handles RTC global interrupt request
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+void RTC_IRQHandler(void)
+{
+    uint32_t temp = 0;
+    
+    if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_SECOND))
+	{
+        /* clear the RTC second interrupt flag*/
+        rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);    
+        temp = rtc_counter_get();
+		TimeOut1000ms = 1000;
+		TimeOut3000ms += 1000;
+    }
+
+    if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_ALARM))
+	{
+        /* clear the RTC alarm interrupt flag*/
+        rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
+		DEBUG("\r\nRTC alarm", temp);
+    }
 }
 
 #if 0

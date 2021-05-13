@@ -36,9 +36,6 @@ extern System_t xSystem;
 /* constant for adc resolution is 12 bit = 4096 */
 #define ADC_12BIT_FACTOR	4096
 
-/* constant for adc threshold value 3.3V */
-#define ADC_VREF			3300
-#define DIODE_OFFSET	100
 
 #define	RS485_DIR_OUT()		GPIO_SetBits(RS485_DR_PORT, RS485_DR_PIN)
 #define	RS485_DIR_IN()		GPIO_ResetBits(RS485_DR_PORT, RS485_DR_PIN)
@@ -56,6 +53,9 @@ uint8_t lastPulseState = 0;
 uint8_t curPulseState = 0;
 uint16_t pulseLengthInMs = 0;
 uint8_t isPulseTrigger = 0;
+uint32_t beginPulseTime, endPulseTime;
+int8_t pullState = -1;
+uint32_t pullDeltaMs;
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
  ******************************************************************************/
@@ -89,18 +89,19 @@ void Measure_PulseTick(void)
 //			pulseLengthInMs = 1;
 //		} else {
 //			//end of falling edge
-//			DEBUG("\rPulse length: %d ms", pulseLengthInMs);
+//			DEBUG ("\r\nPulse length: %d ms", pulseLengthInMs);
 //			
 //			//valid pulse length: 10-1500ms
 //			if(pulseLengthInMs >= 10 && pulseLengthInMs <= 1500)
 //			{
 //				xSystem.MeasureStatus.PulseCounterInBkup++;
-//				DEBUG("\rPulse's valid: %d", xSystem.MeasureStatus.PulseCounterInBkup);
+//				DEBUG ("\r\nPulse's valid: %d", xSystem.MeasureStatus.PulseCounterInBkup);
 				if (isPulseTrigger)
 				{
 					//Store to BKP register
 					app_bkup_write_pulse_counter(xSystem.MeasureStatus.PulseCounterInBkup);
-					isPulseTrigger = false;
+					isPulseTrigger = 0;
+					DEBUG ("\r\n+++++++++ in %ums", pullDeltaMs);
 				}
 //			}
 //			pulseLengthInMs = 0;
@@ -147,9 +148,9 @@ void Measure_Tick(void)
 				
 		if(xSystem.Status.ADCOut)
 		{
-			DEBUG("\rADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
+			DEBUG ("\r\nADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
 				ADC_RegularConvertedValueTab[ADCMEM_V20mV]); 
-			DEBUG("\rVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
+			DEBUG ("\r\nVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
 		}
 				
 		/* === DO DAU VAO 4-20mA DINH KY === //
@@ -169,7 +170,7 @@ void Measure_Tick(void)
 		{
 			measureTimeout--;
 			if(measureTimeout == 0) {
-				DEBUG("\r--- Timeout measure ---");
+				DEBUG ("\r\n--- Timeout measure ---");
 				SENS_420mA_PWR_OFF();
 			}
 		}
@@ -183,8 +184,9 @@ void Measure_Tick(void)
 			if(xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
 			{
 				xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
+				InternalFlash_WriteMeasures();
 				uint8_t res = InternalFlash_WriteConfig();
-				DEBUG("\rSave pulse counter to flash: %s", res ? "FAIL" : "OK"); 
+				DEBUG ("\r\nSave pulse counter %u to flash: %s", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK"); 
 			}
 		}
 	}
@@ -206,7 +208,7 @@ void Measure_Init(void)
 	gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
 	
 	//Pulse input
-	gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+	gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
 	
 #if 1
 	 /* enable and set key user EXTI interrupt to the lowest priority */
@@ -227,7 +229,7 @@ void Measure_Init(void)
 	if(xSystem.MeasureStatus.PulseCounterInBkup < xSystem.MeasureStatus.PulseCounterInFlash) {
 		xSystem.MeasureStatus.PulseCounterInBkup = xSystem.MeasureStatus.PulseCounterInFlash;
 	}
-	DEBUG("\rPulse counter in BKP: %d", xSystem.MeasureStatus.PulseCounterInBkup);
+	DEBUG ("\r\nPulse counter in BKP: %d", xSystem.MeasureStatus.PulseCounterInBkup);
 }
 
 uint8_t isPowerOnRS485(void)
@@ -241,7 +243,7 @@ uint8_t isPowerOnRS485(void)
 uint8_t isUltraValueChanged(int32_t lastVal)
 {
 //	int diff = xSystem.MeasureStatus.DistanceUltra - lastVal;
-//	DEBUG("\rDistance Ultra: %d - %d, diff: %d", xSystem.MeasureStatus.DistanceUltra, lastVal, diff);
+//	DEBUG ("\r\nDistance Ultra: %d - %d, diff: %d", xSystem.MeasureStatus.DistanceUltra, lastVal, diff);
 //	if(diff > 50 || diff < -50) return 1;
 	
 	return 0;
@@ -253,7 +255,7 @@ uint8_t isUltraValueChanged(int32_t lastVal)
 uint8_t isLaserValueChanged(int32_t lastVal)
 {
 //	int diff = xSystem.MeasureStatus.DistanceLaser - lastVal;
-//	DEBUG("\rDistance Laser: %d - %d, diff: %d", xSystem.MeasureStatus.DistanceLaser, lastVal, diff);
+//	DEBUG ("\r\nDistance Laser: %d - %d, diff: %d", xSystem.MeasureStatus.DistanceLaser, lastVal, diff);
 //	if(diff > 50 || diff < -50) return 1;
 	
 	return 0;
@@ -270,9 +272,7 @@ uint8_t isLaserValueChanged(int32_t lastVal)
  * @reviewer:	
  */
 static void MeasureInputTick(void) 
-{	
-	xSystem.MeasureStatus.Vin = (ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF *8/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
-	
+{		
 	//Dau vao 4-20mA: chi tinh toan khi thuc hien do
 	if(measureTimeout > 0)
 	{
@@ -282,14 +282,14 @@ static void MeasureInputTick(void)
 	
 //	if(xSystem.Status.ADCOut)
 //	{
-//		DEBUG("\rV20mA: %d, Current 4-20mA: %d.%d, Distance: %d", 
+//		DEBUG ("\r\nV20mA: %d, Current 4-20mA: %d.%d, Distance: %d", 
 //			(uint32_t)V20mA, iCurrent/10, iCurrent%10, distanceUltra);
 //	}
 //		
 //	/* Neu dang do Ultrasound thi moi duyet ket qua do */
 //	if(isPowerOnRS485())
 //	{
-//		DEBUG("\rUtrasound distance: %u", distanceUltra);
+//		DEBUG ("\r\nUtrasound distance: %u", distanceUltra);
 //		
 //		if(distanceUltra > 0)
 //		{
@@ -298,13 +298,13 @@ static void MeasureInputTick(void)
 //			//Neu co sai khac nhieu voi ket qua do cu thi gui ban tin len server
 //			if(isUltraValueChanged(lastUltraMeasureVal))
 //			{
-//				DEBUG("\r--- ULTRA VALUE changed, update cloud...");
+//				DEBUG ("\r\n--- ULTRA VALUE changed, update cloud...");
 //				xSystem.Status.YeuCauGuiTin = 1;
 //				
 //				RTC_WriteBackupRegister(ULTRA_LAST_VALUE_ADDR, 0x6789);
 //			}
 //			uint32_t lastUltraVal = RTC_ReadBackupRegister(ULTRA_LAST_VALUE_ADDR);
-//			DEBUG("\rRead last value from RTC: %X", lastUltraVal);
+//			DEBUG ("\r\nRead last value from RTC: %X", lastUltraVal);
 //			
 //			lastUltraMeasureVal = xSystem.MeasureStatus.DistanceUltra;
 //			
@@ -332,7 +332,7 @@ static void ProcessNewSensorUartData(void)
 	char digitBuff[10] = {0};
 	uint8_t index = 0;
 	
-	DEBUG("\rLaserSensor: %s", SensorUartBuffer.Buffer);
+	DEBUG ("\r\nLaserSensor: %s", SensorUartBuffer.Buffer);
 	
 	if(SensorUartBuffer.Buffer[0] != 0xFF) return;
 	
@@ -358,14 +358,14 @@ static void ProcessNewSensorUartData(void)
 	if(index > 0)
 	{
 		uint32_t distanceLaserInMilimet = GetNumberFromString(0, digitBuff);
-		DEBUG("\rLaser distance: %d (mm)", distanceLaserInMilimet);
+		DEBUG ("\r\nLaser distance: %d (mm)", distanceLaserInMilimet);
 		
 		xSystem.MeasureStatus.DistanceLaser = distanceLaserInMilimet;
 		
 		//Neu co sai khac nhieu voi ket qua do cu thi gui ban tin len server
 		if(isLaserValueChanged(lastLaserMeasureVal))
 		{
-			DEBUG("\r--- LASER VALUE changed, update cloud...");
+			DEBUG ("\r\n--- LASER VALUE changed, update cloud...");
 			xSystem.Status.YeuCauGuiTin = 1;
 		}
 		lastLaserMeasureVal = xSystem.MeasureStatus.DistanceUltra;
@@ -425,15 +425,27 @@ void EXTI2_IRQHandler(void)
 #if 1
 		if(getPulseState()) 
 		{
-//			beginPulseTime = sys_get_ms();
+			beginPulseTime = sys_get_ms();
+			pullState = 0;
 		} 
-		else 
+		else if (pullState == 0)
 		{
-//			endPulseTime = sys_get_ms();
-//			isPulseTrigger = 1;
-//			DEBUG("\rPulse: %d - %d", endPulseTime, beginPulseTime);
-			isPulseTrigger = 1;
-			xSystem.MeasureStatus.PulseCounterInBkup++;
+			pullState = -1;
+			endPulseTime = sys_get_ms();
+			if (endPulseTime > beginPulseTime)
+			{
+				pullDeltaMs = endPulseTime - beginPulseTime;
+			}
+			else
+			{
+				pullDeltaMs = 0xFFFFFFFF - beginPulseTime + endPulseTime;
+			}
+			
+			if (pullDeltaMs > 200)
+			{
+				isPulseTrigger = 1;
+				xSystem.MeasureStatus.PulseCounterInBkup++;
+			}
 		}
 #else
 		isPulseTrigger = 1;

@@ -58,7 +58,10 @@ static __IO uint8_t isNewUARTData = 0;
  */
 void GSM_InitHardware(void) 
 { 
-	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);
+	//rcu_periph_clock_enable(RCU_SPI0);
+	//rcu_periph_clock_enable(RCU_AF);
+	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);/*!< JTAG-DP disabled and SW-DP enabled */
+	// gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);
 	
 	gpio_init(GSM_PWR_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_EN_PIN);
 	gpio_init(GSM_PWR_KEY_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_KEY_PIN);
@@ -93,9 +96,9 @@ void GSM_InitHardware(void)
 	NVIC_Init(&NVIC_InitStructure);
 #endif	//0
 
-    /* configure RI (PA11) pin as input */
-    gpio_init(GSM_RI_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_RI_PIN);
-	 gpio_init(GSM_STATUS_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_STATUS_PIN);
+	/* configure RI (PA11) pin as input */
+	gpio_init(GSM_RI_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_RI_PIN);
+	gpio_init(GSM_STATUS_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_STATUS_PIN);
     
 #if 0	//HW co RI pin
     /* enable and set key user EXTI interrupt to the lowest priority */
@@ -255,7 +258,7 @@ void GSM_HardwareTick (void)
 			}				
 			else
 			{
-				DEBUG("\rGui lai lenh AT : %s",GSM_Hardware.ATCommand.CMD);
+				DEBUG ("\r\nGui lai lenh AT : %s",GSM_Hardware.ATCommand.CMD);
 				UART_Puts(GSM_UART,GSM_Hardware.ATCommand.CMD);
 			}	
 		}
@@ -275,7 +278,7 @@ void GSM_HardwareTick (void)
 		{
 			if(strstr((char *)(GSM_Hardware.ATCommand.ReceiveBuffer.Buffer),"CONNECT"))
 			{
-				DEBUG("\rModem da ket noi!"); 
+				DEBUG ("\r\nModem da ket noi!"); 
 			}
 			isNewUARTData = 0;
 		}
@@ -341,7 +344,7 @@ void SendATCommand  (char *Command, char *ExpectResponse, uint16_t Timeout,
 	
 	UART_Puts(GSM_UART,Command);
 	
-	DEBUG("\rSend AT : %s", Command);
+	DEBUG ("\r\nSend AT : %s", Command);
 }
 
 #else		//USE_PPP
@@ -695,7 +698,7 @@ void modem_run ()
 			}				
 			else
 			{
-				DEBUG("\rResend ATC: %s",GSM_Hardware.ATCommand.CMD);
+				DEBUG ("\r\nResend ATC: %s",GSM_Hardware.ATCommand.CMD);
 				com_put_at_string(GSM_Hardware.ATCommand.CMD);
 			}			
 		}
@@ -721,7 +724,7 @@ void modem_run ()
 			CMEErrorTimeout = 0;
 			if(CMEErrorCount >= 10)
 			{
-				DEBUG("\r+CME ERROR too much!");
+				DEBUG ("\r\n+CME ERROR too much!");
 				GSM_Manager.State = GSM_RESET;
 				GSM_Manager.Step = 0;
 			}
@@ -761,7 +764,7 @@ BOOL modem_process (uint8_t ch)
 			/* Xu ly du lieu tien +CUSD: 0, "MobiQTKC:20051d,31/07/2016 KM2:50000d KM3:48500d KM1:27800d", 15 */
 			if(strstr((char *)(GSM_Hardware.ATCommand.ReceiveBuffer.Buffer),"+CUSD"))
 			{
-				DEBUG("\rTai khoan: %s", strstr((char *)(GSM_Hardware.ATCommand.ReceiveBuffer.Buffer),"+CUSD"));
+				DEBUG ("\r\nTai khoan: %s", strstr((char *)(GSM_Hardware.ATCommand.ReceiveBuffer.Buffer),"+CUSD"));
 				MQTT_SendBufferToServer((char*)GSM_Hardware.ATCommand.ReceiveBuffer.Buffer, "CUSD");
 			}
 			
@@ -794,14 +797,14 @@ BOOL modem_process (uint8_t ch)
 		if(GSM_Manager.State != GSM_SLEEP && GSM_Manager.State != GSM_GOTOSLEEP && 	
 			GSM_Manager.State != GSM_READSMS)
 		{
-			DEBUG("\rModem disconnected, auto reconnect"); 
+			DEBUG ("\r\nModem disconnected, auto reconnect"); 
 			GSM_Manager.State = GSM_REOPENPPP;
 			GSM_Manager.Step = 0;
 			GSM_Manager.GSMReady = 0;
 		}
 		else
 		{
-			DEBUG("\rModem disconnect because of go to sleep mode!");
+			DEBUG ("\r\nModem disconnect because of go to sleep mode!");
 		}
   }
 #endif
@@ -844,7 +847,7 @@ void SendATCommand  (char *Command, char *ExpectResponse, uint16_t Timeout,
 	
 	com_put_at_string(Command);
 	
-	DEBUG("\rATC: %s",Command);
+	DEBUG ("\r\nATC: %s",Command);
 }
 #endif	//__USED_HTTP__
 

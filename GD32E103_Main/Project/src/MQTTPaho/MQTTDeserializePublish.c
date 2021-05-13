@@ -68,7 +68,7 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 	if (!readMQTTLenString(topicName, &curdata, enddata))		
 	{
 	#if 0
-		DEBUG("\rMQTT: Ko tim thay topic ");
+		DEBUG ("\r\nMQTT: Ko tim thay topic ");
 	#endif
 		goto exit;
 	}
