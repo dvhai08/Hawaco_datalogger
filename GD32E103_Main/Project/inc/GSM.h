@@ -96,7 +96,7 @@ void GSM_TestReadSMS(void);
 uint8_t isGSMSleeping(void);
 void QuerySMSTick(void);
 void GSM_CheckSMSTick(void);
-
+void GSMSleepAfterSecond(uint32_t second);
 BOOL com_put_at_string (char *str);
 
 //======================== FOR MODEM ========================//

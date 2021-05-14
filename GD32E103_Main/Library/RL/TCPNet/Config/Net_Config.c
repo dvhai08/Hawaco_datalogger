@@ -10,7 +10,7 @@
  *---------------------------------------------------------------------------*/
 
 #include "Net_Config.h"
-
+#include "app_debug.h"
 //-------- <<< Use Configuration Wizard in Context Menu >>> -----------------
 //
 // <h>System Definitions
@@ -883,7 +883,7 @@ void sys_error (ERROR_CODE code) {
   /* This function is called when a fatal error is encountered. The normal */
   /* program execution is not possible anymore. Add your crytical error   .*/
   /* handler code here.                                                    */
-	
+	DEBUG_PRINTF("\r\nsystem error %u\r\n", code);
   switch (code) {
     case ERR_MEM_ALLOC:
       /* Out of memory. */

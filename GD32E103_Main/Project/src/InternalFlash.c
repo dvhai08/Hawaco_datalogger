@@ -494,7 +494,7 @@ uint8_t InternalFlash_WriteConfig(void)
 		}
 		else if (*((uint32_t*)(CONFIG_INPUT_ADDR)) != xSystem.Parameters.input.value)
 		{
-			DEBUG("\r\nReadback value at addr %u failed", CONFIG_INPUT_ADDR);
+			DEBUG("Readback value at addr %u failed\r\n", CONFIG_INPUT_ADDR);
 			result++;
 		}
 		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
@@ -522,7 +522,7 @@ uint8_t InternalFlash_WriteConfig(void)
 			fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
 		}
 				
-		DEBUG ("\r\nCFG: Saved: %u - %s", result, result == 0 ? "OK" : "FAIL");
+		DEBUG ("CFG: Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");
 	}
 	
 	FLASH_Lock();

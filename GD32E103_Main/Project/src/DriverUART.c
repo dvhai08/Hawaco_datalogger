@@ -60,7 +60,7 @@ extern System_t xSystem;
 
 void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 {
-	 if (USARTx == GSM_UART)
+	if (USARTx == GSM_UART)
     {
 		static bool gsm_init = false;
 		if (gsm_init == false)
@@ -79,6 +79,24 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 
 			/* connect port to USARTx_Rx */
 			gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, GSM_RX_PIN);
+				 
+			/* USART configure */
+			usart_deinit(USARTx);
+			usart_word_length_set(USARTx, USART_WL_8BIT);
+			usart_stop_bit_set(USARTx, USART_STB_1BIT);
+			usart_parity_config(USARTx, USART_PM_NONE);
+			usart_baudrate_set(USARTx, BaudRate);
+			usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
+			usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
+
+			usart_interrupt_enable(USARTx, USART_INT_RBNE);
+			//	  usart_interrupt_enable(USARTx, USART_INT_TBE);
+
+			//Clear interrupt flag
+			usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+			usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
+
+			usart_enable(USARTx);
 		}
     }
 #if	__USE_SENSOR_UART__
@@ -115,24 +133,6 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 			/* connect port to USARTx_Rx */
 			gpio_init(RS485_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, RS485_RX_PIN);
     }
-	 
-	 /* USART configure */
-	  usart_deinit(USARTx);
-	  usart_word_length_set(USARTx, USART_WL_8BIT);
-	  usart_stop_bit_set(USARTx, USART_STB_1BIT);
-	  usart_parity_config(USARTx, USART_PM_NONE);
-	  usart_baudrate_set(USARTx, BaudRate);
-	  usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
-	  usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
-	 
-	  usart_interrupt_enable(USARTx, USART_INT_RBNE);
-//	  usart_interrupt_enable(USARTx, USART_INT_TBE);
-	 
-	 //Clear interrupt flag
-	 usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
-	 usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
-	 
-	 usart_enable(USARTx);
 }
 
 //size_t driver_uart0_get_new_data_to_send(uint8_t *c)

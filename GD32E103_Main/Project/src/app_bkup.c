@@ -57,7 +57,7 @@ uint32_t app_bkup_read_pulse_counter(void)
 	}
 	else
 	{
-		DEBUG ("\r\nBKUP: Flag not found!");
+		DEBUG ("BKUP: Flag not found!\r\n");
 	}
 	return 0;
 }

@@ -65,7 +65,7 @@ unsigned char pub_dup = 0;
 unsigned char pub_retained = 0;
 MQTTString PubTopicString = MQTTString_initializer;
 
-static uint8_t TimeoutDinhKyTick1000ms;
+static uint16_t TimeoutDinhKyTick1000ms;
 
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
@@ -120,11 +120,16 @@ static void GuiBanTinDinhKiTick(void)
 	uint8_t ThoiGianGuiSubscribe;
 	
 	//Test 10'
-	if(++SendMessageTick >= xSystem.Parameters.TGGTDinhKy*10 || sendMsgWhenReset)
+	if(++SendMessageTick >= xSystem.Parameters.TGGTDinhKy || sendMsgWhenReset)
 	{
-		SendMessageTick = 0;
-		sendMsgWhenReset = 0;
-		MQTT_PublishDataMsg();
+		DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy, xSystem.Status.MQTTServerState);
+		if (xSystem.Status.MQTTServerState == MQTT_CONNECTED
+			|| xSystem.Status.MQTTServerState == MQTT_LOGINED)
+		{
+			SendMessageTick = 0;
+			sendMsgWhenReset = 0;
+			MQTT_PublishDataMsg();
+		}
 	}
 #else
 	

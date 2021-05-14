@@ -124,7 +124,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint16_t sendTime = GetNumberFromString(13, cycleSend);
 		if(xSystem.Parameters.TGGTDinhKy != sendTime) {
-			DEBUG("\r\nCYCLESENDWEB changed");
+			DEBUG("CYCLESENDWEB changed\r\n");
 			xSystem.Parameters.TGGTDinhKy = sendTime;
 			hasNewConfig++;
 		}
@@ -137,7 +137,7 @@ void ProcessSetParameters(char *buffer)
 		if(xSystem.Parameters.outputOnOff != out1) {
 			xSystem.Parameters.outputOnOff = out1;
 			hasNewConfig++;
-			DEBUG("\r\nOutput 1 changed");
+			DEBUG("Output 1 changed\r\n");
 			//Dk ngoai vi luon
 			TRAN_OUTPUT(out1);
 		}
@@ -148,7 +148,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t out2 = GetNumberFromString(8, output2);
 		if(xSystem.Parameters.output420ma != out2) {
-			DEBUG("\r\nOutput 2 changed");
+			DEBUG("Output 2 changed\r\n");
 			xSystem.Parameters.output420ma = out2;
 			hasNewConfig++;
 			
@@ -162,7 +162,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in1 = GetNumberFromString(7, input1) & 0x1;
 		if(xSystem.Parameters.input.name.pulse != in1) {
-			DEBUG("\r\nINPUT1 changed");
+			DEBUG("INPUT1 changed\r\n");
 			xSystem.Parameters.input.name.pulse = in1;
 			hasNewConfig++;
 		}
@@ -173,7 +173,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in2 = GetNumberFromString(7, input2) & 0x1;
 		if(xSystem.Parameters.input.name.ma420 != in2) {
-			DEBUG("\r\nINPUT2 changed");
+			DEBUG("INPUT2 changed\r\n");
 			xSystem.Parameters.input.name.ma420 = in2;
 			hasNewConfig++;
 		}
@@ -184,7 +184,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in485 = GetNumberFromString(7, rs485) & 0x1;
 		if(xSystem.Parameters.input.name.rs485 != in485) {
-			DEBUG("\r\nin485 changed");
+			DEBUG("in485 changed\r\n");
 			xSystem.Parameters.input.name.rs485 = in485;
 			hasNewConfig++;
 		}
@@ -195,7 +195,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t alrm = GetNumberFromString(8, alarm) & 0x1;
 		if(xSystem.Parameters.alarm != alrm) {
-			DEBUG("\r\nWARNING changed");
+			DEBUG("WARNING changed\r\n");
 			xSystem.Parameters.alarm = alrm;
 			hasNewConfig++;
 		}
@@ -219,7 +219,7 @@ void ProcessSetParameters(char *buffer)
 			}
 			if (changed)
 			{
-				DEBUG("\r\nPHONENUM changed");
+				DEBUG("PHONENUM changed\r\n");
 			}
 			#endif
 		}
@@ -232,7 +232,7 @@ void ProcessSetParameters(char *buffer)
 	}
 	else
 	{
-		DEBUG ("\r\nCFG: has no new config");
+		DEBUG ("CFG: has no new config\r\n");
 	}
 }
 
@@ -267,6 +267,7 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 		DEBUG ("\r\nSRV: SET config");
 		xSystem.Status.SendGPRSTimeout = 15;
 		ProcessSetParameters(buffer);
+		GSMSleepAfterSecond(2);
 		return length;
 	}
 //	if(strstr(buffer, "GET,"))

@@ -906,6 +906,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>fault</GroupName>
+          <Files>
+            <File>
+              <FileName>fault.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\fault\fault.c</FilePath>
+            </File>
+            <File>
+              <FileName>fault.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\fault\fault.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>

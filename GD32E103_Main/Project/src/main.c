@@ -59,8 +59,7 @@ int main(void)
 {    
     InitSystem();
 	adcStarted = 1;
-	#warning "Test thoi gian gui tin dinh ki 1p"
-//	xSystem.Parameters.TGGTDinhKy = 1;
+	MqttClientSendFirstMessageWhenReset();
 	
     while (1)
     {
@@ -191,7 +190,7 @@ static void ProcessTimeOut3000ms(void)
 	static uint32_t SystemTickCount = 0;
 
 	  	
-	DEBUG ("\r\nSystem tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
+	DEBUG ("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
 		localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1], 
 		localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
 		xSystem.MeasureStatus.Vin);

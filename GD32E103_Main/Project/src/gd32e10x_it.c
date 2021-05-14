@@ -55,20 +55,20 @@ void NMI_Handler(void)
 {
 }
 
-/*!
-    \brief      this function handles HardFault exception
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
-void HardFault_Handler(void)
-{
-	DEBUG ("\r\n!!!!! HARDFAULT !!!!!");
-	
-    /* if Hard Fault exception occurs, go to infinite loop */
-    while (1){
-    }
-}
+///*!
+//    \brief      this function handles HardFault exception
+//    \param[in]  none
+//    \param[out] none
+//    \retval     none
+//*/
+//void HardFault_Handler(void)
+//{
+//	DEBUG ("\r\n!!!!! HARDFAULT !!!!!");
+//	
+//    /* if Hard Fault exception occurs, go to infinite loop */
+//    while (1){
+//    }
+//}
 
 /*!
     \brief      this function handles MemManage exception
@@ -183,10 +183,6 @@ void EXTI10_15_IRQHandler(void)
 
 void LVD_IRQHandler(void)
 {
-    if(RESET != exti_interrupt_flag_get(EXTI_16))
-	{
-        exti_interrupt_flag_clear(EXTI_16);
-    }
 	NVIC_SystemReset();
 	while (1);
 }

@@ -537,13 +537,16 @@ void GSM_UART_Handler(void)
 		uint8_t ch = usart_data_receive(GSM_UART);
 		GSM_Manager.TimeOutConnection = 0;				//Reset UART data timeout
 		
-		/* Receive Buffer Not Empty */
-		p = &GSM_Hardware.Modem.RxBuffer;
-		if ((U8)(p->IndexIn + 1) != p->IndexOut) 
+		if (GSM_RESET != GSM_Manager.State)
 		{
-			p->Buffer [p->IndexIn++] = ch;
-         if(p->IndexIn == MODEM_BUFFER_SIZE) p->IndexIn = 0;
-		}	
+			/* Receive Buffer Not Empty */
+			p = &GSM_Hardware.Modem.RxBuffer;
+			if ((U8)(p->IndexIn + 1) != p->IndexOut) 
+			{
+				p->Buffer [p->IndexIn++] = ch;
+			 if(p->IndexIn == MODEM_BUFFER_SIZE) p->IndexIn = 0;
+			}	
+		}
 		usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
 	}
 	

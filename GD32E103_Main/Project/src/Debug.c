@@ -144,7 +144,14 @@ static void ProcessNewDebugData(void)
 					xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
 				}
 				break;
-		
+
+			case 18:
+				if (!isGSMSleeping())
+				{
+					GSMSleepAfterSecond(1);
+				}
+				break;
+				
 //			case 7: 	//TEST ISO output 1
 //				DEBUG_PRINTF("Test ISO output1...\r\n");
 //				GPIOToggle(ISO_OUT1_PORT, ISO_OUT1_PIN);
