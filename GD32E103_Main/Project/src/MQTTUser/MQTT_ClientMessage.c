@@ -339,7 +339,6 @@ uint16_t MQTT_PublishDataMsg(void)
 	MediumBuffer_t *pBuffer;
 	uint8_t BufferAvailable;
 	int16_t TotalLen = 0;
-		
 	/* Timeout thoi gian gui ban tin TCP, het thoi gian -> close connection */
 	if(!xSystem.Status.SendGPRSTimeout)
 		xSystem.Status.SendGPRSTimeout = GPRS_SEND_TIMEOUT;	/* 180s */
@@ -365,7 +364,10 @@ uint16_t MQTT_PublishDataMsg(void)
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Output2\":\"%d\",", xSystem.Parameters.output420ma);		//dau ra 4-20mA	
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"SignalStrength\":\"%d\",", xSystem.Status.CSQ);
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"WarningLevel\":\"%d\",", xSystem.Status.Alarm);
-	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryLevel\":\"%d\"}", xSystem.MeasureStatus.Vin);
+	
+	
+	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
+	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryDebug\":\"%d\"}", xSystem.MeasureStatus.Vin);
 //	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Countconnect\":\"%d\"}", pubPackageId);
 			
 	/* =================== Build MQTT message =============== */
@@ -382,7 +384,7 @@ uint16_t MQTT_PublishDataMsg(void)
 	pBuffer->BufferIndex = TotalLen;
 	pBuffer->State = BUFFER_STATE_IDLE;
 			
-#if 0
+#if 1
 	DEBUG ("\r\nMQTT: Send: %d - %s", pBuffer->BufferIndex, mqttBuffer.Buffer);
 #endif
 	

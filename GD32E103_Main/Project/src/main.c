@@ -40,6 +40,7 @@ static void ProcessTimeout10ms(void);
 static void ProcessTimeout100ms(void);
 static void ProcessTimeOut3000ms(void);
 static void ProcessTimeout1000ms(void);
+static uint8_t convertVinToPercent(uint32_t vin);
 void getTimeNTP(void);
 uint32_t sntpTimeoutInverval = 5;
 uint8_t adcStarted = 0;
@@ -58,6 +59,8 @@ int main(void)
 {    
     InitSystem();
 	adcStarted = 1;
+	#warning "Test thoi gian gui tin dinh ki 1p"
+//	xSystem.Parameters.TGGTDinhKy = 1;
 	
     while (1)
     {
@@ -102,6 +105,7 @@ int main(void)
 					lpf_update_estimate(&AdcFilterdValue, &tmpVin);
 					xSystem.MeasureStatus.Vin = AdcFilterdValue.estimate_value/100;
 				}
+				xSystem.MeasureStatus.batteryPercent = convertVinToPercent(xSystem.MeasureStatus.Vin);
 				AdcStop();
 				adcStarted = 0;
 			}
@@ -262,3 +266,16 @@ uint32_t sys_get_ms(void)
 {
     return m_sys_tick;
 }
+
+static uint8_t convertVinToPercent(uint32_t vin)
+{
+	#define VIN_MAX 25000
+	#define VIN_MIN 22000
+	
+	if (vin >= VIN_MAX)
+		return 100;
+	if (vin <= VIN_MIN)
+		return 0;
+	return ((vin-VIN_MIN)*100)/(VIN_MAX-VIN_MIN);
+}
+

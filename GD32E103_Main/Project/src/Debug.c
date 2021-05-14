@@ -138,6 +138,12 @@ static void ProcessNewDebugData(void)
 					DEBUG_PRINTF("Set DAC %uMv\r\n", voltage);
 				}
 				break;
+			case 16:
+				if (isGSMSleeping())
+				{
+					xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+				}
+				break;
 		
 //			case 7: 	//TEST ISO output 1
 //				DEBUG_PRINTF("Test ISO output1...\r\n");

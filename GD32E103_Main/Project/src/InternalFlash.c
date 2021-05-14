@@ -595,7 +595,7 @@ void InternalFlash_ReadConfig(void)
 	{
 		DEBUG ("\r\nCHUA CO CAU HINH, DUNG CAU HINH MAC DINH!");
 		
-		xSystem.Parameters.TGGTDinhKy = 60;		//phut
+		xSystem.Parameters.TGGTDinhKy = 30;		//phut
 		xSystem.Parameters.TGDoDinhKy = 15;		//phut
 		xSystem.Parameters.outputOnOff = 0;		//off
 		xSystem.Parameters.output420ma = 0;		//off

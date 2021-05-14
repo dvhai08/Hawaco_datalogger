@@ -18,7 +18,7 @@
 
 #define	LARGE_BUFFER_SIZE   1024
 #define	MEDIUM_BUFFER_SIZE	512
-#define	SMALL_BUFFER_SIZE   255
+#define	SMALL_BUFFER_SIZE   256
 #define	TINY_BUFFER_SIZE	50	
 
 #define	NUM_OF_GPRS_BUFFER  3
@@ -161,6 +161,7 @@ typedef	struct {
 	uint32_t PulseCounterInFlash;
 	float Input420mA;
 	uint16_t Pressure[4];
+	uint8_t batteryPercent;
 } MeasureStatus_t;
 
 typedef struct {

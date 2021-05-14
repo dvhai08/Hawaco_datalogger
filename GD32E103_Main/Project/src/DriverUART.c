@@ -62,6 +62,10 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 {
 	 if (USARTx == GSM_UART)
     {
+		static bool gsm_init = false;
+		if (gsm_init == false)
+		{
+			gsm_init = true;
 			nvic_irq_enable(GSM_UART_IRQ, 1, 0);
 
 			/* enable COM GPIO clock */
@@ -75,6 +79,7 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 
 			/* connect port to USARTx_Rx */
 			gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, GSM_RX_PIN);
+		}
     }
 #if	__USE_SENSOR_UART__
     else if (USARTx == DEBUG_UART)

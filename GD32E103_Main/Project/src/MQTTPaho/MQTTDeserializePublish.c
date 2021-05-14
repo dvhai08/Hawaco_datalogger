@@ -55,7 +55,8 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 	*retained = header.bits.retain;
 	
 	rc = MQTTPacket_decodeBuf(curdata, &mylen); /* read remaining length */
-	curdata++;
+//	curdata++;		// original
+	curdata += rc;
 	
 	enddata = curdata + mylen;
 
@@ -67,8 +68,8 @@ int MQTTDeserialize_publish(unsigned char* dup, int* qos, unsigned char* retaine
 
 	if (!readMQTTLenString(topicName, &curdata, enddata))		
 	{
-	#if 0
-		DEBUG ("\r\nMQTT: Ko tim thay topic ");
+	#if 1
+		DEBUG ("\r\nMQTT: Ko tim thay topic %s, name len %d, mylen %d, rc %d", topicName, topicName->lenstring.len, mylen, rc);
 	#endif
 		goto exit;
 	}

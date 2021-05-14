@@ -124,6 +124,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint16_t sendTime = GetNumberFromString(13, cycleSend);
 		if(xSystem.Parameters.TGGTDinhKy != sendTime) {
+			DEBUG("\r\nCYCLESENDWEB changed");
 			xSystem.Parameters.TGGTDinhKy = sendTime;
 			hasNewConfig++;
 		}
@@ -136,7 +137,7 @@ void ProcessSetParameters(char *buffer)
 		if(xSystem.Parameters.outputOnOff != out1) {
 			xSystem.Parameters.outputOnOff = out1;
 			hasNewConfig++;
-			
+			DEBUG("\r\nOutput 1 changed");
 			//Dk ngoai vi luon
 			TRAN_OUTPUT(out1);
 		}
@@ -147,6 +148,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t out2 = GetNumberFromString(8, output2);
 		if(xSystem.Parameters.output420ma != out2) {
+			DEBUG("\r\nOutput 2 changed");
 			xSystem.Parameters.output420ma = out2;
 			hasNewConfig++;
 			
@@ -160,6 +162,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in1 = GetNumberFromString(7, input1) & 0x1;
 		if(xSystem.Parameters.input.name.pulse != in1) {
+			DEBUG("\r\nINPUT1 changed");
 			xSystem.Parameters.input.name.pulse = in1;
 			hasNewConfig++;
 		}
@@ -170,6 +173,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in2 = GetNumberFromString(7, input2) & 0x1;
 		if(xSystem.Parameters.input.name.ma420 != in2) {
+			DEBUG("\r\nINPUT2 changed");
 			xSystem.Parameters.input.name.ma420 = in2;
 			hasNewConfig++;
 		}
@@ -180,6 +184,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t in485 = GetNumberFromString(7, rs485) & 0x1;
 		if(xSystem.Parameters.input.name.rs485 != in485) {
+			DEBUG("\r\nin485 changed");
 			xSystem.Parameters.input.name.rs485 = in485;
 			hasNewConfig++;
 		}
@@ -190,6 +195,7 @@ void ProcessSetParameters(char *buffer)
 	{
 		uint8_t alrm = GetNumberFromString(8, alarm) & 0x1;
 		if(xSystem.Parameters.alarm != alrm) {
+			DEBUG("\r\nWARNING changed");
 			xSystem.Parameters.alarm = alrm;
 			hasNewConfig++;
 		}
@@ -201,13 +207,21 @@ void ProcessSetParameters(char *buffer)
 		char tmpPhone[30] = {0};
 		if(CopyParameter(phoneNum, tmpPhone, '(', ')'))
 		{
+			#if 0
+			uint8_t changed = 0;
 			for(uint8_t i = 0; i < 15; i++)
 			{
 				if(tmpPhone[i] != xSystem.Parameters.PhoneNumber[i]) {
+					changed = 1;
 					hasNewConfig ++;
 				}
 				xSystem.Parameters.PhoneNumber[i] = tmpPhone[i];
 			}
+			if (changed)
+			{
+				DEBUG("\r\nPHONENUM changed");
+			}
+			#endif
 		}
 	}
 	
@@ -237,18 +251,18 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 	xSystem.Status.GSMSendFailedTimeout = 0;
 	
 	if(strstr(buffer, "SET,") == NULL)
-	toUpperCase(buffer);
+		toUpperCase(buffer);
 	
 #if 1
 	/** TEST: Check ban tin UDFW khong ma hoa */
-//	if(strstr(buffer, "UDFW,"))
-//	{
-//		DEBUG ("\r\nSRV: Ban tin UDFW");
+	if(strstr(buffer, "UDFW,"))
+	{
+		DEBUG ("\r\nSRV: Ban tin UDFW");
 //		ProcessUpdateFirmwareCommand(buffer, 1);
 //		return length;
-//	}
+	}
 	
-	if(strstr(buffer, "SET,"))
+	if(strstr(buffer, "SET,") || strstr(buffer,"CYCLEWAKEUP"))
 	{
 		DEBUG ("\r\nSRV: SET config");
 		xSystem.Status.SendGPRSTimeout = 15;

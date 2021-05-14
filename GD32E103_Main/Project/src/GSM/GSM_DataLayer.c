@@ -94,19 +94,19 @@ void GSM_GotoSleep(void)
  */
 void gsmWakeUpPeriodically(void)
 {
-//	xSystem.Status.GSMSleepTime++;
-//	if(xSystem.Status.GSMSleepTime >= xSystem.Parameters.TGGTDinhKy*60)
-//	{
-//		xSystem.Status.GSMSleepTime = 0;
+	xSystem.Status.GSMSleepTime++;
+	if(xSystem.Status.GSMSleepTime >= xSystem.Parameters.TGGTDinhKy*60)
+	{
+		xSystem.Status.GSMSleepTime = 0;
 
-//#if (__GSM_SLEEP_MODE__)		
-//		DEBUG ("\r\nGSM: Wakeup to send msg");
-//		xSystem.Status.YeuCauGuiTin = 2;
-//		ChangeGSMState(GSM_WAKEUP);
-//#else
-//		xSystem.Status.YeuCauGuiTin = 3;
-//#endif
-//	}
+#if (__GSM_SLEEP_MODE__)		
+		DEBUG ("\r\nGSM: Wakeup to send msg");
+		xSystem.Status.YeuCauGuiTin = 2;
+		ChangeGSMState(GSM_WAKEUP);
+#else
+		xSystem.Status.YeuCauGuiTin = 3;
+#endif
+	}
 	
 //	//Lưu lại biến đếm vào RTC Reg sau mỗi 10s
 //	if(xSystem.Status.GSMSleepTime % 10 == 0)
@@ -256,11 +256,12 @@ void GSM_ManagerTick(void)
 			}	
 			break;
 		case GSM_WAKEUP:	/* Thoat che do sleep */
-			if(GSM_Manager.Step == 0)
-			{
-				GSM_Manager.Step = 1;
-				SendATCommand ("ATV1\r", "OK", 100, 1, GSM_ExitSleepMode); 
-			}
+			ChangeGSMState(GSM_RESET);
+//			if(GSM_Manager.Step == 0)
+//			{
+//				GSM_Manager.Step = 1;
+//				SendATCommand ("ATV1\r", "OK", 100, 1, GSM_ExitSleepMode); 
+//			}
 			break;
 		case GSM_SLEEP:	/* Dang trong che do Sleep */
 			if(InSleepModeTick % 10 == 0) {
@@ -1002,24 +1003,48 @@ void GSM_HardReset(void)
 	
 	switch(Step)
 	{
-		case 0:
+		case 0:	// Power off
 			GSM_Manager.GSMReady = 0;
-			GSM_Manager.Mode = GSM_AT_MODE;
-			UART_Init(GSM_UART,115200);		
+			GSM_PWR_EN(0);
 			GSM_PWR_RESET(1);
+			GSM_PWR_KEY(0);
 			Step++;
 			break;
+		
 		case 1:
 			GSM_PWR_RESET(0);
+			GSM_PWR_EN(1);
 			Step++;
 			break;
-		case 2: 
+		
+		case 2:		// Delayms for Vbat stable
+			Step++;
+			break;
+		
 		case 3:
-		case 4: 
-		case 5: 
+			/* Tao xung |_| de Power On module, min 1s  */
+			GSM_PWR_KEY(1);
 			Step++;
 			break;
-		case 6:
+		
+		case 4:
+			GSM_PWR_KEY(0);
+			GSM_Manager.Mode = GSM_AT_MODE;
+			UART_Init(GSM_UART,115200);	
+			GSM_InitDataLayer();		
+			GSM_PWR_RESET(0);
+			GSM_Manager.TimeOutOffAfterReset = 90;
+			Step++;
+			break;
+		
+		case 5:
+		case 6: 
+		case 7:
+		case 8: 
+		case 9: 
+			Step++;
+			break;
+		case 10:
 			Step = 0;
 			ChangeGSMState(GSM_POWERON);
 			break;

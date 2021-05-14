@@ -458,14 +458,15 @@ void MQTT_ProcThread(void)
 			break;
 		
 		case PUBLISH:		/* Received msg from other peer published */ 	
-			DEBUG ("\r\nMQTT: Received PUBLISH. ");
+		{
+			DEBUG ("\r\nMQTT: Received PUBLISH, hold buffer size %u", MqttSendBufflen);
 			RecvSubTopic.cstring = NULL;
 			RecvSubTopic.lenstring.data = NULL;
 			RecvSubTopic.lenstring.len = 0;			
-		
-			if(MQTTDeserialize_publish(&dup, &qos, &retained, &packageId, &RecvSubTopic, &subPayload, &payloadlen, MqttSendBuff, MqttSendBufflen) == 1)
+			int err  = MQTTDeserialize_publish(&dup, &qos, &retained, &packageId, &RecvSubTopic, &subPayload, &payloadlen, MqttSendBuff, MqttSendBufflen);
+			if( err == 1)
 			{
-				DEBUG ("\r\nMQTT received, payload leng: %d, QoS: %d, retain: %d, dup: %u"/*, msgid: %u"*/, payloadlen, qos, retained, dup/*, packageId*/);
+				DEBUG ("\r\nMQTT received, payload len: %d, QoS: %d, retain: %d, dup: %u"/*, msgid: %u"*/, payloadlen, qos, retained, dup/*, packageId*/);
 				
 				/* Xu ly ban tin tu Broker */
 				MQTT_ProcessDataFromServer((char*)subPayload, payloadlen);
@@ -475,8 +476,9 @@ void MQTT_ProcThread(void)
 			} 
 			else
 			{
-				DEBUG("\r\nDeserialize FAILED!");
+				DEBUG("\r\nDeserialize FAILED!, err %d", err);
 			}
+		}
 			break;
 			
 		case PUBREC:	/* Publish QoS 2 ack */
