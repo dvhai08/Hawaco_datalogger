@@ -68,28 +68,22 @@ int main(void)
 		 if (xSystem.Parameters.input.name.rs485)
 		 {
 			 RS485_PWR_ON();
+			 UART_Init(RS485_UART, 115200);
+			 
 		 }
 		 else
 		 {
 			 RS485_PWR_OFF();
+			 UART_DeInit(RS485_UART);
 		 }
 		 if(Timeout1ms >= 1)
 		 {
 			 Timeout1ms = 0;
-			 Measure_PulseTick();
 		 }
 		 
         if(TimeOut10ms >= 10)
         {
             TimeOut10ms = 0;
-            ProcessTimeout10ms();
-        }
-
-        if(TimeOut100ms >= 100)
-        {
-			timer_tick();
-			TimeOut100ms = 0;
-			ProcessTimeout100ms();
 			if (adcStarted)
 			{
 				xSystem.MeasureStatus.Vin = AdcUpdate();
@@ -108,6 +102,15 @@ int main(void)
 				AdcStop();
 				adcStarted = 0;
 			}
+			
+            ProcessTimeout10ms();
+        }
+
+        if(TimeOut100ms >= 100)
+        {
+			timer_tick();
+			TimeOut100ms = 0;
+			ProcessTimeout100ms();
         }
 		  
 		if(TimeOut3000ms >= 3000)
@@ -124,7 +127,7 @@ int main(void)
 		if(TimeOut1000ms >= 1000)
 		{
 			TimeOut1000ms = 0;
-			
+			Measure_PulseTick();
 			if(!isGSMSleeping())
 			{
 				if (xSystem.Status.DisconnectTimeout++ > 60)
@@ -132,12 +135,23 @@ int main(void)
 					NVIC_SystemReset();
 				}
 			}
+			ResetWatchdog();
 			ProcessTimeout1000ms();
 		}
 		
 		if(isGSMSleeping())
 		{
+			DEBUG_PRINTF("Sleep\r\n");
+			rtc_alarm_config(rtc_counter_get() + 1);
 			xSystem.Status.DisconnectTimeout = 0;
+			pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+            SystemInit();
+            /* reconfigure ckout0 */
+            rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
+		}
+		else
+		{
+			
 		}
     }
 }
@@ -231,6 +245,7 @@ void Delayms(uint16_t ms)
     TimingDelay = ms;
     while(TimingDelay)
     {
+		pmu_to_sleepmode(WFI_CMD);
         if(TimingDelay % 5 == 0)
             ResetWatchdog();
     }

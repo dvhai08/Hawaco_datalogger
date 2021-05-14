@@ -267,7 +267,7 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 		DEBUG ("\r\nSRV: SET config");
 		xSystem.Status.SendGPRSTimeout = 15;
 		ProcessSetParameters(buffer);
-		GSMSleepAfterSecond(2);
+		GSMSleepAfterSecond(5);
 		return length;
 	}
 //	if(strstr(buffer, "GET,"))

@@ -74,7 +74,7 @@ static void GuiBanTinDinhKiTick(void);
 
 /*****************************************************************************/
 /**
- * @brief	:  	MQTT_ClientMessageTick, call evey 10ms
+ * @brief	:  	MQTT_ClientOneSecMessageTick, call evey 10ms
  * @param	:  
  * @retval	:
  * @author	:	
@@ -82,7 +82,7 @@ static void GuiBanTinDinhKiTick(void);
  * @version	:
  * @reviewer:	
  */
-void MQTT_ClientMessageTick(void)
+void MQTT_ClientOneSecMessageTick(void)
 {
 	if(++TimeoutDinhKyTick1000ms >= 100)
 	{

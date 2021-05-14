@@ -5,6 +5,7 @@
 #include "gd32e10x_usart.h"
 
 void UART_Init(uint32_t USARTx, uint32_t BaudRate);
+void UART_DeInit(uint32_t USARTx);
 void UART_Putc(uint32_t USARTx, uint8_t c);
 void UART_Puts(uint32_t USARTx, const char *str);
 void UART_Putb(uint32_t USARTx, uint8_t *Data, uint16_t Length);

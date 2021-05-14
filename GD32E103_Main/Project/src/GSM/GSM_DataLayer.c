@@ -661,7 +661,7 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			GSM_Manager.Step = 3;
 			break;
 		case 3:
-			DEBUG ("Mo ket noi PPP: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("Open PPP stack : %s\r\n",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 		
 			if(event != EVEN_OK)
 			{
@@ -953,6 +953,10 @@ void GSM_GotoSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			GSM_Manager.State = GSM_SLEEP;
 			
 			// Tat nguon
+			UART_DeInit(GSM_UART);
+			usart_interrupt_disable(GSM_UART, USART_INT_RBNE | USART_INT_FLAG_TBE);
+			usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+			usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
 			GSM_PWR_EN(0);
 			GSM_PWR_RESET(1);
 			GSM_PWR_KEY(0);

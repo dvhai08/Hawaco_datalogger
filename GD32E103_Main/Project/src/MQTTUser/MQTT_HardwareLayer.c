@@ -141,7 +141,7 @@ void MQTT_Tick(void)
 	if(xSystem.Status.TCPNeedToClose) goto CLOSE_TCP_SOCKET;
 	
 	/* Publish client messages */
-	MQTT_ClientMessageTick();
+	MQTT_ClientOneSecMessageTick();
 	
 	if(ppp_is_up())		/* Online */
 	{
@@ -360,7 +360,7 @@ CLOSE_TCP_SOCKET:
 				break;
 			
 			case 3:	/* Finish */
-				DEBUG ("\r\nTCP: close socket OK!");
+				DEBUG ("TCP: close socket OK!\r\n");
 				TCPCloseStep = 0;
 				xSystem.Status.TCPNeedToClose = 0;
 				xSystem.Status.GuiGoiTinTCP = 0;
@@ -376,7 +376,7 @@ CLOSE_TCP_SOCKET:
 				TCPDisconnectFromServer = 0;
 				
 #if (__GSM_SLEEP_MODE__)
-				DEBUG ("\r\nGSM Sleeping...");
+				DEBUG ("GSM Sleeping...\r\n");
 				GSM_GotoSleep();
 #endif
 				break;

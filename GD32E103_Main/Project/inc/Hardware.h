@@ -85,7 +85,6 @@
 
 #define GSM_STATUS_PIN GPIO_PIN_12
 #define GSM_STATUS_PORT GPIOA
-
 /************************* Defines for USART2 for RS485 ***************************/
 #define RS485_UART USART2
 #define	RS485_UART_CLK		RCU_USART2
