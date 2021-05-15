@@ -578,10 +578,10 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			SendATCommand ("AT+COPS?\r", "OK", 1000, 5, PowerOnModuleGSM);	
 			break;
 		case 19:
-			DEBUG ("Query Network Operator: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +COPS: 0,0,"Viettel Viettel",7 */
+			DEBUG ("Query Network Operator: %s\r\n",(event == EVEN_OK) ? "[OK]" : "[FAIL]");	/** +COPS: 0,0,"Viettel Viettel",7 */
 			if(event == EVEN_OK)
 			{
-				DEBUG ("Network operator: %s", (char*)ResponseBuffer);
+				DEBUG ("Network operator: %s\r\n", (char*)ResponseBuffer);
 				GSM_GetNetworkOperator(ResponseBuffer);
 			}
 #if 0
@@ -596,7 +596,7 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 #endif
 			break;
 		case 20:
-			DEBUG ("Enable sleep mode: %s\r\n",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			DEBUG ("Select QSCLK: %s\r\n",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
 			SendATCommand ("AT+CSQ\r", "OK", 1000, 5, PowerOnModuleGSM);	
 			break;
 		case 21:
@@ -607,7 +607,7 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
 				return;
 			}
 			GSM_GetSignalStrength(ResponseBuffer);
-			DEBUG ("Cuong do song: %d\r\n", xSystem.Status.CSQ);
+			DEBUG ("CSQ: %d\r\n", xSystem.Status.CSQ);
 			if (xSystem.Status.CSQ == 99)
 			{
 				DEBUG_PRINTF("Invalid csq\r\n");
@@ -654,7 +654,7 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			if(event == EVEN_OK)
 			{
 				GSM_GetSignalStrength(ResponseBuffer);
-				DEBUG ("Cuong do song: %d", xSystem.Status.CSQ);
+				DEBUG ("CSQ: %d\r\n", xSystem.Status.CSQ);
 			}
 			ppp_connect("*99#","","");
 			SendATCommand ("ATD*99***1#\r", "CONNECT", 1000, 10, OpenPPPStack);
@@ -833,7 +833,7 @@ void GSM_GetBTSInfor(GSM_ResponseEvent_t event, void *ResponseBuffer)
 			{
 				GSM_GetSignalStrength(ResponseBuffer);
 				GSM_Manager.TimeOutCSQ = 0;
-				DEBUG ("CSQ: %d", xSystem.Status.CSQ );
+				DEBUG ("CSQ: %d\r\n", xSystem.Status.CSQ );
 				
 				/* Lay thong tin Network access selected */
 				SendATCommand ("AT+CGREG?\r", "OK", 1000, 3, GSM_GetBTSInfor);

@@ -122,7 +122,10 @@ static void GuiBanTinDinhKiTick(void)
 	//Test 10'
 	if(++SendMessageTick >= xSystem.Parameters.TGGTDinhKy || sendMsgWhenReset)
 	{
-		DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy, xSystem.Status.MQTTServerState);
+		if ((SendMessageTick % 10) == 0)
+		{
+			DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy, xSystem.Status.MQTTServerState);
+		}
 		if (xSystem.Status.MQTTServerState == MQTT_CONNECTED
 			|| xSystem.Status.MQTTServerState == MQTT_LOGINED)
 		{
@@ -216,7 +219,7 @@ void MQTT_InitBufferQueue(void)
 { 
 	uint8_t i;
 	
-	DEBUG ("\r\nMQTT: init buffer");
+	DEBUG ("MQTT: init buffer\r\n");
 	
 	/* Reset cac buffer */
 	for(i = 0; i < NUM_OF_MQTT_BUFFER; i++)
@@ -390,7 +393,7 @@ uint16_t MQTT_PublishDataMsg(void)
 	pBuffer->State = BUFFER_STATE_IDLE;
 			
 #if 1
-	DEBUG ("\r\nMQTT: Send: %d - %s", pBuffer->BufferIndex, mqttBuffer.Buffer);
+	DEBUG ("MQTT: Publish msg len: %d - %s", pBuffer->BufferIndex, mqttBuffer.Buffer);
 #endif
 	
 	return pBuffer->BufferIndex;

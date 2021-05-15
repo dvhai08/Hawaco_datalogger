@@ -541,7 +541,7 @@ uint8_t InternalFlash_WriteMeasures(void)
 	{
 		if (FLASH_ErasePage(MEASURE_STORE_ADDR) != FLASH_COMPLETE)
 		{
-			DEBUG ("\r\nMEASURE: erase FAILED!");
+			DEBUG ("MEASURE: erase FAILED!\r\n");
 			Delayms(200);
 			retry--;
 		}
@@ -571,7 +571,7 @@ uint8_t InternalFlash_WriteMeasures(void)
 			fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
 		}		
 		
-		DEBUG ("\r\nMEASURE : Saved: %u - %s", result, result == 0 ? "OK" : "FAIL");
+		DEBUG ("MEASURE : Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");
 	}
 	
 	FLASH_Lock();
@@ -593,7 +593,7 @@ void InternalFlash_ReadConfig(void)
 {
 	if(*(__IO uint32_t*)(CONFIG_FLAG_ADDR) != CONFIG_FLAG_VALUE)
 	{
-		DEBUG ("\r\nCHUA CO CAU HINH, DUNG CAU HINH MAC DINH!");
+		DEBUG ("Use default parameters\r\n");
 		
 		xSystem.Parameters.TGGTDinhKy = 30;		//phut
 		xSystem.Parameters.TGDoDinhKy = 15;		//phut
@@ -621,12 +621,12 @@ void InternalFlash_ReadConfig(void)
 				xSystem.Parameters.PhoneNumber[i] = '0';
 		}
 	}
-	DEBUG ("\r\nFreq: %u - %u", xSystem.Parameters.TGGTDinhKy, xSystem.Parameters.TGDoDinhKy);
-	DEBUG ("\r\nOut1: %u, out2: %umA", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma); 
-	DEBUG ("\r\nInput: %02X at addr 0x%08X", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
-	DEBUG ("\r\nAlarm: %u", xSystem.Parameters.alarm);
-	DEBUG ("\r\nPhone: %s", xSystem.Parameters.PhoneNumber);
-	DEBUG ("\r\nMeasure addr 0x%08X", MEASURE_PRESSURE_ADDR);
+	DEBUG ("Freq: %u - %u\r\n", xSystem.Parameters.TGGTDinhKy, xSystem.Parameters.TGDoDinhKy);
+	DEBUG ("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma); 
+	DEBUG ("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
+	DEBUG ("Alarm: %u\r\n", xSystem.Parameters.alarm);
+	DEBUG ("Phone: %s\r\n", xSystem.Parameters.PhoneNumber);
+	DEBUG ("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);
 	
 	//Doc thong so do
 	if(*(__IO uint32_t*)(MEASURE_STORE_FLAG_ADDR) != MEASURE_STORE_FLAG_VALUE)
@@ -643,8 +643,8 @@ void InternalFlash_ReadConfig(void)
 			xSystem.MeasureStatus.Pressure[i] = (*(__IO uint32_t*)(MEASURE_PRESSURE_ADDR + i*4)) & 0xFFFF;
 		}
 	}
-	DEBUG ("\r\nPulse in flash: %u", xSystem.MeasureStatus.PulseCounterInFlash);
-	DEBUG ("\r\nPressure: %u-%u-%u-%u", xSystem.MeasureStatus.Pressure[0], xSystem.MeasureStatus.Pressure[1],
+	DEBUG ("Pulse in flash: %u\r\n", xSystem.MeasureStatus.PulseCounterInFlash);
+	DEBUG ("Pressure: %u-%u-%u-%u\r\n", xSystem.MeasureStatus.Pressure[0], xSystem.MeasureStatus.Pressure[1],
 		xSystem.MeasureStatus.Pressure[2], xSystem.MeasureStatus.Pressure[3]);
 }
 

@@ -38,6 +38,7 @@ OF SUCH DAMAGE.
 #include "main.h"
 #include "Hardware.h"
 #include "DataDefine.h"
+#include "GSM.h"
 
 extern void Delay_Decrement(void);
 extern void SystemManagementTask(void);
@@ -157,14 +158,18 @@ void SysTick_Handler(void)
     \param[out] none
     \retval     none
 */
-//void EXTI0_IRQHandler(void)
-//{
-//    /* check the key wakeup is pressed or not */
-//    if (RESET != exti_interrupt_flag_get(EXTI_0)){
-//        gpio_bit_write(GPIOC, GPIO_PIN_2, (bit_status)(1-gpio_input_bit_get(GPIOC, GPIO_PIN_2)));
-//        exti_interrupt_flag_clear(EXTI_0);
-//    }
-//}
+void EXTI0_IRQHandler(void)
+{
+    /* check the key wakeup is pressed or not */
+    if (RESET != exti_interrupt_flag_get(EXTI_0))
+	{
+		if (isGSMSleeping())
+		{
+			xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+		}
+        exti_interrupt_flag_clear(EXTI_0);
+    }
+}
 
 /*!
     \brief      this function handles external lines 10 to 15 interrupt request
@@ -200,8 +205,13 @@ void RTC_IRQHandler(void)
     if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_SECOND))
 	{
         /* clear the RTC second interrupt flag*/
-        rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);    
-        temp = rtc_counter_get();
+        rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);  
+		if (isGSMSleeping())
+		{
+			temp = rtc_counter_get();
+			rtc_alarm_config(rtc_counter_get() + 1);
+			rtc_lwoff_wait();
+		}
 		TimeOut1000ms = 1000;
 		TimeOut3000ms += 1000;
     }
@@ -210,7 +220,7 @@ void RTC_IRQHandler(void)
 	{
         /* clear the RTC alarm interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
-		DEBUG("\r\nRTC alarm", temp);
+		DEBUG("RTC alarm\r\n", temp);
     }
 }
 

@@ -275,9 +275,9 @@ static void InitIO(void)
 	gpio_init(LED1_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED1_PIN);
 	gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
 
-	//Led on
-	LED1(1);
-	LED2(1);
+//	//Led on
+//	LED1(1);
+//	LED2(1);
 }
 
 /**

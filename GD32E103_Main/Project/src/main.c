@@ -128,6 +128,7 @@ int main(void)
 		{
 			TimeOut1000ms = 0;
 			Measure_PulseTick();
+			MeasureTick1000ms();
 			if(!isGSMSleeping())
 			{
 				if (xSystem.Status.DisconnectTimeout++ > 60)
@@ -135,23 +136,29 @@ int main(void)
 					NVIC_SystemReset();
 				}
 			}
+			else
+			{				
+				if (xSystem.Parameters.outputOnOff == 0)
+				{
+		//			DEBUG_PRINTF("Sleep\r\n");
+					static uint8_t debugSleep = 0;
+//					LED1(debugSleep);
+//					LED2(debugSleep);
+					debugSleep = 1 - debugSleep;
+					xSystem.Status.DisconnectTimeout = 0;
+//					pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+					pmu_to_sleepmode(WFI_CMD);
+//		            SystemInit();
+//		//            /* reconfigure ckout0 */
+//		            rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
+				}
+				else
+				{
+					DEBUG("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
+				}
+			}
 			ResetWatchdog();
 			ProcessTimeout1000ms();
-		}
-		
-		if(isGSMSleeping())
-		{
-			DEBUG_PRINTF("Sleep\r\n");
-			rtc_alarm_config(rtc_counter_get() + 1);
-			xSystem.Status.DisconnectTimeout = 0;
-			pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
-            SystemInit();
-            /* reconfigure ckout0 */
-            rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
-		}
-		else
-		{
-			
 		}
     }
 }
@@ -242,10 +249,14 @@ void Delay_Decrement(void)
 //Ham Delayms
 void Delayms(uint16_t ms)
 {
+	if (ms > 10)
+	{
+		DEBUG("Delay %ums\r\n", ms);
+	}
     TimingDelay = ms;
     while(TimingDelay)
     {
-		pmu_to_sleepmode(WFI_CMD);
+//		pmu_to_sleepmode(WFI_CMD);
         if(TimingDelay % 5 == 0)
             ResetWatchdog();
     }
@@ -254,9 +265,9 @@ void Delayms(uint16_t ms)
 static void time_cback (U32 time)
 {
   if (time == 0) {
-	  DEBUG ("\r\nNTP: Error, server not responding or bad response.");
+	  DEBUG ("NTP: Error, server not responding or bad response\r\n");
   } else {
-	  DEBUG ("\r\nNTP: %d seconds elapsed since 1.1.1970", time);
+	  DEBUG ("NTP: %d seconds elapsed since 1.1.1970\r\n", time);
 	  sntpTimeoutInverval = 120;
 		
 	  xSystem.Status.TimeStamp = time;	  
@@ -272,7 +283,7 @@ void getTimeNTP(void)
 {	
   U8 ntp_server[4] = {217,79,179,106};
   if (sntp_get_time (&ntp_server[0], time_cback) == __FALSE) {
-    DEBUG ("\r\nFailed, SNTP not ready or bad parameters");
+    DEBUG ("Failed, SNTP not ready or bad parameters\r\n");
   }
 }
 

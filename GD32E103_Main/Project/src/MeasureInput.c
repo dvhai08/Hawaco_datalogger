@@ -123,10 +123,7 @@ void Measure_PulseTick(void)
  */
 uint8_t measureTimeout = 0;
 void Measure_Tick(void)
-{
-	static uint16_t Measure420mATick = 0;
-	static uint8_t StoreMeasureResultTick = 0;
-	
+{	
 	if(xSystem.Status.InitSystemDone == 0) return;
 		
 	if(SensorUartBuffer.State)
@@ -143,54 +140,59 @@ void Measure_Tick(void)
 	if(++Timeout1000msTick >= 100)
 	{
 		Timeout1000msTick = 0;
-		
-		MeasureInputTick();
-				
-		if(xSystem.Status.ADCOut)
-		{
-			DEBUG ("\r\nADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
-				ADC_RegularConvertedValueTab[ADCMEM_V20mV]); 
-			DEBUG ("\r\nVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
-		}
-				
-		/* === DO DAU VAO 4-20mA DINH KY === //
-		*/
-		if(++Measure420mATick >= xSystem.Parameters.TGDoDinhKy)
-		{
-			Measure420mATick = 0;
-			
-			//Cho phep do thi moi do
-			if(xSystem.Parameters.input.name.ma420)
-			{
-				SENS_420mA_PWR_ON();
-				measureTimeout = 10;
-			}
-		}
-		if(measureTimeout > 0)
-		{
-			measureTimeout--;
-			if(measureTimeout == 0) {
-				DEBUG ("\r\n--- Timeout measure ---");
-				SENS_420mA_PWR_OFF();
-			}
-		}
-		
-		/* Save pulse counter to flash every 30s */
-		if(++StoreMeasureResultTick >= 30)
-		{
-			StoreMeasureResultTick = 0;
-			
-			//Neu counter in BKP != in flash -> luu flash
-			if(xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
-			{
-				xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
-				InternalFlash_WriteMeasures();
-				uint8_t res = InternalFlash_WriteConfig();
-				DEBUG ("\r\nSave pulse counter %u to flash: %s", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK"); 
-			}
-		}
 	}
 }	
+
+void MeasureTick1000ms(void)
+{
+	MeasureInputTick();
+	static uint8_t StoreMeasureResultTick = 0;
+	static uint16_t Measure420mATick = 0;
+	
+	if(xSystem.Status.ADCOut)
+	{
+		DEBUG ("\r\nADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
+			ADC_RegularConvertedValueTab[ADCMEM_V20mV]); 
+		DEBUG ("\r\nVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
+	}
+			
+	/* === DO DAU VAO 4-20mA DINH KY === //
+	*/
+	if(++Measure420mATick >= xSystem.Parameters.TGDoDinhKy)
+	{
+		Measure420mATick = 0;
+		
+		//Cho phep do thi moi do
+		if(xSystem.Parameters.input.name.ma420)
+		{
+			SENS_420mA_PWR_ON();
+			measureTimeout = 10;
+		}
+	}
+	if(measureTimeout > 0)
+	{
+		measureTimeout--;
+		if(measureTimeout == 0) {
+			DEBUG ("\r\n--- Timeout measure ---");
+			SENS_420mA_PWR_OFF();
+		}
+	}
+	
+	/* Save pulse counter to flash every 30s */
+	if(++StoreMeasureResultTick >= 30)
+	{
+		StoreMeasureResultTick = 0;
+		
+		//Neu counter in BKP != in flash -> luu flash
+		if(xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
+		{
+			xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
+			InternalFlash_WriteMeasures();
+			uint8_t res = InternalFlash_WriteConfig();
+			DEBUG ("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK"); 
+		}
+	}
+}
 
 /*****************************************************************************/
 /**
@@ -209,6 +211,16 @@ void Measure_Init(void)
 	
 	//Pulse input
 	gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+	
+	 /* enable and set key user EXTI interrupt to the lowest priority */
+    nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
+
+    /* connect key user EXTI line to key GPIO pin */
+    gpio_exti_source_select(SWITCH_PORT_SOURCE, SWITCH_PIN_SOURCE);
+
+    /* configure key user EXTI line */
+    exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+    exti_interrupt_flag_clear(SWITCH_EXTI_LINE);
 	
 #if 1
 	 /* enable and set key user EXTI interrupt to the lowest priority */
@@ -229,7 +241,7 @@ void Measure_Init(void)
 	if(xSystem.MeasureStatus.PulseCounterInBkup < xSystem.MeasureStatus.PulseCounterInFlash) {
 		xSystem.MeasureStatus.PulseCounterInBkup = xSystem.MeasureStatus.PulseCounterInFlash;
 	}
-	DEBUG ("\r\nPulse counter in BKP: %d", xSystem.MeasureStatus.PulseCounterInBkup);
+	DEBUG ("Pulse counter in BKP: %d\r\n", xSystem.MeasureStatus.PulseCounterInBkup);
 }
 
 uint8_t isPowerOnRS485(void)

@@ -701,7 +701,7 @@ void modem_run ()
 			}				
 			else
 			{
-				DEBUG ("\r\nResend ATC: %s",GSM_Hardware.ATCommand.CMD);
+				DEBUG ("Resend ATC: %s\r\n",GSM_Hardware.ATCommand.CMD);
 				com_put_at_string(GSM_Hardware.ATCommand.CMD);
 			}			
 		}
@@ -850,7 +850,7 @@ void SendATCommand  (char *Command, char *ExpectResponse, uint16_t Timeout,
 	
 	com_put_at_string(Command);
 	
-	DEBUG ("\r\nATC: %s",Command);
+//	DEBUG ("ATC: %s\r\n",Command);
 }
 #endif	//__USED_HTTP__
 

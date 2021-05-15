@@ -16,5 +16,6 @@
 void Measure_Init(void);
 void Measure_Tick(void);
 void Measure_PulseTick(void);
+void MeasureTick1000ms(void);
 
 #endif // __MEASUREMENT_H__

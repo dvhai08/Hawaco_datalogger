@@ -52,7 +52,7 @@ void DetectResetReason(void)
 {
 	xSystem.HardwareInfo.ResetReasion = 0;
 		
-	DEBUG_PRINTF("\rNguyen nhan Reset: ");
+	DEBUG_PRINTF("Reset reason");
 #if	0
 	if(RCC_GetFlagStatus(RCC_FLAG_PINRST) != RESET)
     {
@@ -159,7 +159,7 @@ void DetectHardwareVersion(void)
 */
 void SystemReset(uint8_t NguyenNhanReset)
 { 
-	DEBUG ("\r\n---- System reset: %d ----", NguyenNhanReset);
+	DEBUG ("\r\n---- System reset: %d ----\r\n", NguyenNhanReset);
     NVIC_SystemReset();
 }
 
