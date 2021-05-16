@@ -153,15 +153,15 @@ int main(void)
                     if (cnt++ >= 10)
                     {
                         cnt = 0;
-                        //LED1(1);
-                        //LED2(1);
+                        LED1(1);
+                        LED2(1);
                         AdcStop();
-                        if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk))
-                        {
-                            dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
-                        }
+                        //if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk))
+                        //{
+                        //    dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
+                        //}
 #if 1
-                        rtc_alarm_config(rtc_counter_get() + 1);
+                        rtc_alarm_config(rtc_counter_get() + 120);
                         rtc_lwoff_wait();
                         pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
                         // pmu_to_standbymode(WFI_CMD);
