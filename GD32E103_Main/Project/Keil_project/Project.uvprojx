@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,GD32E10X,IRC8M_VALUE=8000000</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\Library\CMSIS\GD\GD32E10x\Include;..\..\Library\GD32E10x_standard_peripheral\Include;..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;..\inc;..\src\SEGGER_RTT_V698b\RTT;..\src\SEGGER_RTT_V698b\Syscalls;..\lwrb\lwrb\src\include\lwrb;..\..\Project;..\src\MQTTUser;..\src\MQTTPaho;..\lowpass_filter;..\src</IncludePath>
+              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\src\MQTTUser;.\..\src\MQTTPaho;.\..\lowpass_filter;.\..\src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -370,7 +370,7 @@
             <TextAddressRange>0x08000000</TextAddressRange>
             <DataAddressRange>0x20000000</DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile>.\output\Project.sct</ScatterFile>
+            <ScatterFile>.\output\HWC_GW_02.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>

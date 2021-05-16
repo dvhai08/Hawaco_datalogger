@@ -1,0 +1,170 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="Project" target="8" version="2">
+  <project Name="Project">
+    <configuration
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_simulator_memory_simulation_parameter="RX 08000000,00020000,FFFFFFFF;RWX 20000000,00008000,CDCDCDCD"
+      arm_target_device_name="GD32E103CB"
+      arm_target_interface_type="SWD"
+      debug_start_from_entry_point_symbol="No"
+      debug_target_connection="J-Link"
+      linker_section_placements_segments="FLASH1 RX 0x08000000 0x00020000;RAM1 RWX 0x20000000 0x00008000"
+      project_directory=""
+      project_type="Externally Built Executable" />
+    <configuration
+      BUILD_OPTIONS="ARM CC"
+      Name="External Keil ARMCC"
+      build_generic_options_file_name="$(StudioDir)/targets/ARMCC_build_options.xml" />
+    <configuration
+      CMSIS_CORE="Yes"
+      Name="GD32E103x"
+      arm_architecture="v7EM"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_simulator_memory_simulation_parameter="RX 08000000,00020000,FFFFFFFF;RWX 20000000,00008000,CDCDCDCD"
+      arm_target_device_name="GD32E103CB"
+      c_preprocessor_definitions="USE_STDPERIPH_DRIVER;GD32E10X;IRC8M_VALUE=8000000"
+      c_user_include_directories="./../../Library/CMSIS/GD/GD32E10x/Include;./../../Library/GD32E10x_standard_peripheral/Include;./../../Library/CMSIS/GD/GD32E10x/Source/ARM;./../inc;./../src/SEGGER_RTT_V698b/RTT;./../src/SEGGER_RTT_V698b/Syscalls;./../lwrb/lwrb/src/include/lwrb;./../../Project;./../src/MQTTUser;./../src/MQTTPaho;./../lowpass_filter;./../src"
+      linker_section_placements_segments="FLASH1 RX 0x08000000 0x00020000;RAM1 RWX 0x20000000 0x00008000" />
+    <configuration
+      Name="External Keil"
+      build_intermediate_directory="./output"
+      build_output_directory="./output"
+      build_output_file_name="./output/HWC_GW_02.axf" />
+    <folder Name="TCPNet">
+      <file file_name="../../Library/RL/TCPNet/Config/Net_Config.c" />
+      <file file_name="../../Library/RL/TCPNet/TCP_CM3.lib">
+        <configuration Name="External Keil ARMCC" file_type="Library" />
+      </file>
+    </folder>
+    <folder Name="Application">
+      <file file_name="../src/HardwareManager.c" />
+      <file file_name="../src/InitSystem.c" />
+      <file file_name="../src/main.c" />
+      <file file_name="../src/gd32e10x_it.c" />
+      <file file_name="../src/ControlOutput.c" />
+      <file file_name="../src/MeasureInput.c" />
+    </folder>
+    <folder Name="Utilities">
+      <file file_name="../src/Debug.c" />
+      <file file_name="../src/Utilities.c" />
+      <file file_name="../lwrb/lwrb/src/lwrb/lwrb.c" />
+    </folder>
+    <folder Name="Peripheral">
+      <file file_name="../src/app_bkup.c" />
+      <file file_name="../src/app_wdt.c" />
+      <file file_name="../src/board_hw.c" />
+      <file file_name="../src/DriverUART.c" />
+      <file file_name="../src/InternalFlash.c" />
+    </folder>
+    <folder Name="GSM">
+      <file file_name="../src/GSM/GSM_DataLayer.c" />
+      <file file_name="../src/GSM/GSM_HardwareLayer.c" />
+      <file file_name="../src/GSM/GSM_SMSLayer.c">
+        <configuration
+          Name="GD32E103x External"
+          build_exclude_from_build="Yes" />
+      </file>
+      <file file_name="../src/GSM/GSM_Utilities.c" />
+    </folder>
+    <folder Name="MQTTUser">
+      <file file_name="../src/MQTTUser/MQTT_ClientMessage.c" />
+      <file file_name="../src/MQTTUser/MQTT_HardwareLayer.c" />
+      <file file_name="../src/MQTTUser/MQTT_ServerMessage.c" />
+    </folder>
+    <folder Name="MQTTPaho">
+      <file file_name="../src/MQTTPaho/MQTTConnectClient.c" />
+      <file file_name="../src/MQTTPaho/MQTTConnectServer.c" />
+      <file file_name="../src/MQTTPaho/MQTTDeserializePublish.c" />
+      <file file_name="../src/MQTTPaho/MQTTFormat.c" />
+      <file file_name="../src/MQTTPaho/MQTTPacket.c" />
+      <file file_name="../src/MQTTPaho/MQTTSerializePublish.c" />
+      <file file_name="../src/MQTTPaho/MQTTSubscribeClient.c" />
+      <file file_name="../src/MQTTPaho/MQTTSubscribeServer.c" />
+      <file file_name="../src/MQTTPaho/MQTTUnsubscribeClient.c" />
+      <file file_name="../src/MQTTPaho/MQTTUnsubscribeServer.c" />
+    </folder>
+    <folder Name="Encrypt">
+      <configuration Name="GD32E103x" build_exclude_from_build="Yes" />
+      <file file_name="../src/aes.c" />
+      <file file_name="../src/base64.c" />
+    </folder>
+    <folder Name="SeggerRTT">
+      <file file_name="../src/SEGGER_RTT_V698b/RTT/SEGGER_RTT.c" />
+      <file file_name="../src/SEGGER_RTT_V698b/RTT/SEGGER_RTT_printf.c" />
+    </folder>
+    <folder Name="CMSIS">
+      <file file_name="../../Library/CMSIS/GD/GD32E10x/Source/system_gd32e10x.c" />
+    </folder>
+    <folder Name="GD32E103_PeriphLib">
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_adc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_bkp.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_can.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_crc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_ctc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_dac.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_dbg.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_dma.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_exmc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_exti.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fmc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fwdgt.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_gpio.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_i2c.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_misc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_pmu.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rcu.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rtc.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_spi.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_timer.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_usart.c" />
+      <file file_name="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_wwdgt.c" />
+    </folder>
+    <folder Name="Startup">
+      <file file_name="../../Library/CMSIS/GD/GD32E10x/Source/ARM/startup_gd32e10x.s">
+        <configuration Name="Internal" build_exclude_from_build="Yes" />
+      </file>
+    </folder>
+    <folder Name="Doc">
+      <file file_name="../readme.txt" />
+    </folder>
+    <folder Name="lowpass_filter">
+      <file file_name="../lowpass_filter/lpf.c" />
+      <file file_name="../lowpass_filter/lpf.h" />
+    </folder>
+    <folder Name="app_debug">
+      <file file_name="../src/app_debug.c" />
+      <file file_name="../src/app_debug.h" />
+    </folder>
+    <folder Name="fault">
+      <file file_name="../fault/fault.c" />
+      <file file_name="../fault/fault.h" />
+    </folder>
+    <folder Name="::CMSIS" />
+    <configuration
+      Name="GD32E103x External"
+      armcc_cl_cpu="Cortex-M4"
+      armcc_cl_enable_debug_info="Yes"
+      armcc_cl_optimization_level="None"
+      asm_additional_options="--pd;&quot;__MICROLIB SETA 1&quot;"
+      asm_additional_options_backup="--cpu;Cortex-M4;--pd;&quot;__MICROLIB SETA 1&quot;"
+      c_additional_options="-D__MICROLIB;--C99;--split_sections"
+      c_additional_options_backup="--cpu;Cortex-M4;-D__MICROLIB;--C99;-O0;--split_sections;-g"
+      link_additional_options_backup="--cpu;Cortex-M4;--scatter=&quot;./output/HWC_GW_02.sct&quot;;--library_type=microlib"
+      linker_additional_options="--scatter=&quot;./output/HWC_GW_02.sct&quot;;--library_type=microlib" />
+  </project>
+  <configuration
+    Name="External Keil ARMCC"
+    hidden="Yes"
+    macros="KEIL_TOOLKIT_DIR=C:/Keil_v5/ARM" />
+  <configuration Name="GD32E103x" hidden="Yes" />
+  <configuration
+    Name="GD32E103x External"
+    c_user_include_directories=".;../../Library/CMSIS"
+    inherited_configurations="External Keil ARMCC;GD32E103x" />
+</solution>

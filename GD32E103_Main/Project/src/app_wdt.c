@@ -6,7 +6,9 @@
 #warning "Wdt not enabled"
 #endif
 
+#if APP_WDT_ENABLE
 static void irc40k_config(void);
+#endif
 
 /**
  * @brief Start app watchdog
@@ -34,6 +36,7 @@ void app_wdt_feed(void)
 #endif
 }
 
+#if APP_WDT_ENABLE
 static void irc40k_config(void)
 {
     /* enable IRC40K */
@@ -41,3 +44,4 @@ static void irc40k_config(void)
     /* wait till IRC40K is ready */
     rcu_osci_stab_wait(RCU_IRC40K);
 }
+#endif

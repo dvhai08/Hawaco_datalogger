@@ -67,7 +67,7 @@ void InternalFlash_Init(void)
     fmc_unlock();
 
     /* clear all pending flags */
-    fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+    fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 #endif
 }
 
@@ -121,7 +121,7 @@ uint8_t InternalFlash_Prepare(uint16_t StartPage, uint16_t EndPage)
 				break;
 			} else {
 				status++;
-				fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+				fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 				Delayms(100);
 			}
 #endif
@@ -475,17 +475,17 @@ uint8_t InternalFlash_WriteConfig(void)
 		/* Flag */
 		if(FLASH_ProgramWord(CONFIG_FLAG_ADDR, CONFIG_FLAG_VALUE) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* Frequency send message */
 		if(FLASH_ProgramWord(CONFIG_FREQ_SEND_ADDR, xSystem.Parameters.TGGTDinhKy) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* Frequency measure sensor */
 		if(FLASH_ProgramWord(CONFIG_FREQ_MEASURE_ADDR, xSystem.Parameters.TGDoDinhKy) != FLASH_COMPLETE)
 			result++;		
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
 		/* input config */
 		if(FLASH_ProgramWord(CONFIG_INPUT_ADDR, (uint32_t)xSystem.Parameters.input.value) != FLASH_COMPLETE)
@@ -497,29 +497,29 @@ uint8_t InternalFlash_WriteConfig(void)
 			DEBUG("Readback value at addr %u failed\r\n", CONFIG_INPUT_ADDR);
 			result++;
 		}
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* output1 */
 		if(FLASH_ProgramWord(CONFIG_OUTPUT1_ADDR, xSystem.Parameters.outputOnOff) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* output 2 */
 		if(FLASH_ProgramWord(CONFIG_OUTPUT2_ADDR, xSystem.Parameters.output420ma) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* alarm */
 		if(FLASH_ProgramWord(CONFIG_ALARM_ADDR, xSystem.Parameters.alarm) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* phone number */
 		for(uint8_t i = 0; i < 15; i++)
 		{
 			if(FLASH_ProgramWord(CONFIG_PHONE_ADDR + i*4, xSystem.Parameters.PhoneNumber[i]) != FLASH_COMPLETE)
 				result++;
-			fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+			fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		}
 				
 		DEBUG ("CFG: Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");
@@ -556,19 +556,19 @@ uint8_t InternalFlash_WriteMeasures(void)
 		/* Flag */
 		if(FLASH_ProgramWord(MEASURE_STORE_FLAG_ADDR, MEASURE_STORE_FLAG_VALUE) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* pulse counter */
 		if(FLASH_ProgramWord(MEASURE_PULSE_COUNT_ADDR, xSystem.MeasureStatus.PulseCounterInFlash) != FLASH_COMPLETE)
 			result++;
-		fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+		fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		
 		/* pressure */
 		for(uint8_t i = 0; i < 4; i++)
 		{
 			if(FLASH_ProgramWord(MEASURE_PRESSURE_ADDR + i*4, xSystem.MeasureStatus.Pressure[i]) != FLASH_COMPLETE)
 				result++;
-			fmc_flag_clear(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR);
+			fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 		}		
 		
 		DEBUG ("MEASURE : Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");

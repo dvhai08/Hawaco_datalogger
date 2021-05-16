@@ -6,7 +6,6 @@
  * @brief   	
  ******************************************************************************/
 
-
 /******************************************************************************
                                    INCLUDES					    			 
  ******************************************************************************/
@@ -48,12 +47,12 @@ extern System_t xSystem;
  * @version	:
  * @reviewer:	
  */
-void DetectResetReason(void) 
+void DetectResetReason(void)
 {
-	xSystem.HardwareInfo.ResetReasion = 0;
-		
-	DEBUG_PRINTF("Reset reason");
-#if	0
+    xSystem.HardwareInfo.ResetReasion = 0;
+
+    DEBUG_PRINTF("Reset reason");
+#if 0
 	if(RCC_GetFlagStatus(RCC_FLAG_PINRST) != RESET)
     {
 //        xSystem.HardwareInfo.ResetReasion |= 1;
@@ -91,50 +90,49 @@ void DetectResetReason(void)
     }
 	RCC_ClearFlag();
 #else
-	if(RCC_GetFlagStatus(RCU_FLAG_EPRST) != RESET)
+    if (RCC_GetFlagStatus(RCU_FLAG_EPRST) != RESET)
     {
-//        xSystem.HardwareInfo.ResetReasion |= 1;
-		DEBUG_PRINTF("PIN, ");
+        //        xSystem.HardwareInfo.ResetReasion |= 1;
+        DEBUG_PRINTF("PIN, ");
     }
-	 if(RCC_GetFlagStatus(RCU_FLAG_PORRST) != RESET)
+    if (RCC_GetFlagStatus(RCU_FLAG_PORRST) != RESET)
     {
-//        xSystem.HardwareInfo.ResetReasion |= 2;
-		DEBUG_PRINTF("POR, ");
-    }
-
-    if(RCC_GetFlagStatus(RCU_FLAG_SWRST) != RESET)
-    {
-//        xSystem.HardwareInfo.ResetReasion |= 4;
-		DEBUG_PRINTF("SFT, ");
+        //        xSystem.HardwareInfo.ResetReasion |= 2;
+        DEBUG_PRINTF("POR, ");
     }
 
-    if(RCC_GetFlagStatus(RCU_FLAG_FWDGTRST) != RESET)
+    if (RCC_GetFlagStatus(RCU_FLAG_SWRST) != RESET)
     {
-//        xSystem.HardwareInfo.ResetReasion |= 8;
-		DEBUG_PRINTF("IWD, ");
+        //        xSystem.HardwareInfo.ResetReasion |= 4;
+        DEBUG_PRINTF("SFT, ");
     }
 
-    if(RCC_GetFlagStatus(RCU_FLAG_WWDGTRST) != RESET)
+    if (RCC_GetFlagStatus(RCU_FLAG_FWDGTRST) != RESET)
     {
-//        xSystem.HardwareInfo.ResetReasion |= 16;
-		DEBUG_PRINTF("WWDG, ");
+        //        xSystem.HardwareInfo.ResetReasion |= 8;
+        DEBUG_PRINTF("IWD, ");
     }
 
-    if(RCC_GetFlagStatus(RCU_FLAG_LPRST) != RESET)
+    if (RCC_GetFlagStatus(RCU_FLAG_WWDGTRST) != RESET)
     {
-//        xSystem.HardwareInfo.ResetReasion |= 32;
-		DEBUG_PRINTF("LPWR");
-    }		
-		
-	 /* clear the reset flag */
-	rcu_all_reset_flag_clear();
+        //        xSystem.HardwareInfo.ResetReasion |= 16;
+        DEBUG_PRINTF("WWDG, ");
+    }
+
+    if (RCC_GetFlagStatus(RCU_FLAG_LPRST) != RESET)
+    {
+        //        xSystem.HardwareInfo.ResetReasion |= 32;
+        DEBUG_PRINTF("LPWR");
+    }
+
+    /* clear the reset flag */
+    rcu_all_reset_flag_clear();
 
 #endif
 }
 
 void DetectHardwareVersion(void)
 {
-	
 }
 /*****************************************************************************/
 /**
@@ -158,8 +156,9 @@ void DetectHardwareVersion(void)
     7   :   ProcessSetConfig    :   CFG_RESET
 */
 void SystemReset(uint8_t NguyenNhanReset)
-{ 
-	DEBUG ("\r\n---- System reset: %d ----\r\n", NguyenNhanReset);
+{
+    DEBUG("\r\n---- System reset: %d ----\r\n", NguyenNhanReset);
+    __disable_irq();
     NVIC_SystemReset();
 }
 
@@ -198,9 +197,8 @@ void WatchDogInit(void)
 	IWDG_Enable();
 #endif
 
-	app_wdt_start();
+    app_wdt_start();
 }
-	
 
 void ResetWatchdog(void)
 {
@@ -211,8 +209,8 @@ void ResetWatchdog(void)
 		IWDG_ReloadCounter();  
 	}
 #endif
-	
-	app_wdt_feed();
+
+    app_wdt_feed();
 }
 
 /*******************************************************************************
@@ -222,48 +220,47 @@ void ResetWatchdog(void)
  * Description		: Xoa cac co loi cua USART
 *******************************************************************************/
 void Hardware_XoaCoLoi(void)
-{	
-    // OverRun Error Flag	
-    if(USART_GetFlagStatus(USART0, USART_FLAG_ORE) != RESET)
+{
+    // OverRun Error Flag
+    if (USART_GetFlagStatus(USART0, USART_FLAG_ORE) != RESET)
     {
         DEBUG_PRINTF("USART0: ORE set!\r\n");
         USART_ClearFlag(USART0, USART_FLAG_ORE);
     }
     //Framing Error Flag
-    if(USART_GetFlagStatus(USART0, USART_FLAG_FE) != RESET)
+    if (USART_GetFlagStatus(USART0, USART_FLAG_FE) != RESET)
     {
         DEBUG_PRINTF("USART0: FE set!\r\n");
         USART_ClearFlag(USART0, USART_FLAG_FE);
     }
 
 #if __USE_SENSOR_UART__
-    // OverRun Error Flag	
-    if(USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET)
+    // OverRun Error Flag
+    if (USART_GetFlagStatus(USART1, USART_FLAG_ORE) != RESET)
     {
         DEBUG_PRINTF("USART1: ORE set!\r\n");
         USART_ClearFlag(USART1, USART_FLAG_ORE);
     }
     //Framing Error Flag
-    if(USART_GetFlagStatus(USART1, USART_FLAG_FE) != RESET)
+    if (USART_GetFlagStatus(USART1, USART_FLAG_FE) != RESET)
     {
         DEBUG_PRINTF("USART1: FE set!\r\n");
         USART_ClearFlag(USART1, USART_FLAG_FE);
     }
 #endif
-	 
-	 // OverRun Error Flag	
-    if(USART_GetFlagStatus(USART2, USART_FLAG_ORE) != RESET)
+
+    // OverRun Error Flag
+    if (USART_GetFlagStatus(USART2, USART_FLAG_ORE) != RESET)
     {
         DEBUG_PRINTF("USART2: ORE set!\r\n");
         USART_ClearFlag(USART2, USART_FLAG_ORE);
     }
     //Framing Error Flag
-    if(USART_GetFlagStatus(USART2, USART_FLAG_FE) != RESET)
+    if (USART_GetFlagStatus(USART2, USART_FLAG_FE) != RESET)
     {
         DEBUG_PRINTF("USART2: FE set!\r\n");
         USART_ClearFlag(USART2, USART_FLAG_FE);
     }
 }
-
 
 /********************************* END OF FILE *******************************/

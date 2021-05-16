@@ -14,3 +14,4 @@ HAWACO_DATALOGER_V1.0 (5-4-2021 10-15-09 PM)
 ~$Data fomat datalogger (1).xlsx
 GD32E103_Main/Project/Keil_project/JLinkLog.txt
 GD32E103_Main/Project/Keil_project/Project.uvoptx
+*.jlink
