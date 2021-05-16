@@ -128,6 +128,12 @@ void gsmWakeUpPeriodically(void)
  * @reviewer:	
  */
 uint8_t SendATInATModeIdle = 0;
+
+void GSM_ManagerTestSleep(void)
+{
+    GSM_Manager.State = GSM_SLEEP;
+}
+
 void GSM_ManagerTick(void)
 {
     if (xSystem.Status.InitSystemDone != 1)
@@ -277,7 +283,10 @@ void GSM_ManagerTick(void)
         }
         InSleepModeTick++;
         TimeoutToSleep = 0;
-
+        UART_DeInit(GSM_UART);
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(0);
+        GSM_PWR_KEY(0);
         /* Thuc day gui tin dinh ky */
         gsmWakeUpPeriodically();
         break;

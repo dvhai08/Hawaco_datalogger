@@ -131,13 +131,28 @@ void InitSystem(void)
 	
 	Measure_Init();
 	Output_Init();
-	
+
+        pmu_wakeup_pin_enable();
+
+#if GSM_ENABLE	
 	GSM_InitHardware();
 	MQTT_Init();
 	
 	/* Khoi tao main Tcp_Net */ 
 	init_TcpNet();
-		
+#else
+	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);/*!< JTAG-DP disabled and SW-DP enabled */
+	// gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);
+	
+	gpio_init(GSM_PWR_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_EN_PIN);
+	gpio_init(GSM_PWR_KEY_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_KEY_PIN);
+	gpio_init(GSM_RESET_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_RESET_PIN);
+	
+	//Tat nguon module
+	GSM_PWR_EN(0);
+	GSM_PWR_RESET(1);
+	GSM_PWR_KEY(0);
+#endif		
 	xSystem.Status.InitSystemDone = 1;
 	xSystem.Status.DisconnectTimeout = 1;
 }
@@ -180,18 +195,18 @@ static void DrawScreen(void)
  */
 static void RCC_Config(void) 
 {
-	/* Setup SysTick Timer for 1 msec interrupts */ 
-	if (SysTick_Config(SystemCoreClock / 1000))
-	{ 		
-		/* Capture error */
-		NVIC_SystemReset();
-	} 
-	NVIC_SetPriority(SysTick_IRQn, 0x00);		
-	
-	nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
+    /* Setup SysTick Timer for 1 msec interrupts */ 
+    if (SysTick_Config(SystemCoreClock / 1000))
+    { 		
+        /* Capture error */
+        NVIC_SystemReset();
+    } 
+    NVIC_SetPriority(SysTick_IRQn, 0x00);		
+
+    nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
     nvic_irq_enable(LVD_IRQn, 0, 1);
-	
-	/* configure the lvd threshold to 2.9v */
+
+    ///* configure the lvd threshold to 2.9v */
     pmu_lvd_select(PMU_LVDT_5);
 	
 #if 0
@@ -199,22 +214,23 @@ static void RCC_Config(void)
 //	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4 | RCC_APB1Periph_USART3, ENABLE);
 //	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG | RCC_APB2Periph_USART1, ENABLE);
 #else
-	    /* PMU clock enable */
+    /* PMU clock enable */
     rcu_periph_clock_enable(RCU_PMU);
-	
-	/* enable the GPIO clock */
-	rcu_periph_clock_enable(RCU_GPIOA);
-	rcu_periph_clock_enable(RCU_GPIOB);
+    /* configure ckout0 source in RCU */
+    rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
+    /* enable the GPIO clock */
+    rcu_periph_clock_enable(RCU_GPIOA);
+    rcu_periph_clock_enable(RCU_GPIOB);
 
-	/* enable the AF clock */
-	rcu_periph_clock_enable(RCU_AF);
+    /* enable the AF clock */
+    rcu_periph_clock_enable(RCU_AF);
 
-	/* enable ADC clock */
-	rcu_periph_clock_enable(RCU_ADC0);
-	/* enable DMA clock */
-	rcu_periph_clock_enable(RCU_DMA0);
-	/* config ADC clock */
-	rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
+    /* enable ADC clock */
+    rcu_periph_clock_enable(RCU_ADC0);
+    /* enable DMA clock */
+    rcu_periph_clock_enable(RCU_DMA0);
+    /* config ADC clock */
+    rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
 #endif
 }
 
@@ -258,6 +274,13 @@ static void RtcConfiguration(void)
 
     /* wait until last write operation on RTC registers has finished */
     rtc_lwoff_wait();
+
+    /* enable and set EXTI interrupt to the lowest priority */
+    nvic_irq_enable(RTC_ALARM_IRQn, 2U, 0U);
+    /* configure EXTI line */
+    exti_init(EXTI_17, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+    exti_interrupt_flag_clear(EXTI_17);
+
 }
 /*****************************************************************************/
 /**
@@ -271,13 +294,13 @@ static void RtcConfiguration(void)
  */
 static void InitIO(void)
 {		 
-	/* configure LED GPIO port */ 
-	gpio_init(LED1_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED1_PIN);
-	gpio_init(LED2_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_10MHZ, LED2_PIN);
+    /* configure LED GPIO port */ 
+    gpio_init(LED1_PORT, GPIO_MODE_OUT_OD, GPIO_OSPEED_10MHZ, LED1_PIN);
+    gpio_init(LED2_PORT, GPIO_MODE_OUT_OD, GPIO_OSPEED_10MHZ, LED2_PIN);
 
 //	//Led on
-//	LED1(1);
-//	LED2(1);
+	LED1(1);
+	LED2(1);
 }
 
 /**
@@ -285,6 +308,7 @@ static void InitIO(void)
   * @param  None
   * @retval None
   */
+static volatile bool adc_started = false;
 void ADC_Config(void)
 {
 #if 0
@@ -364,14 +388,18 @@ void ADC_Config(void)
 	/* ADC1 regular Software Start Conv */ 
 	ADC_StartOfConversion(ADC1);
 #else    
+    
+    if (adc_started)
+    {
+        return;
+    }
+    rcu_periph_clock_enable(RCU_ADC0);
+    /* enable DMA clock */
+    rcu_periph_clock_enable(RCU_DMA0);
 
-	rcu_periph_clock_enable(RCU_ADC0);
-	/* enable DMA clock */
-	rcu_periph_clock_enable(RCU_DMA0);
-	
-	/* config the GPIO as analog mode */
-	gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
-	gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
+    /* config the GPIO as analog mode */
+    gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
+    gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
 	 
 #if ADC_DMA
 	 /** ================= DMA config ==================== */
@@ -415,9 +443,9 @@ void ADC_Config(void)
     adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, ADCMEM_MAXUNIT);
 	 
     /* ADC regular channel config */
-	adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);
-	adc_regular_channel_config(ADC0, 1, ADC_VIN_CHANNEL, ADC_SAMPLETIME_55POINT5);
-	 
+    adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);
+    adc_regular_channel_config(ADC0, 1, ADC_VIN_CHANNEL, ADC_SAMPLETIME_55POINT5);
+
     /* ADC trigger config */
     adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL, ADC0_1_EXTTRIG_REGULAR_NONE); 
     adc_external_trigger_config(ADC0, ADC_REGULAR_CHANNEL, ENABLE);
@@ -434,23 +462,30 @@ void ADC_Config(void)
 	 
 	 /* ADC software trigger enable */
     adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL);
+    adc_started = true;
 #endif
 }
 
 void AdcStop(void)
 {
-	adc_disable(ADC0);
+    if (adc_started == false)
+    {
+        return;
+    }
     adc_interrupt_flag_clear(ADC0, ADC_INT_FLAG_EOIC);
-	dma_circulation_disable(DMA0, DMA_CH0);
+    dma_circulation_disable(DMA0, DMA_CH0);
+    adc_disable(ADC0);
+    adc_deinit(ADC0);
     dma_channel_disable(DMA0, DMA_CH0);
-	dma_deinit(DMA0, DMA_CH0);
-	rcu_periph_clock_disable(RCU_ADC0);
-	rcu_periph_clock_disable(RCU_DMA0);
+    dma_deinit(DMA0, DMA_CH0);
+    rcu_periph_clock_disable(RCU_ADC0);
+    rcu_periph_clock_disable(RCU_DMA0);
+    adc_started = false;
 }
 
 uint32_t AdcUpdate(void)
 {
-	return RESISTOR_DIV*(ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF *8/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
+    return RESISTOR_DIV*(ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF *8/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
 }
 
 /*****************************************************************************/

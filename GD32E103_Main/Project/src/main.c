@@ -19,6 +19,8 @@
 #include "Debug.h"
 #include "lpf.h"
 
+
+
 #if (__GSM_SLEEP_MODE__)
 #warning CHU Y DANG BUILD __GSM_SLEEP_MODE__ = 1
 #endif
@@ -60,11 +62,15 @@ int main(void)
     __enable_irq();
     InitSystem();
     adcStarted = 1;
+#if GSM_ENABLE
     MqttClientSendFirstMessageWhenReset();
-
+#endif
     while (1)
     {
+#if GSM_ENABLE
         main_TcpNet();
+#endif
+
         xSystem.Status.TimeStamp = rtc_counter_get();
         if (xSystem.Parameters.input.name.rs485)
         {
@@ -138,19 +144,55 @@ int main(void)
             }
             else
             {
+                UART_DeInit(GSM_UART);
+                DEBUG_PRINTF("GPIO get level %u\r\n", getSwitchState());
                 if (xSystem.Parameters.outputOnOff == 0)
                 {
-                    //			DEBUG_PRINTF("Sleep\r\n");
-                    static uint8_t debugSleep = 0;
-                    //					LED1(debugSleep);
-                    //					LED2(debugSleep);
-                    debugSleep = 1 - debugSleep;
                     xSystem.Status.DisconnectTimeout = 0;
-                    //					pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
-                    pmu_to_sleepmode(WFI_CMD);
-                    //		            SystemInit();
-                    //		//            /* reconfigure ckout0 */
-                    //		            rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
+                    static uint32_t cnt = 0;
+                    if (cnt++ >= 10)
+                    {
+                        cnt = 0;
+                        //LED1(1);
+                        //LED2(1);
+                        AdcStop();
+                        if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk))
+                        {
+                            dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
+                        }
+#if 1
+                        rtc_alarm_config(rtc_counter_get() + 1);
+                        rtc_lwoff_wait();
+                        pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+                        // pmu_to_standbymode(WFI_CMD);
+
+                        SystemInit();
+                        rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);
+                        for (uint32_t i = 0; i < 4; i++)
+                        {
+                            LED1(0);
+                            LED2(0);
+                            Delayms(100);
+                            LED1(1);
+                            LED2(1);
+                            Delayms(100);
+                        }
+#else
+                        AdcStop();
+                        NVIC_DisableIRQ(SysTick_IRQn);
+                        pmu_to_sleepmode(WFI_CMD);
+                        NVIC_EnableIRQ(SysTick_IRQn);
+                        //for (uint32_t i = 0; i < 2; i++)
+                        //{
+                        //    LED1(0);
+                        //    LED2(0);
+                        //    Delayms(100);
+                        //    LED1(1);
+                        //    LED2(1);
+                        //    Delayms(100);
+                        //}
+#endif
+                    }
                 }
                 else
                 {
@@ -160,17 +202,22 @@ int main(void)
             ResetWatchdog();
             ProcessTimeout1000ms();
         }
+        __WFI();
     }
 }
 
+extern void GSM_ManagerTestSleep(void);
 static void ProcessTimeout10ms(void)
 {
-#if (__USED_HTTP__)
-    GSM_HardwareTick();
+#if GSM_ENABLE
+    #if (__USED_HTTP__)
+        GSM_HardwareTick();
+    #else
+        MQTT_Tick();
+    #endif
 #else
-    MQTT_Tick();
+    GSM_ManagerTestSleep();
 #endif
-
     Measure_Tick();
     Debug_Tick();
 }
@@ -202,8 +249,8 @@ static void ProcessTimeout1000ms(void)
     //	DownloadFileTick();
 
     Output_Tick();
-    LED1(1);
-    LED2(1);
+    //LED1(1);
+    //LED2(1);
 }
 
 static void ProcessTimeOut3000ms(void)
@@ -214,7 +261,7 @@ static void ProcessTimeOut3000ms(void)
           localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1],
           localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
           xSystem.MeasureStatus.Vin);
-
+#if GSM_ENABLE
     //get NTP time
     if (ppp_is_up() && (isGSMSleeping() == 0))
     {
@@ -229,6 +276,7 @@ static void ProcessTimeOut3000ms(void)
         sntpTimeoutInverval = 5;
         getNTPTimeout = 0;
     }
+#endif
 }
 
 void SystemManagementTask(void)
@@ -261,6 +309,7 @@ void Delayms(uint16_t ms)
         //		pmu_to_sleepmode(WFI_CMD);
         if (TimingDelay % 5 == 0)
             ResetWatchdog();
+        __WFI();
     }
 }
 

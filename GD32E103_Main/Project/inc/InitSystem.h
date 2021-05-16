@@ -3,6 +3,8 @@
 
 #include "stdint.h"
 
+#define  GSM_ENABLE  0
+
 void InitSystem(void) ;
 void ADC_Config(void);
 void AdcStop(void);

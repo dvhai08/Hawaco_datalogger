@@ -1,0 +1,1 @@
+1. Bỏ ADC và ko bỏ ADC lệch nhau 2mA

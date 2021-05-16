@@ -158,15 +158,23 @@ void SysTick_Handler(void)
     \param[out] none
     \retval     none
 */
+uint32_t led_debug_isr = 0;
 void EXTI0_IRQHandler(void)
 {
     /* check the key wakeup is pressed or not */
     if (RESET != exti_interrupt_flag_get(EXTI_0))
-	{
-		if (isGSMSleeping())
-		{
-			xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
-		}
+    {
+        //DEBUG_PRINTF("EXTI0 IRQ\r\n");
+        //LED1(led_debug_isr);
+        //LED2(led_debug_isr);
+        //led_debug_isr = 1 - led_debug_isr;
+        if (getSwitchState() == 0)
+        {
+            //if (isGSMSleeping())
+            //{
+            //    xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+            //}
+        }
         exti_interrupt_flag_clear(EXTI_0);
     }
 }
@@ -180,10 +188,10 @@ void EXTI0_IRQHandler(void)
 void EXTI10_15_IRQHandler(void)
 {
     /* check the GSM_RI pin */
-   if (RESET != exti_interrupt_flag_get(GSM_RI_EXTI_LINE))
-	{
+    if (RESET != exti_interrupt_flag_get(GSM_RI_EXTI_LINE))
+    {
         exti_interrupt_flag_clear(GSM_RI_EXTI_LINE);
-   }
+    }
 }
 
 void LVD_IRQHandler(void)
@@ -203,25 +211,37 @@ void RTC_IRQHandler(void)
     uint32_t temp = 0;
     
     if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_SECOND))
-	{
+    {
+        DEBUG_PRINTF("RTC 1s\r\n");
         /* clear the RTC second interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);  
-		if (isGSMSleeping())
-		{
-			temp = rtc_counter_get();
-			rtc_alarm_config(rtc_counter_get() + 1);
-			rtc_lwoff_wait();
-		}
-		TimeOut1000ms = 1000;
-		TimeOut3000ms += 1000;
+        if (isGSMSleeping())
+        {
+
+        }
+        TimeOut1000ms = 1000;
+        TimeOut3000ms += 1000;
     }
 
     if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_ALARM))
-	{
+    {
         /* clear the RTC alarm interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
-		DEBUG("RTC alarm\r\n", temp);
+        TimeOut1000ms = 1000;
+        DEBUG("RTC alarm\r\n", temp);
     }
+}
+
+
+void RTC_Alarm_IRQHandler()
+{
+    if (RESET != exti_interrupt_flag_get(EXTI_17))
+    {
+        exti_interrupt_flag_clear(EXTI_17);
+    }
+
+
+    RTC_IRQHandler();
 }
 
 #if 0

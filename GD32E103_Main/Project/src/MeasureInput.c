@@ -168,6 +168,10 @@ void MeasureTick1000ms(void)
 			SENS_420mA_PWR_ON();
 			measureTimeout = 10;
 		}
+                else
+                {
+                    SENS_420mA_PWR_OFF();
+                }
 	}
 	if(measureTimeout > 0)
 	{
@@ -206,13 +210,13 @@ void MeasureTick1000ms(void)
  */
 void Measure_Init(void) 
 {
-	//Magnet switch
-	gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
-	
-	//Pulse input
-	gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
-	
-	 /* enable and set key user EXTI interrupt to the lowest priority */
+    //Magnet switch
+    gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+
+    //Pulse input
+    gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+
+    /* enable and set key user EXTI interrupt to the lowest priority */
     nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
 
     /* connect key user EXTI line to key GPIO pin */
@@ -221,6 +225,7 @@ void Measure_Init(void)
     /* configure key user EXTI line */
     exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
     exti_interrupt_flag_clear(SWITCH_EXTI_LINE);
+    exti_interrupt_enable(SWITCH_EXTI_LINE);
 	
 #if 1
 	 /* enable and set key user EXTI interrupt to the lowest priority */
@@ -232,6 +237,7 @@ void Measure_Init(void)
     /* configure key user EXTI line */
     exti_init(SENS_PULSE_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
     exti_interrupt_flag_clear(SENS_PULSE_EXTI_LINE);
+    exti_interrupt_enable(SWITCH_EXTI_LINE);
 #endif	
 	
 	/* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash

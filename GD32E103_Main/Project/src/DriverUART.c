@@ -61,27 +61,27 @@ static bool gsmUartInit = false;
 static bool rs485UartInit = false;
 void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 {
-	bool found = false;
-	if (USARTx == GSM_UART)
+    bool found = false;
+    if (USARTx == GSM_UART)
     {
-		if (gsmUartInit == false)
-		{
-			gsmUartInit = true;
-			nvic_irq_enable(GSM_UART_IRQ, 1, 0);
+        if (gsmUartInit == false)
+        {
+            gsmUartInit = true;
+            nvic_irq_enable(GSM_UART_IRQ, 1, 0);
 
-			/* enable COM GPIO clock */
+            /* enable COM GPIO clock */
 //			rcu_periph_clock_enable(GSM_UART_GPIO);
 
-			/* enable USART clock */
-			rcu_periph_clock_enable(GSM_UART_CLK);
+            /* enable USART clock */
+            rcu_periph_clock_enable(GSM_UART_CLK);
 
-			/* connect port to USARTx_Tx */
-			gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, GSM_TX_PIN);
+            /* connect port to USARTx_Tx */
+            gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, GSM_TX_PIN);
 
-			/* connect port to USARTx_Rx */
-			gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, GSM_RX_PIN);
-			found = true;
-		}
+            /* connect port to USARTx_Rx */
+            gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, GSM_RX_PIN);
+            found = true;
+        }
     }
 #if	__USE_SENSOR_UART__
     else if (USARTx == DEBUG_UART)
@@ -103,64 +103,66 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
 #endif	//__USE_SENSOR_UART__
 	 else if (USARTx == RS485_UART)
     {
-			if (rs485UartInit == false)
-			{
-				rs485UartInit = true;
-				nvic_irq_enable(RS485_UART_IRQ, 1, 1);
+        if (rs485UartInit == false)
+        {
+                rs485UartInit = true;
+                nvic_irq_enable(RS485_UART_IRQ, 1, 1);
 
-				/* enable COM GPIO clock */
-	//			rcu_periph_clock_enable(RS485_UART_GPIO);
+                /* enable COM GPIO clock */
+//			rcu_periph_clock_enable(RS485_UART_GPIO);
 
-				/* enable USART clock */
-				rcu_periph_clock_enable(RS485_UART_CLK);
+                /* enable USART clock */
+                rcu_periph_clock_enable(RS485_UART_CLK);
 
-				/* connect port to USARTx_Tx */
-				gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
+                /* connect port to USARTx_Tx */
+                gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
 
-				/* connect port to USARTx_Rx */
-				gpio_init(RS485_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, RS485_RX_PIN);
-				found = true;
-			}
+                /* connect port to USARTx_Rx */
+                gpio_init(RS485_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, RS485_RX_PIN);
+                found = true;
+        }
     }
 	
 	if (found)
 	{		
-		/* USART configure */
-		usart_deinit(USARTx);
-		usart_word_length_set(USARTx, USART_WL_8BIT);
-		usart_stop_bit_set(USARTx, USART_STB_1BIT);
-		usart_parity_config(USARTx, USART_PM_NONE);
-		usart_baudrate_set(USARTx, BaudRate);
-		usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
-		usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
+            /* USART configure */
+            usart_deinit(USARTx);
+            usart_word_length_set(USARTx, USART_WL_8BIT);
+            usart_stop_bit_set(USARTx, USART_STB_1BIT);
+            usart_parity_config(USARTx, USART_PM_NONE);
+            usart_baudrate_set(USARTx, BaudRate);
+            usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
+            usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
 
-		usart_interrupt_enable(USARTx, USART_INT_RBNE);
-		//	  usart_interrupt_enable(USARTx, USART_INT_TBE);
+            usart_interrupt_enable(USARTx, USART_INT_RBNE);
+            //	  usart_interrupt_enable(USARTx, USART_INT_TBE);
 
-		//Clear interrupt flag
-		usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
-		usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
+            //Clear interrupt flag
+            usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+            usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
 
-		usart_enable(USARTx);
+            usart_enable(USARTx);
 	}
 }
 
 void UART_DeInit(uint32_t USARTx)
 {
-	if (rs485UartInit && USARTx == RS485_UART)
-	{
-		rs485UartInit = false;
-		nvic_irq_disable(RS485_UART_IRQ);
-		usart_disable(RS485_UART_IRQ);
-		usart_deinit(RS485_UART_IRQ);
-	}
-	else if (gsmUartInit && USARTx == GSM_UART)
-	{
-		gsmUartInit = false;
-		nvic_irq_disable(GSM_UART_IRQ);
-		usart_disable(GSM_UART);
-		usart_deinit(GSM_UART);
-	}
+    if (rs485UartInit && USARTx == RS485_UART)
+    {
+        rs485UartInit = false;
+        nvic_irq_disable(RS485_UART_IRQ);
+        usart_disable(RS485_UART_IRQ);
+        usart_deinit(RS485_UART_IRQ);
+        rcu_periph_clock_disable(RS485_UART_CLK);
+    }
+    else if (gsmUartInit && USARTx == GSM_UART)
+    {
+        gsmUartInit = false;
+        nvic_irq_disable(GSM_UART_IRQ);
+        usart_disable(GSM_UART);
+        usart_deinit(GSM_UART);
+        rcu_periph_clock_disable(GSM_UART_CLK);
+    }
 }
 
 
