@@ -30,9 +30,9 @@
 #define ADC_DMA			1
 
 /* constant for adc threshold value 3.3V */
-#define ADC_VREF			3300
-#define DIODE_OFFSET	50
-#define RESISTOR_DIV	1
+//#define ADC_VREF			3300
+#define DIODE_OFFSET	0
+#define RESISTOR_DIV	2
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
@@ -53,7 +53,7 @@ System_t xSystem;
 /******************************************************************************
                                    PRIVATE VARIABLES					    			 
  ******************************************************************************/
-const char WelcomeStr[] = "\t\t\tCopyright by BYTECH JSC\r\n";
+const char WelcomeStr[] = "\t\tCopyright by BYTECH JSC\r\n";
 //const char Bytech[] = {	
 //"\r    ______  ______________________  __       _______ ______\r"
 //"   / __ ) \\/ /_  __/ ____/ ____/ / / /      / / ___// ____/\r"
@@ -68,7 +68,7 @@ extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
  ******************************************************************************/
-static void RCC_Config(void) ;
+void RCC_Config(void) ;
 static void InitIO(void);
 static void InitVariable(void) ;
 static void DrawScreen(void);
@@ -174,13 +174,13 @@ static void DrawScreen(void)
 	DEBUG_RAW(WelcomeStr);
 	DEBUG_RAW("Device: HAWACO Gateway\r\n");	
 	DEBUG_RAW("Firmware: %s%02u\r\n", FIRMWARE_VERSION_HEADER, FIRMWARE_VERSION_CODE);
-	DEBUG_RAW("Released: %s - %s\r\n",__RELEASE_DATE_KEIL__,__RELEASE_TIME_KEIL__); 
+	DEBUG_RAW("Released: %s - %s\r\n",__RELEASE_DATE_KEIL__, __RELEASE_TIME_KEIL__); 
 	
 	uint32_t clkSys = rcu_clock_freq_get(CK_SYS)/1000000;
 	uint32_t clkAHB = rcu_clock_freq_get(CK_AHB)/1000000;
 	uint32_t clkAPB1 = rcu_clock_freq_get(CK_APB1)/1000000;
 	uint32_t clkAPB2 = rcu_clock_freq_get(CK_APB2)/1000000;
-	DEBUG_RAW("\rClock: %u-%u-%u-%u", clkSys, clkAHB, clkAPB1, clkAPB2);
+	DEBUG_RAW("Clock: %u-%u-%u-%uMhz\r\n", clkSys, clkAHB, clkAPB1, clkAPB2);
 }
 
 /*****************************************************************************/
@@ -193,7 +193,7 @@ static void DrawScreen(void)
  * @version	:
  * @reviewer:	
  */
-static void RCC_Config(void) 
+void RCC_Config(void) 
 {
     /* Setup SysTick Timer for 1 msec interrupts */ 
     if (SysTick_Config(SystemCoreClock / 1000))
@@ -397,6 +397,7 @@ void ADC_Config(void)
     /* enable DMA clock */
     rcu_periph_clock_enable(RCU_DMA0);
 
+
     /* config the GPIO as analog mode */
     gpio_init(ADC_VIN_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_VIN_PIN);
     gpio_init(ADC_SENS_PORT, GPIO_MODE_AIN, GPIO_OSPEED_10MHZ, ADC_SENS_PIN);
@@ -422,6 +423,8 @@ void ADC_Config(void)
     dma_init(DMA0, DMA_CH0, &dma_data_parameter);
 
     dma_circulation_enable(DMA0, DMA_CH0);
+	nvic_irq_enable(DMA0_Channel0_IRQn,0,0);
+	dma_interrupt_enable(DMA0, DMA_CH0, DMA_INT_FTF);
   
     /* enable DMA channel */
     dma_channel_enable(DMA0, DMA_CH0);
@@ -433,9 +436,13 @@ void ADC_Config(void)
     /* ADC mode config */
     adc_mode_config(ADC_MODE_FREE);
     /* ADC contineous function enable */
-    adc_special_function_config(ADC0, ADC_CONTINUOUS_MODE, ENABLE);
+#if ADC_DMA
+    adc_special_function_config(ADC0, ADC_CONTINUOUS_MODE, DISABLE);
     /* ADC scan mode disable */
     adc_special_function_config(ADC0, ADC_SCAN_MODE, ENABLE);
+#else
+    adc_special_function_config(ADC0, ADC_CONTINUOUS_MODE, DISABLE);
+#endif
     /* ADC data alignment config */
     adc_data_alignment_config(ADC0, ADC_DATAALIGN_RIGHT);
     
@@ -456,10 +463,14 @@ void ADC_Config(void)
 	 
     /* ADC calibration and reset calibration */
     adc_calibration_enable(ADC0);
-
+#if ADC_DMA
     /* ADC DMA function enable */
     adc_dma_mode_enable(ADC0);
-	 
+#else
+    nvic_irq_enable(ADC0_1_IRQn, 0, 0);
+    adc_interrupt_flag_clear(ADC0, ADC_INT_FLAG_EOC);
+    adc_interrupt_enable(ADC0, ADC_INT_EOC);
+#endif 
 	 /* ADC software trigger enable */
     adc_software_trigger_enable(ADC0, ADC_REGULAR_CHANNEL);
     adc_started = true;
@@ -485,7 +496,7 @@ void AdcStop(void)
 
 uint32_t AdcUpdate(void)
 {
-    return RESISTOR_DIV*(ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF *8/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
+    return RESISTOR_DIV*(ADC_RegularConvertedValueTab[ADCMEM_VSYS] * ADC_VREF/ ADC_12BIT_FACTOR) + DIODE_OFFSET;
 }
 
 /*****************************************************************************/

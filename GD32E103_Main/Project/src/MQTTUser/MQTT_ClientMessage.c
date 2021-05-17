@@ -103,24 +103,25 @@ void MQTT_ClientOneSecMessageTick(void)
  * @reviewer:	
  */
 
-static uint16_t sendMsgWhenReset	= 0;
-void MqttClientSendFirstMessageWhenReset(void)
+static uint16_t send_msg_when_device_wakeup = 0;
+void MqttClientSendFirstMessageWhenWakeup(void)
 {
-	sendMsgWhenReset = 1;
+	send_msg_when_device_wakeup = 1;
 }
+
+volatile uint32_t SendMessageTick = 0;
 
 static void GuiBanTinDinhKiTick(void)
 {
 #if 1
 	static uint8_t SendSubReqTick = 0;
 	static uint16_t SendKeepAliveTick = 0;
-	static uint16_t SendMessageTick = 0;
 
 //	static uint8_t LastMinute = 0xFF;
 	uint8_t ThoiGianGuiSubscribe;
 	
 	//Test 10'
-	if(++SendMessageTick >= xSystem.Parameters.TGGTDinhKy || sendMsgWhenReset)
+	if(SendMessageTick >= xSystem.Parameters.TGGTDinhKy || send_msg_when_device_wakeup)
 	{
 		if ((SendMessageTick % 10) == 0)
 		{
@@ -130,7 +131,7 @@ static void GuiBanTinDinhKiTick(void)
 			|| xSystem.Status.MQTTServerState == MQTT_LOGINED)
 		{
 			SendMessageTick = 0;
-			sendMsgWhenReset = 0;
+			send_msg_when_device_wakeup = 0;
 			MQTT_PublishDataMsg();
 		}
 	}

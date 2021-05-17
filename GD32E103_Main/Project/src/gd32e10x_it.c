@@ -39,6 +39,8 @@ OF SUCH DAMAGE.
 #include "Hardware.h"
 #include "DataDefine.h"
 #include "GSM.h"
+#include "Measurement.h"
+#include "stdbool.h"
 
 extern void Delay_Decrement(void);
 extern void SystemManagementTask(void);
@@ -80,6 +82,7 @@ void NMI_Handler(void)
 void MemManage_Handler(void)
 {
     /* if Memory Manage exception occurs, go to infinite loop */
+    NVIC_SystemReset();
     while (1){
     }
 }
@@ -93,6 +96,7 @@ void MemManage_Handler(void)
 void BusFault_Handler(void)
 {
     /* if Bus Fault exception occurs, go to infinite loop */
+    NVIC_SystemReset();
     while (1){
     }
 }
@@ -158,22 +162,17 @@ void SysTick_Handler(void)
     \param[out] none
     \retval     none
 */
-uint32_t led_debug_isr = 0;
 void EXTI0_IRQHandler(void)
 {
     /* check the key wakeup is pressed or not */
     if (RESET != exti_interrupt_flag_get(EXTI_0))
     {
-        //DEBUG_PRINTF("EXTI0 IRQ\r\n");
-        //LED1(led_debug_isr);
-        //LED2(led_debug_isr);
-        //led_debug_isr = 1 - led_debug_isr;
         if (getSwitchState() == 0)
         {
-            //if (isGSMSleeping())
-            //{
-            //    xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
-            //}
+            if (isGSMSleeping())
+            {
+                xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+            }
         }
         exti_interrupt_flag_clear(EXTI_0);
     }
@@ -196,9 +195,10 @@ void EXTI10_15_IRQHandler(void)
 
 void LVD_IRQHandler(void)
 {
-	NVIC_SystemReset();
-	while (1);
+    NVIC_SystemReset();
+    while (1);
 }
+
 
 /*!
     \brief      this function handles RTC global interrupt request
@@ -206,21 +206,19 @@ void LVD_IRQHandler(void)
     \param[out] none
     \retval     none
 */
+extern volatile uint32_t StoreMeasureResultTick;
+extern uint32_t Measure420mATick;
 void RTC_IRQHandler(void)
-{
-    uint32_t temp = 0;
-    
+{    
     if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_SECOND))
     {
-        DEBUG_PRINTF("RTC 1s\r\n");
+        //DEBUG_PRINTF("RTC 1s\r\n");
         /* clear the RTC second interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);  
-        if (isGSMSleeping())
-        {
-
-        }
         TimeOut1000ms = 1000;
         TimeOut3000ms += 1000;
+        StoreMeasureResultTick++;
+        Measure420mATick++;
     }
 
     if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_ALARM))
@@ -228,7 +226,7 @@ void RTC_IRQHandler(void)
         /* clear the RTC alarm interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
         TimeOut1000ms = 1000;
-        DEBUG("RTC alarm\r\n", temp);
+        //DEBUG("RTC alarm\r\n", temp);
     }
 }
 
@@ -240,8 +238,11 @@ void RTC_Alarm_IRQHandler()
         exti_interrupt_flag_clear(EXTI_17);
     }
 
-
-    RTC_IRQHandler();
+    if(RESET != rtc_interrupt_flag_get(RTC_INT_FLAG_ALARM))
+    {
+        /* clear the RTC alarm interrupt flag*/
+        rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
+    }
 }
 
 #if 0
@@ -260,6 +261,31 @@ void EXTI4_15_IRQHandler(void)
     }
 }
 #endif
+
+extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
+extern volatile bool new_adc_data;
+void ADC0_1_IRQHandler(void)
+{
+    volatile uint16_t adc_value;
+    if(adc_interrupt_flag_get(ADC0, ADC_INT_FLAG_EOC))
+    {
+        adc_interrupt_flag_clear(ADC0, ADC_INT_FLAG_EOC);
+//        adc_value = adc_inserted_data_read(ADC0, ADC_SENS_CHANNEL);
+//        ADC_RegularConvertedValueTab[ADCMEM_V20mV] = adc_value;
+//        adc_value = adc_inserted_data_read(ADC0, ADC_VIN_CHANNEL);
+//        ADC_RegularConvertedValueTab[ADCMEM_VSYS] = adc_value;
+//        new_adc_data = true;    
+    }
+}
+
+void DMA0_Channel0_IRQHandler(void)
+{
+    if(dma_interrupt_flag_get(DMA0, DMA_CH0, DMA_INT_FLAG_FTF))
+    {     
+        new_adc_data = 1;
+        dma_interrupt_flag_clear(DMA0, DMA_CH0, DMA_INT_FLAG_G);
+    }
+}
 
 #if 0
 void USART1_IRQHandler(void)

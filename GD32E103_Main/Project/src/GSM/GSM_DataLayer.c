@@ -95,12 +95,14 @@ void GSM_GotoSleep(void)
  */
 void gsmWakeUpPeriodically(void)
 {
-    xSystem.Status.GSMSleepTime++;
-    DEBUG_PRINTF("Sleep time %u, periodic send msg %u\r\n", xSystem.Status.GSMSleepTime, xSystem.Parameters.TGGTDinhKy * 60);
-    if (xSystem.Status.GSMSleepTime >= xSystem.Parameters.TGGTDinhKy * 60)
+    DEBUG_PRINTF("Sleep time %u, periodic send msg %u, remaining %uS\r\n", 
+                xSystem.Status.GSMSleepTime, 
+                xSystem.Parameters.TGGTDinhKy * 60,
+                xSystem.Parameters.TGGTDinhKy * 60 - xSystem.Status.GSMSleepTime);
+    if (xSystem.Status.GSMSleepTime >= xSystem.Parameters.TGGTDinhKy*60)
     {
         xSystem.Status.GSMSleepTime = 0;
-        MqttClientSendFirstMessageWhenReset();
+        MqttClientSendFirstMessageWhenWakeup();
 #if (__GSM_SLEEP_MODE__)
         DEBUG("GSM: Wakeup to send msg\r\n");
         xSystem.Status.YeuCauGuiTin = 2;
@@ -473,40 +475,40 @@ void ChangeGSMState(GSM_State_t NewState)
     switch ((uint8_t)NewState)
     {
     case 0:
-        DEBUG("OK");
+        DEBUG("OK\r\n");
         break;
     case 1:
-        DEBUG("RESET");
+        DEBUG("RESET\r\n");
         break;
     case 2:
-        DEBUG("SENSMS");
+        DEBUG("SENSMS\r\n");
         break;
     case 3:
-        DEBUG("READSMS");
+        DEBUG("READSMS\r\n");
         break;
     case 4:
-        DEBUG("POWERON");
+        DEBUG("POWERON\r\n");
         break;
     case 5:
-        DEBUG("REOPENPPP");
+        DEBUG("REOPENPPP\r\n");
         break;
     case 6:
-        DEBUG("GETSIGNAL");
+        DEBUG("GETSIGNAL\r\n");
         break;
     case 7:
-        DEBUG("SENDATC");
+        DEBUG("SENDATC\r\n");
         break;
     case 8:
-        DEBUG("GOTOSLEEP");
+        DEBUG("GOTOSLEEP\r\n");
         break;
     case 9:
-        DEBUG("WAKEUP");
+        DEBUG("WAKEUP\r\n");
         break;
     case 10:
-        DEBUG("IDLE");
+        DEBUG("IDLE\r\n");
         break;
     case 11:
-        DEBUG("SLEEP");
+        DEBUG("SLEEP\r\n");
         break;
     default:
         break;

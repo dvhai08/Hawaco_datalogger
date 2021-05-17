@@ -1,7 +1,7 @@
 #include "app_wdt.h"
 #include "gd32e10x.h"
 
-#define APP_WDT_ENABLE      0
+#define APP_WDT_ENABLE      1
 #if APP_WDT_ENABLE == 0
 #warning "Wdt not enabled"
 #endif
@@ -16,6 +16,7 @@ static void irc40k_config(void);
 void app_wdt_start(void)
 {
 #if APP_WDT_ENABLE
+    //irc40k_config();
     /* Enable write access to FWDGT_PSC and FWDGT_RLD registers.
         FWDGT counter clock: 40KHz(IRC40K) / 256 = 156,25 Hz */
     fwdgt_config(4095, FWDGT_PSC_DIV256);

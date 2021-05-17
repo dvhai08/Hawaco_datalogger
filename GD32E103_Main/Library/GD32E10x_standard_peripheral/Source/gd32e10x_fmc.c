@@ -311,6 +311,7 @@ fmc_state_enum fmc_doubleword_program(uint32_t address, uint64_t data)
       \arg        FMC_WPERR: erase/program protection error
       \arg        FMC_TOERR: timeout error
 */
+uint8_t flash_err = 0;
 fmc_state_enum fmc_word_program(uint32_t address, uint32_t data)
 {
     fmc_state_enum fmc_state = FMC_READY;
@@ -325,6 +326,11 @@ fmc_state_enum fmc_word_program(uint32_t address, uint32_t data)
         fmc_state = fmc_ready_wait(FMC_TIMEOUT_COUNT);
         /* reset the PG bit */
         FMC_CTL &= ~FMC_CTL_PG;
+    }
+    
+    if (FMC_READY != fmc_state)
+    {
+        flash_err = 1;
     }
     /* return the FMC state */
     return fmc_state;

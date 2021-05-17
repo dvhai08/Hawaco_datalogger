@@ -51,7 +51,7 @@ void DetectResetReason(void)
 {
     xSystem.HardwareInfo.ResetReasion = 0;
 
-    DEBUG_PRINTF("Reset reason");
+    DEBUG_PRINTF("Reset reason\r\n");
 #if 0
 	if(RCC_GetFlagStatus(RCC_FLAG_PINRST) != RESET)
     {

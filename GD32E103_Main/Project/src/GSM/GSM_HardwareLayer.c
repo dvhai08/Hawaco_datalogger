@@ -122,6 +122,7 @@ void GSM_InitHardware(void)
 	GSM_PWR_KEY(1);
 	Delayms(1500);
 	GSM_PWR_KEY(0);
+        Delayms(1000);
 
 	/* Khoi tao UART cho GSM modem */
 	UART_Init(GSM_UART, 115200);	

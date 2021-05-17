@@ -145,7 +145,8 @@
 
 ///* constant for adc threshold value 3.3V */
 #define ADC_VREF 3300
-#define V_DIODE_DROP 250
+//#define ADC_VREF 2955
+#define V_DIODE_DROP 0
 
 #define ADC_VIN_PORT   GPIOA
 #define ADC_VIN_PIN    GPIO_PIN_6

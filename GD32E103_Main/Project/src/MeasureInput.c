@@ -101,7 +101,7 @@ void Measure_PulseTick(void)
 					//Store to BKP register
 					app_bkup_write_pulse_counter(xSystem.MeasureStatus.PulseCounterInBkup);
 					isPulseTrigger = 0;
-					DEBUG ("\r\n+++++++++ in %ums", pullDeltaMs);
+					DEBUG ("+++++++++ in %ums\r\n", pullDeltaMs);
 				}
 //			}
 //			pulseLengthInMs = 0;
@@ -124,41 +124,41 @@ void Measure_PulseTick(void)
 uint8_t measureTimeout = 0;
 void Measure_Tick(void)
 {	
-	if(xSystem.Status.InitSystemDone == 0) return;
-		
-	if(SensorUartBuffer.State)
-	{
-		SensorUartBuffer.State--;
-		if(SensorUartBuffer.State == 0)
-		{
-			ProcessNewSensorUartData();
-			SensorUartBuffer.BufferIndex = 0;
-		}
-	}
-		
-	/** Tick 1000ms */
-	if(++Timeout1000msTick >= 100)
-	{
-		Timeout1000msTick = 0;
-	}
+    if(xSystem.Status.InitSystemDone == 0) return;
+            
+    if(SensorUartBuffer.State)
+    {
+        SensorUartBuffer.State--;
+        if(SensorUartBuffer.State == 0)
+        {
+                ProcessNewSensorUartData();
+                SensorUartBuffer.BufferIndex = 0;
+        }
+    }
+            
+    /** Tick 1000ms */
+    if(++Timeout1000msTick >= 100)
+    {
+        Timeout1000msTick = 0;
+    }
 }	
 
+volatile uint32_t StoreMeasureResultTick = 0;
+volatile uint32_t Measure420mATick = 0;
 void MeasureTick1000ms(void)
 {
 	MeasureInputTick();
-	static uint8_t StoreMeasureResultTick = 0;
-	static uint16_t Measure420mATick = 0;
 	
 	if(xSystem.Status.ADCOut)
 	{
-		DEBUG ("\r\nADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
-			ADC_RegularConvertedValueTab[ADCMEM_V20mV]); 
-		DEBUG ("\r\nVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
+            DEBUG ("\r\nADC: Vin: %d, Vsens: %d", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
+                    ADC_RegularConvertedValueTab[ADCMEM_V20mV]); 
+            DEBUG ("\r\nVin: %d mV, Vsens: %d mV", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
 	}
 			
 	/* === DO DAU VAO 4-20mA DINH KY === //
 	*/
-	if(++Measure420mATick >= xSystem.Parameters.TGDoDinhKy)
+	if(Measure420mATick >= xSystem.Parameters.TGDoDinhKy*60)
 	{
 		Measure420mATick = 0;
 		
@@ -175,26 +175,27 @@ void MeasureTick1000ms(void)
 	}
 	if(measureTimeout > 0)
 	{
-		measureTimeout--;
-		if(measureTimeout == 0) {
-			DEBUG ("\r\n--- Timeout measure ---");
-			SENS_420mA_PWR_OFF();
-		}
+            measureTimeout--;
+            if(measureTimeout == 0) 
+            {
+                    DEBUG ("\r\n--- Timeout measure ---r\n");
+                    SENS_420mA_PWR_OFF();
+            }
 	}
 	
 	/* Save pulse counter to flash every 30s */
-	if(++StoreMeasureResultTick >= 30)
+	if(StoreMeasureResultTick >= 30)
 	{
-		StoreMeasureResultTick = 0;
-		
-		//Neu counter in BKP != in flash -> luu flash
-		if(xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
-		{
-			xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
-			InternalFlash_WriteMeasures();
-			uint8_t res = InternalFlash_WriteConfig();
-			DEBUG ("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK"); 
-		}
+            StoreMeasureResultTick = 0;
+            
+            //Neu counter in BKP != in flash -> luu flash
+            if(xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
+            {
+                    xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
+                    InternalFlash_WriteMeasures();
+                    uint8_t res = InternalFlash_WriteConfig();
+                    DEBUG ("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK"); 
+            }
 	}
 }
 
@@ -240,19 +241,20 @@ void Measure_Init(void)
     exti_interrupt_enable(SWITCH_EXTI_LINE);
 #endif	
 	
-	/* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
-	* -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
-	*/
-	xSystem.MeasureStatus.PulseCounterInBkup = app_bkup_read_pulse_counter();
-	if(xSystem.MeasureStatus.PulseCounterInBkup < xSystem.MeasureStatus.PulseCounterInFlash) {
-		xSystem.MeasureStatus.PulseCounterInBkup = xSystem.MeasureStatus.PulseCounterInFlash;
-	}
-	DEBUG ("Pulse counter in BKP: %d\r\n", xSystem.MeasureStatus.PulseCounterInBkup);
+    /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
+    * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
+    */
+    xSystem.MeasureStatus.PulseCounterInBkup = app_bkup_read_pulse_counter();
+    if(xSystem.MeasureStatus.PulseCounterInBkup < xSystem.MeasureStatus.PulseCounterInFlash) 
+    {
+            xSystem.MeasureStatus.PulseCounterInBkup = xSystem.MeasureStatus.PulseCounterInFlash;
+    }
+    DEBUG ("Pulse counter in BKP: %d\r\n", xSystem.MeasureStatus.PulseCounterInBkup);
 }
 
 uint8_t isPowerOnRS485(void)
 {
-	return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
+    return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
 }
 	
 /*
@@ -294,8 +296,8 @@ static void MeasureInputTick(void)
 	//Dau vao 4-20mA: chi tinh toan khi thuc hien do
 	if(measureTimeout > 0)
 	{
-		float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF/ ADC_12BIT_FACTOR;
-		xSystem.MeasureStatus.Input420mA = V20mA/124;	//R = 124
+            float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF/ ADC_12BIT_FACTOR;
+            xSystem.MeasureStatus.Input420mA = V20mA/124;	//R = 124
 	}
 	
 //	if(xSystem.Status.ADCOut)
@@ -434,42 +436,45 @@ void RS485_UART_Handler(void)
     \param[out] none
     \retval     none
 */
+extern volatile uint32_t delay_sleeping_for_exit_wakeup;
 #if 1
 void EXTI2_IRQHandler(void)
 {
     /* check the Pulse input pin */
-   if (RESET != exti_interrupt_flag_get(EXTI_2))
-	{
+    if (RESET != exti_interrupt_flag_get(EXTI_2))
+    {
 #if 1
-		if(getPulseState()) 
-		{
-			beginPulseTime = sys_get_ms();
-			pullState = 0;
-		} 
-		else if (pullState == 0)
-		{
-			pullState = -1;
-			endPulseTime = sys_get_ms();
-			if (endPulseTime > beginPulseTime)
-			{
-				pullDeltaMs = endPulseTime - beginPulseTime;
-			}
-			else
-			{
-				pullDeltaMs = 0xFFFFFFFF - beginPulseTime + endPulseTime;
-			}
-			
-			if (pullDeltaMs > 200)
-			{
-				isPulseTrigger = 1;
-				xSystem.MeasureStatus.PulseCounterInBkup++;
-			}
-		}
+        if(getPulseState()) 
+        {
+                beginPulseTime = sys_get_ms();
+                pullState = 0;
+                delay_sleeping_for_exit_wakeup = 5;
+        } 
+        else if (pullState == 0)
+        {
+            pullState = -1;
+            endPulseTime = sys_get_ms();
+            if (endPulseTime > beginPulseTime)
+            {
+                    pullDeltaMs = endPulseTime - beginPulseTime;
+            }
+            else
+            {
+                    pullDeltaMs = 0xFFFFFFFF - beginPulseTime + endPulseTime;
+            }
+        
+            if (pullDeltaMs > 200)
+            {
+                    isPulseTrigger = 1;
+                    xSystem.MeasureStatus.PulseCounterInBkup++;
+            }
+            delay_sleeping_for_exit_wakeup = 2;
+        }
 #else
-		isPulseTrigger = 1;
+        isPulseTrigger = 1;
 #endif
       exti_interrupt_flag_clear(EXTI_2);
-   }
+    }
 }
 #endif
 

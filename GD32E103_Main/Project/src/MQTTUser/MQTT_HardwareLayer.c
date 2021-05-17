@@ -281,8 +281,9 @@ void MQTT_Tick(void)
 				if (IsTheFirstTime)
 				{
 					IsTheFirstTime = 0;
-					GSMSleepAfterSecond(10);
-					MqttClientSendFirstMessageWhenReset();
+                                        DEBUG_PRINTF("GSM will sleep in 5s\r\n");
+					GSMSleepAfterSecond(5);
+					MqttClientSendFirstMessageWhenWakeup();
 				}
 				xSystem.Status.DisconnectTimeout = 0;
 				if(TimeoutTick >= 200)
