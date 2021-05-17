@@ -21,6 +21,7 @@
 #include "Utilities.h"
 #include "Hardware.h"
 #include "MQTTPacket.h"
+#include "app_bkup.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
@@ -34,19 +35,19 @@ extern System_t xSystem;
 /******************************************************************************
                                    DATA TYPE DEFINE					    			 
  ******************************************************************************/
-#define MAXBUFFERTCP		2048
-#define LIMITBUFFER			1738	
-#define NOTFOUND			65535
+#define MAXBUFFERTCP 2048
+#define LIMITBUFFER 1738
+#define NOTFOUND 65535
 
-#define	VALID_OK			1
-#define	VALID_FAILCHECK		0
-#define	VALID_NOTCOMPLETE	2
-#define	PROCESSOK			1
+#define VALID_OK 1
+#define VALID_FAILCHECK 0
+#define VALID_NOTCOMPLETE 2
+#define PROCESSOK 1
 
 /******************************************************************************
                                    PRIVATE VARIABLES					    			 
  ******************************************************************************/
- #if 0
+#if 0
 uint8_t MessageBufferBase64[MEDIUM_BUFFER_SIZE];
 uint8_t MessageBufferAES128[MEDIUM_BUFFER_SIZE];
 
@@ -107,107 +108,116 @@ uint8_t ValidAndDecodePacket(uint8_t* Buffer, uint16_t buffLength)
  */
 void ProcessSetParameters(char *buffer)
 {
-	uint8_t hasNewConfig = 0;
-	
-	char *cycleWake = strstr(buffer, "CYCLEWAKEUP(");
-	if(cycleWake != NULL)
-	{
-		uint16_t wakeTime = GetNumberFromString(12, cycleWake);
-		if(xSystem.Parameters.TGDoDinhKy != wakeTime) {
-			xSystem.Parameters.TGDoDinhKy = wakeTime;
-			hasNewConfig++;
-		}
-	}
-	
-	char *cycleSend = strstr(buffer, "CYCLESENDWEB(");
-	if(cycleSend != NULL)
-	{
-		uint16_t sendTime = GetNumberFromString(13, cycleSend);
-		if(xSystem.Parameters.TGGTDinhKy != sendTime) {
-			DEBUG("CYCLESENDWEB changed\r\n");
-			xSystem.Parameters.TGGTDinhKy = sendTime;
-			hasNewConfig++;
-		}
-	}
+    uint8_t hasNewConfig = 0;
 
-	char *output1 = strstr(buffer, "OUTPUT1(");
-	if(output1 != NULL)
-	{
-		uint8_t out1 = GetNumberFromString(8, output1) & 0x1;
-		if(xSystem.Parameters.outputOnOff != out1) {
-			xSystem.Parameters.outputOnOff = out1;
-			hasNewConfig++;
-			DEBUG("Output 1 changed\r\n");
-			//Dk ngoai vi luon
-			TRAN_OUTPUT(out1);
-		}
-	}
-	
-	char *output2 = strstr(buffer, "OUTPUT2(");
-	if(output2 != NULL)
-	{
-		uint8_t out2 = GetNumberFromString(8, output2);
-		if(xSystem.Parameters.output420ma != out2) {
-			DEBUG("Output 2 changed\r\n");
-			xSystem.Parameters.output420ma = out2;
-			hasNewConfig++;
-			
-			//Dk ngoai vi luon
-			//TRAN_OUTPUT(out2);
-		}
-	}
-	
-	char *input1 = strstr(buffer, "INPUT1(");
-	if(input1 != NULL)
-	{
-		uint8_t in1 = GetNumberFromString(7, input1) & 0x1;
-		if(xSystem.Parameters.input.name.pulse != in1) {
-			DEBUG("INPUT1 changed\r\n");
-			xSystem.Parameters.input.name.pulse = in1;
-			hasNewConfig++;
-		}
-	}	
-	
-	char *input2 = strstr(buffer, "INPUT2(");
-	if(input2 != NULL)
-	{
-		uint8_t in2 = GetNumberFromString(7, input2) & 0x1;
-		if(xSystem.Parameters.input.name.ma420 != in2) {
-			DEBUG("INPUT2 changed\r\n");
-			xSystem.Parameters.input.name.ma420 = in2;
-			hasNewConfig++;
-		}
-	}	
-	
-	char *rs485 = strstr(buffer, "RS485(");
-	if(rs485 != NULL)
-	{
-		uint8_t in485 = GetNumberFromString(7, rs485) & 0x1;
-		if(xSystem.Parameters.input.name.rs485 != in485) {
-			DEBUG("in485 changed\r\n");
-			xSystem.Parameters.input.name.rs485 = in485;
-			hasNewConfig++;
-		}
-	}
-	
-	char *alarm = strstr(buffer, "WARNING(");
-	if(alarm != NULL)
-	{
-		uint8_t alrm = GetNumberFromString(8, alarm) & 0x1;
-		if(xSystem.Parameters.alarm != alrm) {
-			DEBUG("WARNING changed\r\n");
-			xSystem.Parameters.alarm = alrm;
-			hasNewConfig++;
-		}
-	}
-	
-	char *phoneNum = strstr(buffer, "PHONENUM(");
-	if(phoneNum != NULL)
-	{
-		char tmpPhone[30] = {0};
-		if(CopyParameter(phoneNum, tmpPhone, '(', ')'))
-		{
-			#if 0
+    char *cycleWake = strstr(buffer, "CYCLEWAKEUP(");
+    if (cycleWake != NULL)
+    {
+        uint16_t wakeTime = GetNumberFromString(12, cycleWake);
+        if (xSystem.Parameters.TGDoDinhKy != wakeTime)
+        {
+            xSystem.Parameters.TGDoDinhKy = wakeTime;
+            hasNewConfig++;
+        }
+    }
+
+    char *cycleSend = strstr(buffer, "CYCLESENDWEB(");
+    if (cycleSend != NULL)
+    {
+        uint16_t sendTime = GetNumberFromString(13, cycleSend);
+        if (xSystem.Parameters.TGGTDinhKy != sendTime)
+        {
+            DEBUG("CYCLESENDWEB changed\r\n");
+            xSystem.Parameters.TGGTDinhKy = sendTime;
+            hasNewConfig++;
+        }
+    }
+
+    char *output1 = strstr(buffer, "OUTPUT1(");
+    if (output1 != NULL)
+    {
+        uint8_t out1 = GetNumberFromString(8, output1) & 0x1;
+        if (xSystem.Parameters.outputOnOff != out1)
+        {
+            xSystem.Parameters.outputOnOff = out1;
+            hasNewConfig++;
+            DEBUG("Output 1 changed\r\n");
+            //Dk ngoai vi luon
+            TRAN_OUTPUT(out1);
+        }
+    }
+
+    char *output2 = strstr(buffer, "OUTPUT2(");
+    if (output2 != NULL)
+    {
+        uint8_t out2 = GetNumberFromString(8, output2);
+        if (xSystem.Parameters.output420ma != out2)
+        {
+            DEBUG("Output 2 changed\r\n");
+            xSystem.Parameters.output420ma = out2;
+            hasNewConfig++;
+
+            //Dk ngoai vi luon
+            //TRAN_OUTPUT(out2);
+        }
+    }
+
+    char *input1 = strstr(buffer, "INPUT1(");
+    if (input1 != NULL)
+    {
+        uint8_t in1 = GetNumberFromString(7, input1) & 0x1;
+        if (xSystem.Parameters.input.name.pulse != in1)
+        {
+            DEBUG("INPUT1 changed\r\n");
+            xSystem.Parameters.input.name.pulse = in1;
+            hasNewConfig++;
+        }
+    }
+
+    char *input2 = strstr(buffer, "INPUT2(");
+    if (input2 != NULL)
+    {
+        uint8_t in2 = GetNumberFromString(7, input2) & 0x1;
+        if (xSystem.Parameters.input.name.ma420 != in2)
+        {
+            DEBUG("INPUT2 changed\r\n");
+            xSystem.Parameters.input.name.ma420 = in2;
+            hasNewConfig++;
+        }
+    }
+
+    char *rs485 = strstr(buffer, "RS485(");
+    if (rs485 != NULL)
+    {
+        uint8_t in485 = GetNumberFromString(7, rs485) & 0x1;
+        if (xSystem.Parameters.input.name.rs485 != in485)
+        {
+            DEBUG("in485 changed\r\n");
+            xSystem.Parameters.input.name.rs485 = in485;
+            hasNewConfig++;
+        }
+    }
+
+    char *alarm = strstr(buffer, "WARNING(");
+    if (alarm != NULL)
+    {
+        uint8_t alrm = GetNumberFromString(8, alarm) & 0x1;
+        if (xSystem.Parameters.alarm != alrm)
+        {
+            DEBUG("WARNING changed\r\n");
+            xSystem.Parameters.alarm = alrm;
+            hasNewConfig++;
+        }
+    }
+
+
+    char *phoneNum = strstr(buffer, "PHONENUM(");
+    if (phoneNum != NULL)
+    {
+        char tmpPhone[30] = {0};
+        if (CopyParameter(phoneNum, tmpPhone, '(', ')'))
+        {
+#if 0
 			uint8_t changed = 0;
 			for(uint8_t i = 0; i < 15; i++)
 			{
@@ -221,19 +231,37 @@ void ProcessSetParameters(char *buffer)
 			{
 				DEBUG("PHONENUM changed\r\n");
 			}
-			#endif
-		}
-	}
-	
-	//Luu config moi
-	if(hasNewConfig)
-	{
-		InternalFlash_WriteConfig();
-	}
-	else
-	{
-		DEBUG ("CFG: has no new config\r\n");
-	}
+#endif
+        }
+    }
+
+    char *resetCounter = strstr(buffer, "RSTCOUNTER(");
+    if (resetCounter)
+    {
+        uint8_t reset_counter = GetNumberFromString(11, resetCounter);
+        if (reset_counter == 55)
+        {
+            DEBUG_PRINTF("Reset counter\r\n");
+            __disable_irq();
+            xSystem.MeasureStatus.PulseCounterInFlash = 0;
+            xSystem.MeasureStatus.PulseCounterInBkup = 0;
+            app_bkup_write_pulse_counter(0);
+            __enable_irq();
+            InternalFlash_WriteMeasures();
+            hasNewConfig++;   
+        }
+    }
+
+    //Luu config moi
+    if (hasNewConfig)
+    {
+        GSMSleepAfterSecond(10);        // Wait more 10 second
+        InternalFlash_WriteConfig();
+    }
+    else
+    {
+        DEBUG("CFG: has no new config\r\n");
+    }
 }
 
 /*****************************************************************************/
@@ -247,28 +275,28 @@ void ProcessSetParameters(char *buffer)
  * @reviewer:	
  */
 uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
-{	
-	xSystem.Status.GSMSendFailedTimeout = 0;
-	
-	if(strstr(buffer, "SET,") == NULL)
-		toUpperCase(buffer);
-	
+{
+    xSystem.Status.GSMSendFailedTimeout = 0;
+
+    if (strstr(buffer, "SET,") == NULL)
+        toUpperCase(buffer);
+
 #if 1
-	/** TEST: Check ban tin UDFW khong ma hoa */
-	if(strstr(buffer, "UDFW,"))
-	{
-		DEBUG ("\r\nSRV: Ban tin UDFW");
-//		ProcessUpdateFirmwareCommand(buffer, 1);
-//		return length;
-	}
-	
-	if(strstr(buffer, "SET,") || strstr(buffer,"CYCLEWAKEUP"))
-	{
-		DEBUG ("\r\nSRV: SET config");
-		xSystem.Status.SendGPRSTimeout = 15;
-		ProcessSetParameters(buffer);
-		return length;
-	}
+    /** TEST: Check ban tin UDFW khong ma hoa */
+    if (strstr(buffer, "UDFW,"))
+    {
+        DEBUG("\r\nSRV: Ban tin UDFW");
+        //		ProcessUpdateFirmwareCommand(buffer, 1);
+        //		return length;
+    }
+
+    if (strstr(buffer, "SET,") || strstr(buffer, "CYCLEWAKEUP") || strstr(buffer, "RSTCOUNTER"))
+    {
+        DEBUG("\r\nSRV: SET config\r\n");
+        xSystem.Status.SendGPRSTimeout = 15;
+        ProcessSetParameters(buffer);
+        return length;
+    }
 //	if(strstr(buffer, "GET,"))
 //	{
 //		DEBUG ("\r\nSRV: GET config");
@@ -277,7 +305,7 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 //		return length;
 //	}
 #endif
-	
+
 #if 0
 	uint8_t CheckData = 0;
 	
@@ -358,7 +386,7 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
 	}
 #endif
 
-  return PROCESSOK;
+    return PROCESSOK;
 }
 
 /********************************* END OF FILE *******************************/
