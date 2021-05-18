@@ -235,20 +235,32 @@ void ProcessSetParameters(char *buffer)
         }
     }
 
-    char *resetCounter = strstr(buffer, "RSTCOUNTER(");
-    if (resetCounter)
+    char *counterOffser = strstr(buffer, "METERINDICATOR(");
+    if (counterOffser)
     {
-        uint8_t reset_counter = GetNumberFromString(11, resetCounter);
-        if (reset_counter == 55)
+        uint32_t offset = GetNumberFromString(strlen("METERINDICATOR("), counterOffser);
+        if (xSystem.Parameters.input1Offset != offset)
         {
-            DEBUG_PRINTF("Reset counter\r\n");
-            __disable_irq();
-            xSystem.MeasureStatus.PulseCounterInFlash = 0;
-            xSystem.MeasureStatus.PulseCounterInBkup = 0;
-            app_bkup_write_pulse_counter(0);
-            __enable_irq();
-            InternalFlash_WriteMeasures();
             hasNewConfig++;   
+            xSystem.Parameters.input1Offset = offset;
+            DEBUG_PRINTF("Counter offset %u\r\n", offset);
+        }
+    }
+
+    char *kFactor = strstr(buffer, "K(");
+    if (kFactor)
+    {
+        uint32_t k_factor = GetNumberFromString(strlen("K("), kFactor);
+        if (k_factor == 0)
+        {
+            k_factor = 1;
+        }
+
+        if (xSystem.Parameters.kFactor != k_factor)
+        {
+            xSystem.Parameters.kFactor = k_factor;
+            DEBUG_PRINTF("K Factor %u\r\n", k_factor);
+            hasNewConfig++; 
         }
     }
 

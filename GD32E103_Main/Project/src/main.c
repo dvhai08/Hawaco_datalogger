@@ -76,6 +76,8 @@ int main(void)
 #if GSM_ENABLE
         main_TcpNet();
 #endif
+        #warning  "Output 4-20mA always off"
+        xSystem.Parameters.outputOnOff = 0;
         
         if (new_adc_data)
         {
@@ -197,6 +199,7 @@ int main(void)
                         {
                             dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
                         }
+
                         uint32_t tick_before_sleep = rtc_counter_get();
 
                         uint32_t min_interval = xSystem.Parameters.TGGTDinhKy;
@@ -239,6 +242,11 @@ int main(void)
                 else
                 {
                     DEBUG("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
+                    pmu_to_sleepmode(WFI_CMD);
+                    xSystem.Status.GSMSleepTime++;
+                    SendMessageTick++;
+                    StoreMeasureResultTick++;
+                    Measure420mATick++;
                 }
             }
             ResetWatchdog();

@@ -367,7 +367,9 @@ uint16_t MQTT_PublishDataMsg(void)
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"ID\":\"%s\",", xSystem.Parameters.GSM_IMEI);
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"PhoneNum\":\"%s\",", xSystem.Parameters.PhoneNumber);
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Money\":\"%d\",", 0);
-	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Input1\":\"%d\",", xSystem.MeasureStatus.PulseCounterInBkup);		//so xung
+	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Input1\":\"%d\",", 
+                                                                                            xSystem.MeasureStatus.PulseCounterInBkup/xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset);		//so xung
+
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA);		//dau vao 4-20mA
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);		//dau ra on/off
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Output2\":\"%d\",", xSystem.Parameters.output420ma);		//dau ra 4-20mA	
@@ -376,7 +378,9 @@ uint16_t MQTT_PublishDataMsg(void)
 	
 	
 	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
-	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryDebug\":\"%d\"}", xSystem.MeasureStatus.Vin);
+	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"BatteryDebug\":\"%d\",", xSystem.MeasureStatus.Vin);
+        mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"K\":\"%u\",", xSystem.Parameters.kFactor);
+         mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Offset\":\"%u\"}", xSystem.Parameters.input1Offset);
 //	mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex],"\"Countconnect\":\"%d\"}", pubPackageId);
 			
 	/* =================== Build MQTT message =============== */

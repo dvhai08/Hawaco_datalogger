@@ -218,6 +218,8 @@ typedef struct {
 	uint8_t output420ma;		//4-20mA
 	InputConfig_t input;
 	uint8_t alarm;
+        uint32_t input1Offset;
+        uint32_t kFactor;
 } Parameters_t;
 
 #if (__USE_MQTT__ == 1)

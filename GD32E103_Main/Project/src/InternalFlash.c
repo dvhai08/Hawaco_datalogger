@@ -531,8 +531,19 @@ uint8_t InternalFlash_WriteConfig(void)
             result++;
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
-        /* phone number */
+        /* Input 1 offset */
+        tmp_align = xSystem.Parameters.input1Offset;
+        if (FLASH_ProgramWord(CONFIG_INPUT1_OFFSET, tmp_align) != FLASH_COMPLETE)
+            result++;
+        fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
+        
+        /* K factor */
+        tmp_align = xSystem.Parameters.kFactor;
+        if (FLASH_ProgramWord(CONFIG_INPUT1_K_FACTOR, tmp_align) != FLASH_COMPLETE)
+            result++;
+        fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
+        /* phone number */
         for (uint8_t i = 0; i < 15; i++)
         {
             tmp_align = xSystem.Parameters.PhoneNumber[i];
@@ -655,6 +666,8 @@ void InternalFlash_ReadConfig(void)
         xSystem.Parameters.input.value = 0;      //all input off
         xSystem.Parameters.input.name.pulse = 1; //on
         xSystem.Parameters.alarm = 0;            //alarm off
+        xSystem.Parameters.kFactor = 1;
+        xSystem.Parameters.input1Offset = 0;
         sprintf(xSystem.Parameters.PhoneNumber, "%s", "000");
     }
     else
@@ -665,6 +678,8 @@ void InternalFlash_ReadConfig(void)
         xSystem.Parameters.output420ma = (*(__IO uint32_t *)(CONFIG_OUTPUT2_ADDR)) & 0xFF;
         xSystem.Parameters.input.value = (*(__IO uint32_t *)(CONFIG_INPUT_ADDR)) & 0xFF;
         xSystem.Parameters.alarm = (*(__IO uint32_t *)(CONFIG_ALARM_ADDR)) & 0xFF;
+        xSystem.Parameters.input1Offset = (*(__IO uint32_t *)(CONFIG_INPUT1_OFFSET)) & 0xFFFFFFFF;
+        xSystem.Parameters.kFactor = (*(__IO uint32_t *)(CONFIG_INPUT1_K_FACTOR)) & 0xFFFFFFFF;;
 
         for (uint8_t i = 0; i < 15; i++)
         {
@@ -679,6 +694,7 @@ void InternalFlash_ReadConfig(void)
     DEBUG("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma);
     DEBUG("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
     DEBUG("Alarm: %u\r\n", xSystem.Parameters.alarm);
+    DEBUG("Offset: %u, K %u\r\n", xSystem.Parameters.input1Offset, xSystem.Parameters.kFactor);
     DEBUG("Phone: %s\r\n", xSystem.Parameters.PhoneNumber);
     DEBUG("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);
 
