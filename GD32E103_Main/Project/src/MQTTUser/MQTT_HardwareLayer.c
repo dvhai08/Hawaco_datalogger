@@ -470,8 +470,8 @@ void MQTT_ProcThread(void)
 			RecvSubTopic.cstring = NULL;
 			RecvSubTopic.lenstring.data = NULL;
 			RecvSubTopic.lenstring.len = 0;			
-			int err  = MQTTDeserialize_publish(&dup, &qos, &retained, &packageId, &RecvSubTopic, &subPayload, &payloadlen, MqttSendBuff, MqttSendBufflen);
-			if( err == 1)
+			int err = MQTTDeserialize_publish(&dup, &qos, &retained, &packageId, &RecvSubTopic, &subPayload, &payloadlen, MqttSendBuff, MqttSendBufflen);
+			if (err == 1)
 			{
 				DEBUG("MQTT received, payload len: %d, QoS: %d, retain: %d, dup: %u\r\n"/*, msgid: %u"*/, payloadlen, qos, retained, dup/*, packageId*/);
 				

@@ -15,3 +15,5 @@ HAWACO_DATALOGER_V1.0 (5-4-2021 10-15-09 PM)
 GD32E103_Main/Project/Keil_project/JLinkLog.txt
 GD32E103_Main/Project/Keil_project/Project.uvoptx
 *.jlink
+GD32E103_Main/Bootloader/MDK-ARM/object
+GD32E103_Main/Bootloader/Test_Images

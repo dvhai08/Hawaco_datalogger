@@ -268,6 +268,7 @@ void ProcessSetParameters(char *buffer)
     if (hasNewConfig)
     {
         GSMSleepAfterSecond(10);        // Wait more 10 second
+        MqttClientSendFirstMessageWhenWakeup();
         InternalFlash_WriteConfig();
     }
     else

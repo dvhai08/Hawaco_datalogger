@@ -3,7 +3,6 @@
  <Bookmarks/>
  <Breakpoints groups="Breakpoints" active_group="Breakpoints">
   <BreakpointListItem trigger="" line="43" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../fault/fault.c" useHWbreakpoint="false"/>
-  <BreakpointListItem trigger="" line="165" counter="0" hardwareBreakpoint="" isFunctionBreakpoint="false" action="" expression="" group="Breakpoints" type="Breakpoint" state="2" filename="../src/main.c" useHWbreakpoint="false"/>
   <Exceptions set="MemManage;UsageFault_Coprocessor;UsageFault_CheckingError;UsageFault_StateError;BusFault;ExceptionEntryReturnFault;HardFault"/>
  </Breakpoints>
  <ExecutionProfileWindow/>
@@ -11,7 +10,7 @@
   <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
  </FrameBufferWindow>
  <Memory1>
-  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="Project" radix="16" sizeText="" addressText=""/>
+  <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="Project" radix="16" sizeText="" addressText="0x0801FC00"/>
  </Memory1>
  <Memory2>
   <MemoryWindow addressSpace="" dataSize="1" autoEvaluate="0" viewMode="0" addressOrder="0" columnsText="" refreshPeriod="0" name="Project" radix="16" sizeText="" addressText=""/>
@@ -33,6 +32,7 @@
   <ProjectSessionItem path="Project;Project;fault"/>
   <ProjectSessionItem path="Project;Project;GD32E103_PeriphLib"/>
   <ProjectSessionItem path="Project;Project;GSM"/>
+  <ProjectSessionItem path="Project;Project;lowpass_filter"/>
   <ProjectSessionItem path="Project;Project;MQTTPaho"/>
   <ProjectSessionItem path="Project;Project;MQTTUser"/>
   <ProjectSessionItem path="Project;Project;Peripheral"/>
@@ -63,8 +63,11 @@
   <Watches active="1" update="Never">
    <Watchpoint expression="m_debug_buffer" name="m_debug_buffer" radix="-1" linenumber="25" filename="../src/app_debug.c"/>
    <Watchpoint expression="GSM_Manager" name="GSM_Manager" radix="-1" linenumber="76" filename="../src/GSM/GSM_DataLayer.c"/>
-   <Watchpoint expression="xSystem.Status.GSMSleepTime" name="xSystem.Status.GSMSleepTime" radix="10" linenumber="98" filename="../src/GSM/GSM_DataLayer.c"/>
-   <Watchpoint expression="xSystem" name="xSystem" radix="-1" linenumber="100" filename="../src/GSM/GSM_DataLayer.c"/>
+   <Watchpoint expression="xSystem.Status.GSMSleepTime" name="xSystem.Status.GSMSleepTime" radix="10" linenumber="102" filename="../src/GSM/GSM_DataLayer.c"/>
+   <Watchpoint expression="xSystem" name="xSystem" radix="-1" linenumber="102" filename="../src/GSM/GSM_DataLayer.c"/>
+   <Watchpoint expression="SendMessageTick" name="SendMessageTick" radix="10" linenumber="232" filename="../src/gd32e10x_it.c"/>
+   <Watchpoint expression="address" name="address" radix="-1" linenumber="315" filename="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fmc.c"/>
+   <Watchpoint expression="buffer" name="buffer" radix="-1" linenumber="291" filename="../src/MQTTUser/MQTT_ServerMessage.c"/>
   </Watches>
  </Watch1>
  <Watch2>
@@ -78,41 +81,56 @@
  </Watch4>
  <Files>
   <SessionOpenFile windowGroup="DockEditLeft" x="39" y="197" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Include/gd32e10x_pmu.h" useBinaryEdit="0" left="0" path="../../Library/CMSIS/GD/GD32E10x/Include/gd32e10x.h" selected="0" top="183" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="24" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/app_debug.c" selected="0" top="30" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="28" y="21" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/GSM/GSM_SMSLayer.c" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/app_debug.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="249" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/gd32e10x_it.c" useBinaryEdit="0" left="0" path="../src/main.c" selected="0" top="220" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="10" y="126" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/Debug.c" selected="0" top="102" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="53" y="40" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/InternalFlash.c" selected="0" top="24" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="33" y="761" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InternalFlash.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fmc.c" selected="0" top="740" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="502" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/GSM/GSM_DataLayer.c" selected="0" top="488" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="10" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/app_debug.h" useBinaryEdit="0" left="0" path="../src/app_debug.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="1222" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/GSM/GSM_SMSLayer.c" selected="0" top="1197" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="10" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/app_debug.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="9" y="117" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/GSM/GSM_HardwareLayer.c" useBinaryEdit="0" left="0" path="../src/main.c" selected="0" top="105" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="143" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/Debug.c" selected="0" top="118" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="56" y="498" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../src/InternalFlash.c" selected="1" top="498" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="313" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InternalFlash.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fmc.c" selected="0" top="313" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="415" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/GSM/GSM_DataLayer.c" selected="0" top="384" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="871" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/GSM/GSM_DataLayer.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_usart.c" selected="0" top="849" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="7" y="378" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTT_HardwareLayer.c" selected="0" top="335" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="26" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTT_ClientMessage.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="284" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTT_HardwareLayer.c" selected="0" top="306" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="61" y="385" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MQTTUser/MQTT_HardwareLayer.c" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTT_ClientMessage.c" selected="0" top="372" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="76" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MQTTUser/MQTT_ClientMessage.c" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTTUser.h" selected="0" top="51" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="31" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/HardwareManager.c" useBinaryEdit="0" left="0" path="../src/app_wdt.c" selected="0" top="47" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="82" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../fault/fault.c" selected="0" top="66" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="3" y="295" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/InitSystem.c" selected="0" top="270" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="35" y="799" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../src/GSM/GSM_HardwareLayer.c" selected="0" top="777" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="202" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/HardwareManager.c" selected="0" top="188" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="11" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../inc/DataDefine.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="520" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rcu.c" selected="0" top="520" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="19" y="5" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../inc/InitSystem.h" selected="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="210" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../src/MeasureInput.c" selected="0" top="206" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="21" y="131" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../inc/Hardware.h" selected="0" top="111" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="6" y="18" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/HardwareManager.c" useBinaryEdit="0" left="0" path="../src/app_wdt.c" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="82" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../fault/fault.c" selected="0" top="66" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="129" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/InitSystem.c" selected="0" top="119" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="124" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../src/GSM/GSM_HardwareLayer.c" selected="0" top="111" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="42" y="51" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/HardwareManager.c" selected="0" top="266" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="221" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MQTTUser/MQTT_ClientMessage.c" useBinaryEdit="0" left="0" path="../inc/DataDefine.h" selected="0" top="202" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="966" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/app_wdt.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rcu.c" selected="0" top="956" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="14" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../inc/InitSystem.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="247" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/MeasureInput.c" selected="0" top="225" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="146" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MeasureInput.c" useBinaryEdit="0" left="0" path="../inc/Hardware.h" selected="0" top="140" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="51" y="106" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/board_hw.c" selected="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="37" y="154" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../src/DriverUART.c" selected="0" top="144" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="133" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/gd32e10x_it.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rtc.c" selected="0" top="133" codecName=""/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="10" y="168" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/gd32e10x_it.c" selected="1" top="168" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="191" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_adc.c" selected="0" top="164" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="133" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MQTTUser/MQTT_ServerMessage.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_rtc.c" selected="0" top="117" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="23" y="98" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/gd32e10x_it.c" selected="0" top="228" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="694" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Include/gd32e10x_adc.h" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_adc.c" selected="0" top="677" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="24" y="307" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_gpio.h" selected="0" top="283" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="190" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_pmu.c" selected="0" top="187" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="51" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Source/gd32e10x_pmu.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_pmu.h" selected="0" top="37" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="63" y="546" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_rcu.h" selected="0" top="526" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="148" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/CMSIS/GD/GD32E10x/Source/system_gd32e10x.c" selected="0" top="121" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="141" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_pmu.c" selected="0" top="110" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="51" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Source/gd32e10x_pmu.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_pmu.h" selected="0" top="49" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="20" y="496" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Source/gd32e10x_rcu.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_rcu.h" selected="0" top="480" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="148" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/CMSIS/GD/GD32E10x/Source/system_gd32e10x.c" selected="0" top="55" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="12" y="51" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/CMSIS/GD/GD32E10x/Source/system_gd32e10x.c" useBinaryEdit="0" left="0" path="../../Library/CMSIS/GD/GD32E10x/Include/system_gd32e10x.h" selected="0" top="30" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1497" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/CMSIS/core_cm4.h" selected="0" top="1474" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="66" y="57" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_misc.c" selected="0" top="42" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="59" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_dbg.c" selected="0" top="46" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="41" y="236" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../Library/CMSIS/GD/GD32E10x/Source/ARM/startup_gd32e10x.s" selected="0" top="248" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="5" y="71" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/app_wdt.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_fwdgt.c" selected="0" top="148" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="360" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Source/gd32e10x_adc.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_adc.h" selected="0" top="346" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="22" y="11" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/gd32e10x_it.c" useBinaryEdit="0" left="0" path="../inc/Measurement.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="102" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/gd32e10x_it.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_rtc.h" selected="0" top="86" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InitSystem.c" useBinaryEdit="0" left="0" path="../inc/HardwareManager.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_exti.c" selected="0" top="216" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/MQTTPaho/MQTTConnectServer.c" selected="0" top="21" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="15" y="270" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../src/MQTTUser/MQTT_ServerMessage.c" selected="0" top="249" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="189" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/main.c" useBinaryEdit="0" left="0" path="../../Library/RL/TCPNet/Config/Net_lib.c" selected="0" top="173" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="12" y="132" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Library/GD32E10x_standard_peripheral/Source/gd32e10x_fmc.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Include/gd32e10x_fmc.h" selected="0" top="126" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="38" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/MQTTUser/MQTT_ServerMessage.c" useBinaryEdit="0" left="0" path="../src/app_bkup.c" selected="0" top="32" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="63" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/app_bkup.c" useBinaryEdit="0" left="0" path="../../Library/GD32E10x_standard_peripheral/Source/gd32e10x_bkp.c" selected="0" top="47" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="30" y="109" useTextEdit="1" openedFrom="E:/Project/BYT-Hawaco-GW/GD32E103_Main/Project/src/InternalFlash.c" useBinaryEdit="0" left="0" path="../inc/InternalFlash.h" selected="0" top="91" codecName="Default"/>
  </Files>
  <ARMCrossStudioWindow activeProject="Project" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="GD32E103x External" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3711"/>
 </session>
