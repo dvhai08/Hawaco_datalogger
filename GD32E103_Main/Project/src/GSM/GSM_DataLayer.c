@@ -68,6 +68,7 @@ void GSM_SendATCommand(GSM_ResponseEvent_t event, void *ResponseBuffer);
 void GSM_GotoSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer);
 void GSM_ExitSleepMode(GSM_ResponseEvent_t event, void *ResponseBuffer);
 void GSM_HardReset(void);
+uint8_t convertCsqToPercent(uint8_t csq);
 uint8_t CheckReadyStatus(void);
 uint8_t CheckGSMIdle(void);
 uint8_t isGSMSleeping(void)
@@ -672,6 +673,7 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
         }
         else
         {
+            xSystem.Status.CSQPercent = convertCsqToPercent(xSystem.Status.CSQ);
 #if (__USED_HTTP__ == 0)
             GSM_Manager.Step = 0;
             SendATCommand("ATV1\r", "OK", 1000, 3, OpenPPPStack);
@@ -683,6 +685,21 @@ void PowerOnModuleGSM(GSM_ResponseEvent_t event, void *ResponseBuffer)
     }
 
     GSM_Manager.Step++;
+}
+
+uint8_t convertCsqToPercent(uint8_t csq)
+{
+    if (csq > 31)
+    {
+        csq = 31;
+    }
+
+    if (csq < 10)
+    {
+        csq = 10;
+    }
+
+    return ((csq-10)*100)/(31-10);
 }
 
 #if (__USED_HTTP__ == 0)
@@ -710,6 +727,7 @@ void OpenPPPStack(GSM_ResponseEvent_t event, void *ResponseBuffer)
         if (event == EVEN_OK)
         {
             GSM_GetSignalStrength(ResponseBuffer);
+            xSystem.Status.CSQPercent = convertCsqToPercent(xSystem.Status.CSQ);
             DEBUG("CSQ: %d\r\n", xSystem.Status.CSQ);
         }
         ppp_connect("*99#", "", "");
@@ -894,6 +912,7 @@ void GSM_GetBTSInfor(GSM_ResponseEvent_t event, void *ResponseBuffer)
         {
             GSM_GetSignalStrength(ResponseBuffer);
             GSM_Manager.TimeOutCSQ = 0;
+            xSystem.Status.CSQPercent = convertCsqToPercent(xSystem.Status.CSQ);
             DEBUG("CSQ: %d\r\n", xSystem.Status.CSQ);
 
             /* Lay thong tin Network access selected */

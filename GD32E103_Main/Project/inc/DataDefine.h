@@ -21,7 +21,7 @@
 #define	SMALL_BUFFER_SIZE   256
 #define	TINY_BUFFER_SIZE	50	
 
-#define	NUM_OF_GPRS_BUFFER  3
+#define	NUM_OF_GPRS_BUFFER  5
 
 #define	STATUS_OK    1
 #define	STATUS_FAIL  0
@@ -182,6 +182,7 @@ typedef struct {
 	uint16_t GSMSleepTime;
 	uint32_t GSMSendFailedTimeout;
 	uint8_t	CSQ;
+        uint8_t CSQPercent;
 	uint8_t Alarm;
 	
 	//Time stamp
@@ -223,7 +224,7 @@ typedef struct {
 } Parameters_t;
 
 #if (__USE_MQTT__ == 1)
-#define	NUM_OF_MQTT_BUFFER	5
+#define	NUM_OF_MQTT_BUFFER	6
 
 typedef struct { 
 	MediumBuffer_t Buffer[NUM_OF_MQTT_BUFFER];

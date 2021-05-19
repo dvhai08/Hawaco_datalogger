@@ -69,6 +69,7 @@ uint8_t MQTT_ProcessDataFromServer(char *Buffer, uint16_t Length);
 uint16_t MQTT_PublishDebugMsg(char* msgHeader, char* msgBody);
 uint16_t MQTT_PublishDataMsg(void);
 void MQTT_DiscardOldestDataMsg(void);
+uint32_t MQTT_NumberOffQueueMsg(void);
 uint16_t DataMessage(uint8_t LoaiBanTin);
 uint16_t SendBufferToServer(uint8_t* BufferToSend, uint16_t Length);
 void MqttClientSendFirstMessageWhenWakeup(void);

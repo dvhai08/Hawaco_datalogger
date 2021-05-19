@@ -363,6 +363,22 @@ void MQTT_DiscardOldestDataMsg(void)
 }
 
 
+uint32_t MQTT_NumberOffQueueMsg(void)
+{
+    uint32_t msg = 0;
+    for (uint8_t i = 0; i < NUM_OF_GPRS_BUFFER; i++)
+    {
+        if (xSystem.MQTTData.Buffer[i].State == BUFFER_STATE_IDLE 
+            && xSystem.MQTTData.Buffer[i].BufferIndex > 5)
+        {
+            msg++;
+        }
+    }
+    return msg;
+}
+
+
+
 uint16_t MQTT_PublishDataMsg(void)
 {
     MediumBuffer_t *pBuffer;
@@ -375,7 +391,7 @@ uint16_t MQTT_PublishDataMsg(void)
     BufferAvailable = CheckMQTTGPRSBufferState(250);
     if (BufferAvailable == 0xFF || BufferAvailable >= NUM_OF_MQTT_BUFFER)
     {
-        DEBUG("MQTT_PublishDebug: full!\r\n");
+        DEBUG("MQTT_PublishDebug: full!, number of queue msg %u\r\n", MQTT_NumberOffQueueMsg());
         return 0;
     }
     pBuffer = &(xSystem.MQTTData.Buffer[BufferAvailable]);
@@ -394,7 +410,7 @@ uint16_t MQTT_PublishDataMsg(void)
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA); //dau vao 4-20mA
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"Output2\":\"%d\",", xSystem.Parameters.output420ma);    //dau ra 4-20mA
-    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"SignalStrength\":\"%d\",", xSystem.Status.CSQ);
+    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"SignalStrength\":\"%d\",", xSystem.Status.CSQPercent);
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"WarningLevel\":\"%d\",", xSystem.Status.Alarm);
 
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
@@ -418,7 +434,7 @@ uint16_t MQTT_PublishDataMsg(void)
     pBuffer->State = BUFFER_STATE_IDLE;
 
 #if 1
-    DEBUG("MQTT: Publish msg len: %d - %s\r\n", pBuffer->BufferIndex, mqttBuffer.Buffer);
+    DEBUG("MQTT: Publish msg len: %d, memory %u\r\n", pBuffer->BufferIndex, MQTT_NumberOffQueueMsg());
 #endif
 
     return pBuffer->BufferIndex;

@@ -78,8 +78,8 @@ int main(void)
 #endif
         #warning  "Output test gui tin"
         xSystem.Parameters.outputOnOff = 0;
-        xSystem.Parameters.TGGTDinhKy = 4;
-        xSystem.Parameters.TGDoDinhKy = 1;
+        //xSystem.Parameters.TGGTDinhKy = 4;
+        //xSystem.Parameters.TGDoDinhKy = 1;
 
         if (new_adc_data)
         {

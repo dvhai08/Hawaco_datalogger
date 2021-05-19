@@ -293,8 +293,8 @@ void MQTT_Tick(void)
             if (IsTheFirstTime)
             {
                 IsTheFirstTime = 0;
-                DEBUG_PRINTF("GSM will sleep in 5s\r\n");
-                GSMSleepAfterSecond(5);
+                DEBUG_PRINTF("GSM will sleep in 10s, TX queue %d msg\r\n", MQTT_NumberOffQueueMsg());
+                GSMSleepAfterSecond(10);
                 MqttClientSendFirstMessageWhenWakeup();
             }
             xSystem.Status.DisconnectTimeout = 0;
@@ -616,15 +616,15 @@ uint8_t MQTT_SendPINGReq(void)
 {
     if ((MQTTLen = MQTTSerialize_pingreq(MqttSendBuff, MqttSendBufflen)) > 0)
     {
-        DEBUG("\r\nMQTT: Send PING ");
+        DEBUG("MQTT: Send PING\r\n");
         if (MQTT_TCPSend(MqttSendBuff, MQTTLen) < 0)
         {
-            DEBUG("[ER]");
+            DEBUG("[ER]\r\n");
             return 0;
         }
         else
         {
-            DEBUG("[OK]");
+            DEBUG("[OK]\r\n");
         }
     }
     return 1;
