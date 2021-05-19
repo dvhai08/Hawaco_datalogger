@@ -76,9 +76,11 @@ int main(void)
 #if GSM_ENABLE
         main_TcpNet();
 #endif
-        #warning  "Output 4-20mA always off"
+        #warning  "Output test gui tin"
         xSystem.Parameters.outputOnOff = 0;
-        
+        xSystem.Parameters.TGGTDinhKy = 4;
+        xSystem.Parameters.TGDoDinhKy = 1;
+
         if (new_adc_data)
         {
             new_adc_data = false;
@@ -217,7 +219,7 @@ int main(void)
                                         xSystem.Status.GSMSleepTime, 
                                         SendMessageTick,
                                         sleep_time);
-                        sleep_time = 15;  // Due to watchdog
+                        sleep_time = 18;  // Due to watchdog
                         rtc_alarm_config(rtc_counter_get() + sleep_time);
                         rtc_lwoff_wait();
                         ResetWatchdog();

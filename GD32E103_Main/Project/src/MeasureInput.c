@@ -20,7 +20,7 @@
 #include "InternalFlash.h"
 #include "main.h"
 #include "app_bkup.h"
-
+#include "MQTTUser.h"
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
@@ -160,26 +160,36 @@ void MeasureTick1000ms(void)
 	*/
 	if(Measure420mATick >= xSystem.Parameters.TGDoDinhKy*60)
 	{
-		Measure420mATick = 0;
-		
-		//Cho phep do thi moi do
-		if(xSystem.Parameters.input.name.ma420)
-		{
-			SENS_420mA_PWR_ON();
-			measureTimeout = 10;
-		}
-                else
+            Measure420mATick = 0;
+            
+            //Cho phep do thi moi do
+            if(xSystem.Parameters.input.name.ma420)
+            {
+                SENS_420mA_PWR_ON();
+                measureTimeout = 10;
+            }
+            else
+            {
+                SENS_420mA_PWR_OFF();
+                if (MQTT_PublishDataMsg() == 0)     // No memory
                 {
-                    SENS_420mA_PWR_OFF();
+                    MQTT_DiscardOldestDataMsg();
+                    MQTT_PublishDataMsg();
                 }
+            }
 	}
 	if(measureTimeout > 0)
 	{
             measureTimeout--;
             if(measureTimeout == 0) 
             {
-                    DEBUG ("\r\n--- Timeout measure ---r\n");
-                    SENS_420mA_PWR_OFF();
+                DEBUG ("--- Timeout measure ---r\n");
+                if (MQTT_PublishDataMsg() == 0)     // No memory
+                {
+                    MQTT_DiscardOldestDataMsg();
+                    MQTT_PublishDataMsg();
+                }
+                SENS_420mA_PWR_OFF();
             }
 	}
 	
