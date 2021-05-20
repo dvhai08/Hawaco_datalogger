@@ -207,7 +207,7 @@ void RCC_Config(void)
     nvic_irq_enable(LVD_IRQn, 0, 1);
 
     ///* configure the lvd threshold to 2.9v */
-    pmu_lvd_select(PMU_LVDT_5);
+    pmu_lvd_select(PMU_LVDT_3);
 	
 #if 0
 //	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
@@ -230,7 +230,7 @@ void RCC_Config(void)
     /* enable DMA clock */
     rcu_periph_clock_enable(RCU_DMA0);
     /* config ADC clock */
-    rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV6);
+    rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV16);
 #endif
 }
 
@@ -423,8 +423,8 @@ void ADC_Config(void)
     dma_init(DMA0, DMA_CH0, &dma_data_parameter);
 
     dma_circulation_enable(DMA0, DMA_CH0);
-	nvic_irq_enable(DMA0_Channel0_IRQn,0,0);
-	dma_interrupt_enable(DMA0, DMA_CH0, DMA_INT_FTF);
+    nvic_irq_enable(DMA0_Channel0_IRQn,0,0);
+    dma_interrupt_enable(DMA0, DMA_CH0, DMA_INT_FTF);
   
     /* enable DMA channel */
     dma_channel_enable(DMA0, DMA_CH0);

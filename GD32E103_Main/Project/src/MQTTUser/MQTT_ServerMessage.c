@@ -272,7 +272,7 @@ void ProcessSetParameters(char *buffer)
     //Luu config moi
     if (hasNewConfig)
     {
-        GSMSleepAfterSecond(10);        // Wait more 10 second
+        GSMSleepAfterSecond(5);        // Wait more 10 second
         MqttClientSendFirstMessageWhenWakeup();
         InternalFlash_WriteConfig();
     }

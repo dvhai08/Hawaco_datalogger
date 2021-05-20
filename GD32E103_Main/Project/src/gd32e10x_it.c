@@ -167,14 +167,9 @@ void EXTI0_IRQHandler(void)
     /* check the key wakeup is pressed or not */
     if (RESET != exti_interrupt_flag_get(EXTI_0))
     {
-        if (getSwitchState() == 0)
-        {
-            if (isGSMSleeping())
-            {
-                xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
-                LED1(0);
-            }
-        }
+        DEBUG_PRINTF("EXTI0 irq\r\n");
+        xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+        LED1(0);
         exti_interrupt_flag_clear(EXTI_0);
     }
 }

@@ -294,7 +294,7 @@ void MQTT_Tick(void)
             {
                 IsTheFirstTime = 0;
                 DEBUG_PRINTF("GSM will sleep in 10s, TX queue %d msg\r\n", MQTT_NumberOffQueueMsg());
-                GSMSleepAfterSecond(10);
+                GSMSleepAfterSecond(5);
                 MqttClientSendFirstMessageWhenWakeup();
             }
             xSystem.Status.DisconnectTimeout = 0;

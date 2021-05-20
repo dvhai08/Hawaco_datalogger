@@ -1296,7 +1296,7 @@ void ProcessCMDfromSMS(char* Buffer)
 		
 	if(strstr(Buffer, "RESET#"))
 	{
-		SystemReset(10);
+		SystemReset(5);
 		return;
 	}
 	

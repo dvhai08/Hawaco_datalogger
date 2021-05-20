@@ -458,7 +458,6 @@ void EXTI2_IRQHandler(void)
         {
                 beginPulseTime = sys_get_ms();
                 pullState = 0;
-                delay_sleeping_for_exit_wakeup = 5;
         } 
         else if (pullState == 0)
         {

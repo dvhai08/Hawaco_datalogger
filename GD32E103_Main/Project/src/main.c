@@ -77,6 +77,7 @@ int main(void)
         main_TcpNet();
 #endif
         #warning  "Output test gui tin"
+        xSystem.Parameters.input.name.ma420 = 0;
         xSystem.Parameters.outputOnOff = 0;
         //xSystem.Parameters.TGGTDinhKy = 4;
         //xSystem.Parameters.TGDoDinhKy = 1;
@@ -127,6 +128,7 @@ int main(void)
         {
             TimeOut10ms = 0;
             ProcessTimeout10ms();
+            LED1(1);
         }
 
         if (TimeOut100ms >= 100)
@@ -134,6 +136,10 @@ int main(void)
             timer_tick();
             TimeOut100ms = 0;
             ProcessTimeout100ms();
+            if (delay_sleeping_for_exit_wakeup > 0)
+            {
+                delay_sleeping_for_exit_wakeup--;
+            }
         }
 
         if (TimeOut3000ms >= 3000)
@@ -188,12 +194,7 @@ int main(void)
                     }
                     if (delay_sleeping_for_exit_wakeup > 0)
                     {
-                        delay_sleeping_for_exit_wakeup--;
-                        xSystem.Status.GSMSleepTime++;
-                        SendMessageTick++;
-                        StoreMeasureResultTick++;
-                        Measure420mATick++;
-                        __WFI();
+
                     }
                     else
                     {
