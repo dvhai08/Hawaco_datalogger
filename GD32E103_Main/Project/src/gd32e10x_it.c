@@ -172,6 +172,7 @@ void EXTI0_IRQHandler(void)
             if (isGSMSleeping())
             {
                 xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+                LED1(0);
             }
         }
         exti_interrupt_flag_clear(EXTI_0);

@@ -235,18 +235,6 @@ void ProcessSetParameters(char *buffer)
         }
     }
 
-    char *counterOffser = strstr(buffer, "METERINDICATOR(");
-    if (counterOffser)
-    {
-        uint32_t offset = GetNumberFromString(strlen("METERINDICATOR("), counterOffser);
-        if (xSystem.Parameters.input1Offset != offset)
-        {
-            hasNewConfig++;   
-            xSystem.Parameters.input1Offset = offset;
-            DEBUG_PRINTF("Counter offset %u\r\n", offset);
-        }
-    }
-
     char *kFactor = strstr(buffer, "K(");
     if (kFactor)
     {
@@ -263,6 +251,23 @@ void ProcessSetParameters(char *buffer)
             hasNewConfig++; 
         }
     }
+
+    char *counterOffser = strstr(buffer, "METERINDICATOR(");
+    if (counterOffser)
+    {
+        uint32_t offset = GetNumberFromString(strlen("METERINDICATOR("), counterOffser);
+        if (xSystem.Parameters.input1Offset != offset)
+        {
+            hasNewConfig++;   
+            xSystem.Parameters.input1Offset = offset;
+            DEBUG_PRINTF("Input 1 offset %u\r\n", offset);
+            xSystem.MeasureStatus.PulseCounterInFlash = 0;
+            xSystem.MeasureStatus.PulseCounterInBkup = 0;
+            app_bkup_write_pulse_counter(xSystem.MeasureStatus.PulseCounterInBkup);
+            InternalFlash_WriteMeasures();
+        }
+    }
+
 
     //Luu config moi
     if (hasNewConfig)
