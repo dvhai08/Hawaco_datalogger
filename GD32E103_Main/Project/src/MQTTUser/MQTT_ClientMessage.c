@@ -121,11 +121,11 @@ static void GuiBanTinDinhKiTick(void)
     uint8_t ThoiGianGuiSubscribe;
 
     //Test 10'
-    if (SendMessageTick >= xSystem.Parameters.TGGTDinhKy || send_msg_when_device_wakeup)
+    if (SendMessageTick >= xSystem.Parameters.TGGTDinhKy*60 || send_msg_when_device_wakeup)
     {
         if ((SendMessageTick % 10) == 0)
         {
-            DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy, xSystem.Status.MQTTServerState);
+            DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy*60, xSystem.Status.MQTTServerState);
         }
         if (xSystem.Status.MQTTServerState == MQTT_CONNECTED || xSystem.Status.MQTTServerState == MQTT_LOGINED)
         {
