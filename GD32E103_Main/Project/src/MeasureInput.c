@@ -227,6 +227,9 @@ void Measure_Init(void)
     //Pulse input
     gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
 
+    //Direction
+    gpio_init(SENS_DIR_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_DIR_PIN);
+
     /* enable and set key user EXTI interrupt to the lowest priority */
     nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
 
@@ -475,7 +478,18 @@ void EXTI2_IRQHandler(void)
             if (pullDeltaMs > 200)
             {
                     isPulseTrigger = 1;
-                    xSystem.MeasureStatus.PulseCounterInBkup++;
+                    DEBUG_PRINTF("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
+                    if (0 == GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN))
+                    {
+                        xSystem.MeasureStatus.PulseCounterInBkup++;   
+                    }
+                    else
+                    {
+                        if (xSystem.MeasureStatus.PulseCounterInBkup)
+                        {
+                            xSystem.MeasureStatus.PulseCounterInBkup--;
+                        }
+                    }
             }
             delay_sleeping_for_exit_wakeup = 2;
         }
