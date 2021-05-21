@@ -278,7 +278,7 @@ void ProcessSetParameters(char *buffer)
     }
     else
     {
-        GSMSleepAfterSecond(2);        // Wait more 5 second
+        GSMSleepAfterSecond(5);        // Wait more 5 second
         DEBUG("CFG: has no new config\r\n");
     }
 }

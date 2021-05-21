@@ -134,7 +134,7 @@ void MQTT_Init(void)
  * @version	:
  * @reviewer:	
  */
-static uint16_t TimeoutTick = 0;
+static uint32_t TimeoutTick = 0;
 static uint8_t SendRetry = 0;
 uint8_t IsTheFirstTime = 1;
 void MQTT_Tick(void)
@@ -294,11 +294,11 @@ void MQTT_Tick(void)
             {
                 IsTheFirstTime = 0;
                 DEBUG_PRINTF("GSM will sleep in 10s, TX queue %d msg\r\n", MQTT_NumberOffQueueMsg());
-                GSMSleepAfterSecond(5);
+                GSMSleepAfterSecond(10);
                 MqttClientSendFirstMessageWhenWakeup();
             }
             xSystem.Status.DisconnectTimeout = 0;
-            if (TimeoutTick >= 200)
+            if (TimeoutTick >= 300)
             {
                 TimeoutTick = 0;
 
@@ -324,6 +324,7 @@ void MQTT_Tick(void)
                                 xSystem.Status.TCPNeedToClose = 1;
                             }
                         }
+                        GSMSleepAfterSecond(5);
                         break;
                     }
                 }
