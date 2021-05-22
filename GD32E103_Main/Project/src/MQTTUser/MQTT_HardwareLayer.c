@@ -107,7 +107,7 @@ int getdata(unsigned char *buf, int count)
  */
 void MQTT_Init(void)
 {
-    DEBUG("MQTT_Init..\r\n");
+    DEBUG_PRINTF("MQTT_Init..\r\n");
 
     /* state init */
     xSystem.Status.MQTTServerState = MQTT_INIT;
@@ -184,7 +184,7 @@ void MQTT_Tick(void)
                 if (TimeoutTick >= 500)
                 {
                     TimeoutTick = 0;
-                    DEBUG("MQTT: DNS resolving host...%s\r\n", xSystem.Parameters.MQTTHost.Name);
+                    DEBUG_PRINTF("MQTT: DNS resolving host...%s\r\n", xSystem.Parameters.MQTTHost.Name);
                     get_host_by_name((U8 *)xSystem.Parameters.MQTTHost.Name, mqtt_dns_callback);
                 }
             }
@@ -198,10 +198,10 @@ void MQTT_Tick(void)
         case MQTT_ESTABLISHING: /* TCP get socket and connect to broker */
             if (MQTTSocket == 0 && TimeoutTick >= 10)
             {
-                DEBUG("MQTT: Get TCP socket...\r\n");
+                DEBUG_PRINTF("MQTT: Get TCP socket...\r\n");
                 MQTTSocket = tcp_get_socket(TCP_TYPE_CLIENT, 0, MQTT_KEEP_ALIVE_INTERVAL, mqtt_tcp_callback);
                 TimeoutTick = 0;
-                DEBUG("MQTT socket %u\r\n", MQTTSocket);
+                DEBUG_PRINTF("MQTT socket %u\r\n", MQTTSocket);
             }
             else
             {
@@ -211,20 +211,20 @@ void MQTT_Tick(void)
 
                     if (tcp_get_state(MQTTSocket) != TCP_STATE_CONNECT)
                     {
-                        DEBUG("MQTT: connecting to: %u.%u.%u.%u:%u, soc: %u\r\n",
+                        DEBUG_PRINTF("MQTT: connecting to: %u.%u.%u.%u:%u, soc: %u\r\n",
                               xSystem.Parameters.MQTTHost.Sub[0], xSystem.Parameters.MQTTHost.Sub[1],
                               xSystem.Parameters.MQTTHost.Sub[2], xSystem.Parameters.MQTTHost.Sub[3],
                               xSystem.Parameters.MQTTHost.Port, MQTTSocket);
 
                         if (!tcp_connect(MQTTSocket, xSystem.Parameters.MQTTHost.Sub, xSystem.Parameters.MQTTHost.Port, 1000)) /* local port 1000 */
                         {
-                            DEBUG("TCP connect error\r\n");
+                            DEBUG_PRINTF("TCP connect error\r\n");
                         }
 
                         TCPSendDataError++;
                         if (TCPSendDataError >= 30)
                         {
-                            DEBUG("\r\nTCP: cannot connect to server..!\r\n");
+                            DEBUG_PRINTF("\r\nTCP: cannot connect to server..!\r\n");
                             TCPSendDataError = 0;
                             xSystem.Status.TCPNeedToClose = 1;
                         }
@@ -242,22 +242,22 @@ void MQTT_Tick(void)
                 TCPSendDataError = 0;
                 isSubscribed = 0;
 
-                DEBUG("MQTT: Send CONREQ: \r\n");
+                DEBUG_PRINTF("MQTT: Send CONREQ: \r\n");
                 MQTTLen = MQTTSerialize_connect(MqttSendBuff, MqttSendBufflen, &MqttClientInfo);
 
                 if (MQTT_TCPSend(MqttSendBuff, MQTTLen) > 0)
                 {
-                    DEBUG("OK\r\n");
+                    DEBUG_PRINTF("OK\r\n");
                     SendRetry = 0;
                 }
                 else
                 {
-                    DEBUG("ERR\r\n");
+                    DEBUG_PRINTF("ERR\r\n");
                     if (SendRetry++ > 5)
                     {
                         SendRetry = 0;
                         //Close socket and reconnect tcp...
-                        DEBUG("TCP: Send CONREQ error many times..!\r\n");
+                        DEBUG_PRINTF("TCP: Send CONREQ error many times..!\r\n");
                         xSystem.Status.TCPNeedToClose = 1;
                     }
                 }
@@ -273,7 +273,7 @@ void MQTT_Tick(void)
 						
 					if(xSystem.MQTTData.LoginBuffer.State == BUFFER_STATE_IDLE && xSystem.MQTTData.LoginBuffer.BufferIndex > 20)
 					{						
-						DEBUG("\r\nMQTT send login, leng: %u", xSystem.MQTTData.LoginBuffer.BufferIndex);  
+						DEBUG_PRINTF("\r\nMQTT send login, leng: %u", xSystem.MQTTData.LoginBuffer.BufferIndex);  
 						if(MQTT_TCPSend(xSystem.MQTTData.LoginBuffer.Buffer, xSystem.MQTTData.LoginBuffer.BufferIndex))
 						{
 							xSystem.MQTTData.LoginBuffer.State = BUFFER_STATE_PROCESSING;
@@ -308,7 +308,7 @@ void MQTT_Tick(void)
                     if (xSystem.MQTTData.Buffer[i].State == BUFFER_STATE_IDLE 
                         && xSystem.MQTTData.Buffer[i].BufferIndex > 5)
                     {
-                        DEBUG("MQTT: send buffer %u, leng:%u, state:%u\r\n", i, xSystem.MQTTData.Buffer[i].BufferIndex, xSystem.MQTTData.Buffer[i].State);
+                        DEBUG_PRINTF("MQTT: send buffer %u, leng:%u, state:%u\r\n", i, xSystem.MQTTData.Buffer[i].BufferIndex, xSystem.MQTTData.Buffer[i].State);
 
                         if (MQTT_TCPSend(xSystem.MQTTData.Buffer[i].Buffer, xSystem.MQTTData.Buffer[i].BufferIndex) > 0)
                         {
@@ -319,7 +319,7 @@ void MQTT_Tick(void)
                         {
                             if (TCPSendDataError++ >= 5)
                             {
-                                DEBUG("TCP: Send error many times..!\r\n");
+                                DEBUG_PRINTF("TCP: Send error many times..!\r\n");
                                 TCPSendDataError = 0;
                                 xSystem.Status.TCPNeedToClose = 1;
                             }
@@ -346,16 +346,16 @@ CLOSE_TCP_SOCKET:
         {
         case 0: /* Kiem tra ket noi TCP */
             xSystem.Status.TCPCloseDone = 0;
-            DEBUG("Check TCP connection...\r\n");
+            DEBUG_PRINTF("Check TCP connection...\r\n");
             if (tcp_get_state(MQTTSocket) == TCP_STATE_CONNECT)
             {
-                DEBUG("Connect\r\n");
+                DEBUG_PRINTF("Connect\r\n");
                 TCPCloseStep = 1;
                 TCPDisconnectFromServer = 0;
             }
             else
             {
-                DEBUG("Disconnect\r\n");
+                DEBUG_PRINTF("Disconnect\r\n");
                 tcp_close(MQTTSocket);
                 TCPCloseStep = 3;
                 TCPDisconnectFromServer = 1; /* TCP da bi close truoc do boi server */
@@ -364,30 +364,30 @@ CLOSE_TCP_SOCKET:
 
         case 1: /* Abort or close TCP connection */
             xSystem.Status.TCPCloseDone = 0;
-            DEBUG("Abort TCP socket...\r\n");
+            DEBUG_PRINTF("Abort TCP socket...\r\n");
             if (tcp_abort(MQTTSocket))
             {
-                DEBUG("OK");
+                DEBUG_PRINTF("OK");
                 TCPCloseStep = 2;
             }
             else
-                DEBUG("ERR");
+                DEBUG_PRINTF("ERR");
             break;
 
         case 2: /* Release TCP socket */
             xSystem.Status.TCPCloseDone = 0;
-            DEBUG("Release TCP socket...\r\n");
+            DEBUG_PRINTF("Release TCP socket...\r\n");
             if (tcp_release_socket(MQTTSocket))
             {
-                DEBUG("OK");
+                DEBUG_PRINTF("OK");
                 TCPCloseStep = 3;
             }
             else
-                DEBUG("ERR");
+                DEBUG_PRINTF("ERR");
             break;
 
         case 3: /* Finish */
-            DEBUG("TCP: close socket OK!\r\n");
+            DEBUG_PRINTF("TCP: close socket OK!\r\n");
             TCPCloseStep = 0;
             xSystem.Status.TCPNeedToClose = 0;
             xSystem.Status.GuiGoiTinTCP = 0;
@@ -403,7 +403,7 @@ CLOSE_TCP_SOCKET:
             TCPDisconnectFromServer = 0;
 
 #if (__GSM_SLEEP_MODE__)
-            DEBUG("GSM Sleeping...\r\n");
+            DEBUG_PRINTF("GSM Sleeping...\r\n");
             GSM_GotoSleep();
 #endif
             break;
@@ -446,21 +446,21 @@ void MQTT_ProcThread(void)
     switch (msgType)
     {
     case CONNECT:
-        DEBUG("MQTT: Received CONNECT\r\n");
+        DEBUG_PRINTF("MQTT: Received CONNECT\r\n");
         break;
 
     case DISCONNECT:
-        DEBUG("\r\nMQTT: Received DISCONNECT\r\n");
+        DEBUG_PRINTF("\r\nMQTT: Received DISCONNECT\r\n");
         break;
 
     case CONNACK: /* Connect ack */
         if (MQTTDeserialize_connack(&sessionPresent, &connack_rc, MqttSendBuff, MqttSendBufflen) != 1 || connack_rc != 0)
         {
-            DEBUG("MQTT: CONACK is WRONG, code: %d\r\n", connack_rc);
+            DEBUG_PRINTF("MQTT: CONACK is WRONG, code: %d\r\n", connack_rc);
         }
         else
         {
-            DEBUG("MQTT: Received CONACK. Broker's connected!\r\n");
+            DEBUG_PRINTF("MQTT: Received CONACK. Broker's connected!\r\n");
             if (xSystem.Status.MQTTServerState == MQTT_SEND_CONREQ)
             {
                 xSystem.Status.MQTTServerState = MQTT_CONNECTED;
@@ -472,34 +472,34 @@ void MQTT_ProcThread(void)
         break;
 
     case SUBACK: /* Subscribe ack */
-        DEBUG("MQTT: Received SUBACK\r\n");
+        DEBUG_PRINTF("MQTT: Received SUBACK\r\n");
         if (MQTTDeserialize_suback(&packageId, 1, &subcount, &granted_qos, MqttSendBuff, MqttSendBufflen) == 1)
         {
-            DEBUG("Granted QoS = %d\r\n", granted_qos);
+            DEBUG_PRINTF("Granted QoS = %d\r\n", granted_qos);
             isSubscribed = 1;
             xSystem.Status.PingTimeout = 180;
         }
         else
         {
-            DEBUG("Deserialize FAILED!\r\n");
+            DEBUG_PRINTF("Deserialize FAILED!\r\n");
         }
         break;
 
     case PUBACK:
-        DEBUG("MQTT: Received PUBACK\r\n");
+        DEBUG_PRINTF("MQTT: Received PUBACK\r\n");
         xSystem.Status.PingTimeout = 180;
         break;
 
     case PUBLISH: /* Received msg from other peer published */
     {
-        DEBUG("MQTT: Received PUBLISH\r\n");
+        DEBUG_PRINTF("MQTT: Received PUBLISH\r\n");
         RecvSubTopic.cstring = NULL;
         RecvSubTopic.lenstring.data = NULL;
         RecvSubTopic.lenstring.len = 0;
         int err = MQTTDeserialize_publish(&dup, &qos, &retained, &packageId, &RecvSubTopic, &subPayload, &payloadlen, MqttSendBuff, MqttSendBufflen);
         if (err == 1)
         {
-            DEBUG("MQTT received, payload len: %d, QoS: %d, retain: %d, dup: %u\r\n" /*, msgid: %u"*/, payloadlen, qos, retained, dup /*, packageId*/);
+            DEBUG_PRINTF("MQTT received, payload len: %d, QoS: %d, retain: %d, dup: %u\r\n" /*, msgid: %u"*/, payloadlen, qos, retained, dup /*, packageId*/);
 
             /* Xu ly ban tin tu Broker */
             MQTT_ProcessDataFromServer((char *)subPayload, payloadlen);
@@ -509,7 +509,7 @@ void MQTT_ProcThread(void)
         }
         else
         {
-            DEBUG("Deserialize FAILED!, err %d\r\n", err);
+            DEBUG_PRINTF("Deserialize FAILED!, err %d\r\n", err);
         }
     }
     break;
@@ -519,18 +519,18 @@ void MQTT_ProcThread(void)
         break;
 
     case PINGRESP: /* PING Response Message */
-        DEBUG("MQTT: received PING reply!\r\n");
+        DEBUG_PRINTF("MQTT: received PING reply!\r\n");
         xSystem.Status.PingTimeout = 180;
         break;
 
     case UNSUBACK:
-        DEBUG("MQTT: received UNSUBACK\r\n");
+        DEBUG_PRINTF("MQTT: received UNSUBACK\r\n");
         /* Send subscribe request again */
         MQTT_SubscribeNewTopic(TOPIC_SUB_HEADER);
         break;
 
     default: /* Other messages */
-        DEBUG("MQTT: msgType %d\r\n", msgType);
+        DEBUG_PRINTF("MQTT: msgType %d\r\n", msgType);
         break;
     }
 }
@@ -555,7 +555,7 @@ uint16_t mqtt_tcp_callback(uint8_t soc, uint8_t event, uint8_t *ptr, uint16_t pa
 {
     uint8_t i;
 
-    DEBUG("TCP callback: socket: %u, event: %u, param: %u\r\n", soc, event, par);
+    DEBUG_PRINTF("TCP callback: socket: %u, event: %u, param: %u\r\n", soc, event, par);
 
     switch (event)
     {
@@ -617,15 +617,15 @@ uint8_t MQTT_SendPINGReq(void)
 {
     if ((MQTTLen = MQTTSerialize_pingreq(MqttSendBuff, MqttSendBufflen)) > 0)
     {
-        DEBUG("MQTT: Send PING\r\n");
+        DEBUG_PRINTF("MQTT: Send PING\r\n");
         if (MQTT_TCPSend(MqttSendBuff, MQTTLen) < 0)
         {
-            DEBUG("[ER]\r\n");
+            DEBUG_PRINTF("[ER]\r\n");
             return 0;
         }
         else
         {
-            DEBUG("[OK]\r\n");
+            DEBUG_PRINTF("[OK]\r\n");
         }
     }
     return 1;
@@ -665,7 +665,7 @@ static void mqtt_dns_callback(U8 event, U8 *ip)
     switch (event)
     {
     case DNS_EVT_SUCCESS:
-        DEBUG("DNS success, host IP: %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
+        DEBUG_PRINTF("DNS success, host IP: %d.%d.%d.%d\r\n", ip[0], ip[1], ip[2], ip[3]);
         if (mem_test(ip, 0, 4))
             break;
         else
@@ -675,13 +675,13 @@ static void mqtt_dns_callback(U8 event, U8 *ip)
         }
         break;
     case DNS_EVT_NONAME:
-        DEBUG("DNS: Host's not exist!\r\n");
+        DEBUG_PRINTF("DNS: Host's not exist!\r\n");
         break;
     case DNS_EVT_TIMEOUT:
-        DEBUG("DNS: Timeout!\r\n");
+        DEBUG_PRINTF("DNS: Timeout!\r\n");
         break;
     case DNS_EVT_ERROR:
-        DEBUG("DNS: ERR!\r\n");
+        DEBUG_PRINTF("DNS: ERR!\r\n");
         break;
     }
 }
@@ -691,7 +691,7 @@ void MQTT_SubscribeNewTopic(char *topic)
     char subTopic[50] = {0};
     sprintf(subTopic, "%s%s", TOPIC_SUB_HEADER, xSystem.Parameters.GSM_IMEI);
     SubTopicString.cstring = subTopic;
-    DEBUG("MQTT: subscribe topic: %s\r\n", subTopic);
+    DEBUG_PRINTF("MQTT: subscribe topic: %s\r\n", subTopic);
 
     int subQos = 1;
     MQTTLen = MQTTSerialize_subscribe(MqttSendBuff, MqttSendBufflen, 0, pubPackageId, 1, &SubTopicString, &subQos);
@@ -717,7 +717,7 @@ static int8_t MQTT_TCPSend(uint8_t *Buffer, uint16_t Length)
 
         if (Length > MaxLength)
         {
-            DEBUG("MQTT: Send error, Leng: %u, Max: %u\r\n", Length, MaxLength);
+            DEBUG_PRINTF("MQTT: Send error, Leng: %u, Max: %u\r\n", Length, MaxLength);
             return -1;
         }
         if (SendBuffer)
@@ -725,7 +725,7 @@ static int8_t MQTT_TCPSend(uint8_t *Buffer, uint16_t Length)
             memcpy(SendBuffer, Buffer, Length);
             if (tcp_send(MQTTSocket, SendBuffer, Length) == __FALSE)
             {
-                DEBUG("TCP: tcp_send() error!\r\n");
+                DEBUG_PRINTF("TCP: tcp_send() error!\r\n");
                 return -1;
             }
         }
@@ -734,7 +734,7 @@ static int8_t MQTT_TCPSend(uint8_t *Buffer, uint16_t Length)
     }
     else
     {
-        DEBUG("TCP: socket not ready!\r\n");
+        DEBUG_PRINTF("TCP: socket not ready!\r\n");
         return -1;
     }
 

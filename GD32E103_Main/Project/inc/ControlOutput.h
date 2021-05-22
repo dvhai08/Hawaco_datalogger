@@ -1,7 +1,7 @@
 #ifndef __CONTROL_OUTPUT_H__
 #define __CONTROL_OUTPUT_H__
 
-#include "Hardware.h"
+#include "hardware.h"
 
 /************************* Analog  ***************************/
 void Output_Init(void);

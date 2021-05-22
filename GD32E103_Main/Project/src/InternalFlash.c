@@ -297,7 +297,7 @@ uint8_t InternalFlash_WriteBytes(uint32_t Address, uint16_t *Buffer, uint16_t Le
     //	{
     //		uint16_t readData = *(__IO uint16_t*)Address;
     //		Address += 1;
-    //		DEBUG("%c ", (char)readData);
+    //		DEBUG_PRINTF("%c ", (char)readData);
     //	}
 
     //	FLASH_Lock();
@@ -393,7 +393,7 @@ uint8_t InternalFlash_CopyData(uint32_t DesAddress, uint32_t SourceAddress, uint
     //Unlock Flash
     InternalFlash_Init();
 
-    DEBUG("\r\nCopy from 0x%X to 0x%X, amount: %d Bytes", SourceAddress, DesAddress, Length);
+    DEBUG_PRINTF("\r\nCopy from 0x%X to 0x%X, amount: %d Bytes", SourceAddress, DesAddress, Length);
 
     for (i = 0; (i < Length) && (Status == FLASH_COMPLETE); i += 4, DesAddress += 4, SourceAddress += 4)
     {
@@ -401,7 +401,7 @@ uint8_t InternalFlash_CopyData(uint32_t DesAddress, uint32_t SourceAddress, uint
 
         if ((*(__IO uint32_t *)SourceAddress) != (*(__IO uint32_t *)DesAddress)) //Verify write data
         {
-            DEBUG("\r\nCannot copy, Des: %d, Source: %d", *(__IO uint32_t *)DesAddress, *(__IO uint32_t *)SourceAddress);
+            DEBUG_PRINTF("\r\nCannot copy, Des: %d, Source: %d", *(__IO uint32_t *)DesAddress, *(__IO uint32_t *)SourceAddress);
             return 0;
         }
         //Reset Watchdog
@@ -444,7 +444,7 @@ uint8_t CheckFirmwareCRC(uint32_t FWCRC, uint32_t BeginAddr, uint32_t Length)
     {
         return 1;
     }
-    DEBUG("\r\nSai checksum %u - %u", FWCRC, Total);
+    DEBUG_PRINTF("\r\nSai checksum %u - %u", FWCRC, Total);
 
     return 0;
 }
@@ -472,7 +472,7 @@ uint8_t InternalFlash_WriteConfig(void)
     {
         if (FLASH_ErasePage(CONFIG_ADDR) != FLASH_COMPLETE)
         {
-            DEBUG("CFG: erase at addr 0x%08X FAILED\r\n", CONFIG_ADDR);
+            DEBUG_PRINTF("CFG: erase at addr 0x%08X FAILED\r\n", CONFIG_ADDR);
             Delayms(200);
             retry--;
         }
@@ -482,7 +482,7 @@ uint8_t InternalFlash_WriteConfig(void)
 
     if (retry > 0)
     {
-        DEBUG("CFG: erase at addr 0x%08X OK\r\n", CONFIG_ADDR);
+        DEBUG_PRINTF("CFG: erase at addr 0x%08X OK\r\n", CONFIG_ADDR);
 
         /* Flag */
         __disable_irq();
@@ -508,7 +508,7 @@ uint8_t InternalFlash_WriteConfig(void)
         }
         else if (*((uint32_t *)(CONFIG_INPUT_ADDR)) != tmp_align)
         {
-            DEBUG("Readback value at addr %u failed\r\n", CONFIG_INPUT_ADDR);
+            DEBUG_PRINTF("Readback value at addr %u failed\r\n", CONFIG_INPUT_ADDR);
             result++;
         }
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
@@ -553,7 +553,7 @@ uint8_t InternalFlash_WriteConfig(void)
         }
         __enable_irq();
 
-        DEBUG("CFG: Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");
+        DEBUG_PRINTF("CFG: Saved: %u - %s\r\n", result, result == 0 ? "OK" : "FAIL");
     }
 
     FLASH_Lock();
@@ -582,7 +582,7 @@ uint8_t InternalFlash_WriteMeasures(void)
     {
         if (FLASH_ErasePage(MEASURE_STORE_ADDR) != FLASH_COMPLETE)
         {
-            DEBUG("MEASURE: erase FAILED! at addr 0x%08X\r\n", MEASURE_STORE_ADDR);
+            DEBUG_PRINTF("MEASURE: erase FAILED! at addr 0x%08X\r\n", MEASURE_STORE_ADDR);
             Delayms(200);
             retry--;
         }
@@ -592,7 +592,7 @@ uint8_t InternalFlash_WriteMeasures(void)
 
     if (retry > 0)
     {
-        DEBUG("MEASURE: erase OK! at addr 0x%08X\r\n", MEASURE_STORE_ADDR);
+        DEBUG_PRINTF("MEASURE: erase OK! at addr 0x%08X\r\n", MEASURE_STORE_ADDR);
         __align(4) uint32_t tmp_align;
         __disable_irq();
         /* Flag */
@@ -622,7 +622,7 @@ uint8_t InternalFlash_WriteMeasures(void)
         }
         __enable_irq();
 
-        DEBUG("MEASURE : Saved: %u - %s at begin addr 0x%08X\r\n",
+        DEBUG_PRINTF("MEASURE : Saved: %u - %s at begin addr 0x%08X\r\n",
               result,
               result == 0 ? "OK" : "FAIL",
               MEASURE_PRESSURE_ADDR);
@@ -657,7 +657,7 @@ void InternalFlash_ReadConfig(void)
 {
     if (*(__IO uint32_t *)(CONFIG_FLAG_ADDR) != CONFIG_FLAG_VALUE)
     {
-        DEBUG("Use default parameters\r\n");
+        DEBUG_PRINTF("Use default parameters\r\n");
 
         xSystem.Parameters.TGGTDinhKy = 60;      //phut
         xSystem.Parameters.TGDoDinhKy = 15;      //phut
@@ -690,13 +690,13 @@ void InternalFlash_ReadConfig(void)
                 xSystem.Parameters.PhoneNumber[i] = '0';
         }
     }
-    DEBUG("Freq: %u - %u\r\n", xSystem.Parameters.TGGTDinhKy, xSystem.Parameters.TGDoDinhKy);
-    DEBUG("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma);
-    DEBUG("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
-    DEBUG("Alarm: %u\r\n", xSystem.Parameters.alarm);
-    DEBUG("Offset: %u, K %u\r\n", xSystem.Parameters.input1Offset, xSystem.Parameters.kFactor);
-    DEBUG("Phone: %s\r\n", xSystem.Parameters.PhoneNumber);
-    DEBUG("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);
+    DEBUG_PRINTF("Freq: %u - %u\r\n", xSystem.Parameters.TGGTDinhKy, xSystem.Parameters.TGDoDinhKy);
+    DEBUG_PRINTF("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma);
+    DEBUG_PRINTF("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
+    DEBUG_PRINTF("Alarm: %u\r\n", xSystem.Parameters.alarm);
+    DEBUG_PRINTF("Offset: %u, K %u\r\n", xSystem.Parameters.input1Offset, xSystem.Parameters.kFactor);
+    DEBUG_PRINTF("Phone: %s\r\n", xSystem.Parameters.PhoneNumber);
+    DEBUG_PRINTF("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);
 
     //Doc thong so do
     if (*(__IO uint32_t *)(MEASURE_STORE_FLAG_ADDR) != MEASURE_STORE_FLAG_VALUE)
@@ -714,8 +714,8 @@ void InternalFlash_ReadConfig(void)
             xSystem.MeasureStatus.Pressure[i] = (*(__IO uint32_t *)(MEASURE_PRESSURE_ADDR + i * 4)) & 0xFFFF;
         }
     }
-    DEBUG("Pulse in flash: %u\r\n", xSystem.MeasureStatus.PulseCounterInFlash);
-    DEBUG("Pressure: %u-%u-%u-%u\r\n", xSystem.MeasureStatus.Pressure[0], xSystem.MeasureStatus.Pressure[1],
+    DEBUG_PRINTF("Pulse in flash: %u\r\n", xSystem.MeasureStatus.PulseCounterInFlash);
+    DEBUG_PRINTF("Pressure: %u-%u-%u-%u\r\n", xSystem.MeasureStatus.Pressure[0], xSystem.MeasureStatus.Pressure[1],
           xSystem.MeasureStatus.Pressure[2], xSystem.MeasureStatus.Pressure[3]);
 }
 

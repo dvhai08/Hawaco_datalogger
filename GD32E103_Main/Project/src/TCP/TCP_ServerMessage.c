@@ -58,11 +58,11 @@ uint8_t ProcessPacketTCP(uint8_t *Buffer, uint16_t Length)
 	uint8_t i = 0;
 
 	if(Length > 0)
-			DEBUG("\rSRV: packet length: %d", Length);
+			DEBUG_PRINTF("\rSRV: packet length: %d", Length);
 	else 
 		return 0;
 		
-	DEBUG("\rSRV: Noi dung ban tin: %c", Buffer[0]);
+	DEBUG_PRINTF("\rSRV: Noi dung ban tin: %c", Buffer[0]);
 	
 	//Gui 2 lan ban tin -> Moi lan gui nhan duoc 2 phan hoi tu SRV ('1' & '0')
 	if(SoLanNhanPhanHoi++ >= 3) 
@@ -108,7 +108,7 @@ uint8_t ProcessPacketTCP(uint8_t *Buffer, uint16_t Length)
 	}
 	else if(Buffer[0] == '0')
 	{
-		DEBUG("\rSRV: Yeu cau gui lai!");
+		DEBUG_PRINTF("\rSRV: Yeu cau gui lai!");
 		xSystem.Status.ResendGPRSRequest = 1;
 	}
 	

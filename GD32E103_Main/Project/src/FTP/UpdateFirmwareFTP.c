@@ -75,11 +75,11 @@ static void QueryFileTransferState(void)
 		{
 			if(ftpc_connect(xSystem.FileTransfer.FTP_IP.Sub, 21, FTPC_CMD_GET, ftpc_notify) == 0)
 			{
-				DEBUG("\rFTP: Khong ket noi duoc voi FTP server");
+				DEBUG_PRINTF("\rFTP: Khong ket noi duoc voi FTP server");
 				FTPConnectRetry++;
 				if(FTPConnectRetry >= 60)
 				{
-					DEBUG("\rFTP: HUY UPDATE!");
+					DEBUG_PRINTF("\rFTP: HUY UPDATE!");
 					xSystem.FileTransfer.State =  FT_NO_TRANSER;
 					xSystem.FileTransfer.UDFWTarget = 0;
 					xSystem.FileTransfer.Retry = 0;
@@ -88,7 +88,7 @@ static void QueryFileTransferState(void)
 			}
 			else
 			{
-				DEBUG("\rFTP: Thuc hien download file %s", xSystem.FileTransfer.FTP_FileName);
+				DEBUG_PRINTF("\rFTP: Thuc hien download file %s", xSystem.FileTransfer.FTP_FileName);
 				xSystem.FileTransfer.State = FT_TRANSFERRING;
 				xSystem.FileTransfer.DataTransfered = 0;
 				FTPConnectRetry = 0;
@@ -114,18 +114,18 @@ void ProcessDownloadTick(void)
 		xSystem.FileTransfer.Retry = 0;
 		if(xSystem.FileTransfer.UDFWTarget == UPDATE_BOOTLOADER)
 		{			
-      DEBUG("\rUDFW: Bat dau update Bootloader!");    
+      DEBUG_PRINTF("\rUDFW: Bat dau update Bootloader!");    
 			
 			/* Thuc hien update Bootloader */
 			if(UpdateBootloader())
 			{
-				DEBUG("\rUpdate Bootloader [SUCCESS] Reset!");
+				DEBUG_PRINTF("\rUpdate Bootloader [SUCCESS] Reset!");
 				Delayms(100);
 				SystemReset(8);
 			}
 			else
 			{
-				DEBUG("\rUDFW: Failed!");
+				DEBUG_PRINTF("\rUDFW: Failed!");
 				xSystem.FileTransfer.Type = FTP_UPLOAD;
 				xSystem.FileTransfer.UDFWTarget = 0;
 				
@@ -136,7 +136,7 @@ void ProcessDownloadTick(void)
         
 		if(xSystem.FileTransfer.UDFWTarget ==  UPDATE_MAINFW)
 		{
-      DEBUG("\rUDFW: Bat dau update Firmware!");   
+      DEBUG_PRINTF("\rUDFW: Bat dau update Firmware!");   
 			
 			/* Ghi cac thong so vao EEPROM */
 			EEPROM_WriteLong(UPDATEFW_SIZE, xSystem.FileTransfer.FileSize.value);
@@ -188,7 +188,7 @@ void ProcessUpdateFirmwareCommand(char *Buffer, uint8_t fromSource)
 	/* Neu dang trong qua trinh upload thi cancel */
 	if(xSystem.FileTransfer.State == FT_WAIT_TRANSFER_STATE || xSystem.FileTransfer.State == FT_TRANSFERRING) 
 	{
-		DEBUG("\rWARNING: Dang update FW: %u", xSystem.FileTransfer.State);
+		DEBUG_PRINTF("\rWARNING: Dang update FW: %u", xSystem.FileTransfer.State);
 		return;
 	}
 	
@@ -225,7 +225,7 @@ void ProcessUpdateFirmwareCommand(char *Buffer, uint8_t fromSource)
 		//Neu dang cung version thi khong update nua
 		if(newVersion == FIRMWARE_VERSION_CODE)
 		{
-			DEBUG("\rFW's same version, reject!");
+			DEBUG_PRINTF("\rFW's same version, reject!");
 			return;
 		}
 	}
@@ -246,12 +246,12 @@ void ProcessUpdateFirmwareCommand(char *Buffer, uint8_t fromSource)
 	}
 		
 #if 0
-	DEBUG("\rUDFW: %s, %u, user : %s, pass : %s, srv: %s, target: %u",
+	DEBUG_PRINTF("\rUDFW: %s, %u, user : %s, pass : %s, srv: %s, target: %u",
         xSystem.FileTransfer.FTP_FileName, xSystem.FileTransfer.FileSize.value,xSystem.FileTransfer.FTP_UserName,
         xSystem.FileTransfer.FTP_Pass,xSystem.FileTransfer.FTP_IPAddress, xSystem.FileTransfer.UDFWTarget);
 #endif
 	
-	DEBUG("\rUDFW: %s, size: %u, crc: %u, target: %u",
+	DEBUG_PRINTF("\rUDFW: %s, size: %u, crc: %u, target: %u",
         xSystem.FileTransfer.FTP_FileName, xSystem.FileTransfer.FileSize.value, 
 			xSystem.FileTransfer.FileCRC.value, xSystem.FileTransfer.UDFWTarget);
 			
@@ -259,7 +259,7 @@ void ProcessUpdateFirmwareCommand(char *Buffer, uint8_t fromSource)
 	/* Xoa vung nho luu Firmware update tren External flash */
 	Flash_EraseBlock64(FWUD_BLOCK1);
 	Flash_EraseBlock64(FWUD_BLOCK2);
-	DEBUG("\rUDFW: Xoa vung nho luu FW trong Flash: DONE");
+	DEBUG_PRINTF("\rUDFW: Xoa vung nho luu FW trong Flash: DONE");
 	
 	/* Dia chi luu du lieu FW update trong Flash */
 	xSystem.FileTransfer.FileAddress = FWUD_BLOCK1 * 65536;	
@@ -281,7 +281,7 @@ void UDFW_UpdateMainFWTest(uint8_t source)
 {
 	if(source == 0)
 	{
-		DEBUG("\rUDFW: Download FW. Size: %d, CRC: %d", xSystem.FileTransfer.FileSize.value, xSystem.FileTransfer.FileCRC.value);
+		DEBUG_PRINTF("\rUDFW: Download FW. Size: %d, CRC: %d", xSystem.FileTransfer.FileSize.value, xSystem.FileTransfer.FileCRC.value);
 		sprintf(xSystem.FileTransfer.FTP_IPAddress,"210.245.85.158");
 		xSystem.FileTransfer.FTP_IP.Sub[0] = 210;
 		xSystem.FileTransfer.FTP_IP.Sub[1] = 245;
@@ -311,7 +311,7 @@ void UDFW_UpdateMainFWTest(uint8_t source)
 	/* Xoa vung nho luu Firmware update tren External flash */
 	Flash_EraseBlock64(FWUD_BLOCK1);
 	Flash_EraseBlock64(FWUD_BLOCK2);
-	DEBUG("\rUDFW: Xoa vung nho luu FW trong Flash: DONE"); 
+	DEBUG_PRINTF("\rUDFW: Xoa vung nho luu FW trong Flash: DONE"); 
 	xSystem.FileTransfer.FileAddress = FWUD_BLOCK1 * 65536;	
 	
 	/* Cho phep mo FTP va Download FW */
@@ -372,9 +372,9 @@ void ProcessUpdateFirmware(uint8_t *Buffer, uint8_t UDType)
 	_mem_set(xSystem.FileTransfer.FTP_Pass, 0 , sizeof(xSystem.FileTransfer.FTP_Pass));
     memcpy(xSystem.FileTransfer.FTP_Pass, &Buffer[Index], 10);
     
-    DEBUG("\rFile: %s, Size: %d, CRC: %d", xSystem.FileTransfer.FTP_FileName, 
+    DEBUG_PRINTF("\rFile: %s, Size: %d, CRC: %d", xSystem.FileTransfer.FTP_FileName, 
 						xSystem.FileTransfer.FileSize.value,  xSystem.FileTransfer.FileCRC.value);
-	DEBUG("\rPath: %s, IP: %s, User: %s, Pass: %s", xSystem.FileTransfer.FTP_Path, xSystem.FileTransfer.FTP_IPAddress,
+	DEBUG_PRINTF("\rPath: %s, IP: %s, User: %s, Pass: %s", xSystem.FileTransfer.FTP_Path, xSystem.FileTransfer.FTP_IPAddress,
 						xSystem.FileTransfer.FTP_UserName, xSystem.FileTransfer.FTP_Pass);
 	
 	/* Xoa vung nho Flash ngoai luu FW */
@@ -382,7 +382,7 @@ void ProcessUpdateFirmware(uint8_t *Buffer, uint8_t UDType)
 	Flash_EraseBlock64(FWUD_BLOCK2);
 	xSystem.FileTransfer.FileAddress = FWUD_BLOCK1 * 65536;		
 		
-	DEBUG("\rUDFW: Xoa vung nho luu FW trong Flash: DONE"); 
+	DEBUG_PRINTF("\rUDFW: Xoa vung nho luu FW trong Flash: DONE"); 
 				
 	/* Cho phep mo FTP va Download FW */
 	xSystem.FileTransfer.Type = FTP_DOWNLOAD;
@@ -412,7 +412,7 @@ static uint8_t CheckCRCExternalFlash(uint32_t FWLeng, uint32_t FWCRC)
 	
 	if(SumValue != FWCRC)
 	{
-		DEBUG("\rChecksum fail: %d - %d", SumValue, FWCRC);
+		DEBUG_PRINTF("\rChecksum fail: %d - %d", SumValue, FWCRC);
 		return 0;
 	}
 	else
@@ -430,7 +430,7 @@ void CopyDataFromFlashToMCU(uint32_t Leng)
 	
 	//Unlock Flash
 	InternalFlash_Init();
-    DEBUG("\rCopy from 0x%X to 0x%X, amount: %d Bytes", DiaChi, BOOTLOADER_ADDR, Leng);
+    DEBUG_PRINTF("\rCopy from 0x%X to 0x%X, amount: %d Bytes", DiaChi, BOOTLOADER_ADDR, Leng);
 	
 	ControlAllUART(DISABLE);
 	for(i = 0; i < Leng; i += 4)
@@ -477,7 +477,7 @@ static uint8_t UpdateBootloader(void)
 	}
 		
 	/* Xoa vung nho BootLoader: Page 0 - 47 */
-	DEBUG("\rXoa vung nho BLDER...");
+	DEBUG_PRINTF("\rXoa vung nho BLDER...");
 	Delayms(100);
 	InternalFlash_Prepare(0, MAIN_FW_START_PAGE);
 

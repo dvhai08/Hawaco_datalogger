@@ -26,7 +26,7 @@
 #include "MQTTConnect.h"
 #include "MQTTUser.h"
 #include "HardwareManager.h"
-#include "Measurement.h"
+#include "measure_input.h"
 #include "aes.h"
 #include "base64.h"
 
@@ -178,13 +178,13 @@ static void GuiBanTinDinhKiTick(void)
         /* Gui lai ban tin moi 15s, neu server khong phan hoi ban tin */
         if (xSystem.Status.SendGPRSTimeout && (xSystem.Status.SendGPRSTimeout % 15 == 0))
         {
-            DEBUG("\r\nMQTT: Gui lai ban tin...");
+            DEBUG_PRINTF("\r\nMQTT: Gui lai ban tin...");
             DataMessage(xSystem.Status.LastTCPMessageType);
         }
 
         if (xSystem.Status.SendGPRSTimeout == 0)
         {
-            DEBUG("\r\nMQTT: Het thoi gian gui tin!");
+            DEBUG_PRINTF("\r\nMQTT: Het thoi gian gui tin!");
             xSystem.Status.TCPNeedToClose = 1;
             xSystem.Status.LastTCPMessageType = 0;
             MQTT_InitBufferQueue();
@@ -222,7 +222,7 @@ void MQTT_InitBufferQueue(void)
 {
     uint8_t i;
 
-    DEBUG("MQTT: init buffer\r\n");
+    DEBUG_PRINTF("MQTT: init buffer\r\n");
 
     /* Reset cac buffer */
     for (i = 0; i < NUM_OF_MQTT_BUFFER; i++)
@@ -391,7 +391,7 @@ uint16_t MQTT_PublishDataMsg(void)
     BufferAvailable = CheckMQTTGPRSBufferState(250);
     if (BufferAvailable == 0xFF || BufferAvailable >= NUM_OF_MQTT_BUFFER)
     {
-        DEBUG("MQTT_PublishDebug: full!, number of queue msg %u\r\n", MQTT_NumberOffQueueMsg());
+        DEBUG_PRINTF("MQTT_PublishDebug: full!, number of queue msg %u\r\n", MQTT_NumberOffQueueMsg());
         return 0;
     }
     pBuffer = &(xSystem.MQTTData.Buffer[BufferAvailable]);
@@ -434,7 +434,7 @@ uint16_t MQTT_PublishDataMsg(void)
     pBuffer->State = BUFFER_STATE_IDLE;
 
 #if 1
-    DEBUG("MQTT: Publish msg len: %d, memory %u\r\n", pBuffer->BufferIndex, MQTT_NumberOffQueueMsg());
+    DEBUG_PRINTF("MQTT: Publish msg len: %d, memory %u\r\n", pBuffer->BufferIndex, MQTT_NumberOffQueueMsg());
 #endif
 
     return pBuffer->BufferIndex;
@@ -463,7 +463,7 @@ uint16_t MQTT_PublishDebugMsg(char *msgHeader, char *msgBody)
     BufferAvailable = CheckMQTTGPRSBufferState(250);
     if (BufferAvailable == 0xFF || BufferAvailable >= NUM_OF_MQTT_BUFFER)
     {
-        DEBUG("MQTT_PublishDebug: full!\r\n");
+        DEBUG_PRINTF("MQTT_PublishDebug: full!\r\n");
         return 0;
     }
     pBuffer = &(xSystem.MQTTData.Buffer[BufferAvailable]);
@@ -490,7 +490,7 @@ uint16_t MQTT_PublishDebugMsg(char *msgHeader, char *msgBody)
     pBuffer->State = BUFFER_STATE_IDLE;
 
 #if 1
-    DEBUG("MQTT: SendDebug: %u - %s\r\n", pBuffer->BufferIndex, msgHeader);
+    DEBUG_PRINTF("MQTT: SendDebug: %u - %s\r\n", pBuffer->BufferIndex, msgHeader);
 #endif
 
     return pBuffer->BufferIndex;

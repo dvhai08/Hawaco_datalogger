@@ -13,7 +13,7 @@
 #include "gd32e10x_gpio.h"
 #include "gd32e10x_usart.h"
 
-#include "Hardware.h"
+#include "hardware.h"
 #include "DataDefine.h"
 #include <stdarg.h>
 #include "Integer.h"

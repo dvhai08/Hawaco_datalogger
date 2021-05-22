@@ -48,7 +48,7 @@
       <file file_name="../src/main.c" />
       <file file_name="../src/gd32e10x_it.c" />
       <file file_name="../src/ControlOutput.c" />
-      <file file_name="../src/MeasureInput.c" />
+      <file file_name="../src/measure_input.c" />
     </folder>
     <folder Name="Utilities">
       <file file_name="../src/Debug.c" />

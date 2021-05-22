@@ -13,7 +13,7 @@
 #include <string.h>
 #include "Main.h"
 #include "DataDefine.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "HardwareManager.h"
 #include "app_wdt.h"
 
@@ -157,7 +157,7 @@ void DetectHardwareVersion(void)
 */
 void SystemReset(uint8_t NguyenNhanReset)
 {
-    DEBUG("\r\n---- System reset: %d ----\r\n", NguyenNhanReset);
+    DEBUG_PRINTF("\r\n---- System reset: %d ----\r\n", NguyenNhanReset);
     __disable_irq();
     NVIC_SystemReset();
 }

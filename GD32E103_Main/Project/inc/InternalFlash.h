@@ -1,7 +1,7 @@
 #ifndef __INTERNAL_FLASH_H__
 #define __INTERNAL_FLASH_H__
 
-#include "Hardware.h"
+#include "hardware.h"
 
 /* Includes */
 #include "gd32e10x_fmc.h"

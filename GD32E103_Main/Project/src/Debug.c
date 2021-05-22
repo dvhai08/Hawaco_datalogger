@@ -15,7 +15,7 @@
 #include "DataDefine.h"
 #include "Utilities.h"
 #include "HardwareManager.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "main.h"
 #include "Debug.h"
 #include "GSM.h"
@@ -128,7 +128,7 @@ static void ProcessNewDebugData(void)
 				break;
 			case 27:
 				xSystem.Status.ADCOut = 1 - xSystem.Status.ADCOut;
-				DEBUG("ADC out: %d", xSystem.Status.ADCOut);
+				DEBUG_PRINTF("ADC out: %d", xSystem.Status.ADCOut);
 				break;
 			case 15:
 				{	
@@ -184,7 +184,7 @@ static void ProcessNewDebugData(void)
 		strcat((char *)debugBuffer.Buffer, "\r");
 		
 #if __HOPQUY_GSM__
-		DEBUG((char*)debugBuffer.Buffer);
+		DEBUG_PRINTF(char*)debugBuffer.Buffer);
 		com_put_at_string((char*)debugBuffer.Buffer);
 #else
 		DEBUG ("\r\nLenh AT: %s", debugBuffer.Buffer);
@@ -197,7 +197,7 @@ static void ProcessNewDebugData(void)
 #if __HOPQUY_GSM__
 		debugBuffer.Buffer[debugBuffer.BufferIndex++] = 26;
 		debugBuffer.Buffer[debugBuffer.BufferIndex++] = 13;
-		DEBUG((char*)debugBuffer.Buffer);
+		DEBUG_PRINTF(char*)debugBuffer.Buffer);
 		com_put_at_string((char*)debugBuffer.Buffer);
 #endif
 		return;

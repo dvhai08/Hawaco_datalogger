@@ -4,7 +4,7 @@
 // #include "stm32f0xx.h"
 #include "gd32e10x.h"
 
-#include "Hardware.h"
+#include "hardware.h"
 #include "DriverUART.h"
 	
 #include "SEGGER_RTT.h"    
@@ -12,7 +12,7 @@
 #define DEBUG			DEBUG_PRINTF
 #define DEBUG_RAW		DEBUG_PRINTF
 
-//#define 	DEBUG(String...) 	SEGGER_RTT_printf(0, String)
+//#define 	DEBUG_PRINTFString...) 	SEGGER_RTT_printf(0, String)
 //#define DEBUG_RAW(String...)        SEGGER_RTT_printf(0, String)
 //#define DEBUG_PRINTF(String...)     { SEGGER_RTT_printf(0, "[%d] ", sys_get_ms()); SEGGER_RTT_printf(0, String);}
 

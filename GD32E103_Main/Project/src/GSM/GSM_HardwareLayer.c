@@ -14,7 +14,7 @@
 #include "Net_Config.h"
 #include "Main.h"
 #include "GSM.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "HardwareManager.h"
 #include "DataDefine.h"
 #include "MQTTUser.h"
@@ -759,7 +759,7 @@ BOOL modem_process (uint8_t ch)
 	else
 	{
 #if __HOPQUY_GSM__
-		DEBUG("%c", ch);		//DEBUG GSM : Hien thi noi dung gui ra tu module GSM
+		DEBUG_PRINTF("%c", ch);		//DEBUG GSM : Hien thi noi dung gui ra tu module GSM
 #endif	/* __HOPQUY_GSM__ */
 		
 		GSM_Hardware.ATCommand.ReceiveBuffer.Buffer[GSM_Hardware.ATCommand.ReceiveBuffer.BufferIndex++] = ch;

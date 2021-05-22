@@ -12,9 +12,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "Measurement.h"
+#include "measure_input.h"
 #include "DataDefine.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "Utilities.h"
 #include "HardwareManager.h"
 #include "InternalFlash.h"

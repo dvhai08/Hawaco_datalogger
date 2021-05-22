@@ -22,7 +22,7 @@
 #include "Main.h"
 #include "GSM.h"
 #include "MQTTUser.h"
-#include "Measurement.h"
+#include "measure_input.h"
 #include "app_bkup.h"
 #include "InternalFlash.h"
 #include "ControlOutput.h"
@@ -63,7 +63,7 @@ const char WelcomeStr[] = "\t\tCopyright by BYTECH JSC\r\n";
 //};
 
 extern __IO uint16_t  adc_vin_value;
-extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
+extern __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
 
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
@@ -129,7 +129,7 @@ void InitSystem(void)
 	
 	InternalFlash_ReadConfig();
 	
-	Measure_Init();
+	measure_input_initialize();
 	Output_Init();
 
         pmu_wakeup_pin_enable();
@@ -418,7 +418,7 @@ void ADC_Config(void)
     dma_data_parameter.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
     dma_data_parameter.memory_width = DMA_MEMORY_WIDTH_16BIT;  
     dma_data_parameter.direction = DMA_PERIPHERAL_TO_MEMORY;
-    dma_data_parameter.number = ADCMEM_MAXUNIT;
+    dma_data_parameter.number = MEASURE_INPUT_ADC_DMA_UNIT;
     dma_data_parameter.priority = DMA_PRIORITY_HIGH;
     dma_init(DMA0, DMA_CH0, &dma_data_parameter);
 
@@ -447,7 +447,7 @@ void ADC_Config(void)
     adc_data_alignment_config(ADC0, ADC_DATAALIGN_RIGHT);
     
     /* ADC channel length config */
-    adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, ADCMEM_MAXUNIT);
+    adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, MEASURE_INPUT_ADC_DMA_UNIT);
 	 
     /* ADC regular channel config */
     adc_regular_channel_config(ADC0, 0, ADC_SENS_CHANNEL, ADC_SAMPLETIME_55POINT5);

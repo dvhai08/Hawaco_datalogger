@@ -459,7 +459,7 @@ uint16_t DataMessage(uint8_t LoaiBanTin)
 	BufferAvailable = CheckGPRSBufferState(100);
 	if(BufferAvailable == 0xFF || BufferAvailable >= NUM_OF_GPRS_BUFFER)
 	{
-		DEBUG("\rDataMessage(ret:0)");		
+		DEBUG_PRINTF("\rDataMessage(ret:0)");		
 		return 0;
 	}
     
@@ -474,8 +474,8 @@ uint16_t DataMessage(uint8_t LoaiBanTin)
 	pBuffer->State = BUFFER_STATE_IDLE;
 	
 	/* FOR DEBUG */
-	DEBUG("\rAdd message to buffer: %u, len: %u", BufferAvailable, pBuffer->BufferIndex);
-	DEBUG("\rMessage: %s", PublicBuffer);
+	DEBUG_PRINTF("\rAdd message to buffer: %u, len: %u", BufferAvailable, pBuffer->BufferIndex);
+	DEBUG_PRINTF("\rMessage: %s", PublicBuffer);
 	
 	xSystem.Status.SendGPRSRequest = LoaiBanTin;
 	xSystem.Status.ResendGPRSRequest = 0;
@@ -511,7 +511,7 @@ static void SendSMSToServer(uint8_t LoaiBanTin)
 		SendSMS(xSystem.Parameters.SMSNum1, SendSMSBuffer);
 		
 	if(Ret == 0)
-		DEBUG("\rSend SMS Error!");
+		DEBUG_PRINTF("\rSend SMS Error!");
 }
 
 /*****************************************************************************/
@@ -532,7 +532,7 @@ uint16_t SendBufferToServer(uint8_t* BufferToSend, uint16_t Length)
 	BufferAvailable = CheckGPRSBufferState(Length);
 	if(BufferAvailable == 0xFF || BufferAvailable >= NUM_OF_GPRS_BUFFER)
 	{
-		DEBUG("\rSendBufferToServer(ret:0)");		
+		DEBUG_PRINTF("\rSendBufferToServer(ret:0)");		
 		return 0;
 	}
   	
@@ -547,8 +547,8 @@ uint16_t SendBufferToServer(uint8_t* BufferToSend, uint16_t Length)
 	pBuffer->State = BUFFER_STATE_IDLE;
 	
 	/* FOR DEBUG */
-	DEBUG("\rAdd message to buffer: %u, len: %u", BufferAvailable, Length);
-	DEBUG("\rMessage: %s", pBuffer->Buffer);
+	DEBUG_PRINTF("\rAdd message to buffer: %u, len: %u", BufferAvailable, Length);
+	DEBUG_PRINTF("\rMessage: %s", pBuffer->Buffer);
 	
 	xSystem.Status.SendGPRSRequest = GPRS_BANTINKHAC;
 	xSystem.Status.ResendGPRSRequest = 0;

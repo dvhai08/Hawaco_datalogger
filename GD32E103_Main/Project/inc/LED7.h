@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "gd32e10x.h"
-#include "Hardware.h"
+#include "hardware.h"
 
 #define	DIGIT_ARRAY_SIZE	5
 #define	MODE_ARRAY_SIZE	6	/* FM1, FM2, FM3, MIC, LINE IN, IDLE */

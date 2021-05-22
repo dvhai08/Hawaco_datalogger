@@ -14,7 +14,7 @@
 #include "InitSystem.h"
 #include "GSM.h"
 #include "MQTTUser.h"
-#include "Measurement.h"
+#include "measure_input.h"
 #include "ControlOutput.h"
 #include "Debug.h"
 #include "lpf.h"
@@ -26,14 +26,14 @@
 
 extern System_t xSystem;
 extern LOCALM localm[];
-extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
+extern __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
 
 static uint8_t Timeout1ms = 0;
 static uint8_t TimeOut10ms = 0;
 static uint8_t TimeOut100ms = 0;
 uint16_t TimeOut1000ms = 0;
 uint16_t TimeOut3000ms = 0;
-extern volatile uint32_t StoreMeasureResultTick;
+extern volatile uint32_t store_measure_result_timeout;
 extern uint32_t Measure420mATick;
 __IO uint16_t TimingDelay = 0;
 volatile uint32_t m_sys_tick = 0;
@@ -103,7 +103,7 @@ int main(void)
                 AdcStop();
                 adcStarted = 0;
             }
-            //DEBUG("ADC data %u-%u, vin %uMV, percent %u%%\r\n", ADC_RegularConvertedValueTab[ADCMEM_V20mV], 
+            //DEBUG_PRINTF("ADC data %u-%u, vin %uMV, percent %u%%\r\n", ADC_RegularConvertedValueTab[ADCMEM_V20mV], 
             //                            ADC_RegularConvertedValueTab[ADCMEM_VSYS],
             //                            xSystem.MeasureStatus.Vin,
             //                            xSystem.MeasureStatus.batteryPercent);
@@ -156,7 +156,6 @@ int main(void)
         if (TimeOut1000ms >= 1000)
         {
             TimeOut1000ms = 0;
-            Measure_PulseTick();
             MeasureTick1000ms();
             if (!isGSMSleeping())
             {
@@ -235,7 +234,7 @@ int main(void)
                         SendMessageTick += diff;
                         TimeOut1000ms = diff*1000;
                         TimeOut3000ms += diff*1000;
-                        StoreMeasureResultTick += diff;
+                        store_measure_result_timeout += diff;
                         Measure420mATick += diff;
                         DEBUG_PRINTF("After sleep, gsm sleep time %us, send msg tick %uS\r\n", 
                                         xSystem.Status.GSMSleepTime, 
@@ -244,11 +243,11 @@ int main(void)
                 }
                 else
                 {
-                    DEBUG("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
+                    DEBUG_PRINTF("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
                     pmu_to_sleepmode(WFI_CMD);
                     xSystem.Status.GSMSleepTime++;
                     SendMessageTick++;
-                    StoreMeasureResultTick++;
+                    store_measure_result_timeout++;
                     Measure420mATick++;
                 }
             }
@@ -271,7 +270,7 @@ static void ProcessTimeout10ms(void)
 #else
     GSM_ManagerTestSleep();
 #endif
-    Measure_Tick();
+    measure_input_task();
     Debug_Tick();
 }
 
@@ -314,7 +313,7 @@ static void ProcessTimeOut3000ms(void)
 {
     static uint32_t SystemTickCount = 0;
 
-    DEBUG("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
+    DEBUG_PRINTF("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
           localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1],
           localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
           xSystem.MeasureStatus.Vin);
@@ -358,7 +357,7 @@ void Delayms(uint16_t ms)
 {
     if (ms > 10)
     {
-        DEBUG("Delay %ums\r\n", ms);
+        DEBUG_PRINTF("Delay %ums\r\n", ms);
     }
     TimingDelay = ms;
     while (TimingDelay)
@@ -373,11 +372,11 @@ static void time_cback(U32 time)
 {
     if (time == 0)
     {
-        DEBUG("NTP: Error, server not responding or bad response\r\n");
+        DEBUG_PRINTF("NTP: Error, server not responding or bad response\r\n");
     }
     else
     {
-        DEBUG("NTP: %d seconds elapsed since 1.1.1970\r\n", time);
+        DEBUG_PRINTF("NTP: %d seconds elapsed since 1.1.1970\r\n", time);
         sntpTimeoutInverval = 120;
 
         xSystem.Status.TimeStamp = time + 25200;        // GMT+7
@@ -392,7 +391,7 @@ void getTimeNTP(void)
     U8 ntp_server[4] = {217, 79, 179, 106};
     if (sntp_get_time(&ntp_server[0], time_cback) == __FALSE)
     {
-        DEBUG("Failed, SNTP not ready or bad parameters\r\n");
+        DEBUG_PRINTF("Failed, SNTP not ready or bad parameters\r\n");
     }
 }
 

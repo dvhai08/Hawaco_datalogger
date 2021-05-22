@@ -19,7 +19,7 @@
 //#include "Parameters.h"
 #include "InternalFlash.h"
 #include "Utilities.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "MQTTPacket.h"
 #include "app_bkup.h"
 
@@ -127,7 +127,7 @@ void ProcessSetParameters(char *buffer)
         uint16_t sendTime = GetNumberFromString(13, cycleSend);
         if (xSystem.Parameters.TGGTDinhKy != sendTime)
         {
-            DEBUG("CYCLESENDWEB changed\r\n");
+            DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
             xSystem.Parameters.TGGTDinhKy = sendTime;
             hasNewConfig++;
         }
@@ -141,7 +141,7 @@ void ProcessSetParameters(char *buffer)
         {
             xSystem.Parameters.outputOnOff = out1;
             hasNewConfig++;
-            DEBUG("Output 1 changed\r\n");
+            DEBUG_PRINTF("Output 1 changed\r\n");
             //Dk ngoai vi luon
             TRAN_OUTPUT(out1);
         }
@@ -153,7 +153,7 @@ void ProcessSetParameters(char *buffer)
         uint8_t out2 = GetNumberFromString(8, output2);
         if (xSystem.Parameters.output420ma != out2)
         {
-            DEBUG("Output 2 changed\r\n");
+            DEBUG_PRINTF("Output 2 changed\r\n");
             xSystem.Parameters.output420ma = out2;
             hasNewConfig++;
 
@@ -168,7 +168,7 @@ void ProcessSetParameters(char *buffer)
         uint8_t in1 = GetNumberFromString(7, input1) & 0x1;
         if (xSystem.Parameters.input.name.pulse != in1)
         {
-            DEBUG("INPUT1 changed\r\n");
+            DEBUG_PRINTF("INPUT1 changed\r\n");
             xSystem.Parameters.input.name.pulse = in1;
             hasNewConfig++;
         }
@@ -180,7 +180,7 @@ void ProcessSetParameters(char *buffer)
         uint8_t in2 = GetNumberFromString(7, input2) & 0x1;
         if (xSystem.Parameters.input.name.ma420 != in2)
         {
-            DEBUG("INPUT2 changed\r\n");
+            DEBUG_PRINTF("INPUT2 changed\r\n");
             xSystem.Parameters.input.name.ma420 = in2;
             hasNewConfig++;
         }
@@ -192,7 +192,7 @@ void ProcessSetParameters(char *buffer)
         uint8_t in485 = GetNumberFromString(7, rs485) & 0x1;
         if (xSystem.Parameters.input.name.rs485 != in485)
         {
-            DEBUG("in485 changed\r\n");
+            DEBUG_PRINTF("in485 changed\r\n");
             xSystem.Parameters.input.name.rs485 = in485;
             hasNewConfig++;
         }
@@ -204,7 +204,7 @@ void ProcessSetParameters(char *buffer)
         uint8_t alrm = GetNumberFromString(8, alarm) & 0x1;
         if (xSystem.Parameters.alarm != alrm)
         {
-            DEBUG("WARNING changed\r\n");
+            DEBUG_PRINTF("WARNING changed\r\n");
             xSystem.Parameters.alarm = alrm;
             hasNewConfig++;
         }
@@ -229,7 +229,7 @@ void ProcessSetParameters(char *buffer)
 			}
 			if (changed)
 			{
-				DEBUG("PHONENUM changed\r\n");
+				DEBUG_PRINTF("PHONENUM changed\r\n");
 			}
 #endif
         }
@@ -279,7 +279,7 @@ void ProcessSetParameters(char *buffer)
     else
     {
         GSMSleepAfterSecond(5);        // Wait more 5 second
-        DEBUG("CFG: has no new config\r\n");
+        DEBUG_PRINTF("CFG: has no new config\r\n");
     }
 }
 
@@ -304,14 +304,14 @@ uint8_t MQTT_ProcessDataFromServer(char *buffer, uint16_t length)
     /** TEST: Check ban tin UDFW khong ma hoa */
     if (strstr(buffer, "UDFW,"))
     {
-        DEBUG("\r\nSRV: Ban tin UDFW");
+        DEBUG_PRINTF("\r\nSRV: Ban tin UDFW");
         //		ProcessUpdateFirmwareCommand(buffer, 1);
         //		return length;
     }
 
     if (strstr(buffer, "SET,") || strstr(buffer, "CYCLEWAKEUP") || strstr(buffer, "RSTCOUNTER"))
     {
-        DEBUG("\r\nSRV: SET config\r\n");
+        DEBUG_PRINTF("\r\nSRV: SET config\r\n");
         xSystem.Status.SendGPRSTimeout = 15;
         ProcessSetParameters(buffer);
         return length;

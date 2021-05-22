@@ -16,7 +16,7 @@
 #include "Utilities.h"
 #include "Version.h"
 #include "DataDefine.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "Parameters.h"
 #include "Configurations.h"
 #include "HardwareManager.h"
@@ -447,7 +447,7 @@ void ProcessGetParameters(char* Buffer, uint8_t source)
 	char *mToken = NULL;
 	uint16_t malenh = 0;
 	
-	/* Split các truong du lieu, cach nhau boi dau ',' */
+	/* Split cï¿½c truong du lieu, cach nhau boi dau ',' */
 	mToken = strtok(Buffer, ",");
 	
 	/** Duyet cac truong */
@@ -1219,14 +1219,14 @@ void ProcessCMDfromSMS(char* Buffer)
 		sprintf(SDT, "SMS:%s", SoDienThoai);
 		MQTT_SendBufferToServer(SMSContent, SDT);
 		
-		DEBUG("SET config");
+		DEBUG_PRINTF("SET config");
 		ProcessSetParameters(Buffer, CF_SMS);
 		return;
 	}
 	
 	if(strstr(Buffer, "GET,"))
 	{
-		DEBUG("GET config");
+		DEBUG_PRINTF("GET config");
 		ProcessGetParameters(strstr(Buffer, "GET,"), CF_SMS);
 		return;
 	} 
@@ -1302,7 +1302,7 @@ void ProcessCMDfromSMS(char* Buffer)
 	
 	if(strstr(Buffer, "CPN"))
 	{
-		DEBUG("Dang ky SDT");
+		DEBUG_PRINTF("Dang ky SDT");
 		DangKySDT(Buffer);
 		return;
 	}	
@@ -1317,70 +1317,70 @@ void ProcessCMDfromSMS(char* Buffer)
 	
 	if(strstr(Buffer, "CPASS"))
 	{
-		DEBUG("Doi mat khau");
+		DEBUG_PRINTF("Doi mat khau");
 		DoiMatKhau(Buffer);
 		return;
 	}
 
 	if(strstr(Buffer, "CPOS"))
 	{
-		DEBUG("Cai dat toa do");
+		DEBUG_PRINTF("Cai dat toa do");
 		CaiDatToaDo(Buffer);
 		return;
 	}	
 
 	if(strstr(Buffer, "CDIS"))
 	{
-			DEBUG("Cai dat khoang cach");
+			DEBUG_PRINTF("Cai dat khoang cach");
 			CaiDatKhoangCach(Buffer);
 			return;
 	}
 	
 	if(strstr(Buffer, "CCAP"))
 	{
-			DEBUG("Cai dat cong suat");
+			DEBUG_PRINTF("Cai dat cong suat");
 			CaiDatCongSuat(Buffer);
 			return;
 	}
 
 	if(strstr(Buffer, "CID"))
 	{
-			DEBUG("Cai dat ma phao");
+			DEBUG_PRINTF("Cai dat ma phao");
 			CaiDatMaPhao(Buffer);
 			return;
 	}
 
 	if(strstr(Buffer, "CSV"))
 	{
-		DEBUG("Cai dat server");
+		DEBUG_PRINTF("Cai dat server");
 		CaiDatServer(Buffer);
 		return;
 	}
 
 	if(strstr(Buffer, "CTB"))
 	{
-			DEBUG("Cai dat kieu chop");
+			DEBUG_PRINTF("Cai dat kieu chop");
 			CaiDatKieuChop(Buffer);
 			return;
 	}
 
 	if(strstr(Buffer, "CGPS"))
 	{
-			DEBUG("Cai dat che do GPS");
+			DEBUG_PRINTF("Cai dat che do GPS");
 			CaiDatGPSMode(Buffer);
 			return;
 	}
 
 	if(strstr(Buffer, "CTIME"))
 	{
-			DEBUG("Cai dat thoi gian gui tin");
+			DEBUG_PRINTF("Cai dat thoi gian gui tin");
 			CaiDatThoiGian(Buffer);
 			return;
 	}
 	
 	if(strstr(Buffer, "CINFO"))
 	{
-			DEBUG("Gui trang thai");
+			DEBUG_PRINTF("Gui trang thai");
 			GuiTrangThai();
 			return;
 	}

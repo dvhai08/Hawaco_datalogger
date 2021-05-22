@@ -49,7 +49,7 @@ void *ftpc_fopen (U8 *mode)
 {	
     /* Open local file for reading or writing. If the return value is NULL, */
     /* processing of FTP Client commands PUT, APPEND or GET is cancelled.   */
-	DEBUG("\rFTPC open file, mode: %s", mode);
+	DEBUG_PRINTF("\rFTPC open file, mode: %s", mode);
 	
 	if(xSystem.FileTransfer.State != FT_TRANSFERRING) return NULL;
 		
@@ -70,7 +70,7 @@ void *ftpc_fopen (U8 *mode)
 void ftpc_fclose (void *file) 
 {
     /* Close a local file. */
-	DEBUG("\rFTPC close file");	
+	DEBUG_PRINTF("\rFTPC close file");	
 }
 
 
@@ -112,7 +112,7 @@ U16 ftpc_fwrite (void *file, U8 *buf, U16 len)
 	else
 		DoDaiCanGhi = len;
 	
-	DEBUG("\rFTPC write: %u bytes. Addr: %X", DoDaiCanGhi, xSystem.FileTransfer.FileAddress);
+	DEBUG_PRINTF("\rFTPC write: %u bytes. Addr: %X", DoDaiCanGhi, xSystem.FileTransfer.FileAddress);
 	Flash_WriteBytes(xSystem.FileTransfer.FileAddress, buf, DoDaiCanGhi);
 	xSystem.FileTransfer.DataTransfered += DoDaiCanGhi;
 	xSystem.FileTransfer.FileAddress += DoDaiCanGhi;
@@ -198,18 +198,18 @@ U16 ftpc_cbfunc (U8 code, U8 *buf, U16 buflen)
 
 void ftpc_notify (U8 event) 
 {
-    DEBUG("\rFTPC notify: %u. ", event);
+    DEBUG_PRINTF("\rFTPC notify: %u. ", event);
     switch (event) 
     {
         case FTPC_EVT_SUCCESS:  
             /* Command successful */		
-			DEBUG("\rDownload file %s DONE", xSystem.FileTransfer.FTP_FileName);
+			DEBUG_PRINTF("\rDownload file %s DONE", xSystem.FileTransfer.FTP_FileName);
 			xSystem.FileTransfer.State = FT_TRANSFER_DONE;         
             break;
 
         case FTPC_EVT_TIMEOUT:
             /* Failed, timeout expired */
-			DEBUG("Timeout expired");
+			DEBUG_PRINTF("Timeout expired");
 			if(xSystem.FileTransfer.FileAddress != (FWUD_BLOCK1<<16))		//Da ghi data truoc do
 			{
 				Flash_EraseBlock64(FWUD_BLOCK1);
@@ -217,7 +217,7 @@ void ftpc_notify (U8 event)
 			}
             xSystem.FileTransfer.State = FT_WAIT_TRANSFER_STATE;
 			if(xSystem.FileTransfer.Retry) xSystem.FileTransfer.Retry--;
-			DEBUG("\rUDFW: Retry %d, erase Flash [DONE]", xSystem.FileTransfer.Retry);
+			DEBUG_PRINTF("\rUDFW: Retry %d, erase Flash [DONE]", xSystem.FileTransfer.Retry);
             break;
 
         case FTPC_EVT_LOGINFAIL:
@@ -247,7 +247,7 @@ void ftpc_notify (U8 event)
 
         case FTPC_EVT_ERROR:
             /* Failed, unspecified protocol error */
-			DEBUG("client error!");
+			DEBUG_PRINTF("client error!");
 		
 			if(xSystem.FileTransfer.FileAddress != (FWUD_BLOCK1<<16))		//Da ghi data truoc do
 			{
@@ -256,7 +256,7 @@ void ftpc_notify (U8 event)
 			}
             xSystem.FileTransfer.State = FT_WAIT_TRANSFER_STATE;
 			if(xSystem.FileTransfer.Retry) xSystem.FileTransfer.Retry--;
-			DEBUG("\rUDFW: Retry %d, erase Flash [DONE]", xSystem.FileTransfer.Retry);
+			DEBUG_PRINTF("\rUDFW: Retry %d, erase Flash [DONE]", xSystem.FileTransfer.Retry);
             break;
     }
 }

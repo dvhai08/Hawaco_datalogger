@@ -11,7 +11,7 @@
  ******************************************************************************/
 #include <stdio.h>
 #include <string.h>
-#include "Hardware.h"
+#include "hardware.h"
 #include "DataDefine.h"
 #include "Transfer.h"
 #include "Utilities.h"

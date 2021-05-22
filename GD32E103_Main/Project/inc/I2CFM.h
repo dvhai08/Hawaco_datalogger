@@ -19,7 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "gd32e10x.h"
-#include "Hardware.h"
+#include "hardware.h"
 	 
 typedef enum
 {

@@ -36,10 +36,10 @@ OF SUCH DAMAGE.
 
 #include "gd32e10x_it.h"
 #include "main.h"
-#include "Hardware.h"
+#include "hardware.h"
 #include "DataDefine.h"
 #include "GSM.h"
-#include "Measurement.h"
+#include "measure_input.h"
 #include "stdbool.h"
 
 extern void Delay_Decrement(void);
@@ -202,7 +202,7 @@ void LVD_IRQHandler(void)
     \param[out] none
     \retval     none
 */
-extern volatile uint32_t StoreMeasureResultTick;
+extern volatile uint32_t store_measure_result_timeout;
 extern uint32_t Measure420mATick;
 void RTC_IRQHandler(void)
 {    
@@ -213,7 +213,7 @@ void RTC_IRQHandler(void)
         rtc_interrupt_flag_clear(RTC_INT_FLAG_SECOND);  
         TimeOut1000ms = 1000;
         TimeOut3000ms += 1000;
-        StoreMeasureResultTick++;
+        store_measure_result_timeout++;
         Measure420mATick++;
     }
 
@@ -222,7 +222,7 @@ void RTC_IRQHandler(void)
         /* clear the RTC alarm interrupt flag*/
         rtc_interrupt_flag_clear(RTC_INT_FLAG_ALARM);
         TimeOut1000ms = 1000;
-        //DEBUG("RTC alarm\r\n", temp);
+        //DEBUG_PRINTF("RTC alarm\r\n", temp);
     }
 }
 
@@ -258,7 +258,7 @@ void EXTI4_15_IRQHandler(void)
 }
 #endif
 
-extern __IO uint16_t ADC_RegularConvertedValueTab[ADCMEM_MAXUNIT];
+extern __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
 extern volatile bool new_adc_data;
 void ADC0_1_IRQHandler(void)
 {
@@ -267,7 +267,7 @@ void ADC0_1_IRQHandler(void)
     {
         adc_interrupt_flag_clear(ADC0, ADC_INT_FLAG_EOC);
 //        adc_value = adc_inserted_data_read(ADC0, ADC_SENS_CHANNEL);
-//        ADC_RegularConvertedValueTab[ADCMEM_V20mV] = adc_value;
+//        ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_MEM_V20MV_INDEX                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ] = adc_value;
 //        adc_value = adc_inserted_data_read(ADC0, ADC_VIN_CHANNEL);
 //        ADC_RegularConvertedValueTab[ADCMEM_VSYS] = adc_value;
 //        new_adc_data = true;    

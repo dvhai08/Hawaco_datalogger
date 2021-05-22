@@ -1,7 +1,7 @@
 #ifndef __UART_HANDLER_H__
 #define __UART_HANDLER_H__
 
-#include "Hardware.h"
+#include "hardware.h"
 
 void InitUART(USART_TypeDef* USARTx, uint32_t BaudRate);
 void UART_Putc(USART_TypeDef* USARTx, uint8_t c);

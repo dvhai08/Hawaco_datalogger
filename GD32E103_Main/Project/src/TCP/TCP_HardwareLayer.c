@@ -110,7 +110,7 @@ void TCP_Tick(void)
 				{
 					if(TimeoutTick >= 50)		//every 5s
 					{
-						DEBUG("\rTCP: DNS resolving \"%s\"...", xSystem.Parameters.CurrentHost.Name);
+						DEBUG_PRINTF("\rTCP: DNS resolving \"%s\"...", xSystem.Parameters.CurrentHost.Name);
 						get_host_by_name ((U8*)xSystem.Parameters.CurrentHost.Name, dns_callback);
 						TimeoutTick = 0;
 						
@@ -138,7 +138,7 @@ void TCP_Tick(void)
 					if(TimeoutTick >= 20)
 					{
 						TimeoutTick = 0;
-						DEBUG("\rTCP: Mo ket noi toi dia chi: %u.%u.%u.%u:%u", xSystem.Parameters.CurrentHost.Sub[0],
+						DEBUG_PRINTF("\rTCP: Mo ket noi toi dia chi: %u.%u.%u.%u:%u", xSystem.Parameters.CurrentHost.Sub[0],
 								xSystem.Parameters.CurrentHost.Sub[1],xSystem.Parameters.CurrentHost.Sub[2],
 								xSystem.Parameters.CurrentHost.Sub[3],xSystem.Parameters.CurrentHost.Port);
 						tcp_connect (xSystem.Status.TCPSocket, xSystem.Parameters.CurrentHost.Sub, xSystem.Parameters.CurrentHost.Port, 0);		
@@ -174,7 +174,7 @@ void TCP_Tick(void)
 //								xSystem.TCP_Data.GPRS_Buffer[i].State = BUFFER_STATE_PROCESSING2; 
 //							TCPSendDataError++;			
 							
-							DEBUG("\rTCP send buffer %u, leng:%u, state:%u",i,xSystem.TCP_Data.GPRS_Buffer[i].BufferIndex, xSystem.TCP_Data.GPRS_Buffer[i].State);    
+							DEBUG_PRINTF("\rTCP send buffer %u, leng:%u, state:%u",i,xSystem.TCP_Data.GPRS_Buffer[i].BufferIndex, xSystem.TCP_Data.GPRS_Buffer[i].State);    
 							xSystem.Status.GuiGoiTinTCP = 1;
 
 							if(TCP_SendData(xSystem.TCP_Data.GPRS_Buffer[i].Buffer, xSystem.TCP_Data.GPRS_Buffer[i].BufferIndex) == 1)
@@ -197,7 +197,7 @@ void TCP_Tick(void)
 	/* Giam sat trang thai TCP gui du lieu bi loi */
 	if(TCPSendDataError > 5)
 	{
-		DEBUG("\rTCP send data error, reconnect!");
+		DEBUG_PRINTF("\rTCP send data error, reconnect!");
 		TCPSendDataError = 0;
 		xSystem.Status.TCPNeedToClose = 1;
 		TCPCloseStep = 0;
@@ -211,41 +211,41 @@ CLOSE_TCP_SOCKET:
 		switch(TCPCloseStep)
 		{
 			case 0:	//Kiem tra ket noi TCP
-				DEBUG("\rCheck TCP connection...");
+				DEBUG_PRINTF("\rCheck TCP connection...");
 				if(tcp_get_state(xSystem.Status.TCPSocket) == TCP_STATE_CONNECT) {
 					TCPCloseStep = 1;
 					TCPDisconnectFromServer = 0;
-					DEBUG("Connect");
+					DEBUG_PRINTF("Connect");
 				}
 				else {
-					DEBUG("Disconnect");
+					DEBUG_PRINTF("Disconnect");
 					TCPCloseStep = 3;
 					TCPDisconnectFromServer = 1;		//TCP da bi close tu phia server
 				}
 				break;
 			
 			case 1:	//Abort or close TCP connection
-				DEBUG("\rAbort TCP socket...");
+				DEBUG_PRINTF("\rAbort TCP socket...");
 				if(tcp_abort (xSystem.Status.TCPSocket)) {
-					DEBUG("OK");
+					DEBUG_PRINTF("OK");
 					TCPCloseStep = 2;
 				} else {
-					DEBUG("FAIL");
+					DEBUG_PRINTF("FAIL");
 				}
 				break;
 				
 			case 2:	//Release TCP socket
-				DEBUG("\rRelease TCP socket...");
+				DEBUG_PRINTF("\rRelease TCP socket...");
 				if(tcp_release_socket (xSystem.Status.TCPSocket)) {
-					DEBUG("OK");
+					DEBUG_PRINTF("OK");
 					TCPCloseStep = 3;
 				} else {
-					DEBUG("FAIL");
+					DEBUG_PRINTF("FAIL");
 				}
 				break;
 			
 			case 3:	//Close PPP
-				DEBUG("\rTCP connection closed!");
+				DEBUG_PRINTF("\rTCP connection closed!");
 				TCPCloseStep = 0;
 				xSystem.Status.GuiGoiTinTCP = 0;
 				xSystem.Status.TCPNeedToClose = 0;
@@ -314,7 +314,7 @@ static void dns_callback(U8 event, U8 *ip)
 	{
 		case DNS_EVT_SUCCESS:
 			ResetWatchdog();
-			DEBUG("\rDNS IP: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+			DEBUG_PRINTF("\rDNS IP: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 			//Neu DSN resolve OK thi moi lay dia chi, k lay dia chi 0.0.0.0
 			if(ip[0]  == 0 && ip[1] == 0 && ip[2] == 0 && ip[3] == 0)
 				break;
@@ -324,13 +324,13 @@ static void dns_callback(U8 event, U8 *ip)
 			}
 			break;
 		case DNS_EVT_NONAME:
-			DEBUG("Host name does not exist!\n");
+			DEBUG_PRINTF("Host name does not exist!\n");
 			break;
 		case DNS_EVT_TIMEOUT:
-			DEBUG("DNS Timeout expired!\n");
+			DEBUG_PRINTF("DNS Timeout expired!\n");
 			break;
 		case DNS_EVT_ERROR:
-			DEBUG("DNS Error, check the host name!\n");
+			DEBUG_PRINTF("DNS Error, check the host name!\n");
 			break;
 	}
 }
@@ -349,7 +349,7 @@ uint16_t tcp_callback (uint8_t soc, uint8_t event, uint8_t *ptr, uint16_t par)
 {	
 	uint8_t i;
 	
-	DEBUG("\rTCP callback: soc: %u, event: %u, par: %u",soc,event,par);
+	DEBUG_PRINTF("\rTCP callback: soc: %u, event: %u, par: %u",soc,event,par);
 	
 	switch (event) 
 	{
@@ -439,7 +439,7 @@ uint8_t TCP_SendData(uint8_t *Buffer, uint16_t Length)
 		
 		if(Length > MaxLength)
 		{
-			DEBUG("\rTCP: Send error, Len: %u, MaxLen: %u",Length,MaxLength);
+			DEBUG_PRINTF("\rTCP: Send error, Len: %u, MaxLen: %u",Length,MaxLength);
 			return 0;
 		}
 		memcpy(SendBuffer,Buffer,Length);
@@ -447,7 +447,7 @@ uint8_t TCP_SendData(uint8_t *Buffer, uint16_t Length)
 		return 1;
 	}
 	else {
-		DEBUG("\rTCP socket not ready!");
+		DEBUG_PRINTF("\rTCP socket not ready!");
 		return 0;
 	}
 }
