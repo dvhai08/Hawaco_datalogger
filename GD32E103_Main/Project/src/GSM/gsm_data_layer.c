@@ -23,7 +23,7 @@
 #include "gsm_http.h"
 
 #define MAX_TIMEOUT_TO_SLEEP_S 60
-#define GSM_NEED_ENTER_HTTP()           (false)
+#define GSM_NEED_ENTER_HTTP()           (m_enter_http)
 #define GSM_NEED_DONT_NEED_HTTP()       (m_enter_http = false)
 
 /******************************************************************************
@@ -78,7 +78,7 @@ uint8_t gsm_check_ready_status(void);
 uint8_t gsm_check_idle(void);
 static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 
-static bool m_enter_http = false;
+static bool m_enter_http = true;
 
 void gsm_data_layter_set_flag_switch_mode_http(void)
 {

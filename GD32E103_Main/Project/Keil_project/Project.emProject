@@ -159,6 +159,10 @@
       c_additional_options_backup="--cpu;Cortex-M4;-D__MICROLIB;--C99;-O0;--split_sections;-g"
       link_additional_options_backup="--cpu;Cortex-M4;--scatter=&quot;./output/HWC_GW_02.sct&quot;;--library_type=microlib"
       linker_additional_options="--scatter=&quot;./output/HWC_GW_02.sct&quot;;--library_type=microlib" />
+    <folder Name="server_msg">
+      <file file_name="../src/server_msg.c" />
+      <file file_name="../inc/server_msg.h" />
+    </folder>
   </project>
   <configuration
     Name="External Keil ARMCC"
