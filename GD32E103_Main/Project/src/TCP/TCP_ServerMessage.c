@@ -14,10 +14,10 @@
 #include "TCP.h"
 #include "DataDefine.h"
 #include "GPS.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "Configurations.h"
 #include "Parameters.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "HardwareManager.h"
 #include "UpdateFirmwareFTP.h"
 

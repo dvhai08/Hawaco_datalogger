@@ -38,7 +38,7 @@ OF SUCH DAMAGE.
 #include "main.h"
 #include "hardware.h"
 #include "DataDefine.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "measure_input.h"
 #include "stdbool.h"
 

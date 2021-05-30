@@ -15,12 +15,11 @@
 #include "InitSystem.h"
 #include "Version.h"
 #include "DataDefine.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "InternalFlash.h"
 #include "HardwareManager.h"
-#include "Indicator.h"
 #include "Main.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "MQTTUser.h"
 #include "measure_input.h"
 #include "app_bkup.h"
@@ -135,7 +134,7 @@ void InitSystem(void)
         pmu_wakeup_pin_enable();
 
 #if GSM_ENABLE	
-	GSM_InitHardware();
+	gsm_init_hw();
 	MQTT_Init();
 	
 	/* Khoi tao main Tcp_Net */ 

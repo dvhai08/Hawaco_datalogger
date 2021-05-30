@@ -13,12 +13,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "DataDefine.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "HardwareManager.h"
 #include "hardware.h"
 #include "main.h"
 #include "Debug.h"
-#include "GSM.h"
+#include "gsm.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
@@ -139,16 +139,16 @@ static void ProcessNewDebugData(void)
 				}
 				break;
 			case 16:
-				if (isGSMSleeping())
+				if (gsm_data_layer_is_module_sleeping())
 				{
 					xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
 				}
 				break;
 
 			case 18:
-				if (!isGSMSleeping())
+				if (!gsm_data_layer_is_module_sleeping())
 				{
-					GSMSleepAfterSecond(1);
+					gsm_set_timeout_to_sleep(1);
 				}
 				break;
 				
@@ -188,7 +188,7 @@ static void ProcessNewDebugData(void)
 		com_put_at_string((char*)debugBuffer.Buffer);
 #else
 		DEBUG ("\r\nLenh AT: %s", debugBuffer.Buffer);
-		ThucHienLenhAT((char*)debugBuffer.Buffer);
+		gsm_process_at_cmd((char*)debugBuffer.Buffer);
 #endif
 		return;
 	}

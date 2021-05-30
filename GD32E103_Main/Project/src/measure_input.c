@@ -15,7 +15,7 @@
 #include "measure_input.h"
 #include "DataDefine.h"
 #include "hardware.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "HardwareManager.h"
 #include "InternalFlash.h"
 #include "main.h"

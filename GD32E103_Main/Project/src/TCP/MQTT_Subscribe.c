@@ -14,9 +14,9 @@
 #include "DataDefine.h"
 #include "RTL.h"
 #include "TCP.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "Main.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "Parameters.h"
 #include "MQTTClient.h"
 #include "MQTTConnect.h"
@@ -29,7 +29,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t GSM_Manager;
+extern GSM_Manager_t gsm_manager;
 extern uint8_t HostNo;
 extern uint8_t LastHost; 
 extern uint8_t DNSResolved;

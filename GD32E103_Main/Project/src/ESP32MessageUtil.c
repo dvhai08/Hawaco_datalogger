@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "DataDefine.h"
 #include "Transfer.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 

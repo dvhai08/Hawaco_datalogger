@@ -424,9 +424,9 @@
               <FilePath>..\src\ControlOutput.c</FilePath>
             </File>
             <File>
-              <FileName>MeasureInput.c</FileName>
+              <FileName>measure_input.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\MeasureInput.c</FilePath>
+              <FilePath>..\src\measure_input.c</FilePath>
             </File>
           </Files>
         </Group>

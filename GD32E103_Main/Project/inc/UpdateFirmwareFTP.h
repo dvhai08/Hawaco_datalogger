@@ -8,10 +8,10 @@
 #include <Net_Config.h>
 #include "DataDefine.h"
 #include "FTP.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "InternalFlash.h"
 #include "HardwareManager.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "Main.h"
 
 #define UPDATE_MAINFW 3

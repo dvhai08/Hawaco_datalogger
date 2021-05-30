@@ -3,151 +3,174 @@
 
 #include "RTL.h"
 #include "DataDefine.h"
+#include <stdbool.h>
 
-#define	GSM_ON	1
-#define	GSM_OFF	2
+#define GSM_ON 1
+#define GSM_OFF 2
 
-#define	GSMIMEI         0
-#define	SIMIMEI         1
+#define GSMIMEI 0
+#define SIMIMEI 1
 
-#define 	MAX_GSMRESETSYSTEMCOUNT	600	//10 phut
+#define MAX_GSMRESETSYSTEMCOUNT 600 //10 phut
 
 #define __HOPQUY_GSM__ 0
-#define	__GSM_SLEEP_MODE__	1	
-#define	__USED_HTTP__	0
-#define __GSM_SMS_ENABLE__	0
+#define __GSM_SLEEP_MODE__ 1
+#define __USED_HTTP__ 0
+#define __GSM_SMS_ENABLE__ 0
 
+typedef enum
+{
+    GSM_EVENT_OK = 0,  // GSM response dung
+    GSM_EVENT_TIMEOUT, // Het timeout ma chua co response
+    GSM_EVENT_ERROR,   // GSM response ko dung
+} gsm_response_event_t;
 
+typedef enum
+{
+    GSM_STATE_OK = 0,
+    GSM_STATE_RESET = 1,
+    GSM_STATE_SEND_SMS = 2,
+    GSM_STATE_READ_SMS = 3,
+    GSM_STATE_POWER_ON = 4,
+    GSM_STATE_REOPEN_PPP = 5,
+    GSM_STATE_GET_BTS_INFO = 6,
+    GSM_STATE_SEND_ATC = 7,
+    GSM_STATE_GOTO_SLEEP = 8,
+    GSM_STATE_WAKEUP = 9,
+    GSM_STATE_AT_MODE_IDLE,
+    GSM_STATE_SLEEP,
+    GSM_STATE_HTTP_GET,
+    GSM_STATE_HTTP_POST,
+} gsm_state_t;
 
-typedef enum {
-    EVEN_OK = 0, // GSM response dung
-    EVEN_TIMEOUT, // Het timeout ma chua co response
-    EVEN_ERROR, // GSM response ko dung
-} GSM_ResponseEvent_t;
-
-typedef enum {
-	GSM_OK = 0,
-	GSM_RESET = 1,
-	GSM_SENSMS = 2,
-	GSM_READSMS = 3,
-	GSM_POWERON = 4,
-	GSM_REOPENPPP = 5,
-	GSM_GETBTSINFOR = 6,
-	GSM_SENDATC = 7,
-	GSM_GOTOSLEEP = 8,
-	GSM_WAKEUP = 9,
-	GSM_ATMODE_IDLE,
-	GSM_SLEEP,
-} GSM_State_t;
-
-typedef enum {
+typedef enum
+{
     GSM_AT_MODE = 1,
     GSM_PPP_MODE
-} GSM_Mode_t;
+} gsm_at_mode_t;
 
-typedef struct{		
-	GSM_State_t State;
-	GSM_Mode_t	Mode;
-	uint8_t Step;
-	uint8_t RISignal;
-	uint8_t Dial;
-	uint8_t GetBTSInfor;
-	uint8_t GSMReady;
-	uint8_t FirstTimePower;
-	uint8_t SendSMSAfterRead;
-	uint8_t PPPCommandState;
-	uint16_t TimeOutConnection;
-	uint16_t TimeOutCSQ;
-	uint8_t TimeOutOffAfterReset;
-	uint8_t isGSMOff;
-	uint8_t AccessTechnology;
-}GSM_Manager_t;
+typedef struct
+{
+    gsm_state_t state;
+    gsm_at_mode_t Mode;
+    uint8_t step;
+    uint8_t RISignal;
+    uint8_t Dial;
+    uint8_t GetBTSInfor;
+    uint8_t GSMReady;
+    uint8_t FirstTimePower;
+    uint8_t SendSMSAfterRead;
+    uint8_t PPPCommandState;
+    uint16_t TimeOutConnection;
+    uint16_t TimeOutCSQ;
+    uint8_t TimeOutOffAfterReset;
+    uint8_t isGSMOff;
+    uint8_t AccessTechnology;
+} GSM_Manager_t;
 
-typedef void (*GSM_SendATCallBack_t) (GSM_ResponseEvent_t event, void *ResponseBuffer);
+typedef void (*gsm_send_at_cb_t)(gsm_response_event_t event, void *ResponseBuffer);
 
-void SendATCommand(char *Command, char *ExpectResponse, uint16_t Timeout,
-        uint8_t RetryCount, GSM_SendATCallBack_t CallBackFunction);
+void gsm_hw_send_at_cmd(char *cmd, char *expect_resp, char *expect_resp_at_the_end
+                    ,uint32_t timeout,uint8_t retry_count, gsm_send_at_cb_t callback);
 
-void GSM_InitHardware(void);
-void GSM_InitDataLayer(void);
-void GSM_UARTHandler(void);
-void GSM_ManagerTick(void);
-void GSM_HardwareTick (void) ;
+void gsm_init_hw(void);
+void gsm_data_layer_initialize(void);
+void gsm_uart_rx_cb(void);
+void gsm_manager_tick(void);
+void gsm_hardware_tick(void);
 
-void GSM_GetIMEI(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer);
-void GSM_GetShortAPN(char *ShortAPN);
-void GSM_GetSignalStrength(uint8_t *Buffer);
-void GetCellIDAndSignalStrength(char* Buffer);
-void GSM_ProcessCUSDMessage(char *buffer);
-void GSM_GetNetworkStatus(char *Buffer);
-void GSM_GetNetworkOperator(char *Buffer);
+void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer);
+void gsm_get_short_apn(char *ShortAPN);
+void gsm_get_signal_strength(uint8_t *Buffer);
+void gsm_get_cell_id_and_signal_strength(char *Buffer);
+void gsm_process_cusd_message(char *buffer);
+void gsm_get_network_status(char *Buffer);
+void gsm_get_network_operator(char *Buffer);
 
-void QuerySMS(void);
-void ProcessCMDfromSMS(char* Buffer);
-void GSM_SendSMS(GSM_ResponseEvent_t event, void *ResponseBuffer);
-void ChangeGSMState(GSM_State_t NewState);
-void GSM_PowerControl(uint8_t State);
-void GuiTrangThaiToiSDT(char *SDT);
-void NhanTin(char* Buffer, uint8_t CallFrom);
-void ThucHienLenhAT(char *Lenh);
-void ReconnectTCP(void);
-void GSM_GotoSleep(void);
-void GSM_TestReadSMS(void);
-uint8_t isGSMSleeping(void);
-void QuerySMSTick(void);
-void GSM_CheckSMSTick(void);
-void GSMSleepAfterSecond(uint32_t second);
-BOOL com_put_at_string (char *str);
+void gsm_query_sms(void);
+void gsm_process_cmd_from_sms(char *Buffer);
+void gsm_send_sms(gsm_response_event_t event, void *ResponseBuffer);
+void gsm_change_state(gsm_state_t NewState);
+void gsm_pwr_control(uint8_t State);
+void gsm_send_status_to_mobilephone(char *SDT);
+//void gsm_send_sms(char *Buffer, uint8_t CallFrom);
+void gsm_process_at_cmd(char *Lenh);
+void gsm_reconnect_tcp(void);
+void gsm_change_state_sleep(void);
+void gsm_test_read_sms(void);
+bool gsm_data_layer_is_module_sleeping(void);
+void gsm_query_sms_tick(void);
+void gsm_check_sms_tick(void);
+void gsm_set_timeout_to_sleep(uint32_t second);
+BOOL com_put_at_string(char *str);
 
 //======================== FOR MODEM ========================//
 
-#define MODEM_BUFFER_SIZE   1500
+#define MODEM_BUFFER_SIZE 1500
 
-#define MODEM_IDLE      0
-#define MODEM_ERROR     1
-#define MODEM_READY     2
-#define MODEM_LISTEN    3
-#define MODEM_ONLINE    4
-#define MODEM_DIAL      5
-#define MODEM_HANGUP    6 
+#define MODEM_IDLE 0
+#define MODEM_ERROR 1
+#define MODEM_READY 2
+#define MODEM_LISTEN 3
+#define MODEM_ONLINE 4
+#define MODEM_DIAL 5
+#define MODEM_HANGUP 6
 
-typedef struct{
-	char *CMD;
-	char *ExpectResponseFromATC;
-	uint16_t TimeoutATC;
-	uint16_t CurrentTimeoutATC;
-	uint8_t RetryCountATC;
-	SmallBuffer_t ReceiveBuffer;
-	GSM_SendATCallBack_t SendATCallBack;
-}ATCommand_t;
+typedef struct
+{
+    char *cmd;
+    char *expect_resp_from_atc;
+    char *expected_response_at_the_end;
+    uint16_t timeout_atc_ms;
+    uint16_t current_timeout_atc_ms;
+    uint8_t retry_count_atc;
+    SmallBuffer_t recv_buff;
+    gsm_send_at_cb_t send_at_callback;
+} gsm_at_cmd_t;
 
 #if (__USED_HTTP__ == 0)
-typedef struct {
-	uint16_t IndexIn;
-	uint16_t IndexOut;
-	uint8_t Buffer[MODEM_BUFFER_SIZE];
-}ModemBuffer_t;
+typedef struct
+{
+    uint16_t idx_in;
+    uint16_t idx_out;
+    uint8_t Buffer[MODEM_BUFFER_SIZE];
+} gms_ppp_modem_buffer_t;
 
-typedef struct{
-	uint8_t Step;
-	uint8_t State;
-	uint8_t TX_Active;
-	
-	ModemBuffer_t TxBuffer;
-	ModemBuffer_t RxBuffer;
-	
-	uint8_t *DialNumber;
-} Modem_t;
+typedef struct
+{
+    uint8_t Step;
+    uint8_t State;
+    uint8_t tx_active;
 
-typedef struct{
-	ATCommand_t	ATCommand;
-	Modem_t		Modem;
-} GSM_Hardware_t;
+    gms_ppp_modem_buffer_t tx_buffer;
+    gms_ppp_modem_buffer_t rx_buffer;
+
+    uint8_t *dial_number;
+} gsm_modem_t;
+
+typedef struct
+{
+    gsm_at_cmd_t atc;
+    gsm_modem_t modem;
+} gsm_hardware_t;
 #else
-typedef struct{
-	ATCommand_t	ATCommand;
-} GSM_Hardware_t;
-#endif	//__USED_HTTP__
+typedef struct
+{
+    gsm_at_cmd_t atc;
+} gsm_hardware_t;
+#endif //__USED_HTTP__
+
+
+void gsm_hw_clear_non_at_serial_rx_buffer(void);
+
+uint32_t gsm_hw_serial_at_cmd_rx_buffer_size(void);
+
+void gsm_hw_clear_at_serial_rx_buffer(void);
+
+uint32_t gsm_hw_direct_read_at_command_rx_buffer(uint8_t **output, uint32_t size);
+
+void gsm_data_layter_set_flag_switch_mode_http(void);   
+
+void gsm_data_layter_exit_mode_http(void);
 
 #endif // __GSM_H__
-

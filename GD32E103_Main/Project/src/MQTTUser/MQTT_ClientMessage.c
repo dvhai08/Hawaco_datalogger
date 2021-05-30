@@ -16,10 +16,10 @@
 #include <string.h>
 #include "Net_Config.h"
 #include "RTL.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "Main.h"
 //#include "TCP.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "Version.h"
 //#include "Parameters.h"
 #include "MQTTPacket.h"
@@ -34,7 +34,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t GSM_Manager;
+extern GSM_Manager_t gsm_manager;
 
 extern uint8_t isSubscribed;
 extern uint16_t pubPackageId;

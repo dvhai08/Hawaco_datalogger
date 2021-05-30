@@ -12,7 +12,7 @@
 #include "main.h"
 #include "HardwareManager.h"
 #include "InitSystem.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "MQTTUser.h"
 #include "measure_input.h"
 #include "ControlOutput.h"
@@ -157,7 +157,7 @@ int main(void)
         {
             TimeOut1000ms = 0;
             MeasureTick1000ms();
-            if (!isGSMSleeping())
+            if (!gsm_data_layer_is_module_sleeping())
             {
                 if (xSystem.Status.DisconnectTimeout++ > 60)
                 {
@@ -263,7 +263,7 @@ static void ProcessTimeout10ms(void)
 {
 #if GSM_ENABLE
     #if (__USED_HTTP__)
-        GSM_HardwareTick();
+        gsm_hardware_tick();
     #else
         MQTT_Tick();
     #endif
@@ -295,8 +295,8 @@ static void ProcessTimeout1000ms(void)
 {
     if (xSystem.FileTransfer.State != FT_TRANSFERRING)
     {
-        GSM_ManagerTick();
-        if (isGSMSleeping())
+        gsm_manager_tick();
+        if (gsm_data_layer_is_module_sleeping())
         {
             DEBUG_PRINTF("Process timeout 1000ms in sleeping state\r\n");
         }
@@ -317,9 +317,9 @@ static void ProcessTimeOut3000ms(void)
           localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1],
           localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
           xSystem.MeasureStatus.Vin);
-#if GSM_ENABLE
+#if GSM_ENABLE | 0
     //get NTP time
-    if (ppp_is_up() && (isGSMSleeping() == 0))
+    if (ppp_is_up() && (gsm_data_layer_is_module_sleeping() == 0))
     {
         if (getNTPTimeout % sntpTimeoutInverval == 0)
         {

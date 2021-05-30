@@ -16,9 +16,9 @@
 #include <string.h>
 #include "Net_Config.h"
 #include "RTL.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "Main.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 //#include "Parameters.h"
 #include "MQTTPacket.h"
 #include "MQTTConnect.h"
@@ -29,7 +29,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t GSM_Manager;
+extern GSM_Manager_t gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -150,9 +150,9 @@ void MQTT_Tick(void)
     {
         ResetWatchdog();
 
-        if (GSM_Manager.Mode == GSM_AT_MODE)
+        if (gsm_manager.Mode == GSM_AT_MODE)
             return;
-        if (GSM_Manager.State != GSM_OK)
+        if (gsm_manager.state != GSM_STATE_OK)
             return; //Ex: Dang xu ly SMS, BTS, ATC...
 
         /** Neu het thoi gian gui tin TCP thi ko xu ly nua */
@@ -294,7 +294,7 @@ void MQTT_Tick(void)
             {
                 IsTheFirstTime = 0;
                 DEBUG_PRINTF("GSM will sleep in 10s, TX queue %d msg\r\n", MQTT_NumberOffQueueMsg());
-                GSMSleepAfterSecond(10);
+                gsm_set_timeout_to_sleep(10);
                 MqttClientSendFirstMessageWhenWakeup();
             }
             xSystem.Status.DisconnectTimeout = 0;
@@ -324,7 +324,7 @@ void MQTT_Tick(void)
                                 xSystem.Status.TCPNeedToClose = 1;
                             }
                         }
-                        GSMSleepAfterSecond(5);
+                        gsm_set_timeout_to_sleep(5);
                         break;
                     }
                 }
@@ -403,8 +403,8 @@ CLOSE_TCP_SOCKET:
             TCPDisconnectFromServer = 0;
 
 #if (__GSM_SLEEP_MODE__)
-            DEBUG_PRINTF("GSM Sleeping...\r\n");
-            GSM_GotoSleep();
+            DEBUG_PRINTF("GSM sleeping...\r\n");
+            gsm_change_state_sleep();
 #endif
             break;
 

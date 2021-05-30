@@ -20,7 +20,7 @@
                                    GLOBAL VARIABLES					    			 
 ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t	GSM_Manager;
+extern GSM_Manager_t	gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 

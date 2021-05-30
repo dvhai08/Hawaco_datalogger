@@ -14,7 +14,7 @@
 #include "DataDefine.h"
 #include "RTL.h"
 #include "TCP.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "Main.h"
 #include "HardwareManager.h"
 
@@ -22,7 +22,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t GSM_Manager;
+extern GSM_Manager_t gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -87,9 +87,9 @@ void TCP_Tick(void)
 		
 		TCP_ClientMessageTick();
 		
-		if(GSM_Manager.Mode == GSM_AT_MODE) return;
+		if(gsm_manager.Mode == GSM_AT_MODE) return;
 		if(xSystem.Status.TCPNeedToClose) goto CLOSE_TCP_SOCKET;
-		if(GSM_Manager.State != GSM_OK) return;	//Ex: Dang xu ly SMS, BTS, ATC
+		if(gsm_manager.state != GSM_STATE_OK) return;	//Ex: Dang xu ly SMS, BTS, ATC
 		
 		if(TCPConnectFail == 10 || xSystem.Status.SendGPRSTimeout == 0) return;
 		

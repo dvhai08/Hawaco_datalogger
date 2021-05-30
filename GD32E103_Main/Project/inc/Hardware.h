@@ -59,7 +59,7 @@
 
 #define GSM_UART_GPIO GPIOA
 #define GSM_UART_IRQ USART0_IRQn
-#define	GSM_UART_Handler	USART0_IRQHandler
+#define	gsm_uart_handler	USART0_IRQHandler
 
 //Dieu khien GSM Power Enable, active 1
 #define GSM_PWR_EN_PIN GPIO_PIN_15

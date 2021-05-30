@@ -13,12 +13,12 @@
 #include "MQTTUser.h"
 #include "UpdateFirmwareFTP.h"
 #include "DataDefine.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "aes.h"
 #include "base64.h"
 //#include "Parameters.h"
 #include "InternalFlash.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "hardware.h"
 #include "MQTTPacket.h"
 #include "app_bkup.h"
@@ -272,13 +272,13 @@ void ProcessSetParameters(char *buffer)
     //Luu config moi
     if (hasNewConfig)
     {
-        GSMSleepAfterSecond(10);        // Wait more 5 second
+        gsm_set_timeout_to_sleep(10);        // Wait more 5 second
         MqttClientSendFirstMessageWhenWakeup();
         InternalFlash_WriteConfig();
     }
     else
     {
-        GSMSleepAfterSecond(5);        // Wait more 5 second
+        gsm_set_timeout_to_sleep(5);        // Wait more 5 second
         DEBUG_PRINTF("CFG: has no new config\r\n");
     }
 }

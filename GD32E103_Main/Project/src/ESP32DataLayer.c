@@ -14,7 +14,7 @@
 #include "hardware.h"
 #include "DataDefine.h"
 #include "Transfer.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "MeasureInput.h"
 #include "HardwareManager.h"
 #include "Version.h"

@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "Version.h"
-#include "Utilities.h"
+#include "gsm_utilities.h"
 #include "TCP.h"
-#include "GSM.h"
+#include "gsm.h"
 #include "GPS.h"
 #include "HardwareManager.h"
 #include "Main.h"
@@ -23,7 +23,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t	GSM_Manager;
+extern GSM_Manager_t	gsm_manager;
 extern GPS_Manager_t GPS_Manager;
 extern char SendSMSBuffer[160];
 extern uint8_t TCPConnectFail;
@@ -80,8 +80,8 @@ void TCP_SendAlarmTick(void)
 		if(xSystem.Status.SendAlarmRequest == 1)
 		{
 			//Tat GSM
-			if(GSM_Manager.isGSMOff == 0)
-				GSM_PowerControl(GSM_OFF);
+			if(gsm_manager.isGSMOff == 0)
+				gsm_pwr_control(GSM_OFF);
 			
 			Timeout30m_Move = 0;
 			Timeout360m_Bulb = 0;
@@ -89,7 +89,7 @@ void TCP_SendAlarmTick(void)
 		}
 	}
 
-	if(GSM_Manager.isGSMOff == 0) return;
+	if(gsm_manager.isGSMOff == 0) return;
 	
 	if(xSystem.Status.DistanceAlarm == 1)
 	{
@@ -98,8 +98,8 @@ void TCP_SendAlarmTick(void)
 			TimeoutSendAlarm30m = 0;
 			if(xSystem.Status.VminAlarm == 0)
 			{
-				if(GSM_Manager.isGSMOff)
-					GSM_PowerControl(GSM_ON);
+				if(gsm_manager.isGSMOff)
+					gsm_pwr_control(GSM_ON);
 
 				Timeout30m_Move = 0;
 				xSystem.Status.SendAlarmRequest = 180;	//Timeout send alarm 180s
@@ -115,8 +115,8 @@ void TCP_SendAlarmTick(void)
 		{
 			if(xSystem.Status.VminAlarm == 0)
 			{
-				if(GSM_Manager.isGSMOff)
-					GSM_PowerControl(GSM_ON);
+				if(gsm_manager.isGSMOff)
+					gsm_pwr_control(GSM_ON);
 
 				Timeout360m_Bulb = 0;
 				Timeout360m_Bat = 0;

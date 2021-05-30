@@ -12,8 +12,8 @@
  ******************************************************************************/
 #include <stdio.h> 
 #include <string.h>
-#include "GSM.h"
-#include "Utilities.h"
+#include "gsm.h"
+#include "gsm_utilities.h"
 #include "Version.h"
 #include "DataDefine.h"
 #include "hardware.h"
@@ -28,7 +28,7 @@
  ******************************************************************************/
 SMSStruct_t SMSMemory[3];
 extern System_t xSystem;
-extern GSM_Manager_t GSM_Manager;
+extern GSM_Manager_t gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -235,7 +235,7 @@ static void GuiINFO()
  * @version	:
  * @reviewer:	
  */
-void GuiTrangThaiToiSDT(char *SDT)
+void gsm_send_status_to_mobilephone(char *SDT)
 {
   sprintf(SoDienThoai,"%s",SDT);
 		
@@ -259,7 +259,7 @@ void GuiTrangThaiToiSDT(char *SDT)
  * @version	:
  * @reviewer:	
  */
-void NhanTin(char* Buffer, uint8_t CallFrom)
+void gsm_send_sms(char* Buffer, uint8_t CallFrom)
 {
     uint16_t ViTri = 0;
     uint16_t i = 0;
@@ -1193,7 +1193,7 @@ static void GuiTrangThai(void)
  * @version	:
  * @reviewer:	
  */
-void ProcessCMDfromSMS(char* Buffer)
+void gsm_process_cmd_from_sms(char* Buffer)
 {     	  
 	/* Lenh khong thuoc 1 trong 4 lenh nay thi upcase */
 	if(strstr(Buffer, "SET,") == NULL || strstr(Buffer, "CSV") == NULL || 
@@ -1239,7 +1239,7 @@ void ProcessCMDfromSMS(char* Buffer)
 	
 	if(strstr(Buffer, "TRANGTHAI#"))
 	{
-		GuiTrangThaiToiSDT(SoDienThoai);
+		gsm_send_status_to_mobilephone(SoDienThoai);
 		return;
 	} 
 

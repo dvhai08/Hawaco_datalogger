@@ -13,15 +13,15 @@
 #include <stdio.h>
 #include <string.h> 
 #include <stdlib.h>
-#include "GSM.h"
-#include "Utilities.h"
+#include "gsm.h"
+#include "gsm_utilities.h"
 #include "DataDefine.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t	GSM_Manager;
+extern GSM_Manager_t	gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -49,22 +49,22 @@ extern GSM_Manager_t	GSM_Manager;
  * @version	:
  * @reviewer:	
  */
-void GSM_GetIMEI(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer)
+void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_buffer)
 {
     uint8_t Count = 0;
     uint8_t tmpCount = 0;
 
-    for(Count = 0; Count < strlen((char*) IMEI_Buffer); Count++)
+    for(Count = 0; Count < strlen((char*) IMEI_buffer); Count++)
     {
-        if(IMEI_Buffer[Count] >= '0' && IMEI_Buffer[Count] <= '9')
+        if(IMEI_buffer[Count] >= '0' && IMEI_buffer[Count] <= '9')
         {
             if(LoaiIMEI == GSMIMEI)
             {
-                xSystem.Parameters.GSM_IMEI[tmpCount++] = IMEI_Buffer[Count];
+                xSystem.Parameters.GSM_IMEI[tmpCount++] = IMEI_buffer[Count];
             }
             else
             {
-                xSystem.Parameters.SIM_IMEI[tmpCount++] = IMEI_Buffer[Count];
+                xSystem.Parameters.SIM_IMEI[tmpCount++] = IMEI_buffer[Count];
             }
         }
         if(tmpCount >= 20) break;
@@ -90,20 +90,20 @@ void GSM_GetIMEI(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer)
  * @version	:
  * @reviewer:	
  */
-void GSM_GetSignalStrength(uint8_t *Buffer)
+void gsm_get_signal_strength(uint8_t *buffer)
 {	
-	char *tempBuff = strstr((char *)Buffer, "+CSQ:");
+	char *tempBuff = strstr((char *)buffer, "+CSQ:");
 	
 	if(tempBuff == NULL) return;	
-	xSystem.Status.CSQ = GetNumberFromString(6, tempBuff);
-	GSM_Manager.GSMReady = 1;
+	xSystem.Status.CSQ = gsm_utilities_get_number_from_string(6, tempBuff);
+	gsm_manager.GSMReady = 1;
 }
 
 #if __USE_APN_CONFIG__
 /*
 * Get APN name only, w/o username & password, ex: "v-internet"
 */
-void GSM_GetShortAPN(char *ShortAPN)
+void gsm_get_short_apn(char *ShortAPN)
 {
 	uint8_t i = 0;
 	
@@ -128,7 +128,7 @@ hoac
 +CUSD: 4
 +CME ERROR: unknown
 */
-void GSM_ProcessCUSDMessage(char* buffer)
+void gsm_process_cusd_message(char* buffer)
 {
 #if 0
 	uint8_t sizeBuff = sizeof(xSystem.Status.GSMBalance);
@@ -141,7 +141,7 @@ void GSM_ProcessCUSDMessage(char* buffer)
 		if(cusdLeng >= sizeBuff) cusdLeng = sizeBuff - 1;
 	
 		memcpy(xSystem.Status.GSMBalance, cusd, cusdLeng);
-		GSM_Manager.GSMReady = 1;
+		gsm_manager.GSMReady = 1;
 	}
 #endif
 }
@@ -156,14 +156,14 @@ void GSM_ProcessCUSDMessage(char* buffer)
  * @version	:
  * @reviewer:	
  */
-void GSM_GetNetworkStatus(char *Buffer)
+void gsm_get_network_status(char *buffer)
 {
 	/**
 	* +CGREG: 2,1,"3279","487BD01",7
 	*
 	* OK
 	*/
-	char *tempBuff = strstr(Buffer, "+CGREG:");
+	char *tempBuff = strstr(buffer, "+CGREG:");
 	if(tempBuff == NULL) return;	
 	
 	uint8_t commaIndex[10] = {0};
@@ -174,11 +174,11 @@ void GSM_GetNetworkStatus(char *Buffer)
 	}
 	if(index >= 4)
 	{
-		GSM_Manager.AccessTechnology = GetNumberFromString(commaIndex[3] + 1, tempBuff);
-		GSM_Manager.GSMReady = 1;
+		gsm_manager.AccessTechnology = gsm_utilities_get_number_from_string(commaIndex[3] + 1, tempBuff);
+		gsm_manager.GSMReady = 1;
 		
-		if(GSM_Manager.AccessTechnology > 9) GSM_Manager.AccessTechnology = 9;
-//		DEBUG ("\r\nNetwork status: %s - %u", tempBuff, GSM_Manager.AccessTechnology);
+		if(gsm_manager.AccessTechnology > 9) gsm_manager.AccessTechnology = 9;
+//		DEBUG ("\r\nNetwork status: %s - %u", tempBuff, gsm_manager.AccessTechnology);
 	}
 }
 
@@ -193,7 +193,7 @@ void GSM_GetNetworkStatus(char *Buffer)
  * @version	:
  * @reviewer:	
  */
-void GSM_GetNetworkOperator(char *Buffer)
+void gsm_get_network_operator(char *buffer)
 {
 	/**
 	* AT+COPS=? 
@@ -209,7 +209,7 @@ void GSM_GetNetworkOperator(char *Buffer)
 	* OK
 	*/
 #if 0
-	char *tempBuff = strstr(Buffer, "+COPS:");
+	char *tempBuff = strstr(buffer, "+COPS:");
 	if(tempBuff == NULL) return;	
 	
 	uint8_t commaIndex[5] = {0};
@@ -233,4 +233,161 @@ void GSM_GetNetworkOperator(char *Buffer)
 #endif
 }
 
-/********************************* END OF FILE *******************************/
+// +HTTPACTION: 0,200,12314\r\n
+bool gsm_utilities_parse_http_action_response(char *response, uint32_t *error_code, uint32_t *content_length)
+{
+    bool retval = false;
+    char tmp[32];
+    char *p;
+#if 0 // SIMCOM
+    p = strstr(response, "+HTTPACTION: 0,200,");
+    if (p)
+    {
+        p += strlen("+HTTPACTION: 0,200,");
+        for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+        {
+            if (*p != '\r')
+            {
+                tmp[i] = *p;
+            }
+            else
+            {
+                tmp[i] = '\0';
+                break;
+            }
+        }
+
+        *content_length = atoi(tmp);
+        *error_code = 200;
+        retval = true;
+    }
+    else
+    {
+        // TODO parse error code
+        retval = false;
+    }
+#else   // Quectel
+    p = strstr(response, "+QHTTPGET: 0,200,");
+    if (p)
+    {
+        p += strlen("+QHTTPGET: 0,200,");
+        for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+        {
+            if (*p != '\r')
+            {
+                tmp[i] = *p;
+            }
+            else
+            {
+                tmp[i] = '\0';
+                break;
+            }
+        }
+
+        *content_length = atoi(tmp);
+        *error_code = 200;
+        retval = true;
+    }
+    else
+    {
+        // TODO parse error code
+        retval = false;
+    }
+#endif
+    return retval;
+}
+
+int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_pointer)
+{
+#if 0   // SIMCOM
+    // +HTTPREAD: 123\r\nData
+    char tmp[32];
+    char *p = strstr(buffer, "+HTTPREAD: ");
+    if (p == NULL)
+    {
+        return -1;
+    }
+
+    p += strlen("+HTTPREAD: ");
+    if (strstr(p, "\r\n") == NULL)
+    {
+        return -1;
+    }
+
+    for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+    {
+        if (*p != '\r')
+        {
+            tmp[i] = *p;
+        }
+        else
+        {
+            tmp[i] = '\0';
+            break;
+        }
+    }
+    p += 2; // Skip \r\n
+    *begin_data_pointer = (uint8_t*)p;
+
+    return atoi(tmp);
+#else       // Quectel
+    char tmp[32];
+    char *p = strstr(buffer, "CONNECT\r\n");
+    if (p == NULL)
+    {
+        return -1;
+    }
+
+    p += strlen("CONNECT\r\n");
+    if (strstr(p, "OK\r\n") == NULL)
+    {
+        return -1;
+    }
+
+    for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+    {
+        if (*p != '\r')
+        {
+            tmp[i] = *p;
+        }
+        else
+        {
+            tmp[i] = '\0';
+            break;
+        }
+    }
+    p += 2; // Skip \r\n
+    *begin_data_pointer = (uint8_t*)p;
+
+    return atoi(tmp);
+#endif
+}
+
+/*
+ * 	Ham doc mot so trong chuoi bat dau tu dia chi nao do.
+ *	Buffer = abc124mff thi gsm_utilities_get_number_from_string(3,Buffer) = 123
+ *
+ */
+uint32_t gsm_utilities_get_number_from_string(uint16_t begin_index, char* buffer)
+{
+    // assert(buffer);
+
+    uint32_t value = 0;
+    uint16_t tmp = begin_index;
+    uint32_t len = strlen(buffer);
+    while (buffer[tmp] && tmp < len)
+    {
+        if (buffer[tmp] >= '0' && buffer[tmp] <= '9')
+        {
+            value *= 10;
+            value += buffer[tmp] - 48;
+        }
+        else
+        {
+            break;
+        }
+        tmp++;
+    }
+
+    return value;
+}
