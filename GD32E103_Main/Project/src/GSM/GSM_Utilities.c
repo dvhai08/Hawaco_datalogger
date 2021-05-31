@@ -6,12 +6,11 @@
  * @brief   	
  ******************************************************************************/
 
-
 /******************************************************************************
                                    INCLUDES					    			 
  ******************************************************************************/
 #include <stdio.h>
-#include <string.h> 
+#include <string.h>
 #include <stdlib.h>
 #include "gsm.h"
 #include "gsm_utilities.h"
@@ -21,7 +20,7 @@
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
 extern System_t xSystem;
-extern GSM_Manager_t	gsm_manager;
+extern GSM_Manager_t gsm_manager;
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -52,51 +51,46 @@ extern GSM_Manager_t	gsm_manager;
 void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_buffer)
 {
     uint8_t Count = 0;
-    uint8_t tmpCount = 0;
+    uint8_t tmp_cnt = 0;
 
-    for(Count = 0; Count < strlen((char*) IMEI_buffer); Count++)
+    for (Count = 0; Count < strlen((char *)IMEI_buffer); Count++)
     {
-        if(IMEI_buffer[Count] >= '0' && IMEI_buffer[Count] <= '9')
+        if (IMEI_buffer[Count] >= '0' && IMEI_buffer[Count] <= '9')
         {
-            if(LoaiIMEI == GSMIMEI)
+            if (LoaiIMEI == GSMIMEI)
             {
-                xSystem.Parameters.GSM_IMEI[tmpCount++] = IMEI_buffer[Count];
+                xSystem.Parameters.GSM_IMEI[tmp_cnt++] = IMEI_buffer[Count];
             }
             else
             {
-                xSystem.Parameters.SIM_IMEI[tmpCount++] = IMEI_buffer[Count];
+                xSystem.Parameters.SIM_IMEI[tmp_cnt++] = IMEI_buffer[Count];
             }
         }
-        if(tmpCount >= 20) break;
+        if (tmp_cnt >= 20)
+            break;
     }
 
-    if(LoaiIMEI == GSMIMEI)
+    if (LoaiIMEI == GSMIMEI)
     {
-        xSystem.Parameters.GSM_IMEI[tmpCount] = 0;
+        xSystem.Parameters.GSM_IMEI[tmp_cnt] = 0;
     }
     else
     {
-        xSystem.Parameters.SIM_IMEI[tmpCount] = 0;
+        xSystem.Parameters.SIM_IMEI[tmp_cnt] = 0;
     }
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/10/2015
- * @version	:
- * @reviewer:	
- */
-void gsm_get_signal_strength(uint8_t *buffer)
-{	
-	char *tempBuff = strstr((char *)buffer, "+CSQ:");
-	
-	if(tempBuff == NULL) return;	
-	xSystem.Status.CSQ = gsm_utilities_get_number_from_string(6, tempBuff);
-	gsm_manager.GSMReady = 1;
+bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq)
+{
+    char *tmp_buff = strstr((char *)buffer, "+CSQ:");
+
+    if (tmp_buff == NULL)
+    {
+        return false;
+    }
+
+    *csq = gsm_utilities_get_number_from_string(6, tmp_buff);
+    return true;
 }
 
 #if __USE_APN_CONFIG__
@@ -105,19 +99,19 @@ void gsm_get_signal_strength(uint8_t *buffer)
 */
 void gsm_get_short_apn(char *ShortAPN)
 {
-	uint8_t i = 0;
-	
-	while(xSystem.Parameters.APNConfig[i] && i < 20)
-	{
-		if(xSystem.Parameters.APNConfig[i] == ',')
-			break;
-		i++;
-	}
-	
-	if(i > 2)
-	{
-		memcpy(ShortAPN, xSystem.Parameters.APNConfig, i);
-	}
+    uint8_t i = 0;
+
+    while (xSystem.Parameters.APNConfig[i] && i < 20)
+    {
+        if (xSystem.Parameters.APNConfig[i] == ',')
+            break;
+        i++;
+    }
+
+    if (i > 2)
+    {
+        memcpy(ShortAPN, xSystem.Parameters.APNConfig, i);
+    }
 }
 #endif
 
@@ -128,7 +122,7 @@ hoac
 +CUSD: 4
 +CME ERROR: unknown
 */
-void gsm_process_cusd_message(char* buffer)
+void gsm_process_cusd_message(char *buffer)
 {
 #if 0
 	uint8_t sizeBuff = sizeof(xSystem.Status.GSMBalance);
@@ -158,30 +152,32 @@ void gsm_process_cusd_message(char* buffer)
  */
 void gsm_get_network_status(char *buffer)
 {
-	/**
+    /**
 	* +CGREG: 2,1,"3279","487BD01",7
 	*
 	* OK
 	*/
-	char *tempBuff = strstr(buffer, "+CGREG:");
-	if(tempBuff == NULL) return;	
-	
-	uint8_t commaIndex[10] = {0};
-	uint8_t index = 0;
-	for(uint8_t i = 0; i < strlen(tempBuff); i++)
-	{
-		if(tempBuff[i] == ',') commaIndex[index++] = i;
-	}
-	if(index >= 4)
-	{
-		gsm_manager.AccessTechnology = gsm_utilities_get_number_from_string(commaIndex[3] + 1, tempBuff);
-		gsm_manager.GSMReady = 1;
-		
-		if(gsm_manager.AccessTechnology > 9) gsm_manager.AccessTechnology = 9;
-//		DEBUG ("\r\nNetwork status: %s - %u", tempBuff, gsm_manager.AccessTechnology);
-	}
-}
+    char *tmp_buff = strstr(buffer, "+CGREG:");
+    if (tmp_buff == NULL)
+        return;
 
+    uint8_t commaIndex[10] = {0};
+    uint8_t index = 0;
+    for (uint8_t i = 0; i < strlen(tmp_buff); i++)
+    {
+        if (tmp_buff[i] == ',')
+            commaIndex[index++] = i;
+    }
+    if (index >= 4)
+    {
+        gsm_manager.AccessTechnology = gsm_utilities_get_number_from_string(commaIndex[3] + 1, tmp_buff);
+        gsm_manager.GSMReady = 1;
+
+        if (gsm_manager.AccessTechnology > 9)
+            gsm_manager.AccessTechnology = 9;
+        //		DEBUG ("\r\nNetwork status: %s - %u", tmp_buff, gsm_manager.AccessTechnology);
+    }
+}
 
 /*****************************************************************************/
 /**
@@ -195,7 +191,7 @@ void gsm_get_network_status(char *buffer)
  */
 void gsm_get_network_operator(char *buffer)
 {
-	/**
+    /**
 	* AT+COPS=? 
 	* +COPS: (2,"Viettel","Viettel","45204",7),(1,"VIETTEL","VIETTEL","45204",2),(1,"VIETTEL","VIETTEL","45204",0),
 	* (1,"Vietnamobile","VNMOBILE","45205",2),(1,"VN VINAPHONE","GPC","45202",2),(1,"Vietnamobile","VNMOBILE","45205",0),
@@ -209,14 +205,14 @@ void gsm_get_network_operator(char *buffer)
 	* OK
 	*/
 #if 0
-	char *tempBuff = strstr(buffer, "+COPS:");
-	if(tempBuff == NULL) return;	
+	char *tmp_buff = strstr(buffer, "+COPS:");
+	if(tmp_buff == NULL) return;	
 	
 	uint8_t commaIndex[5] = {0};
 	uint8_t index = 0;
-	for(uint8_t i = 0; i < strlen(tempBuff); i++)
+	for(uint8_t i = 0; i < strlen(tmp_buff); i++)
 	{
-		if(tempBuff[i] == '"') commaIndex[index++] = i;
+		if(tmp_buff[i] == '"') commaIndex[index++] = i;
 	}
 	if(index >= 2)
 	{
@@ -226,7 +222,7 @@ void gsm_get_network_operator(char *buffer)
 		
 		//Copy operator name
 		memset(xSystem.Status.GSMOperator, 0, sizeof(xSystem.Status.GSMOperator));
-		memcpy(xSystem.Status.GSMOperator, &tempBuff[commaIndex[0] + 1], length - 1);
+		memcpy(xSystem.Status.GSMOperator, &tmp_buff[commaIndex[0] + 1], length - 1);
 		
 		DEBUG ("\r\nOperator: %s", xSystem.Status.GSMOperator);
 	}
@@ -266,7 +262,7 @@ bool gsm_utilities_parse_http_action_response(char *response, uint32_t *error_co
         // TODO parse error code
         retval = false;
     }
-#else   // Quectel
+#else // Quectel
     p = strstr(response, "+QHTTPGET: 0,200,");
     if (p)
     {
@@ -299,7 +295,7 @@ bool gsm_utilities_parse_http_action_response(char *response, uint32_t *error_co
 
 int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_pointer)
 {
-#if 0   // SIMCOM
+#if 0 // SIMCOM
     // +HTTPREAD: 123\r\nData
     char tmp[32];
     char *p = strstr(buffer, "+HTTPREAD: ");
@@ -330,7 +326,7 @@ int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_poin
     *begin_data_pointer = (uint8_t*)p;
 
     return atoi(tmp);
-#else       // Quectel
+#else // Quectel
     char tmp[32];
     char *p = strstr(buffer, "CONNECT\r\n");
     if (p == NULL)
@@ -357,7 +353,7 @@ int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_poin
         }
     }
     p += 2; // Skip \r\n
-    *begin_data_pointer = (uint8_t*)p;
+    *begin_data_pointer = (uint8_t *)p;
 
     return atoi(tmp);
 #endif
@@ -368,7 +364,7 @@ int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_poin
  *	Buffer = abc124mff thi gsm_utilities_get_number_from_string(3,Buffer) = 123
  *
  */
-uint32_t gsm_utilities_get_number_from_string(uint16_t begin_index, char* buffer)
+uint32_t gsm_utilities_get_number_from_string(uint16_t begin_index, char *buffer)
 {
     // assert(buffer);
 
@@ -390,4 +386,48 @@ uint32_t gsm_utilities_get_number_from_string(uint16_t begin_index, char* buffer
     }
 
     return value;
+}
+
+int32_t find_index_of_char(char char_to_find, char *buffer_to_find)
+{
+    uint32_t tmp_cnt = 0;
+    uint32_t max_length = 0;
+
+    /* Do dai du lieu */
+    max_length = strlen(buffer_to_find);
+
+    for (tmp_cnt = 0; tmp_cnt < max_length; tmp_cnt++)
+    {
+        if (buffer_to_find[tmp_cnt] == char_to_find)
+        {
+            return tmp_cnt;
+        }
+    }
+    return -1;
+}
+
+bool gsm_utilities_copy_parameters(char *src, char *dst, char comma_begin, char comma_end)
+{
+    int16_t begin_idx = find_index_of_char(comma_begin, src);
+    int16_t end_idx = find_index_of_char(comma_end, src);
+    int16_t tmp_cnt, i = 0;
+
+    if (begin_idx == -1 || end_idx == -1)
+    {
+        return false;
+    }
+
+    if (end_idx - begin_idx <= 1)
+    {
+        return false;
+    }
+
+    for (tmp_cnt = begin_idx + 1; tmp_cnt < end_idx; tmp_cnt++)
+    {
+        dst[i++] = src[tmp_cnt];
+    }
+
+    dst[i] = 0;
+
+    return true;
 }

@@ -406,7 +406,7 @@ static void ProcessGetConfigFromBroker(uint8_t* Buffer)
 	{
 		char Lenh[12] = {0};
 		memset(ServerResponseBuffer, 0, 150);
-		CopyParameter(BufferData, Lenh, '$', '?');
+		gsm_utilities_copy_parameters(BufferData, Lenh, '$', '?');
 		sprintf(ServerResponseBuffer, "ERROR: %s", Lenh);
 	}
 	

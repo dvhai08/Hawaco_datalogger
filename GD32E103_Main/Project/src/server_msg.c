@@ -2,129 +2,135 @@
 #include "string.h"
 #include "DataDefine.h"
 #include "gsm_utilities.h"
+#include "app_bkup.h"
+#include "gsm.h"
+#include "InternalFlash.h"
+#include "utilities.h"
 
 extern System_t xSystem;
 
 void server_msg_process_cmd(char *buffer)
 {
-    uint8_t hasNewConfig = 0;
+    uint8_t has_new_cfg = 0;
+    utilities_to_upper_case(buffer);
 
-    char *cycleWake = strstr(buffer, "CYCLEWAKEUP(");
-    if (cycleWake != NULL)
+    char *cycle_wakeup = strstr(buffer, "CYCLEWAKEUP\":");
+    if (cycle_wakeup != NULL)
     {
-        uint16_t wakeTime = gsm_utilities_get_number_from_string(12, cycleWake);
+        uint16_t wakeTime = gsm_utilities_get_number_from_string(strlen("CYCLEWAKEUP\":"), cycle_wakeup);
         if (xSystem.Parameters.TGDoDinhKy != wakeTime)
         {
             xSystem.Parameters.TGDoDinhKy = wakeTime;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
-    char *cycleSend = strstr(buffer, "CYCLESENDWEB(");
-    if (cycleSend != NULL)
+    char *cycle_send_web = strstr(buffer, "CYCLESENDWEB\":");
+    if (cycle_send_web != NULL)
     {
-        uint16_t sendTime = gsm_utilities_get_number_from_string(13, cycleSend);
+        uint16_t sendTime = gsm_utilities_get_number_from_string(strlen("CYCLESENDWEB\":"), cycle_send_web);
         if (xSystem.Parameters.TGGTDinhKy != sendTime)
         {
             DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
             xSystem.Parameters.TGGTDinhKy = sendTime;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
-    char *output1 = strstr(buffer, "OUTPUT1(");
+    char *output1 = strstr(buffer, "OUTPUT1\":");
     if (output1 != NULL)
     {
-        uint8_t out1 = gsm_utilities_get_number_from_string(8, output1) & 0x1;
+        uint8_t out1 = gsm_utilities_get_number_from_string(strlen("OUTPUT1\":"), output1) & 0x1;
         if (xSystem.Parameters.outputOnOff != out1)
         {
             xSystem.Parameters.outputOnOff = out1;
-            hasNewConfig++;
+            has_new_cfg++;
             DEBUG_PRINTF("Output 1 changed\r\n");
             //Dk ngoai vi luon
             TRAN_OUTPUT(out1);
         }
     }
 
-    char *output2 = strstr(buffer, "OUTPUT2(");
+    char *output2 = strstr(buffer, "OUTPUT2\":");
     if (output2 != NULL)
     {
-        uint8_t out2 = gsm_utilities_get_number_from_string(8, output2);
+        uint8_t out2 = gsm_utilities_get_number_from_string(strlen("OUTPUT2\":"), output2);
         if (xSystem.Parameters.output420ma != out2)
         {
             DEBUG_PRINTF("Output 2 changed\r\n");
             xSystem.Parameters.output420ma = out2;
-            hasNewConfig++;
+            has_new_cfg++;
 
             //Dk ngoai vi luon
             //TRAN_OUTPUT(out2);
         }
     }
 
-    char *input1 = strstr(buffer, "INPUT1(");
+    char *input1 = strstr(buffer, "INPUT1\":");
     if (input1 != NULL)
     {
-        uint8_t in1 = gsm_utilities_get_number_from_string(7, input1) & 0x1;
+        uint8_t in1 = gsm_utilities_get_number_from_string(strlen("INPUT1\":"), input1) & 0x1;
         if (xSystem.Parameters.input.name.pulse != in1)
         {
             DEBUG_PRINTF("INPUT1 changed\r\n");
             xSystem.Parameters.input.name.pulse = in1;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
-    char *input2 = strstr(buffer, "INPUT2(");
+    char *input2 = strstr(buffer, "INPUT2\":");
     if (input2 != NULL)
     {
-        uint8_t in2 = gsm_utilities_get_number_from_string(7, input2) & 0x1;
+        uint8_t in2 = gsm_utilities_get_number_from_string(strlen("INPUT2\":"), input2) & 0x1;
         if (xSystem.Parameters.input.name.ma420 != in2)
         {
             DEBUG_PRINTF("INPUT2 changed\r\n");
             xSystem.Parameters.input.name.ma420 = in2;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
-    char *rs485 = strstr(buffer, "RS485(");
+    char *rs485 = strstr(buffer, "RS485\":");
     if (rs485 != NULL)
     {
-        uint8_t in485 = gsm_utilities_get_number_from_string(7, rs485) & 0x1;
+        uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485) & 0x1;
         if (xSystem.Parameters.input.name.rs485 != in485)
         {
             DEBUG_PRINTF("in485 changed\r\n");
             xSystem.Parameters.input.name.rs485 = in485;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
-    char *alarm = strstr(buffer, "WARNING(");
+    char *alarm = strstr(buffer, "WARNING\":");
     if (alarm != NULL)
     {
-        uint8_t alrm = gsm_utilities_get_number_from_string(8, alarm) & 0x1;
+        uint8_t alrm = gsm_utilities_get_number_from_string(strlen("WARNING\":"), alarm) & 0x1;
         if (xSystem.Parameters.alarm != alrm)
         {
             DEBUG_PRINTF("WARNING changed\r\n");
             xSystem.Parameters.alarm = alrm;
-            hasNewConfig++;
+            has_new_cfg++;
         }
     }
 
 
-    char *phoneNum = strstr(buffer, "PHONENUM(");
-    if (phoneNum != NULL)
+    char *phone_num = strstr(buffer, "PHONENUM\":");
+    if (phone_num != NULL)
     {
-        char tmpPhone[30] = {0};
-        if (gsm_utilities_copy_parameters(phoneNum, tmpPhone, '(', ')'))
+        phone_num +=  strlen("PHONENUM\":");
+        char tmp_phone[30] = {0};
+        if (gsm_utilities_copy_parameters(phone_num, tmp_phone, '"', '"'))
         {
 #if 0
 			uint8_t changed = 0;
 			for(uint8_t i = 0; i < 15; i++)
 			{
-				if(tmpPhone[i] != xSystem.Parameters.PhoneNumber[i]) {
+				if(tmp_phone[i] != xSystem.Parameters.PhoneNumber[i]) {
 					changed = 1;
-					hasNewConfig ++;
+					has_new_cfg ++;
 				}
-				xSystem.Parameters.PhoneNumber[i] = tmpPhone[i];
+				xSystem.Parameters.PhoneNumber[i] = tmp_phone[i];
 			}
 			if (changed)
 			{
@@ -134,30 +140,30 @@ void server_msg_process_cmd(char *buffer)
         }
     }
 
-    char *kFactor = strstr(buffer, "K(");
-    if (kFactor)
+    char *k_factor = strstr(buffer, "K\":");
+    if (k_factor)
     {
-        uint32_t k_factor = gsm_utilities_get_number_from_string(strlen("K("), kFactor);
-        if (k_factor == 0)
+        uint32_t k = gsm_utilities_get_number_from_string(strlen("K\":"), k_factor);
+        if (k == 0)
         {
-            k_factor = 1;
+            k = 1;
         }
 
-        if (xSystem.Parameters.kFactor != k_factor)
+        if (xSystem.Parameters.kFactor != k)
         {
-            xSystem.Parameters.kFactor = k_factor;
-            DEBUG_PRINTF("K Factor %u\r\n", k_factor);
-            hasNewConfig++; 
+            xSystem.Parameters.kFactor = k;
+            DEBUG_PRINTF("K Factor %u\r\n", k);
+            has_new_cfg++; 
         }
     }
 
-    char *counterOffser = strstr(buffer, "METERINDICATOR(");
-    if (counterOffser)
+    char *counter_offset = strstr(buffer, "METERINDICATOR\":");
+    if (counter_offset)
     {
-        uint32_t offset = gsm_utilities_get_number_from_string(strlen("METERINDICATOR("), counterOffser);
+        uint32_t offset = gsm_utilities_get_number_from_string(strlen("METERINDICATOR\":"), counter_offset);
         if (xSystem.Parameters.input1Offset != offset)
         {
-            hasNewConfig++;   
+            has_new_cfg++;   
             xSystem.Parameters.input1Offset = offset;
             DEBUG_PRINTF("Input 1 offset %u\r\n", offset);
             xSystem.MeasureStatus.PulseCounterInFlash = 0;
@@ -169,10 +175,10 @@ void server_msg_process_cmd(char *buffer)
 
 
     //Luu config moi
-    if (hasNewConfig)
+    if (has_new_cfg)
     {
         gsm_set_timeout_to_sleep(10);        // Wait more 5 second
-        MqttClientSendFirstMessageWhenWakeup();
+        //MqttClientSendFirstMessageWhenWakeup();
         InternalFlash_WriteConfig();
     }
     else

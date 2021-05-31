@@ -20,7 +20,7 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result);
  * @retval TRUE Get csq success
  *         FALSE Get csq fail
  */ 
-bool gsm_utilities_get_signal_strength_from_buffer(char *buffer, uint8_t *csq);
+bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq);
 
 /**
  * @brief Get Number from string
@@ -105,16 +105,6 @@ bool gsm_utilities_copy_parameters(char* src, char* des, char find_char_begin, c
  */ 
 uint16_t gsm_utilities_calculate_crc16(uint8_t *data_int, uint8_t nb_of_bytes);
 
-
-/**
- * @brief Get signal strength from buffer
- * @param[in] buffer buffer response from GSM module
- * @param[out] CSQ value
- * @note buffer = "+CSQ:..."
- * @retval TRUE Get csq success
- *         FALSE Get csq fail
- */ 
-bool gsm_utilities_get_signal_strength_from_buffer(char * buffer, uint8_t * csq);
 
 ///**
 // * @brief Parse GSM HTTP timestamp response message

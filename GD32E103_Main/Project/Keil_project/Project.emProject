@@ -52,8 +52,8 @@
     </folder>
     <folder Name="Utilities">
       <file file_name="../src/Debug.c" />
-      <file file_name="../src/Utilities.c" />
       <file file_name="../lwrb/lwrb/src/lwrb/lwrb.c" />
+      <file file_name="../src/utilities.c" />
     </folder>
     <folder Name="Peripheral">
       <file file_name="../src/app_bkup.c" />
@@ -162,6 +162,37 @@
     <folder Name="server_msg">
       <file file_name="../src/server_msg.c" />
       <file file_name="../inc/server_msg.h" />
+    </folder>
+    <folder Name="inc">
+      <file file_name="../inc/aes.h" />
+      <file file_name="../inc/app_bkup.h" />
+      <file file_name="../inc/app_flash.h" />
+      <file file_name="../inc/app_wdt.h" />
+      <file file_name="../inc/base64.h" />
+      <file file_name="../inc/board_hw.h" />
+      <file file_name="../inc/ControlOutput.h" />
+      <file file_name="../inc/DataDefine.h" />
+      <file file_name="../inc/Debug.h" />
+      <file file_name="../inc/DownloadFile.h" />
+      <file file_name="../inc/DriverUART.h" />
+      <file file_name="../inc/FTP.h" />
+      <file file_name="../inc/gd32e10x_it.h" />
+      <file file_name="../inc/gd32e10x_libopt.h" />
+      <file file_name="../inc/gsm.h" />
+      <file file_name="../inc/gsm_utilities.h" />
+      <file file_name="../inc/Hardware.h" />
+      <file file_name="../inc/HardwareManager.h" />
+      <file file_name="../inc/InitSystem.h" />
+      <file file_name="../inc/Integer.h" />
+      <file file_name="../inc/InternalFlash.h" />
+      <file file_name="../inc/main.h" />
+      <file file_name="../inc/measure_input.h" />
+      <file file_name="../inc/Net_Config.h" />
+      <file file_name="../inc/RTL.h" />
+      <file file_name="../inc/Transfer.h" />
+      <file file_name="../inc/UART_Handler.h" />
+      <file file_name="../inc/UpdateFirmwareFTP.h" />
+      <file file_name="../inc/Version.h" />
     </folder>
   </project>
   <configuration

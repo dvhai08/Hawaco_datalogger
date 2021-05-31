@@ -212,15 +212,15 @@ void ProcessUpdateFirmwareCommand(char *Buffer, uint8_t fromSource)
 	sprintf(xSystem.FileTransfer.FTP_FileName,"%s", pTemp);	
 	
 	pTemp = strtok(NULL,",");	
-	xSystem.FileTransfer.FileSize.value = GetNumberFromString(0,pTemp);
+	xSystem.FileTransfer.FileSize.value = gsm_utilities_get_number_from_string(0,pTemp);
 	
 	pTemp = strtok(NULL,",");	
-	xSystem.FileTransfer.FileCRC.value = GetNumberFromString(0,pTemp);
+	xSystem.FileTransfer.FileCRC.value = gsm_utilities_get_number_from_string(0,pTemp);
 	
 	if(fromSource == CF_SERVER)
 	{
 		pTemp = strtok(NULL,",");
-		uint16_t newVersion = GetNumberFromString(0,pTemp);
+		uint16_t newVersion = gsm_utilities_get_number_from_string(0,pTemp);
 		
 		//Neu dang cung version thi khong update nua
 		if(newVersion == FIRMWARE_VERSION_CODE)

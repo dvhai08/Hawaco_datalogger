@@ -93,7 +93,7 @@ char espMessage[200];
 //    index += sprintf(&espMessage[index], "VERSION=%u|", FIRMWARE_VERSION_CODE);
 
 //    /* Add checksum */
-//    uint16_t crc16 = CalculateCRC16((uint8_t *)espMessage, index);
+//    uint16_t crc16 = utilities_calculate_crc16((uint8_t *)espMessage, index);
 //    index += sprintf(&espMessage[index], "CRC=%05u#", crc16);
 
 //    /* Send to ESP32 */
@@ -230,10 +230,10 @@ void ESP32_UART_Tick(void)
 //    char *crc = strstr(msg, "CRC=");
 //    if (crc)
 //    {
-//        uint16_t crc16 = GetNumberFromString(4, crc);
+//        uint16_t crc16 = gsm_utilities_get_number_from_string(4, crc);
 
 //        /* Tinh CRC thuc cua chuoi: Tru 10 ki tu cuoi CRC=12345# */
-//        uint16_t crcCal = CalculateCRC16((uint8_t *)msg, length - 10);
+//        uint16_t crcCal = utilities_calculate_crc16((uint8_t *)msg, length - 10);
 
 //        if (crc16 != crcCal)
 //        {
@@ -265,7 +265,7 @@ void ESP32_UART_Tick(void)
 //    if (gpioControl != NULL)
 //    {
 //        GPIO_Control_t gpio;
-//        gpio.Value = GetNumberFromString(5, gpioControl);
+//        gpio.Value = gsm_utilities_get_number_from_string(5, gpioControl);
 //        currentIOState = gpio.Value;
 //        workerControlGpio(&gpio);
 //    }

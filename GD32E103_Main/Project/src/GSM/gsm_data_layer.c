@@ -21,6 +21,7 @@
 #include "gsm.h"
 #include "MQTTUser.h"
 #include "gsm_http.h"
+#include "server_msg.h"
 
 #define MAX_TIMEOUT_TO_SLEEP_S 60
 #define GSM_NEED_ENTER_HTTP()           (m_enter_http)
@@ -721,8 +722,11 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             gsm_change_state(GSM_STATE_RESET);
             return;
         }
-        gsm_get_signal_strength(resp_buffer);
+
+        xSystem.Status.CSQ = 0;
+        gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &xSystem.Status.CSQ);
         DEBUG_PRINTF("CSQ: %d\r\n", xSystem.Status.CSQ);
+
         if (xSystem.Status.CSQ == 99)
         {
             DEBUG_PRINTF("Invalid csq\r\n");
@@ -731,6 +735,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         else
         {
+            gsm_manager.GSMReady = 1;
             xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
 //#if (__USED_HTTP__ == 0)
 #if 0
@@ -786,7 +791,9 @@ void gsm_at_cb_open_ppp_stack(gsm_response_event_t event, void *resp_buffer)
     case 2:
         if (event == GSM_EVENT_OK)
         {
-            gsm_get_signal_strength(resp_buffer);
+            xSystem.Status.CSQ = 0;
+            gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &xSystem.Status.CSQ);
+            gsm_manager.GSMReady = 1;
             xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
             DEBUG_PRINTF("CSQ: %d\r\n", xSystem.Status.CSQ);
         }
@@ -970,7 +977,9 @@ void gsm_at_cb_get_bts_info(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            gsm_get_signal_strength(resp_buffer);
+            xSystem.Status.CSQ = 0;
+            gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &xSystem.Status.CSQ);
+            gsm_manager.GSMReady = 1;
             gsm_manager.TimeOutCSQ = 0;
             xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
             DEBUG_PRINTF("CSQ: %d\r\n", xSystem.Status.CSQ);
@@ -1594,8 +1603,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         case GSM_HTTP_EVENT_DATA:
         {
             gsm_http_data_t *rx = (gsm_http_data_t*)data;
-            MQTT_ProcessDataFromServer((char*)rx->data, rx->length);
-            // DEBUG_PRINTF("DATA: %s\r\n", rx->data);
+            DEBUG_PRINTF("DATA: %s\r\n", rx->data);
+            server_msg_process_cmd((char*)rx->data);
+            // 
         }
             break;
 

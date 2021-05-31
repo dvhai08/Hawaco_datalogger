@@ -433,7 +433,7 @@ static uint8_t BuildPacketSendServer(uint8_t LoaiBanTin)
 	}
 		
 	/* Tinh checksum */
-	CheckSum = CalculateCheckSum((uint8_t*)PublicBuffer, ViTriTinhCheckSum, ViTri - ViTriTinhCheckSum) & 0xFF;
+	CheckSum = utilities_calculate_checksum((uint8_t*)PublicBuffer, ViTriTinhCheckSum, ViTri - ViTriTinhCheckSum) & 0xFF;
 		
 	/* Add tail & checksum */
 	ViTri += sprintf(&PublicBuffer[ViTri], "*%02X", CheckSum);

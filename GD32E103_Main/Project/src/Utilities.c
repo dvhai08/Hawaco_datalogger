@@ -6,21 +6,19 @@
  * @brief   	
  ******************************************************************************/
 
-
 /******************************************************************************
                                    INCLUDES					    			 
  ******************************************************************************/
- #include <string.h>
-#include "gsm_utilities.h"
+#include <string.h>
+#include "utilities.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
- 
- /******************************************************************************
+
+/******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
  ******************************************************************************/
-
 
 /******************************************************************************
                                    DATA TYPE DEFINE					    			 
@@ -34,14 +32,14 @@
                                    LOCAL FUNCTIONS					    			 
  ******************************************************************************/
 
-void toUpperCase(char* BufferData)
+void utilities_to_upper_case(char *buffer)
 {
     uint16_t i = 0;
-    while(BufferData[i] && i < 256)
+    while (buffer[i] && i < 256)
     {
-			if(BufferData[i] >= 97 && BufferData[i] <= 122)
-					BufferData[i] = BufferData[i] - 32;
-      i++;
+        if (buffer[i] >= 97 && buffer[i] <= 122)
+            buffer[i] = buffer[i] - 32;
+        i++;
     }
 }
 
@@ -55,39 +53,39 @@ void toUpperCase(char* BufferData)
  * @version	:
  * @reviewer:	
  */
-//uint32_t GetHexNumberFromString(uint16_t BeginAddress, char* Buffer)
+//uint32_t GetHexNumberFromString(uint16_t start_addr, char* buffer)
 //{
 //    uint32_t Value = 0;
-//    uint16_t tmpCount = 0;
+//    uint16_t tmp_count = 0;
 
-//    tmpCount = BeginAddress;
+//    tmp_count = start_addr;
 //    Value = 0;
-//    while(Buffer[tmpCount] && tmpCount < 1024)
+//    while(buffer[tmp_count] && tmp_count < 1024)
 //    {
-//        if((Buffer[tmpCount] >= '0' && Buffer[tmpCount] <= '9') || (Buffer[tmpCount] >= 'A' && Buffer[tmpCount] <= 'F') || (Buffer[tmpCount] >= 'a' && Buffer[tmpCount] <= 'f'))
+//        if((buffer[tmp_count] >= '0' && buffer[tmp_count] <= '9') || (buffer[tmp_count] >= 'A' && buffer[tmp_count] <= 'F') || (buffer[tmp_count] >= 'a' && buffer[tmp_count] <= 'f'))
 //        {
 //            Value *= 16;
 
-//            if(Buffer[tmpCount] == '1') Value += 1;
-//            if(Buffer[tmpCount] == '2') Value += 2;
-//            if(Buffer[tmpCount] == '3') Value += 3;
-//            if(Buffer[tmpCount] == '4') Value += 4;
-//            if(Buffer[tmpCount] == '5') Value += 5;
-//            if(Buffer[tmpCount] == '6') Value += 6;
-//            if(Buffer[tmpCount] == '7') Value += 7;
-//            if(Buffer[tmpCount] == '8') Value += 8;
-//            if(Buffer[tmpCount] == '9') Value += 9;
+//            if(buffer[tmp_count] == '1') Value += 1;
+//            if(buffer[tmp_count] == '2') Value += 2;
+//            if(buffer[tmp_count] == '3') Value += 3;
+//            if(buffer[tmp_count] == '4') Value += 4;
+//            if(buffer[tmp_count] == '5') Value += 5;
+//            if(buffer[tmp_count] == '6') Value += 6;
+//            if(buffer[tmp_count] == '7') Value += 7;
+//            if(buffer[tmp_count] == '8') Value += 8;
+//            if(buffer[tmp_count] == '9') Value += 9;
 
-//            if(Buffer[tmpCount] == 'A' || Buffer[tmpCount] == 'a') Value += 10;
-//            if(Buffer[tmpCount] == 'B' || Buffer[tmpCount] == 'b') Value += 11;
-//            if(Buffer[tmpCount] == 'C' || Buffer[tmpCount] == 'c') Value += 12;
-//            if(Buffer[tmpCount] == 'D' || Buffer[tmpCount] == 'd') Value += 13;
-//            if(Buffer[tmpCount] == 'E' || Buffer[tmpCount] == 'e') Value += 14;
-//            if(Buffer[tmpCount] == 'F' || Buffer[tmpCount] == 'f') Value += 15;
+//            if(buffer[tmp_count] == 'A' || buffer[tmp_count] == 'a') Value += 10;
+//            if(buffer[tmp_count] == 'B' || buffer[tmp_count] == 'b') Value += 11;
+//            if(buffer[tmp_count] == 'C' || buffer[tmp_count] == 'c') Value += 12;
+//            if(buffer[tmp_count] == 'D' || buffer[tmp_count] == 'd') Value += 13;
+//            if(buffer[tmp_count] == 'E' || buffer[tmp_count] == 'e') Value += 14;
+//            if(buffer[tmp_count] == 'F' || buffer[tmp_count] == 'f') Value += 15;
 //        }
 //        else break;
 
-//        tmpCount++;
+//        tmp_count++;
 //    }
 
 //    return Value;
@@ -102,15 +100,15 @@ void toUpperCase(char* BufferData)
  * @version	:
  * @reviewer:	
  */
-uint16_t CalculateCheckSum(uint8_t* Buffer, uint16_t BeginAddress, uint16_t Length)
+uint16_t utilities_calculate_checksum(uint8_t *buffer, uint16_t start_addr, uint16_t length)
 {
-    uint32_t tempChecksum = 0;
+    uint32_t tmp_checksum = 0;
     uint16_t i = 0;
 
-    for(i = BeginAddress; i < BeginAddress + Length; i++)
-        tempChecksum += Buffer[i];
-	
-    return(uint16_t) (tempChecksum);
+    for (i = start_addr; i < start_addr + length; i++)
+        tmp_checksum += buffer[i];
+
+    return (uint16_t)(tmp_checksum);
 }
 
 /***************************************************************************************************************************/
@@ -118,30 +116,30 @@ uint16_t CalculateCheckSum(uint8_t* Buffer, uint16_t BeginAddress, uint16_t Leng
  * 	Tinh check sum CRC 16 
  *
  */
-#define ISO15693_PRELOADCRC16	0xFFFF 
-#define ISO15693_POLYCRC16      0x8408 
-#define ISO15693_MASKCRC16      0x0001
-#define ISO15693_RESIDUECRC16   0xF0B8
- 
-uint16_t CalculateCRC16(uint8_t *DataIn, uint8_t NbByte)
+#define ISO15693_PRELOADCRC16 0xFFFF
+#define ISO15693_POLYCRC16 0x8408
+#define ISO15693_MASKCRC16 0x0001
+#define ISO15693_RESIDUECRC16 0xF0B8
+
+uint16_t utilities_calculate_crc16(uint8_t *data_in, uint8_t size)
 {
-	int16_t   i,j; 
-	int32_t ResCrc = ISO15693_PRELOADCRC16;
-            
-	for (i = 0; i < NbByte; i++) 
-	{ 
-		ResCrc = ResCrc ^ DataIn[i];
-		for (j = 8; j > 0; j--) 
-		{
-			ResCrc = (ResCrc & ISO15693_MASKCRC16) ? (ResCrc>>1) ^ ISO15693_POLYCRC16 : (ResCrc>>1); 
-		}
-	} 
- 
-	return ((~ResCrc) & 0xFFFF);
+    int16_t i, j;
+    int32_t res_crc = ISO15693_PRELOADCRC16;
+
+    for (i = 0; i < size; i++)
+    {
+        res_crc = res_crc ^ data_in[i];
+        for (j = 8; j > 0; j--)
+        {
+            res_crc = (res_crc & ISO15693_MASKCRC16) ? (res_crc >> 1) ^ ISO15693_POLYCRC16 : (res_crc >> 1);
+        }
+    }
+
+    return ((~res_crc) & 0xFFFF);
 }
 
 ///* Table of CRC values for high�order byte */
-//uint8_t const auchCRCHi[] = { 
+//uint8_t const auchCRCHi[] = {
 //	0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
 //	0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
 //	0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01,
@@ -162,8 +160,8 @@ uint16_t CalculateCRC16(uint8_t *DataIn, uint8_t NbByte)
 //	0x40
 //} ;
 
-/* Table of CRC values for low�order byte */ 
-//uint8_t const auchCRCLo[] = { 
+/* Table of CRC values for low�order byte */
+//uint8_t const auchCRCLo[] = {
 //	0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06, 0x07, 0xC7, 0x05, 0xC5, 0xC4,
 //	0x04, 0xCC, 0x0C, 0x0D, 0xCD, 0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09,
 //	0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9, 0x1B, 0xDB, 0xDA, 0x1A, 0x1E, 0xDE, 0xDF, 0x1F, 0xDD,
@@ -182,21 +180,21 @@ uint16_t CalculateCRC16(uint8_t *DataIn, uint8_t NbByte)
 //	0x48, 0x49, 0x89, 0x4B, 0x8B, 0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C,
 //	0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83, 0x41, 0x81, 0x80,
 //	0x40
-//}; 
+//};
 
-//uint16_t CRC16Custom(uint8_t *Buff, uint16_t DataLen)  /* The function returns the CRC as a unsigned short type */ 
+//uint16_t utilities_crc16_custom(uint8_t *Buff, uint16_t DataLen)  /* The function returns the CRC as a unsigned short type */
 //{
-//	uint8_t CRCHi = 0xFF ;  /* high byte of CRC initialized  */ 
-//	uint8_t CRCLo = 0xFF ;  /* low byte of CRC initialized  */ 
-//	
-//	uint16_t uIndex ;  /* will index into CRC lookup table  */ 
-//	while (DataLen--)  /* pass through message buffer  */ 
-//	{ 
-//		uIndex = CRCLo ^ (*Buff++) ;   /* calculate the CRC  */ 
-//		CRCLo = CRCHi ^ auchCRCHi[uIndex]; 
-//		CRCHi = auchCRCHi[uIndex]/2; 
+//	uint8_t CRCHi = 0xFF ;  /* high byte of CRC initialized  */
+//	uint8_t CRCLo = 0xFF ;  /* low byte of CRC initialized  */
+//
+//	uint16_t uIndex ;  /* will index into CRC lookup table  */
+//	while (DataLen--)  /* pass through message buffer  */
+//	{
+//		uIndex = CRCLo ^ (*Buff++) ;   /* calculate the CRC  */
+//		CRCLo = CRCHi ^ auchCRCHi[uIndex];
+//		CRCHi = auchCRCHi[uIndex]/2;
 //	}
-//	
+//
 //	return (CRCHi << 8 | CRCLo);
 //}
 
@@ -210,81 +208,18 @@ uint16_t CalculateCRC16(uint8_t *DataIn, uint8_t NbByte)
  * @version	:
  * @reviewer:	
  */
-int16_t FindIndexOfChar(char CharToFind, char *BufferToFind)
+int16_t FindIndexOfChar(char char_to_find, char *data_to_find)
 {
-    uint8_t tmpCount = 0;
-    uint16_t DoDai = 0;
+    uint8_t tmp_count = 0;
+    uint16_t length = 0;
 
     /* Do dai du lieu */
-    DoDai = strlen(BufferToFind);
+    length = strlen(data_to_find);
 
-    for(tmpCount = 0; tmpCount < DoDai; tmpCount++)
+    for (tmp_count = 0; tmp_count < length; tmp_count++)
     {
-        if(BufferToFind[tmpCount] == CharToFind) return tmpCount;
+        if (data_to_find[tmp_count] == char_to_find)
+            return tmp_count;
     }
     return -1;
 }
-/*****************************************************************************/
-/**
- * @brief	:  	Copy parameters
- * @param	:   
- * @retval	:
- * @author	:	Phinht
- * @created	:	15/01/2014
- * @version	:
- * @reviewer:	
- */
-
-uint8_t CopyParameter(char* BufferSource, char* BufferDes, char FindCharBegin, char FindCharEnd)
-{
-    int16_t ViTriBatDau = FindIndexOfChar(FindCharBegin, BufferSource);
-    int16_t ViTriKetThuc = FindIndexOfChar(FindCharEnd, BufferSource);
-    int16_t tmpCount, i = 0;
-
-    /* Kiem tra dinh dang du lieu */
-    if(ViTriBatDau == -1 || ViTriKetThuc == -1) return 0;
-    if(ViTriKetThuc - ViTriBatDau <= 1) return 0;
-
-    for(tmpCount = ViTriBatDau + 1; tmpCount < ViTriKetThuc; tmpCount++)
-    {
-        BufferDes[i++] = BufferSource[tmpCount];
-    }
-
-    BufferDes[i] = 0;
-
-    return 1;
-}
-/*****************************************************************************/
-/**
- * @brief	:  	Ham doc mot so trong chuoi bat dau tu dia chi nao do
- *				Buffer = abc124mff thi GetNumberFromString(3,Buffer) = 123
- * @param	:   
- * @retval	:
- * @author	:	Phinht
- * @created	:	15/01/2014
- * @version	:
- * @reviewer:	
- */
-
-uint32_t GetNumberFromString(uint16_t BeginAddress, char* Buffer)
-{
-    uint32_t Value = 0;
-    uint16_t tmpCount = 0;
-
-    tmpCount = BeginAddress;
-    Value = 0;
-    while(Buffer[tmpCount] && tmpCount < 1024)
-    {
-        if(Buffer[tmpCount] >= '0' && Buffer[tmpCount] <= '9')
-        {
-            Value *= 10;
-            Value += Buffer[tmpCount] - 48;
-        }
-        else break;
-
-        tmpCount++;
-    }
-
-    return Value;
-}
-

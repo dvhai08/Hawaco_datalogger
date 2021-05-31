@@ -452,7 +452,7 @@ void ProcessGetParameters(char* Buffer, uint8_t source)
 	
 	/** Duyet cac truong */
 	while(mToken != NULL) {
-		malenh = GetNumberFromString(0, mToken);
+		malenh = gsm_utilities_get_number_from_string(0, mToken);
 		if(malenh && index < 145)
 		{
 			memset(ConfigBuffer, 0, 20);
@@ -687,7 +687,7 @@ void DangKySDT(char* Buffer)
 	if(strcmp(tmpBuf, xSystem.Parameters.Password) != 0) return;	//Sai mat khau
 	
 	pos++;
-	tmpByte = GetNumberFromString(pos, Message);
+	tmpByte = gsm_utilities_get_number_from_string(pos, Message);
 		
 	if(tmpByte == 1) Macauhinh = CFG_SMSNumber1;
 	else if(tmpByte == 2) Macauhinh = CFG_SMSNumber2;
@@ -792,7 +792,7 @@ void CaiDatKhoangCach(char* Buffer)
 		}
 		pos++;
 	}	
-	tmpByte = GetNumberFromString(0, tmpBuf);
+	tmpByte = gsm_utilities_get_number_from_string(0, tmpBuf);
 				
 	//Set cau hinh
     memset(SendSMSBuffer, 0, 160);
@@ -835,7 +835,7 @@ void CaiDatCongSuat(char* Buffer)
 		}
 		pos++;
 	}	
-	tmpByte = GetNumberFromString(0, tmpBuf);
+	tmpByte = gsm_utilities_get_number_from_string(0, tmpBuf);
 				
 	//Set cau hinh
     memset(SendSMSBuffer, 0, 160);
@@ -975,7 +975,7 @@ void CaiDatKieuChop(char* Buffer)
 		}
 		pos++;
 	}	
-	tmpInt = GetNumberFromString(0, tmpBuf);
+	tmpInt = gsm_utilities_get_number_from_string(0, tmpBuf);
 				
 	//Set cau hinh
     memset(SendSMSBuffer, 0, 160);
@@ -1018,7 +1018,7 @@ void CaiDatGPSMode(char* Buffer)
 		}
 		pos++;
 	}	
-	tmpByte = GetNumberFromString(0, tmpBuf);
+	tmpByte = gsm_utilities_get_number_from_string(0, tmpBuf);
 				
 	//Set cau hinh
     memset(SendSMSBuffer, 0, 160);
@@ -1151,7 +1151,7 @@ static uint8_t BuildResponseMessage(uint8_t LoaiBanTin)
 //	}
 		
 	/* Tinh checksum */
-	CheckSum = CalculateCheckSum((uint8_t*)SendSMSBuffer, ViTriTinhCheckSum, ViTri - ViTriTinhCheckSum) & 0xFF;
+	CheckSum = utilities_calculate_checksum((uint8_t*)SendSMSBuffer, ViTriTinhCheckSum, ViTri - ViTriTinhCheckSum) & 0xFF;
 		
 	/* Add tail & checksum */
 	ViTri += sprintf(&SendSMSBuffer[ViTri], "*%02X", CheckSum);
@@ -1445,15 +1445,15 @@ void gsm_process_cmd_from_sms(char* Buffer)
 			return;
 		}
 		
-		if(CopyParameter((char*)Buffer, UDFWBuffer, '(', ')') == 0) return;
+		if(gsm_utilities_copy_parameters((char*)Buffer, UDFWBuffer, '(', ')') == 0) return;
 		
 		//Get file size
-		xSystem.FileTransfer.FileSize.value = GetNumberFromString(0, UDFWBuffer);
+		xSystem.FileTransfer.FileSize.value = gsm_utilities_get_number_from_string(0, UDFWBuffer);
 		
 		//Get file CRC
 		strcat(UDFWBuffer, ")");
-		if(CopyParameter(UDFWBuffer, CRCBuff, ',', ')') == 0) return;
-		xSystem.FileTransfer.FileCRC.value = GetNumberFromString(0, CRCBuff);
+		if(gsm_utilities_copy_parameters(UDFWBuffer, CRCBuff, ',', ')') == 0) return;
+		xSystem.FileTransfer.FileCRC.value = gsm_utilities_get_number_from_string(0, CRCBuff);
 		
 		SendSMS(SoDienThoai, "Chuan bi update FW");
 		
@@ -1476,7 +1476,7 @@ void gsm_process_cmd_from_sms(char* Buffer)
 		}
 		
 		memset(SMSResponseBuffer, 0, 160);
-		if(CopyParameter((char*)Buffer, SMSResponseBuffer, '(', ')') == 0) return;
+		if(gsm_utilities_copy_parameters((char*)Buffer, SMSResponseBuffer, '(', ')') == 0) return;
 		
 		//Get IP Address
 		while(SMSResponseBuffer[i] != ',' && i < 15)
@@ -1517,7 +1517,7 @@ void gsm_process_cmd_from_sms(char* Buffer)
 			tmpBuff[i-5] = pos[i];
 			i++;
 		}
-		xSystem.FileTransfer.FileSize.value = GetNumberFromString(0, tmpBuff);
+		xSystem.FileTransfer.FileSize.value = gsm_utilities_get_number_from_string(0, tmpBuff);
 		
 		//Get File CRC
 		pos = NULL;
@@ -1530,7 +1530,7 @@ void gsm_process_cmd_from_sms(char* Buffer)
 			tmpBuff[i-4] = pos[i];
 			i++;
 		}
-		xSystem.FileTransfer.FileCRC.value = GetNumberFromString(0, tmpBuff);
+		xSystem.FileTransfer.FileCRC.value = gsm_utilities_get_number_from_string(0, tmpBuff);
 		
 		DEBUG ("\r\nUDFW: Download FW. IP:%s, User:%s, Pass:%s, Size:%d, CRC:%d", xSystem.FileTransfer.FTP_IPAddress, 
 			xSystem.FileTransfer.FTP_UserName, xSystem.FileTransfer.FTP_Pass,

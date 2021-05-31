@@ -81,7 +81,6 @@ void gsm_hardware_tick(void);
 
 void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer);
 void gsm_get_short_apn(char *ShortAPN);
-void gsm_get_signal_strength(uint8_t *Buffer);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);
 void gsm_process_cusd_message(char *buffer);
 void gsm_get_network_status(char *Buffer);
