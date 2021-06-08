@@ -8,7 +8,7 @@
 
 typedef struct
 {
-    uint32_t *pointer;
+    uint8_t *pointer;
     uint32_t length;
 } app_queue_data_t;
 

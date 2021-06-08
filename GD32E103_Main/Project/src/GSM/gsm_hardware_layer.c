@@ -655,6 +655,12 @@ BOOL modem_online()
     return __FALSE;
 }
 
+
+void gsm_hw_uart_put_direct(uint8_t *data, uint32_t length)
+{
+    
+}
+
 /*****************************************************************************/
 /**
  * @brief	: This is a main thread for MODEM Control module. It is called on every 
@@ -824,18 +830,19 @@ BOOL modem_process(uint8_t ch)
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
         if (ch == '\r' || ch == '\n')
         {
-            /* Xu ly du lieu tien +CUSD: 0, "MobiQTKC:20051d,31/07/2016 KM2:50000d KM3:48500d KM1:27800d", 15 */
-            if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CUSD"))
-            {
-                DEBUG("\r\nTai khoan: %s", strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CUSD"));
-                MQTT_SendBufferToServer((char *)GSM_Hardware.atc.recv_buff.Buffer, "CUSD");
-            }
+            ///* Xu ly du lieu tien +CUSD: 0, "MobiQTKC:20051d,31/07/2016 KM2:50000d KM3:48500d KM1:27800d", 15 */
+            //if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CUSD"))
+            //{
+            //    DEBUG("\r\nTai khoan: %s", strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CUSD"));
+            //    MQTT_SendBufferToServer((char *)GSM_Hardware.atc.recv_buff.Buffer, "CUSD");
+            //}
 
-            /* Xu ly ban tin +CME ERROR */
-            if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CME ERROR:"))
-            {
-                CMEErrorCount++;
-            }
+            ///* Xu ly ban tin +CME ERROR */
+            //if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CME ERROR:"))
+            //{
+            //    CMEErrorCount++;
+            //}
+            DEBUG_PRINTF("Unhandled msg %s\r\n", GSM_Hardware.atc.recv_buff.Buffer);
 
             GSM_Hardware.atc.recv_buff.BufferIndex = 0;
             memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
@@ -897,7 +904,12 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
         return;
     }
     
-    DEBUG_PRINTF("%s", cmd);
+
+    if (strlen(cmd) < 128)
+    {
+        DEBUG_PRINTF("%s", cmd);
+    }
+
     GSM_Hardware.atc.cmd = cmd;
     GSM_Hardware.atc.expect_resp_from_atc = expect_resp;
     GSM_Hardware.atc.expected_response_at_the_end = expected_response_at_the_end_of_response;

@@ -114,15 +114,25 @@ typedef struct
     uint16_t Port;
 } HostStruct_t;
 
+//typedef struct
+//{
+//    uint8_t Year;
+//    uint8_t Month;
+//    uint8_t Day;
+//    uint8_t Hour;
+//    uint8_t Minute;
+//    uint8_t Second;
+//} DateTime_t;
+
 typedef struct
 {
-    uint8_t Year;
-    uint8_t Month;
-    uint8_t Day;
-    uint8_t Hour;
-    uint8_t Minute;
-    uint8_t Second;
-} DateTime_t;
+    uint8_t year;       // From 2000
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+} date_time_t;
 
 typedef enum
 {

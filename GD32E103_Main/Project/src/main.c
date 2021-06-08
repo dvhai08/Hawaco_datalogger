@@ -71,12 +71,13 @@ int main(void)
     __enable_irq();
     InitSystem();
     adcStarted = 1;
-#if GSM_ENABLE
+ #if (__USE_MQTT__)
     MqttClientSendFirstMessageWhenWakeup();
 #endif
     while (1)
     {
-#if GSM_ENABLE
+ //#if (__USE_MQTT__)
+#if 1
         main_TcpNet();
 #endif
         #warning  "Output test gui tin"
@@ -251,7 +252,9 @@ int main(void)
                     DEBUG_PRINTF("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
                     pmu_to_sleepmode(WFI_CMD);
                     xSystem.Status.GSMSleepTime++;
+#if (__USE_MQTT__)
                     SendMessageTick++;
+#endif
                     store_measure_result_timeout++;
                     Measure420mATick++;
                 }
@@ -267,10 +270,10 @@ extern void GSM_ManagerTestSleep(void);
 static void ProcessTimeout10ms(void)
 {
 #if GSM_ENABLE
-    #if (__USED_HTTP__)
-        gsm_hardware_tick();
-    #else
+    #if (__USE_MQTT__)
         MQTT_Tick();
+    #else
+        //gsm_hardware_tick();
     #endif
 #else
     GSM_ManagerTestSleep();

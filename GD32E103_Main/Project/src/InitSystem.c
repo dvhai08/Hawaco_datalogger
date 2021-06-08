@@ -135,10 +135,12 @@ void InitSystem(void)
 
 #if GSM_ENABLE	
 	gsm_init_hw();
-	MQTT_Init();
-	
-	/* Khoi tao main Tcp_Net */ 
+        /* Khoi tao main Tcp_Net */ 
 	init_TcpNet();
+
+ #if (__USE_MQTT__)
+	MQTT_Init();
+#endif
 #else
 	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);/*!< JTAG-DP disabled and SW-DP enabled */
 	// gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);

@@ -274,7 +274,9 @@ void ProcessSetParameters(char *buffer)
     if (hasNewConfig)
     {
         gsm_set_timeout_to_sleep(10);        // Wait more 5 second
+#if (__USE_MQTT__)
         MqttClientSendFirstMessageWhenWakeup();
+#endif
         InternalFlash_WriteConfig();
     }
     else

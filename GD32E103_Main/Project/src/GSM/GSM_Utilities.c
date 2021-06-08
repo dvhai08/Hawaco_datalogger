@@ -431,3 +431,69 @@ bool gsm_utilities_copy_parameters(char *src, char *dst, char comma_begin, char 
 
     return true;
 }
+
+bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *date_time)
+{
+    // Parse response buffer
+    // "\r\n+CCLK : "yy/MM/dd,hh:mm:ss+zz"\r\n\r\nOK\r\n        zz : timezone
+    // \r\n+CCLK : "10/05/06,00:01:52+08"\r\n\r\nOK\r\n
+    bool val = false;
+    uint8_t tmp[4];
+    char *p_index = strstr(response_buffer, "+CCLK");
+    if (p_index == NULL)
+    {
+        goto exit;
+    }
+
+    while (*p_index && ((*p_index) != '"'))
+    {
+        p_index++;
+    }
+    if (*p_index == '\0')
+    {
+        goto exit;
+    }
+    p_index++;
+    response_buffer = p_index;
+
+    memset(tmp, 0, sizeof(tmp));
+    memcpy(tmp, response_buffer, 2);
+    date_time->year = atoi((char*)tmp);
+    if (date_time->year < 20) // 2020
+    {
+        // Invalid timestamp
+        val = false;
+    }
+    else
+    {
+        // MM
+        memset(tmp, 0, sizeof(tmp));
+        memcpy(tmp, response_buffer + 3, 2);
+        date_time->month = atoi((char*)tmp);
+
+        // dd
+        memset(tmp, 0, sizeof(tmp));
+        memcpy(tmp, response_buffer + 6, 2);
+        date_time->day = atoi((char*)tmp);
+
+        // hh
+        memset(tmp, 0, sizeof(tmp));
+        memcpy(tmp, response_buffer + 9, 2);
+        date_time->hour = atoi((char*)tmp);
+
+        // mm
+        memset(tmp, 0, sizeof(tmp));
+        memcpy(tmp, response_buffer + 12, 2);
+        date_time->minute = atoi((char*)tmp);
+
+        // ss
+        memset(tmp, 0, sizeof(tmp));
+        memcpy(tmp, response_buffer + 15, 2);
+        date_time->second = atoi((char*)tmp);
+
+        val = true;
+    }
+
+exit:
+    return val;
+}

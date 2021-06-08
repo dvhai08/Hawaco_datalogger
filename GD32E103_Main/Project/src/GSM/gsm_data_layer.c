@@ -82,10 +82,13 @@ uint8_t gsm_check_ready_status(void);
 uint8_t gsm_check_idle(void);
 static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 
-static bool m_enter_http_get = false;
+static bool m_enter_http_get = true;
 static bool m_enter_http_post = false;
 
-static app_queue_data_t *m_last_http_msg = NULL;
+static app_queue_data_t m_last_http_msg = 
+{
+    .pointer = NULL,
+};
 
 void gsm_data_layter_set_flag_switch_mode_http(void)
 {
@@ -110,6 +113,58 @@ bool gsm_data_layer_is_module_sleeping(void)
 void gsm_change_state_sleep(void)
 {
     gsm_change_state(GSM_STATE_GOTO_SLEEP);
+}
+
+static uint32_t rtc_struct_to_counter(date_time_t *t)
+{
+    static const uint8_t days_in_month[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    uint16_t i;
+    uint32_t result = 0;
+    uint16_t idx, year;
+
+    year = t->year + 2000;
+
+    /* Calculate days of years before */
+    result = (uint32_t)year * 365;
+    if (t->year >= 1)
+    {
+        result += (year + 3) / 4;
+        result -= (year - 1) / 100;
+        result += (year - 1) / 400;
+    }
+
+    /* Start with 2000 a.d. */
+    result -= 730485UL;
+
+    /* Make month an array index */
+    idx = t->month - 1;
+
+    /* Loop thru each month, adding the days */
+    for (i = 0; i < idx; i++)
+    {
+        result += days_in_month[i];
+    }
+
+    /* Leap year? adjust February */
+    if (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0))
+    {
+    }
+    else
+    {
+        if (t->month > 2)
+        {
+            result--;
+        }
+    }
+
+    /* Add remaining days */
+    result += t->day;
+
+    /* Convert to seconds, add all the other stuff */
+    result = (result - 1) * 86400L + (uint32_t)t->hour * 3600 +
+             (uint32_t)t->minute * 60 + t->second;
+
+    return result;
 }
 
 /******************************************************************************/
@@ -511,7 +566,7 @@ uint8_t gsm_check_idle(void)
 static void init_http_msq(void)
 {
 #if (__USE_MQTT__ == 0)
-    uint8_t i;
+    //uint8_t i;
 
     DEBUG_PRINTF("HTTP: init buffer\r\n");
 
@@ -521,8 +576,13 @@ static void init_http_msq(void)
     //    xSystem.http_data.Buffer[i].BufferIndex = 0;
     //    xSystem.http_data.Buffer[i].State = BUFFER_STATE_IDLE;
     //}
-
-    app_queue_reset(&m_http_msq);
+    static bool m_is_the_first_time = true;
+    if (m_is_the_first_time)
+    {
+        m_is_the_first_time = false;
+        umm_init();
+        app_queue_reset(&m_http_msq);
+    }
 #endif
 }
 
@@ -614,16 +674,6 @@ void gsm_change_state(gsm_state_t new_state)
     gsm_manager.step = 0;
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 {
     switch (gsm_manager.step)
@@ -747,11 +797,32 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
 #endif
         break;
+
     case 20:
+    {
         DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CCLK?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+    }
         break;
+
+
     case 21:
+    {
+        DEBUG_PRINTF("Query CCLK: %s,%s\r\n", 
+                (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
+                (char*)resp_buffer);
+        date_time_t time;
+        gsm_utilities_parse_timestamp_buffer((char*)resp_buffer, &time);
+        uint32_t timestamp = rtc_struct_to_counter(&time);
+        __disable_irq();
+        xSystem.Status.TimeStamp = timestamp + 946681200 + 25200;       // 1970 to 2000 + GMT=7
+        rtc_counter_set(xSystem.Status.TimeStamp);
+        __enable_irq();
+        gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+    }
+        break;
+    
+    case 22:
         gsm_manager.step = 0;
         if (event != GSM_EVENT_OK)
         {
@@ -767,7 +838,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         if (xSystem.Status.CSQ == 99)
         {
             DEBUG_PRINTF("Invalid csq\r\n");
-            gsm_manager.step = 19;
+            gsm_manager.step = 20;
             gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         }
         else
@@ -1629,51 +1700,57 @@ void gsm_set_timeout_to_sleep(uint32_t sec)
 }
 
 
-static LargeBuffer_t m_http_buffer;
+//static LargeBuffer_t m_http_buffer;
 uint16_t gsm_build_http_post_msg(void)
 {
 #if (__USE_MQTT__ == 0)
-    app_queue_data_t *new_msq;
+    app_queue_data_t new_msq;
     if (app_queue_is_full(&m_http_msq))
     {
         DEBUG_PRINTF("HTTP msq full\r\n");
-        app_queue_get(&m_http_msq, new_msq);
-        umm_free(new_msq);
+        app_queue_data_t* tmp;
+        app_queue_get(&m_http_msq, tmp);
+        umm_free(tmp->pointer);
     }
 
-    new_msq->pointer = umm_malloc(256);
-    if (new_msq == NULL)
+    new_msq.pointer = umm_malloc(256);
+    if (new_msq.pointer == NULL)
     {
         DEBUG_PRINTF("[%s-%d] No memory\r\n", __FUNCTION__, __LINE__);
+        return 0;
+    }
+    else
+    {
+        DEBUG_PRINTF("[%s-%d] Malloc success\r\n", __FUNCTION__, __LINE__);
     }
 
-    new_msq->length = sprintf((char *)new_msq->pointer, "{\"Timestamp\":\"%d\",", xSystem.Status.TimeStamp); //second since 1970
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"ID\":\"%s\",", xSystem.Parameters.GSM_IMEI);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"PhoneNum\":\"%s\",", xSystem.Parameters.PhoneNumber);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Money\":\"%d\",", 0);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Input1\":\"%d\",",
+    new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%d\",", xSystem.Status.TimeStamp); //second since 1970
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"ID\":\"%s\",", xSystem.Parameters.GSM_IMEI);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", xSystem.Parameters.PhoneNumber);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Input1\":\"%d\",",
                                       xSystem.MeasureStatus.PulseCounterInBkup / xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset); //so xung
 
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA); //dau vao 4-20mA
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Output2\":\"%d\",", xSystem.Parameters.output420ma);    //dau ra 4-20mA
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"SignalStrength\":\"%d\",", xSystem.Status.CSQPercent);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"WarningLevel\":\"%d\",", xSystem.Status.Alarm);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA); //dau vao 4-20mA
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Output2\":\"%d\",", xSystem.Parameters.output420ma);    //dau ra 4-20mA
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", xSystem.Status.CSQPercent);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%d\",", xSystem.Status.Alarm);
 
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"BatteryDebug\":\"%d\",", xSystem.MeasureStatus.Vin);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"K\":\"%u\",", xSystem.Parameters.kFactor);
-    new_msq->length += sprintf((char *)&new_msq->pointer[new_msq->length], "\"Offset\":\"%u\"}", xSystem.Parameters.input1Offset);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"BatteryDebug\":\"%d\",", xSystem.MeasureStatus.Vin);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"K\":\"%u\",", xSystem.Parameters.kFactor);
+    new_msq.length += sprintf((char*)(new_msq.pointer + new_msq.length), "\"Offset\":\"%u\"}", xSystem.Parameters.input1Offset);
 
-    if (app_queue_put(&m_http_msq, new_msq) == false)
+    if (app_queue_put(&m_http_msq, &new_msq) == false)
     {
         DEBUG_PRINTF("Put to http msg failed\r\n");
         return 0;
     }
     else
     {
-        DEBUG_PRINTF("Put to http msg success, length %u\r\n", new_msq->length);
-        return new_msq->length;
+        DEBUG_PRINTF("Put to http msg success, length %u\r\n", new_msq.length);
+        return new_msq.length;
     }
 #else
     return 0;
@@ -1703,12 +1780,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
         case GSM_HTTP_POST_EVENT_DATA:
         {
-            if (m_last_http_msg == NULL)
+            if (m_last_http_msg.pointer == NULL)
             {
-                app_queue_get(&m_http_msq, m_last_http_msg);
-                gsm_http_data_t *post_data = (gsm_http_data_t*)data;
-                post_data->data = (uint8_t*)m_last_http_msg->pointer;
-                post_data->length = m_last_http_msg->length;
+                app_queue_get(&m_http_msq, &m_last_http_msg);
+                ((gsm_http_data_t*)data)->data = (uint8_t*)m_last_http_msg.pointer;
+                ((gsm_http_data_t*)data)->length = m_last_http_msg.length;
             }
         }
             break;
@@ -1723,11 +1799,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         case GSM_HTTP_POST_EVENT_FINISH_SUCCESS:
         {
             DEBUG_PRINTF("HTTP post : event success\r\n");
-            if (m_last_http_msg)
+            if (m_last_http_msg.pointer)
             {
                 DEBUG_PRINTF("Free um memory\r\n");
-                umm_free(m_last_http_msg->pointer);
-                m_last_http_msg = NULL;
+                umm_free(m_last_http_msg.pointer);
+                m_last_http_msg.pointer = NULL;
             }
             gsm_change_state(GSM_STATE_OK);
         }
@@ -1736,11 +1812,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         case GSM_HTTP_EVENT_FINISH_FAILED:
         {
             DEBUG_PRINTF("HTTP event failed\r\n");
-            if (m_last_http_msg)
+            if (m_last_http_msg.pointer)
             {
                 DEBUG_PRINTF("Free um memory\r\n");
-                umm_free(m_last_http_msg->pointer);
-                m_last_http_msg = NULL;
+                umm_free(m_last_http_msg.pointer);
+                m_last_http_msg.pointer = NULL;
             }
         }
             break;

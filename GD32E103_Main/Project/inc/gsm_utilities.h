@@ -106,6 +106,16 @@ bool gsm_utilities_copy_parameters(char* src, char* des, char find_char_begin, c
 uint16_t gsm_utilities_calculate_crc16(uint8_t *data_int, uint8_t nb_of_bytes);
 
 
+/**
+ * @brief                       Parse GSM HTTP timestamp response message
+ * @param[in]                   buffer : Pointer to buffer data will be parsed
+ * @param[out]                  date_time : Date time result
+ * @note :                      Format message "\r\n+CCLK : "yy/MM/dd,hh:mm:ss+zz"\r\n\r\nOK\r\n"
+ * @retval                      TRUE  : Operation success
+ *                              FALSE : Response message is invalid format or invalid timestamp
+ */ 
+bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *date_time);
+
 ///**
 // * @brief Parse GSM HTTP timestamp response message
 // * @param[in] buffer : Pointer to buffer data will be parsed

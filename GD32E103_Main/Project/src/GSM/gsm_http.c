@@ -13,7 +13,7 @@ static uint32_t m_total_bytes_recv = 0;
 static uint32_t m_content_length = 0;
 static char m_http_cmd_buffer[256];
 //static uint32_t m_http_packet_size;
-
+static gsm_http_data_t post_rx_data;
 
 #if 0   // SIMCOM
 void gsm_http_query(gsm_response_event_t event, void *response_buffer)
@@ -489,22 +489,35 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             DEBUG_PRINTF("Set PDP context as 1 : %s, response %s\r\n",
                          (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                          (char*)response_buffer);
-                
-            gsm_hw_send_at_cmd("AT+QHTTPCFG=\"responseheader\",0\r\n", 
-                                "OK\r\n", 
-                                "", 
-                                5000, 
-                                2, 
-                                gsm_http_query);
+            if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+            {
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"responseheader\",0\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+            }
+            else
+            {
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+            }
         }
         break;
 
         case 2:
         {
-            DEBUG_PRINTF("AT+QHTTPCFG=\"responseheader\",1 : %s, response %s\r\n", 
-                                            (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
-                                            (char*)response_buffer);
-
+            //if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+            {
+                DEBUG_PRINTF("AT+QHTTPCFG=\"header\",1 : %s, response %s\r\n", 
+                                                (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
+                                                (char*)response_buffer);
+            }
             gsm_hw_send_at_cmd("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1\r\n", 
                                 "OK\r\n", 
                                 "", 
@@ -670,18 +683,15 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                gsm_http_data_t rx_data;
-                rx_data.action = m_http_cfg.action;
 
-                DEBUG_PRINTF("Request http post data\r\n");
-                m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &rx_data);
-                   
-
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,10,10\r\n", rx_data.length);        // Set maximum 10s input time, and 10s response from server
+                post_rx_data.action = m_http_cfg.action;
+                m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
+                DEBUG_PRINTF("%s", post_rx_data.data); 
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,10,10\r\n", post_rx_data.length);        // Set maximum 10s input time, and 10s response from server
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
-                                    "+QHTTPPOST: 0,", 
+                                    "CONNECT", 
                                     "\r\n", 
-                                    20000, 
+                                    25000, 
                                     1, 
                                     gsm_http_query);
             }
@@ -700,7 +710,9 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 {
                     uint32_t http_response_code;
 
-                    if (gsm_utilities_parse_http_action_response((char*)response_buffer, &http_response_code, &m_content_length))
+                    if (gsm_utilities_parse_http_action_response((char*)response_buffer, 
+                                                                &http_response_code, 
+                                                                &m_content_length))
                     {
                         if (m_http_cfg.on_event_cb)
                         {
@@ -736,19 +748,30 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                gsm_hw_send_at_cmd("AT+QHTTPREAD=80\r\n", 
-                                    "CONNECT\r\n", 
-                                    "QHTTPREAD: 0", 
-                                    12000, 
+                DEBUG_PRINTF("Input http post\r\n");
+                gsm_hw_send_at_cmd((char*)post_rx_data.data, 
+                                    "QHTTPPOST: ", 
+                                    "\r\n", 
+                                    20000, 
                                     1, 
                                     gsm_http_query); // Close a GPRS context.
+
+                //gsm_hw_send_at_cmd("AT+QHTTPREAD=80\r\n", 
+                //                    "CONNECT\r\n", 
+                //                    "QHTTPREAD: 0", 
+                //                    12000, 
+                //                    1, 
+                //                    gsm_http_query); // Close a GPRS context.
             }
         }
         break;
         
         case 13:     // Proccess httpread data
         {
-            DEBUG_PRINTF("HTTP read : %s\r\n", (event == GSM_EVENT_OK) ? "OK" : "FAIL");
+            DEBUG_PRINTF("HTTP read : %s, data %s\r\n", 
+                            (event == GSM_EVENT_OK) ? "OK" : "FAIL",
+                             (char*)response_buffer);
+
             if (m_http_cfg.action == GSM_HTTP_ACTION_GET)       // GET
             {
                 if (event == GSM_EVENT_OK)
