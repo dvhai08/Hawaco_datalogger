@@ -21,6 +21,7 @@
 #include "main.h"
 #include "app_bkup.h"
 #include "MQTTUser.h"
+#include "gsm.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 
@@ -118,11 +119,15 @@ void MeasureTick1000ms(void)
         else
         {
             SENS_420mA_PWR_OFF();
+ #if (__USE_MQTT__)
             if (MQTT_PublishDataMsg() == 0) // No memory
             {
                 MQTT_DiscardOldestDataMsg();
                 MQTT_PublishDataMsg();
             }
+ #else
+        gsm_build_http_post_msg();
+ #endif
         }
     }
     if (m_measure_timeout > 0)
@@ -131,11 +136,15 @@ void MeasureTick1000ms(void)
         if (m_measure_timeout == 0)
         {
             DEBUG_PRINTF("--- Timeout measure ---r\n");
+#if (__USE_MQTT__)
             if (MQTT_PublishDataMsg() == 0) // No memory
             {
                 MQTT_DiscardOldestDataMsg();
                 MQTT_PublishDataMsg();
             }
+#else
+        gsm_build_http_post_msg();
+ #endif
             SENS_420mA_PWR_OFF();
         }
     }

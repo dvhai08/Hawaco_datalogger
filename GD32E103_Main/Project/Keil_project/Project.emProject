@@ -194,6 +194,17 @@
       <file file_name="../inc/UpdateFirmwareFTP.h" />
       <file file_name="../inc/Version.h" />
     </folder>
+    <folder Name="um_malloc">
+      <file file_name="../umm_malloc-1.0.1/src/umm_info.c" />
+      <file file_name="../umm_malloc-1.0.1/src/umm_integrity.c" />
+      <file file_name="../umm_malloc-1.0.1/src/umm_malloc.c" />
+      <file file_name="../umm_malloc-1.0.1/src/umm_malloc.h" />
+      <file file_name="../umm_malloc-1.0.1/src/umm_malloc_cfg.h" />
+      <file file_name="../umm_malloc-1.0.1/src/umm_poison.c" />
+    </folder>
+    <folder Name="app_queue">
+      <file file_name="../app_queue/app_queue.h" />
+    </folder>
   </project>
   <configuration
     Name="External Keil ARMCC"
@@ -202,6 +213,6 @@
   <configuration Name="GD32E103x" hidden="Yes" />
   <configuration
     Name="GD32E103x External"
-    c_user_include_directories=".;../../Library/CMSIS"
+    c_user_include_directories=".;../../Library/CMSIS;./../umm_malloc-1.0.1/src"
     inherited_configurations="External Keil ARMCC;GD32E103x" />
 </solution>

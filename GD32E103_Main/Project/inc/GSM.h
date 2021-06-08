@@ -172,4 +172,6 @@ void gsm_data_layter_set_flag_switch_mode_http(void);
 
 void gsm_data_layter_exit_mode_http(void);
 
+uint16_t gsm_build_http_post_msg(void);
+
 #endif // __GSM_H__

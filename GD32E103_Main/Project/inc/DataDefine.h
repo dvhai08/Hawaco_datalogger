@@ -29,7 +29,7 @@
 #define PTT_PRESSED 0
 #define PTT_RELEASED 1
 
-#define __USE_MQTT__ 1
+#define __USE_MQTT__ 0
 
 #define BUFFER_STATE_BUSY 1       // Trang thai dang them du lieu
 #define BUFFER_STATE_IDLE 2       // Trang thai cho
@@ -240,15 +240,20 @@ typedef struct
 {
     MediumBuffer_t Buffer[NUM_OF_MQTT_BUFFER];
 } MQTT_ClientData_t;
-#else
+#else       // use http
+#define NUM_OF_HTTP_BUFFER 6
 typedef struct
 {
-    SmallBuffer_t GPRS_Buffer[NUM_OF_GPRS_BUFFER];
-    SmallBuffer_t LoginBuffer;
+    MediumBuffer_t Buffer[NUM_OF_HTTP_BUFFER];
+} HTTP_ClientData_t;
+// typedef struct
+// {
+//     SmallBuffer_t GPRS_Buffer[NUM_OF_GPRS_BUFFER];
+//     SmallBuffer_t LoginBuffer;
 
-    uint8_t NewDataToSend;
-    uint16_t DataLengthToSend;
-} TCP_ClientData_t;
+//     uint8_t NewDataToSend;
+//     uint16_t DataLengthToSend;
+// } TCP_ClientData_t;
 #endif //__USE_MQTT__
 
 typedef struct
@@ -266,8 +271,10 @@ typedef struct
 #if (__USE_MQTT__ == 1)
     MQTT_ClientData_t MQTTData;
 #else
-    TCP_ClientData_t TCP_Data;
+    HTTP_ClientData_t http_data;
 #endif
+
+
 } System_t;
 
 #endif // __DATA_DEFINE_H__

@@ -57,6 +57,9 @@ volatile int32_t delay_sleeping_for_exit_wakeup = 0;
 
 extern volatile uint32_t SendMessageTick;
 volatile bool new_adc_data = false;
+
+ __align(4) char g_umm_heap[2048];
+
 /*!
     \brief      main function
     \param[in]  none
@@ -215,9 +218,8 @@ int main(void)
                         uint32_t sleep_time = estimate_sleep_time_in_second(xSystem.Status.GSMSleepTime,
                                                                             min_interval*60);       // 1 min = 60s
 
-                        DEBUG_PRINTF("Before deep sleep, gsm time %us, send msg tick %uS, estimate sleep time %usec\r\n", 
+                        DEBUG_PRINTF("Before deep sleep, gsm time %us, estimate sleep time %usec\r\n", 
                                         xSystem.Status.GSMSleepTime, 
-                                        SendMessageTick,
                                         sleep_time);
                         sleep_time = 18;  // Due to watchdog
                         rtc_alarm_config(rtc_counter_get() + sleep_time);
@@ -231,14 +233,17 @@ int main(void)
 
                         uint32_t diff = rtc_counter_get() - tick_before_sleep;
                         xSystem.Status.GSMSleepTime += diff;
+                        
+                        #if (__USE_MQTT__)
                         SendMessageTick += diff;
+                        #endif
+
                         TimeOut1000ms = diff*1000;
                         TimeOut3000ms += diff*1000;
                         store_measure_result_timeout += diff;
                         Measure420mATick += diff;
-                        DEBUG_PRINTF("After sleep, gsm sleep time %us, send msg tick %uS\r\n", 
-                                        xSystem.Status.GSMSleepTime, 
-                                        SendMessageTick);
+                        DEBUG_PRINTF("After sleep, gsm sleep time %us\r\n", 
+                                        xSystem.Status.GSMSleepTime);
                     }
                 }
                 else
