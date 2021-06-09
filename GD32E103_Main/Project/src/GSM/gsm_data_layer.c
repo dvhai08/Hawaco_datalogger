@@ -82,7 +82,7 @@ uint8_t gsm_check_ready_status(void);
 uint8_t gsm_check_idle(void);
 static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 
-static bool m_enter_http_get = true;
+static bool m_enter_http_get = false;
 static bool m_enter_http_post = false;
 
 static app_queue_data_t m_last_http_msg = 
@@ -381,6 +381,7 @@ void gsm_manager_tick(void)
             static gsm_http_config_t cfg;
             sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/telemetry", 
                                 xSystem.Parameters.GSM_IMEI);
+            //sprintf(cfg.url, "%s", "https://iot.wilad.vn");
             cfg.on_event_cb = gsm_http_event_cb;
             cfg.action = GSM_HTTP_ACTION_POST;
             cfg.port = 443;

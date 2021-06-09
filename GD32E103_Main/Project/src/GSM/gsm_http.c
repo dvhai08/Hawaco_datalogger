@@ -109,6 +109,12 @@ VWPm/+XGsJ/v7deUUws8xkJ9UoLUD905cqKZn9TJ4QYFGGNcLOcoE8gk4TDNj4NJ\r\n\
 Zt/byxPi3v8sFwXbAhUVRPxdaQ==\r\n\
 -----END PRIVATE KEY-----\r\n";
 
+static char m_build_http_post_header[255];
+static char *build_http_header(uint32_t length)
+{
+    sprintf(m_build_http_post_header, "POST /api/v1/863674040981159/telemetry HTTP/1.1\r\nHost: iot.wilad.vn\r\nContent-Type: application/json\r\nContent-Length: %u\r\n\r\n", length);
+}
+
 static uint32_t m_ssl_step = 0;
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
 {
@@ -892,14 +898,35 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
-                //gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",1\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+
+                //gsm_hw_send_at_cmd("AT\r\n", 
                 //                    "OK\r\n", 
                 //                    "", 
                 //                    5000, 
                 //                    2, 
                 //                    gsm_http_query);
+            }
+        }
+        break;
 
-                gsm_hw_send_at_cmd("AT\r\n", 
+        case 2: // Allow to output HTTP response header
+        {
+            DEBUG_PRINTF("Set PDP context as 1 : %s, response %s\r\n",
+                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
+                         (char*)response_buffer);
+            if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+            {
+    
+            }
+            else
+            {
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"responseheader\",1\r\n", 
                                     "OK\r\n", 
                                     "", 
                                     5000, 
@@ -909,7 +936,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
 
-        case 2:
+        case 3:
         {
             //if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
             {
@@ -926,7 +953,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
 
-        case 3:     // Activate context 1
+        case 4:     // Activate context 1
         {
             DEBUG_PRINTF("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1 : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
@@ -947,7 +974,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
 
-        case 4:     // Query state of context
+        case 5:     // Query state of context
         {
             //DEBUG_PRINTF("AT+QIACT=1: %s, response %s\r\n", 
             //            (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
@@ -965,7 +992,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
         
-        case 5: // Set ssl
+        case 6: // Set ssl
         {
             DEBUG_PRINTF("AT+QIACT: %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
@@ -980,7 +1007,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
             break;
 
-        case 6: // Set url
+        case 7: // Set url
         {
             DEBUG_PRINTF("SSL : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
@@ -1005,7 +1032,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
 
-        case 7:
+        case 8:
         {
             DEBUG_PRINTF("URL : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
@@ -1020,7 +1047,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
             break;
         
-        case 8: // Start HTTP download
+        case 9: // Start HTTP download
         {
             
             DEBUG_PRINTF("HTTP setting url : %s, response %s\r\n", 
@@ -1041,7 +1068,8 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 post_rx_data.action = m_http_cfg.action;
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 DEBUG_PRINTF("Send post data\r\n"); 
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,30,30\r\n", post_rx_data.length);        // Set maximum 10s input time, and 10s response from server
+                build_http_header(post_rx_data.length);
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,30,30\r\n", post_rx_data.length + strlen(m_build_http_post_header));        // Set maximum 10s input time, and 10s response from server
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT", 
                                     "", 
@@ -1052,7 +1080,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
 
-        case 9:
+        case 10:
         {
             DEBUG_PRINTF("HTTP action : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
@@ -1103,6 +1131,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             else        // POST
             {
                 DEBUG_PRINTF("Input http post, len %u\r\n", strlen((char*)post_rx_data.data));
+                gsm_hw_uart_send_raw((char*)m_build_http_post_header);
                 gsm_hw_send_at_cmd((char*)post_rx_data.data, 
                                     "QHTTPPOST: ", 
                                     "\r\n", 
@@ -1120,7 +1149,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         }
         break;
         
-        case 10:     // Proccess httpread data
+        case 11:     // Proccess httpread data
         {
             DEBUG_PRINTF("HTTP response : %s, data %s\r\n", 
                             (event == GSM_EVENT_OK) ? "OK" : "FAIL",
@@ -1153,13 +1182,26 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
-                DEBUG_PRINTF("HTTP finish\r\n");
-                if (m_http_cfg.on_event_cb) 
-                    m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+                gsm_hw_send_at_cmd("AT+QHTTPREAD=10\r\n",
+                                        "QHTTPREAD", 
+                                        "\r\n", 
+                                       10000, 
+                                        1, 
+                                        gsm_http_query); // Close a GPRS context.
             }
         }
             break;
         
+        case 12:
+        {
+            DEBUG_PRINTF("HTTP finish : %s, data %s\r\n", 
+                            (event == GSM_EVENT_OK) ? "OK" : "FAIL",
+                             (char*)response_buffer);
+                if (m_http_cfg.on_event_cb) 
+                    m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+        }
+            break;
+
         default:
             DEBUG_PRINTF("[%s] Unhandle step %d\r\n", __FUNCTION__, m_http_step);
             break;

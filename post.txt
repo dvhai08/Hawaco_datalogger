@@ -1,0 +1,1 @@
+{"Timestamp":"13","ID":"863674040981159","PhoneNum":"000000000000000","Money":"0","Input1":"1000","Input2":"0.0","Output1":"0","Output2":"0","SignalStrength":"85","WarningLevel":"0","BatteryLevel":"0","BatteryDebug":"0","K":"1","Offset":"1000"}
