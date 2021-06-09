@@ -174,4 +174,6 @@ void gsm_data_layter_exit_mode_http(void);
 
 uint16_t gsm_build_http_post_msg(void);
 
+void gsm_hw_uart_send_raw(char* raw);
+
 #endif // __GSM_H__

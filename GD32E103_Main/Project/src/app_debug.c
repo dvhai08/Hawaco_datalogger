@@ -4,7 +4,7 @@
 #include "main.h"
 #include "gd32e10x.h"
 
-#define RTT_PRINTF_BUFFER_SIZE 128
+#define RTT_PRINTF_BUFFER_SIZE 256
 #define BLE_PRINTF_MTU_SIZE 23
 static char m_debug_buffer[RTT_PRINTF_BUFFER_SIZE];
 

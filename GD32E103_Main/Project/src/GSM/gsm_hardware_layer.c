@@ -543,7 +543,10 @@ void gsm_uart_handler(void)
             {
                 p->Buffer[p->idx_in++] = ch;
                 if (p->idx_in == MODEM_BUFFER_SIZE)
+                {
+                    DEBUG_RAW("%s", p->Buffer);
                     p->idx_in = 0;
+                }
             }
         }
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
@@ -948,5 +951,10 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     //	DEBUG ("ATC: %s\r\n",cmd);
 }
 #endif //__USED_HTTP__
+
+void gsm_hw_uart_send_raw(char* raw)
+{
+    com_put_at_string(raw);
+}
 
 /********************************* END OF FILE *******************************/
