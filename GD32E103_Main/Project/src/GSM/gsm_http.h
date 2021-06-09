@@ -14,7 +14,9 @@ typedef enum
     GSM_HTTP_GET_EVENT_DATA,
     GSM_HTTP_POST_EVENT_DATA,
     GSM_HTTP_GET_EVENT_FINISH_SUCCESS,
+    GSM_HTTP_POST_BUILD_HEADER,
     GSM_HTTP_POST_EVENT_FINISH_SUCCESS,
+    GSM_HTTP_POST_EVENT_FINISH_FAILED,
     GSM_HTTP_EVENT_FINISH_FAILED
 } gsm_http_event_t;
 
@@ -27,8 +29,9 @@ typedef enum
 typedef struct
 {
     gsm_http_action_t action;
-    uint32_t length;
+    uint32_t data_length;
     uint8_t *data;
+    uint8_t *header;
 } gsm_http_data_t;
 
 

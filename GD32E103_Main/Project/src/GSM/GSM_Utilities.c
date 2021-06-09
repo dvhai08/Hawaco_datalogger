@@ -235,61 +235,27 @@ bool gsm_utilities_parse_http_action_response(char *response, uint32_t *error_co
     bool retval = false;
     char tmp[32];
     char *p;
-#if 0 // SIMCOM
-    p = strstr(response, "+HTTPACTION: 0,200,");
+    p = strstr(response, ": 0,");
     if (p)
     {
-        p += strlen("+HTTPACTION: 0,200,");
-        for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+        p += strlen(": 0,");
+        *error_code = gsm_utilities_get_number_from_string(0, p);
+        if (*error_code == 200)
         {
-            if (*p != '\r')
-            {
-                tmp[i] = *p;
-            }
-            else
-            {
-                tmp[i] = '\0';
-                break;
-            }
+            retval = true;
         }
-
-        *content_length = atoi(tmp);
-        *error_code = 200;
-        retval = true;
-    }
-    else
-    {
-        // TODO parse error code
-        retval = false;
-    }
-#else // Quectel
-    p = strstr(response, "+QHTTPGET: 0,200,");
-    if (p)
-    {
-        p += strlen("+QHTTPGET: 0,200,");
-        for (uint32_t i = 0; i < (sizeof(tmp) - 1); i++, p++)
+        
+        p = strstr(p, ",");
+        if (p)
         {
-            if (*p != '\r')
-            {
-                tmp[i] = *p;
-            }
-            else
-            {
-                tmp[i] = '\0';
-                break;
-            }
+            p++;
+            *content_length = gsm_utilities_get_number_from_string(0, p);
         }
-
-        *content_length = atoi(tmp);
-        *error_code = 200;
-        retval = true;
+        else
+        {
+            *content_length = 0;
+        }
     }
-    else
-    {
-        // TODO parse error code
-        retval = false;
-    }
-#endif
     return retval;
 }
 

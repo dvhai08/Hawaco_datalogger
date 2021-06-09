@@ -303,19 +303,21 @@ void gsm_manager_tick(void)
         gsmWakeUpPeriodically();
 #endif
 
-        if (gsm_manager.state == GSM_STATE_OK)
-        {
-            if (GSM_NEED_ENTER_HTTP_GET())
-            {
-                gsm_change_state(GSM_STATE_HTTP_GET);
-            }
-        }
-
         if (!app_queue_is_empty(&m_http_msq))
         {
             DEBUG_PRINTF("Post http data\r\n");
             m_enter_http_post = true;
             gsm_change_state(GSM_STATE_HTTP_POST);
+        }
+        else
+        {
+            if (gsm_manager.state == GSM_STATE_OK)
+            {
+                if (GSM_NEED_ENTER_HTTP_GET())
+                {
+                    gsm_change_state(GSM_STATE_HTTP_GET);
+                }
+            }
         }
         break;
 
@@ -386,6 +388,7 @@ void gsm_manager_tick(void)
             cfg.action = GSM_HTTP_ACTION_POST;
             cfg.port = 443;
             gsm_http_start(&cfg);
+            m_enter_http_get = true;
         }
     }
         break;
@@ -594,6 +597,7 @@ void gsm_data_layer_initialize(void)
     gsm_manager.TimeOutConnection = 0;
 
     gsm_change_state(GSM_STATE_POWER_ON);
+    gsm_http_cleanup();
     init_http_msq();
 }
 
@@ -1758,6 +1762,17 @@ uint16_t gsm_build_http_post_msg(void)
 #endif
 }
 
+static char m_build_http_post_header[255];
+static char *build_http_header(uint32_t length)
+{
+    sprintf(m_build_http_post_header, "POST /api/v1/%s/telemetry HTTP/1.1\r\n"\
+                                      "Host: iot.wilad.vn\r\nContent-Type: application/json\r\n"\
+                                      "Content-Length: %u\r\n\r\n", 
+                                        xSystem.Parameters.GSM_IMEI,
+                                        length);
+    return m_build_http_post_header;
+}
+
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 {
     switch (event)
@@ -1785,7 +1800,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             {
                 app_queue_get(&m_http_msq, &m_last_http_msg);
                 ((gsm_http_data_t*)data)->data = (uint8_t*)m_last_http_msg.pointer;
-                ((gsm_http_data_t*)data)->length = m_last_http_msg.length;
+                ((gsm_http_data_t*)data)->data_length = m_last_http_msg.length;
+                ((gsm_http_data_t*)data)->header = (uint8_t*)build_http_header(m_last_http_msg.length);
             }
         }
             break;
@@ -1809,7 +1825,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             gsm_change_state(GSM_STATE_OK);
         }
             break;
-
+        
+        case GSM_HTTP_POST_EVENT_FINISH_FAILED:
         case GSM_HTTP_EVENT_FINISH_FAILED:
         {
             DEBUG_PRINTF("HTTP event failed\r\n");
