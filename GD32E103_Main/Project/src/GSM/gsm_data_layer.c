@@ -379,7 +379,7 @@ void gsm_manager_tick(void)
         {
             GSM_DONT_NEED_HTTP_POST();
             static gsm_http_config_t cfg;
-            sprintf(cfg.url, "HTTPs://iot.wilad.vn/api/v1/%s/telemetry", 
+            sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/telemetry", 
                                 xSystem.Parameters.GSM_IMEI);
             cfg.on_event_cb = gsm_http_event_cb;
             cfg.action = GSM_HTTP_ACTION_POST;
@@ -394,7 +394,7 @@ void gsm_manager_tick(void)
         if (GSM_NEED_ENTER_HTTP_GET())
         {
             static gsm_http_config_t cfg;
-            sprintf(cfg.url, "HTTPs://iot.wilad.vn/api/v1/%s/attributes", 
+            sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/attributes", 
                                 xSystem.Parameters.GSM_IMEI);
             cfg.on_event_cb = gsm_http_event_cb;
             cfg.action = GSM_HTTP_ACTION_GET;

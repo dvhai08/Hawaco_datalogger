@@ -439,7 +439,14 @@ BOOL com_put_at_character(uint8_t c)
     if ((uint8_t)(p->idx_in + 1) == p->idx_out)
     {
         /* Serial transmit buffer is full. */
-        return (__FALSE);
+        DEBUG_PRINTF("Buffer full\r\n");
+        Delayms(5);
+        while ((uint8_t)(p->idx_in + 1) == p->idx_out)
+        {
+            
+        }
+        DEBUG_PRINTF("Buffer free\r\n");
+        //return (__FALSE);
     }
 
     /* Disable ngat USART0 */
@@ -746,6 +753,15 @@ void modem_run()
                 }
             }
         }
+        else 
+        {
+            char *p = strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "CME");
+            if (p && strstr(p, "\r\n"))
+            {
+                DEBUG_PRINTF("%s", p);
+                GSM_Hardware.atc.timeout_atc_ms = 0;
+            }
+        }
     }
 
 #if 1
@@ -842,7 +858,10 @@ BOOL modem_process(uint8_t ch)
             //{
             //    CMEErrorCount++;
             //}
-            DEBUG_PRINTF("Unhandled msg %s\r\n", GSM_Hardware.atc.recv_buff.Buffer);
+            if (GSM_Hardware.atc.recv_buff.BufferIndex>2)
+            {
+                DEBUG_PRINTF("Unhandled msg %s", GSM_Hardware.atc.recv_buff.Buffer);
+            }
 
             GSM_Hardware.atc.recv_buff.BufferIndex = 0;
             memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);

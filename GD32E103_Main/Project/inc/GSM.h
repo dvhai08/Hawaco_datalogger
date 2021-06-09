@@ -105,7 +105,7 @@ BOOL com_put_at_string(char *str);
 
 //======================== FOR MODEM ========================//
 
-#define MODEM_BUFFER_SIZE 1500
+#define MODEM_BUFFER_SIZE 2048
 
 #define MODEM_IDLE 0
 #define MODEM_ERROR 1

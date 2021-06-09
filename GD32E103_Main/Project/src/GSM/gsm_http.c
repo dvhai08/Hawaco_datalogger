@@ -6,6 +6,7 @@
 #include <string.h>
 
 //#define m_http_packet_size 512
+#define  POST_SSL_LEVEL              1
 
 static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
@@ -36,77 +37,76 @@ static gsm_http_data_t post_rx_data;
 //"Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n"\
 //"-----END CERTIFICATE-----\n";
 
-const char* root_ca = \
-"-----BEGIN CERTIFICATE-----\n"
-"MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n" \
-"MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n" \
-"DkRTVCBSb290IENBIFgzMB4XDTAwMDkzMDIxMTIxOVoXDTIxMDkzMDE0MDExNVow\n" \
-"PzEkMCIGA1UEChMbRGlnaXRhbCBTaWduYXR1cmUgVHJ1c3QgQ28uMRcwFQYDVQQD\n" \
-"Ew5EU1QgUm9vdCBDQSBYMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\n" \
-"AN+v6ZdQCINXtMxiZfaQguzH0yxrMMpb7NnDfcdAwRgUi+DoM3ZJKuM/IUmTrE4O\n" \
-"rz5Iy2Xu/NMhD2XSKtkyj4zl93ewEnu1lcCJo6m67XMuegwGMoOifooUMM0RoOEq\n" \
-"OLl5CjH9UL2AZd+3UWODyOKIYepLYYHsUmu5ouJLGiifSKOeDNoJjj4XLh7dIN9b\n" \
-"xiqKqy69cK3FCxolkHRyxXtqqzTWMIn/5WgTe1QLyNau7Fqckh49ZLOMxt+/yUFw\n" \
-"7BZy1SbsOFU5Q9D8/RhcQPGX69Wam40dutolucbY38EVAjqr2m7xPi71XAicPNaD\n" \
-"aeQQmxkqtilX4+U9m5/wAl0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNV\n" \
-"HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFMSnsaR7LHH62+FLkHX/xBVghYkQMA0GCSqG\n" \
-"SIb3DQEBBQUAA4IBAQCjGiybFwBcqR7uKGY3Or+Dxz9LwwmglSBd49lZRNI+DT69\n" \
-"ikugdB/OEIKcdBodfpga3csTS7MgROSR6cz8faXbauX+5v3gTt23ADq1cEmv8uXr\n" \
-"AvHRAosZy5Q6XkjEGB5YGV8eAlrwDPGxrancWYaLbumR9YbK+rlmM6pZW87ipxZz\n" \
-"R8srzJmwN0jP41ZL9c8PDHIyh8bwRLtTcm1D9SZImlJnt1ir/md2cXjbDaJWFBM5\n" \
-"JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo\n" \
-"Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n" \
-"-----END CERTIFICATE-----\n";
-
-static const char *certificate_pem = "-----BEGIN CERTIFICATE-----\r\n\
-MIIDXTCCAkWgAwIBAgIUTIuWv4Y7UjrIBhNNdQdQPhg4RpkwDQYJKoZIhvcNAQEL\r\n\
-BQAwPTELMAkGA1UEBhMCVk4xCzAJBgNVBAgMAkhOMSEwHwYDVQQKDBhJbnRlcm5l\r\n\
-dCBXaWRnaXRzIFB0eSBMdGQwIBcNMjEwNjA4MTEyMTA1WhgPMjEyMTA1MTUxMTIx\r\n\
-MDVaMD0xCzAJBgNVBAYTAlZOMQswCQYDVQQIDAJITjEhMB8GA1UECgwYSW50ZXJu\r\n\
-ZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC\r\n\
-AQEAwXeAtxn3nebrrYgPcvgIgcjMmGrTfUpmMIQKn2JKjR1uRZA/Uigoa/D9E07u\r\n\
-PRXyfqWML7THc9DiUSTMc4IuDEvrbgtuIugNlwAdeqYWwpXGKaZDBDYvJ1vyMSxc\r\n\
-/0Lz/zUwc0B9rlj1yNsWGkCWhBbAWu6C5sT1/jzl2DXVOTR3MjTQZPnN38sPulyP\r\n\
-mAPbaFB4b8+q4Sde2PjQj/n98q/qW55ZvcCmAZKR9eP3QOEV7jyITBCcb5xXV6co\r\n\
-nNSJ2Biy1RdvXTk5QQD/PM8lR+mc3lRZ0xQ/m+ugvwSp3gN3DtQoRUgVy3++UaOr\r\n\
-TCRoOwcfsK7RHbk7ZVrL5laAQwIDAQABo1MwUTAdBgNVHQ4EFgQUYWyZDgW9K485\r\n\
-5kyhPZFLQZi1PO8wHwYDVR0jBBgwFoAUYWyZDgW9K4855kyhPZFLQZi1PO8wDwYD\r\n\
-VR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAtwvhfIDZTzC0Bxtl5ckF\r\n\
-vYRswpRc9wwmRMWVPM3P1+92OvzFwVPh/CgU5A4Ikp057B6ZO2XgA8fhyrIMr5/V\r\n\
-AQiziTG//uXCcL0Dv6cfGK1EQpHnktMBoYmJCdV6iAg3l9mVMCFANcpf7Lx/JQgI\r\n\
-e2owMB+zEk0EBtGuOhdbElhMtTwO3h/jh7eX1Qb3MRrJTl3xpiuA183G/z7nA0Wd\r\n\
-Vp1GX/MJZ6tHfHOXZKHROMsFEwGGYz6haBqwnNnopPtU4P5DPsNCDGWcoRNsh7Sk\r\n\
-t8E+/eNZprf/HoDBf/pbaQQ8kICZW1zKJduxxDM6YbbAsXHa1NBTR+l/HXhW/FZK\r\n\
-mg==\r\n\
+const char* root_ca = "-----BEGIN CERTIFICATE-----\r\n\
+MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\r\n\
+MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\r\n\
+DkRTVCBSb290IENBIFgzMB4XDTAwMDkzMDIxMTIxOVoXDTIxMDkzMDE0MDExNVow\r\n\
+PzEkMCIGA1UEChMbRGlnaXRhbCBTaWduYXR1cmUgVHJ1c3QgQ28uMRcwFQYDVQQD\r\n\
+Ew5EU1QgUm9vdCBDQSBYMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\r\n\
+AN+v6ZdQCINXtMxiZfaQguzH0yxrMMpb7NnDfcdAwRgUi+DoM3ZJKuM/IUmTrE4O\r\n\
+rz5Iy2Xu/NMhD2XSKtkyj4zl93ewEnu1lcCJo6m67XMuegwGMoOifooUMM0RoOEq\r\n\
+OLl5CjH9UL2AZd+3UWODyOKIYepLYYHsUmu5ouJLGiifSKOeDNoJjj4XLh7dIN9b\r\n\
+xiqKqy69cK3FCxolkHRyxXtqqzTWMIn/5WgTe1QLyNau7Fqckh49ZLOMxt+/yUFw\r\n\
+7BZy1SbsOFU5Q9D8/RhcQPGX69Wam40dutolucbY38EVAjqr2m7xPi71XAicPNaD\r\n\
+aeQQmxkqtilX4+U9m5/wAl0CAwEAAaNCMEAwDwYDVR0TAQH/BAUwAwEB/zAOBgNV\r\n\
+HQ8BAf8EBAMCAQYwHQYDVR0OBBYEFMSnsaR7LHH62+FLkHX/xBVghYkQMA0GCSqG\r\n\
+SIb3DQEBBQUAA4IBAQCjGiybFwBcqR7uKGY3Or+Dxz9LwwmglSBd49lZRNI+DT69\r\n\
+ikugdB/OEIKcdBodfpga3csTS7MgROSR6cz8faXbauX+5v3gTt23ADq1cEmv8uXr\r\n\
+AvHRAosZy5Q6XkjEGB5YGV8eAlrwDPGxrancWYaLbumR9YbK+rlmM6pZW87ipxZz\r\n\
+R8srzJmwN0jP41ZL9c8PDHIyh8bwRLtTcm1D9SZImlJnt1ir/md2cXjbDaJWFBM5\r\n\
+JDGFoqgCWjBH4d1QB7wCCZAA62RjYJsWvIjJEubSfZGL+T0yjWW06XyxV3bqxbYo\r\n\
+Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\r\n\
 -----END CERTIFICATE-----\r\n";
 
+static const char *certificate_pem = "-----BEGIN CERTIFICATE-----\r\n\
+MIIDXTCCAkWgAwIBAgIUW4vkdSVuQy9lnOovjKjRvc3QfwowDQYJKoZIhvcNAQEL\r\n\
+BQAwPTELMAkGA1UEBhMCVk4xCzAJBgNVBAgMAkhOMSEwHwYDVQQKDBhJbnRlcm5l\r\n\
+dCBXaWRnaXRzIFB0eSBMdGQwIBcNMjEwNjA5MDE0NjE1WhgPMjEyMTA1MTYwMTQ2\r\n\
+MTVaMD0xCzAJBgNVBAYTAlZOMQswCQYDVQQIDAJITjEhMB8GA1UECgwYSW50ZXJu\r\n\
+ZXQgV2lkZ2l0cyBQdHkgTHRkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC\r\n\
+AQEAu0bKMttzgJAkmY4aD4kzxflCHR70lgqNQpujozx/GQ1ggE59RP4cnyqGjW+9\r\n\
+YotQCTcFL0XeMONU5GwCIO9fZ7s2Y8n3/MFngWW/5D3TLy1yLi0/W97RHkQRHUqZ\r\n\
+4sL0d91FbrQMZAEc9oT/Rpf+XaEsURFwiZN5ZuZEMMO3k8+pcWoX4M/3JsU4BBdy\r\n\
+Dv4+Mtaqgk/jlSnirylZXLb6lcdOm5ZFJGC7mB7ltuvwMHcNXrgTyykxfvuikj1V\r\n\
+0zLen95h99et42GTztJnzhRwx5ZV0TeKou889R3VfMqqgkG4gsVEhJwF3G82Jz8Z\r\n\
+PY04WucITBhXTky6kvSJacapFwIDAQABo1MwUTAdBgNVHQ4EFgQUrLXVJVF3v7HI\r\n\
+Uf4qohN4Az+ElwYwHwYDVR0jBBgwFoAUrLXVJVF3v7HIUf4qohN4Az+ElwYwDwYD\r\n\
+VR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAttYNEZ8As91wrT8pZdnn\r\n\
+nbVcywUpDelRUuhOEtcHmc2qlB9H8hFxjFvakI4K1JN9lW23D3L6r7NoaoQiuIX9\r\n\
+P3vx9h9G7qjetM1eHDuoliBs/MFp+DNJcp5ohydI/oDK4kyf50KQDYwp/bwP91Hp\r\n\
+mYq41s84bwqBgENrgS8nXZPFpIx7nn8AdplZURi9+s61DP5IDvk812kUZspp9scy\r\n\
+cLXnMBx6+jug5ZZR7BiWpVQJj8UdxOJxh9/BM7DD1KorfBP3MUFwMjSWvyFZwFm9\r\n\
+yVPDO1YdvsLyH6d/zx7FsUQmyVR6TGPdhHmU1IXWJzuEb0J/DlPB5Y5WYABQEzpB\r\n\
+Eg==\r\n\
+-----END CERTIFICATE-----";
+
 static const char *privkey = "-----BEGIN PRIVATE KEY-----\r\n\
-MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDBd4C3Gfed5uut\r\n\
-iA9y+AiByMyYatN9SmYwhAqfYkqNHW5FkD9SKChr8P0TTu49FfJ+pYwvtMdz0OJR\r\n\
-JMxzgi4MS+tuC24i6A2XAB16phbClcYppkMENi8nW/IxLFz/QvP/NTBzQH2uWPXI\r\n\
-2xYaQJaEFsBa7oLmxPX+POXYNdU5NHcyNNBk+c3fyw+6XI+YA9toUHhvz6rhJ17Y\r\n\
-+NCP+f3yr+pbnlm9wKYBkpH14/dA4RXuPIhMEJxvnFdXpyic1InYGLLVF29dOTlB\r\n\
-AP88zyVH6ZzeVFnTFD+b66C/BKneA3cO1ChFSBXLf75Ro6tMJGg7Bx+wrtEduTtl\r\n\
-WsvmVoBDAgMBAAECggEAZe7y8IZMAvRCRKIlkavBv6/urHfMin0CrplDh4qgQQ26\r\n\
-pghEdKMX+Rd2IBA8Ug8YP0Y2QIR9ejYaqCo9VrbGUFBH8SkwlE+zqVW0MoUEBO4p\r\n\
-BJTHRpbN7WzyhJodPZknOdXqey8FiTDx/yv/z0EsjNf37XExoykvew7XAz4J5CMm\r\n\
-C9IRJObLhBCR4Qi9BzZ1DS3l6ZomqM5Sgc587E/NyHEJO/V17uBGurGbBfRF5kZO\r\n\
-+qewmDOXxZT7/nPYBfHUk/ySYUiHRoCM3ffLvkkX3ndgmJb07YRIgFlNh4zMb429\r\n\
-17yBPNv/3vNhb7ZNhj+pwGgmn3EOAHfJrFeF/n9yMQKBgQD9qbFlM3pEfDOD9ylM\r\n\
-ZvYDdpEKDSQ9/OkN6FRiwfzGVB59rulshXaF4Wmd0Omve+KZUY5vS/FfKZ8s+Dpj\r\n\
-6BxF3KXgIoPTodX4LlE/k8rr7u535aUrju5RwXtl+VqDOkj/lB5gaoNnK+mPuFqv\r\n\
-3kSG+2ZUu+LJ6gkHDJUg7CSNpwKBgQDDP9PDRwdH8rVKa3mej2gNn40GF1gyE+/S\r\n\
-0JPU0kxw3gZE4nOzULWOFJ8eHCzb0eSDohofd1XR/IMbbj0rAPMzpLpKLh04TgFS\r\n\
-bq/5JYS0a68waywT8YyJXIIgo7EmU1ifj/w4RJlhPtdvkMpu+i4cWedKcpy/LCwW\r\n\
-uFewPbHkBQKBgQDNyM+oSSXEz3m/clDnsZOdZZ/uppCjVT0AUl27LKLThsShs7ec\r\n\
-mX14yVC0fhpGidtgBGDn+5UaXZrLkalVCaV+K63J8lY950m9qF2zlUOHOfPuAriH\r\n\
-aNIAM1XXeX4rfapg5RnroB1wIpi9RpMTn966HtN6pF4s7hdax6Nn7QsOewKBgQCQ\r\n\
-v570pJHHSy4P0AHIBTT09JYOL/xYk+M1/R+7pXS6MD+hjeiMxYbzoGIeZnDzPnYV\r\n\
-CHYpYcUj+foQufdrDDdA0ByzpeBPv7THMfwPzzrErxif4rQ4zNiNdSGbpP9OFHgd\r\n\
-QxePd3vmVjpNIaCSCbNpnVUVIkcGi27cISoRJIvfKQKBgFBFhms+0d12HkbDxamn\r\n\
-+9fEKT4yFhlX9SsjQgm5Dx5++FlPyWusophbu9mRY124m7lE2cTJnoDT7YrAKCRM\r\n\
-jlZKto+QTvD0cbHPbRbe1VMbgblhS8Pu6z4SwdBkLUT1eGbvwU/LjmDjaF2cgwKp\r\n\
-szZ4Q3ml342DN4v0G4ElRr0Y\r\n\
+MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQC7Rsoy23OAkCSZ\r\n\
+jhoPiTPF+UIdHvSWCo1Cm6OjPH8ZDWCATn1E/hyfKoaNb71ii1AJNwUvRd4w41Tk\r\n\
+bAIg719nuzZjyff8wWeBZb/kPdMvLXIuLT9b3tEeRBEdSpniwvR33UVutAxkARz2\r\n\
+hP9Gl/5doSxREXCJk3lm5kQww7eTz6lxahfgz/cmxTgEF3IO/j4y1qqCT+OVKeKv\r\n\
+KVlctvqVx06blkUkYLuYHuW26/Awdw1euBPLKTF++6KSPVXTMt6f3mH3163jYZPO\r\n\
+0mfOFHDHllXRN4qi7zz1HdV8yqqCQbiCxUSEnAXcbzYnPxk9jTha5whMGFdOTLqS\r\n\
+9IlpxqkXAgMBAAECggEARdyikVZMQCmFfcME9ca5CaFyiGqD03UcPTzSTpLC1xWm\r\n\
+ajbdhF9HThkPGLQWciyGLunXhUsLGDG1+YBRSvgBHzE3mQI/AIslkZ/jdcGahn7t\r\n\
+mUxH1n3IhQHfYI3z2iPgDtb8j8+az7OamlwC3tLUkRkO7y8STEA3iatcxNQ+J2Us\r\n\
+zUqQn0IcoizAKNI1ogoaCWLACVGIhOMAA4XfWhltDH0MnXMMOHXgwN6HzhZRQArF\r\n\
+RTMCiTNXU9RXqJ0ZHoYqTBsuEUWKRmmpia1jBJICGeoaT1xZ3LegOubktYIKue2W\r\n\
+zditaO86rl+h8KXBEoCsK5nkP98FjyPO6B0+9RCIAQKBgQDkh6lzodNfMlRCt1qe\r\n\
+WuarGjYEtqacagtvVwn2M6jq7yAuhH2eozHwaF9Bylsl9d0mswkevf04fYEH0Ttg\r\n\
+ddpibo83wUZL2gTe2EEuXHioTFWkhxd+mVIAdEVugCdwR9yRn8OZx9nQDgpRVFSl\r\n\
+LnK37tcUf4OfI75hw1RVmIO4CQKBgQDRyazk0DbwtK2VPc1DEpZGfoZpsKvFl+Yb\r\n\
+JngnLn3nC2feIymjXlAJm6bA8ZyGTxUngjbrCe1OtfbMYJ9tXlu+WMqI6PWeOb1g\r\n\
+p+s6Qs/8SzVsVPILcKKhKv2ZnxR7RonV2HT7zzkgDR0EJprarJJ5Qcdozo6hkVO6\r\n\
+h3TnOlBgHwKBgQDSVosAgtGprQkg3uHpHoFwuo89h1+SV4hu0g25LZMrqSxVpFx6\r\n\
+xnoQbABA7Z83MTR7ig263eNTOzCnoUylW9PFBT2Mc7ff2Kri8OgNY88qGBg7dpuJ\r\n\
+SlTPVjURn6KtFXdOEV5XDDrN5B5a/ONrpXSxFoOfuj3LG3r/QGk+30FdAQKBgQCw\r\n\
+EIwz9LNHTLup1xZfxkesnh98sDNZP+R0wNJyP8iWkbH4cpZNb6fIiINoxt3QsqpU\r\n\
+YCprFAe/2WNpn2XtyhVBKQ/B25HX2yme5w659LzNRultI9WH2F4E2SnBNgtgcpDX\r\n\
+kjSL6RxOU/MYOrYX9GFxtsz+nuyBmJAmqexo6z3tjQKBgQChrKwXjx3B/sNL0mxE\r\n\
+VWPm/+XGsJ/v7deUUws8xkJ9UoLUD905cqKZn9TJ4QYFGGNcLOcoE8gk4TDNj4NJ\r\n\
+7ITe2Tlt8b1OOiGYXDKkqYoO01QTgkdj5a8fnuaxwV2KGyvqETJSKZ5YgGw19PUz\r\n\
+Zt/byxPi3v8sFwXbAhUVRPxdaQ==\r\n\
 -----END PRIVATE KEY-----\r\n";
 
 static uint32_t m_ssl_step = 0;
@@ -137,7 +137,7 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
 
-            gsm_hw_send_at_cmd("AT+QSSLCFG=\"sslversion\",1,3\r\n", 
+            gsm_hw_send_at_cmd("AT+QSSLCFG=\"sslversion\",1,4\r\n", 
                                 "OK\r\n", 
                                 "", 
                                 5000, 
@@ -167,6 +167,7 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
     }
 
     if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+    //if (0)
     {
         switch (m_ssl_step)
         {
@@ -214,13 +215,21 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
                 DEBUG_PRINTF("Set the SSL ciphersuite: %s, response %s\r\n", 
                             (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                             (char*)response_buffer);
-
+#if (POST_SSL_LEVEL == 2)
                 gsm_hw_send_at_cmd("AT+QSSLCFG=\"seclevel\",1,2\r\n", 
                                     "OK\r\n", 
                                     "", 
                                     5000, 
                                     2, 
                                     setup_http_ssl);
+#else
+                gsm_hw_send_at_cmd("AT+QSSLCFG=\"seclevel\",1,0\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    setup_http_ssl);
+#endif
             }
                 break;
             
@@ -274,13 +283,28 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
                 DEBUG_PRINTF("AT+QSSLCFG=\"cacert\": %s, response %s\r\n", 
                             (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                             (char*)response_buffer);
-                sprintf(m_http_cmd_buffer, "AT+QFUPL=\"RAM:clientcert.pem\",%u\r\n", strlen(certificate_pem));
-                gsm_hw_send_at_cmd(m_http_cmd_buffer, 
-                                    "CONNECT\r\n", 
+                if (POST_SSL_LEVEL == 2)
+                {
+                    sprintf(m_http_cmd_buffer, "AT+QFUPL=\"RAM:clientcert.pem\",%u\r\n", strlen(certificate_pem));
+                    gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                                        "CONNECT\r\n", 
+                                        "", 
+                                        5000, 
+                                        1, 
+                                        setup_http_ssl);
+                }
+                else
+                {
+                    gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n", 
                                     "", 
                                     5000, 
-                                    1, 
-                                    setup_http_ssl);
+                                    2, 
+                                    gsm_http_query);
+                    m_ssl_step = 0;
+                    return;
+                }
+
             }   
                 break;
 
@@ -868,7 +892,14 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
-                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                //gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                //                    "OK\r\n", 
+                //                    "", 
+                //                    5000, 
+                //                    2, 
+                //                    gsm_http_query);
+
+                gsm_hw_send_at_cmd("AT\r\n", 
                                     "OK\r\n", 
                                     "", 
                                     5000, 
@@ -961,8 +992,8 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT\r\n", 
                                     "", 
-                                    5000, 
-                                    2, 
+                                    1000, 
+                                    1, 
                                     gsm_http_query);
             }
             else
@@ -976,6 +1007,10 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
         case 7:
         {
+            DEBUG_PRINTF("URL : %s, response %s\r\n", 
+                        (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
+                        (char*)response_buffer);
+
             gsm_hw_send_at_cmd(m_http_cfg.url, 
                             "OK\r\n", 
                             "", 
@@ -1006,11 +1041,11 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 post_rx_data.action = m_http_cfg.action;
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 DEBUG_PRINTF("Send post data\r\n"); 
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,10,10\r\n", post_rx_data.length);        // Set maximum 10s input time, and 10s response from server
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,30,30\r\n", post_rx_data.length);        // Set maximum 10s input time, and 10s response from server
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT", 
                                     "", 
-                                    5000, 
+                                    30000, 
                                     1, 
                                     gsm_http_query);
             }
@@ -1067,7 +1102,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                DEBUG_PRINTF("Input http post\r\n");
+                DEBUG_PRINTF("Input http post, len %u\r\n", strlen((char*)post_rx_data.data));
                 gsm_hw_send_at_cmd((char*)post_rx_data.data, 
                                     "QHTTPPOST: ", 
                                     "\r\n", 
@@ -1087,7 +1122,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         
         case 10:     // Proccess httpread data
         {
-            DEBUG_PRINTF("HTTP read : %s, data %s\r\n", 
+            DEBUG_PRINTF("HTTP response : %s, data %s\r\n", 
                             (event == GSM_EVENT_OK) ? "OK" : "FAIL",
                              (char*)response_buffer);
 
