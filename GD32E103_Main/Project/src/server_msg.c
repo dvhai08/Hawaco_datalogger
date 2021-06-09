@@ -18,9 +18,9 @@ void server_msg_process_cmd(char *buffer)
     if (cycle_wakeup != NULL)
     {
         uint16_t wakeTime = gsm_utilities_get_number_from_string(strlen("CYCLEWAKEUP\":"), cycle_wakeup);
-        if (xSystem.Parameters.TGDoDinhKy != wakeTime)
+        if (xSystem.Parameters.period_measure_peripheral != wakeTime)
         {
-            xSystem.Parameters.TGDoDinhKy = wakeTime;
+            xSystem.Parameters.period_measure_peripheral = wakeTime;
             has_new_cfg++;
         }
     }
@@ -29,10 +29,10 @@ void server_msg_process_cmd(char *buffer)
     if (cycle_send_web != NULL)
     {
         uint16_t sendTime = gsm_utilities_get_number_from_string(strlen("CYCLESENDWEB\":"), cycle_send_web);
-        if (xSystem.Parameters.TGGTDinhKy != sendTime)
+        if (xSystem.Parameters.period_send_message_to_server_min != sendTime)
         {
             DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
-            xSystem.Parameters.TGGTDinhKy = sendTime;
+            xSystem.Parameters.period_send_message_to_server_min = sendTime;
             #warning "Turn off cycle send webchanged"
             // has_new_cfg++;
         }
@@ -127,11 +127,11 @@ void server_msg_process_cmd(char *buffer)
 			uint8_t changed = 0;
 			for(uint8_t i = 0; i < 15; i++)
 			{
-				if(tmp_phone[i] != xSystem.Parameters.PhoneNumber[i]) {
+				if(tmp_phone[i] != xSystem.Parameters.phone_number[i]) {
 					changed = 1;
 					has_new_cfg ++;
 				}
-				xSystem.Parameters.PhoneNumber[i] = tmp_phone[i];
+				xSystem.Parameters.phone_number[i] = tmp_phone[i];
 			}
 			if (changed)
 			{

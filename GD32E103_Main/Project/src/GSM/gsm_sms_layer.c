@@ -169,29 +169,29 @@ static void CopySMSContent(char* Buffer)
  * @version	:
  * @reviewer:	
  */
-uint8_t SendSMS(char* PhoneNumber, char* Message) 
+uint8_t SendSMS(char* phone_number, char* Message) 
 { 
 	uint8_t ucCount = 0;
 
 	/* Kiem tra dieu kien ve do dai */
 	if(strlen(Message) >= 160) return 0;
-	if((strlen(PhoneNumber) >= 15) || (strlen(PhoneNumber) == 0)) return 0;
+	if((strlen(phone_number) >= 15) || (strlen(phone_number) == 0)) return 0;
 
 	/* Tim bo nho rong */
 	for(ucCount = 0; ucCount < 3; ucCount++)
 	{
 		if(SMSMemory[ucCount].NeedToSent == 0)
 		{
-			memset(SMSMemory[ucCount].PhoneNumber, 0, 15);
+			memset(SMSMemory[ucCount].phone_number, 0, 15);
 			memset(SMSMemory[ucCount].Message, 0, 160);
 
-			strcpy(SMSMemory[ucCount].PhoneNumber, PhoneNumber);
+			strcpy(SMSMemory[ucCount].phone_number, phone_number);
 			strcpy(SMSMemory[ucCount].Message, Message);
 
 			SMSMemory[ucCount].NeedToSent = 2;		//1
 			SMSMemory[ucCount].RetryCount = 0;
 
-			DEBUG ("\r\nAdd tin nhan vao buffer %u: %s,SDT: %s", ucCount, Message, PhoneNumber);
+			DEBUG ("\r\nAdd tin nhan vao buffer %u: %s,SDT: %s", ucCount, Message, phone_number);
 
 			return 1;
 		}
@@ -216,7 +216,7 @@ static void GuiINFO()
 
     //Build thong tin
 	sprintf(SendSMSBuffer, "%d:%d - IMEI: %s TBI: %s FIRM: %s%03u, RD: %s %s, BLDER: %u, FLASH: %u",
-        RTC_GetDateTime().Hour, RTC_GetDateTime().Minute,xSystem.Parameters.GSM_IMEI, 
+        RTC_GetDateTime().Hour, RTC_GetDateTime().Minute,xSystem.Parameters.gsm_imei, 
         xSystem.Parameters.DeviceID, FIRMWARE_VERSION_HEADER,FIRMWARE_VERSION_CODE,
 			__RELEASE_DATE_KEIL__, __RELEASE_TIME_KEIL__, xSystem.Parameters.BootloaderVersion,
 			xSystem.Status.FlashState);
@@ -240,7 +240,7 @@ void gsm_send_status_to_mobilephone(char *SDT)
   sprintf(SoDienThoai,"%s",SDT);
 		
 	sprintf(SendSMSBuffer, "IMEI: %s, ID: %s, TD: %.4f,%.4f, MoveAlr: %u, BatAlr: %u, BulbAlr: %u, 30Alr: %u, DisSet: %u, DisCal: %.1f, OpTime: %u,Laser:%d,Ultra:%d",
-		xSystem.Parameters.GSM_IMEI, xSystem.Parameters.DeviceID, 
+		xSystem.Parameters.gsm_imei, xSystem.Parameters.DeviceID, 
 		GPS_GetPosition().ViDo.value, GPS_GetPosition().KinhDo.value, 
 		xSystem.Status.DistanceAlarm, xSystem.Status.LowBattAlarm, xSystem.Status.LedBulbAlarm, xSystem.Status.Alarm30Min,
 		xSystem.Parameters.Distance, xSystem.Status.Distance, xSystem.MeasureStatus.operatingTime,

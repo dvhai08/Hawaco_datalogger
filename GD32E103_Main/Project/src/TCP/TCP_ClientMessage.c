@@ -32,7 +32,7 @@ extern uint8_t TrangThaiDen;
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
  ******************************************************************************/
-extern uint8_t SendSMS(char* PhoneNumber, char* Message);
+extern uint8_t SendSMS(char* phone_number, char* Message);
 
 /******************************************************************************
                                    DATA TYPE DEFINE					    			 

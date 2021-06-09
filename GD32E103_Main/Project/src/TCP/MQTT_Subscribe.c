@@ -112,7 +112,7 @@ void MQTTSub_Init(void)
 	SubData.cleansession = 1;
 	SubData.keepAliveInterval = KEEP_ALIVE_INTERVAL;
 	BufferLen = sizeof(Buffer);
-	SubTopicString.cstring = xSystem.Parameters.MQTT.SubTopic;	//xSystem.Parameters.GSM_IMEI;	
+	SubTopicString.cstring = xSystem.Parameters.MQTT.SubTopic;	//xSystem.Parameters.gsm_imei;	
 }
 	
 /*****************************************************************************/

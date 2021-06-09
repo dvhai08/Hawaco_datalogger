@@ -170,7 +170,7 @@ void MQTT_Tick(void)
         {
         case MQTT_INIT: /* Init MQTT params */
             memset(mqttClientIdBuff, 0, sizeof(mqttClientIdBuff));
-            sprintf(mqttClientIdBuff, "HWC_%s", xSystem.Parameters.GSM_IMEI);
+            sprintf(mqttClientIdBuff, "HWC_%s", xSystem.Parameters.gsm_imei);
             MqttClientInfo.clientID.cstring = mqttClientIdBuff;
 
             xSystem.Status.MQTTServerState = MQTT_RESOLVE_DNS;
@@ -689,7 +689,7 @@ static void mqtt_dns_callback(U8 event, U8 *ip)
 void MQTT_SubscribeNewTopic(char *topic)
 {
     char subTopic[50] = {0};
-    sprintf(subTopic, "%s%s", TOPIC_SUB_HEADER, xSystem.Parameters.GSM_IMEI);
+    sprintf(subTopic, "%s%s", TOPIC_SUB_HEADER, xSystem.Parameters.gsm_imei);
     SubTopicString.cstring = subTopic;
     DEBUG_PRINTF("MQTT: subscribe topic: %s\r\n", subTopic);
 

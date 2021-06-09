@@ -115,9 +115,9 @@ void ProcessSetParameters(char *buffer)
     if (cycleWake != NULL)
     {
         uint16_t wakeTime = gsm_utilities_get_number_from_string(12, cycleWake);
-        if (xSystem.Parameters.TGDoDinhKy != wakeTime)
+        if (xSystem.Parameters.period_measure_peripheral != wakeTime)
         {
-            xSystem.Parameters.TGDoDinhKy = wakeTime;
+            xSystem.Parameters.period_measure_peripheral = wakeTime;
             hasNewConfig++;
         }
     }
@@ -126,10 +126,10 @@ void ProcessSetParameters(char *buffer)
     if (cycleSend != NULL)
     {
         uint16_t sendTime = gsm_utilities_get_number_from_string(13, cycleSend);
-        if (xSystem.Parameters.TGGTDinhKy != sendTime)
+        if (xSystem.Parameters.period_send_message_to_server_min != sendTime)
         {
             DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
-            xSystem.Parameters.TGGTDinhKy = sendTime;
+            xSystem.Parameters.period_send_message_to_server_min = sendTime;
             hasNewConfig++;
         }
     }
@@ -222,11 +222,11 @@ void ProcessSetParameters(char *buffer)
 			uint8_t changed = 0;
 			for(uint8_t i = 0; i < 15; i++)
 			{
-				if(tmpPhone[i] != xSystem.Parameters.PhoneNumber[i]) {
+				if(tmpPhone[i] != xSystem.Parameters.phone_number[i]) {
 					changed = 1;
 					hasNewConfig ++;
 				}
-				xSystem.Parameters.PhoneNumber[i] = tmpPhone[i];
+				xSystem.Parameters.phone_number[i] = tmpPhone[i];
 			}
 			if (changed)
 			{

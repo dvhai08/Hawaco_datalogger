@@ -491,12 +491,12 @@ uint8_t InternalFlash_WriteConfig(void)
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
         /* Frequency send message */
-        if (FLASH_ProgramWord(CONFIG_FREQ_SEND_ADDR, xSystem.Parameters.TGGTDinhKy) != FLASH_COMPLETE)
+        if (FLASH_ProgramWord(CONFIG_FREQ_SEND_ADDR, xSystem.Parameters.period_send_message_to_server_min) != FLASH_COMPLETE)
             result++;
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
         /* Frequency measure sensor */
-        if (FLASH_ProgramWord(CONFIG_FREQ_MEASURE_ADDR, xSystem.Parameters.TGDoDinhKy) != FLASH_COMPLETE)
+        if (FLASH_ProgramWord(CONFIG_FREQ_MEASURE_ADDR, xSystem.Parameters.period_measure_peripheral) != FLASH_COMPLETE)
             result++;
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
         
@@ -546,7 +546,7 @@ uint8_t InternalFlash_WriteConfig(void)
         /* phone number */
         for (uint8_t i = 0; i < 15; i++)
         {
-            tmp_align = xSystem.Parameters.PhoneNumber[i];
+            tmp_align = xSystem.Parameters.phone_number[i];
             if (FLASH_ProgramWord(CONFIG_PHONE_ADDR + i * 4, tmp_align) != FLASH_COMPLETE)
                 result++;
             fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
@@ -659,8 +659,8 @@ void InternalFlash_ReadConfig(void)
     {
         DEBUG_PRINTF("Use default parameters\r\n");
 
-        xSystem.Parameters.TGGTDinhKy = 60;      //phut
-        xSystem.Parameters.TGDoDinhKy = 15;      //phut
+        xSystem.Parameters.period_send_message_to_server_min = 60;      //phut
+        xSystem.Parameters.period_measure_peripheral = 15;      //phut
         xSystem.Parameters.outputOnOff = 0;      //off
         xSystem.Parameters.output420ma = 0;      //off
         xSystem.Parameters.input.value = 0;      //all input off
@@ -668,12 +668,12 @@ void InternalFlash_ReadConfig(void)
         xSystem.Parameters.alarm = 0;            //alarm off
         xSystem.Parameters.kFactor = 1;
         xSystem.Parameters.input1Offset = 0;
-        sprintf(xSystem.Parameters.PhoneNumber, "%s", "000");
+        sprintf(xSystem.Parameters.phone_number, "%s", "000");
     }
     else
     {
-        xSystem.Parameters.TGGTDinhKy = (*(__IO uint32_t *)(CONFIG_FREQ_SEND_ADDR)) & 0xFFFF;
-        xSystem.Parameters.TGDoDinhKy = (*(__IO uint32_t *)(CONFIG_FREQ_MEASURE_ADDR)) & 0xFFFF;
+        xSystem.Parameters.period_send_message_to_server_min = (*(__IO uint32_t *)(CONFIG_FREQ_SEND_ADDR)) & 0xFFFF;
+        xSystem.Parameters.period_measure_peripheral = (*(__IO uint32_t *)(CONFIG_FREQ_MEASURE_ADDR)) & 0xFFFF;
         xSystem.Parameters.outputOnOff = (*(__IO uint32_t *)(CONFIG_OUTPUT1_ADDR)) & 0xFF;
         xSystem.Parameters.output420ma = (*(__IO uint32_t *)(CONFIG_OUTPUT2_ADDR)) & 0xFF;
         xSystem.Parameters.input.value = (*(__IO uint32_t *)(CONFIG_INPUT_ADDR)) & 0xFF;
@@ -685,17 +685,17 @@ void InternalFlash_ReadConfig(void)
         {
             char ch = *(__IO uint32_t *)(CONFIG_PHONE_ADDR + i * 4);
             if ((ch >= '0' && ch <= '9') || ch == '+')
-                xSystem.Parameters.PhoneNumber[i] = ch;
+                xSystem.Parameters.phone_number[i] = ch;
             else
-                xSystem.Parameters.PhoneNumber[i] = '0';
+                xSystem.Parameters.phone_number[i] = '0';
         }
     }
-    DEBUG_PRINTF("Freq: %u - %u\r\n", xSystem.Parameters.TGGTDinhKy, xSystem.Parameters.TGDoDinhKy);
+    DEBUG_PRINTF("Freq: %u - %u\r\n", xSystem.Parameters.period_send_message_to_server_min, xSystem.Parameters.period_measure_peripheral);
     DEBUG_PRINTF("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma);
     DEBUG_PRINTF("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
     DEBUG_PRINTF("Alarm: %u\r\n", xSystem.Parameters.alarm);
     DEBUG_PRINTF("Offset: %u, K %u\r\n", xSystem.Parameters.input1Offset, xSystem.Parameters.kFactor);
-    DEBUG_PRINTF("Phone: %s\r\n", xSystem.Parameters.PhoneNumber);
+    DEBUG_PRINTF("Phone: %s\r\n", xSystem.Parameters.phone_number);
     DEBUG_PRINTF("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);
 
     //Doc thong so do

@@ -121,11 +121,11 @@ static void GuiBanTinDinhKiTick(void)
     uint8_t ThoiGianGuiSubscribe;
 
     //Test 10'
-    if (SendMessageTick >= xSystem.Parameters.TGGTDinhKy*60 || send_msg_when_device_wakeup)
+    if (SendMessageTick >= xSystem.Parameters.period_send_message_to_server_min*60 || send_msg_when_device_wakeup)
     {
         if ((SendMessageTick % 10) == 0)
         {
-            DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.TGGTDinhKy*60, xSystem.Status.MQTTServerState);
+            DEBUG_PRINTF("SendMessageTick %u-%u, svr %d\r\n", SendMessageTick, xSystem.Parameters.period_send_message_to_server_min*60, xSystem.Status.MQTTServerState);
         }
         if (xSystem.Status.MQTTServerState == MQTT_CONNECTED || xSystem.Status.MQTTServerState == MQTT_LOGINED)
         {
@@ -142,7 +142,7 @@ static void GuiBanTinDinhKiTick(void)
         LastMinute = RTC_GetDateTime().Minute;
 
         TimeoutSendDistanceUpdate++;
-        if (TimeoutSendDistanceUpdate >= xSystem.Parameters.TGGTDinhKy)
+        if (TimeoutSendDistanceUpdate >= xSystem.Parameters.period_send_message_to_server_min)
         {
             TimeoutSendDistanceUpdate = 0;
             DataMessage(DATA_DINHKY);
@@ -326,7 +326,7 @@ uint16_t MQTT_SendBufferToServer(char *BufferToSend, char *LoaiBanTin)
 	if(pubPackageId == 0) pubPackageId = 1;
 	
 	char pubTopic[50] = {0};
-	sprintf(pubTopic, "%s%s", TOPIC_PUB_HEADER, xSystem.Parameters.GSM_IMEI);
+	sprintf(pubTopic, "%s%s", TOPIC_PUB_HEADER, xSystem.Parameters.gsm_imei);
 	PubTopicString.cstring = pubTopic;
 	
 	/* Dong goi MQTT */
@@ -401,8 +401,8 @@ uint16_t MQTT_PublishDataMsg(void)
     if (pubPackageId == 0)
         pubPackageId = 1;
     mqttBuffer.BufferIndex = sprintf((char *)mqttBuffer.Buffer, "{\"Timestamp\":\"%d\",", xSystem.Status.TimeStamp); //second since 1970
-    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"ID\":\"%s\",", xSystem.Parameters.GSM_IMEI);
-    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"PhoneNum\":\"%s\",", xSystem.Parameters.PhoneNumber);
+    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"ID\":\"%s\",", xSystem.Parameters.gsm_imei);
+    mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"PhoneNum\":\"%s\",", xSystem.Parameters.phone_number);
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"Money\":\"%d\",", 0);
     mqttBuffer.BufferIndex += sprintf((char *)&mqttBuffer.Buffer[mqttBuffer.BufferIndex], "\"Input1\":\"%d\",",
                                       xSystem.MeasureStatus.PulseCounterInBkup / xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset); //so xung
@@ -421,7 +421,7 @@ uint16_t MQTT_PublishDataMsg(void)
 
     /* =================== Build MQTT message =============== */
     char pubTopic[50] = {0};
-    sprintf(pubTopic, "%s%s", TOPIC_PUB_HEADER, xSystem.Parameters.GSM_IMEI);
+    sprintf(pubTopic, "%s%s", TOPIC_PUB_HEADER, xSystem.Parameters.gsm_imei);
     PubTopicString.cstring = pubTopic;
 
     /* Dong goi MQTT */
@@ -477,7 +477,7 @@ uint16_t MQTT_PublishDebugMsg(char *msgHeader, char *msgBody)
         pubPackageId = 1;
 
     char pubTopic[50] = {0};
-    sprintf(pubTopic, "%s%s", TOPIC_DEBUG_HEADER, xSystem.Parameters.GSM_IMEI);
+    sprintf(pubTopic, "%s%s", TOPIC_DEBUG_HEADER, xSystem.Parameters.gsm_imei);
     PubTopicString.cstring = pubTopic;
 
     /* Dong goi MQTT */

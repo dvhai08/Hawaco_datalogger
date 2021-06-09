@@ -140,7 +140,7 @@ static void ProcessNewDebugData(void)
         case 16:
             if (gsm_data_layer_is_module_sleeping())
             {
-                xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy * 60;
+                xSystem.Status.gsm_sleep_time_s = xSystem.Parameters.period_send_message_to_server_min * 60;
             }
             break;
 

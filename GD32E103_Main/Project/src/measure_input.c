@@ -106,7 +106,7 @@ void MeasureTick1000ms(void)
 
     /* === DO DAU VAO 4-20mA DINH KY === //
 	*/
-    if (Measure420mATick >= xSystem.Parameters.TGDoDinhKy * 60)
+    if (Measure420mATick >= xSystem.Parameters.period_measure_peripheral * 60)
     {
         Measure420mATick = 0;
 

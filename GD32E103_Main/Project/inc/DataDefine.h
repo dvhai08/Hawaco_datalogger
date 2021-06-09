@@ -196,7 +196,7 @@ typedef struct
     uint8_t TCPCloseDone;
 
     uint8_t SendGPRSTimeout;
-    uint16_t GSMSleepTime;
+    uint16_t gsm_sleep_time_s;
     uint32_t GSMSendFailedTimeout;
     uint8_t CSQ;
     uint8_t CSQPercent;
@@ -224,17 +224,17 @@ typedef union
 
 typedef struct
 {
-    char GSM_IMEI[25];
-    char SIM_IMEI[25];
+    char gsm_imei[25];
+    char sim_imei[25];
 
     char MQTTUser[25];
     char MQTTPass[25];
     HostStruct_t MQTTHost;
 
     //Thong so cau hinh
-    char PhoneNumber[15];
-    uint16_t TGGTDinhKy; //phut
-    uint16_t TGDoDinhKy; //phut
+    char phone_number[15];
+    uint16_t period_send_message_to_server_min; //phut
+    uint16_t period_measure_peripheral; //phut
     uint8_t outputOnOff; //0/1
     uint8_t output420ma; //4-20mA
     InputConfig_t input;

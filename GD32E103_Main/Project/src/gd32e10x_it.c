@@ -168,7 +168,7 @@ void EXTI0_IRQHandler(void)
     if (RESET != exti_interrupt_flag_get(EXTI_0))
     {
         DEBUG_PRINTF("EXTI0 irq\r\n");
-        xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy*60;
+        xSystem.Status.gsm_sleep_time_s = xSystem.Parameters.period_send_message_to_server_min*60;
         LED1(0);
         exti_interrupt_flag_clear(EXTI_0);
     }

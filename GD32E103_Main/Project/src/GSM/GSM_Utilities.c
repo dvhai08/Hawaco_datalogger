@@ -15,6 +15,7 @@
 #include "gsm.h"
 #include "gsm_utilities.h"
 #include "DataDefine.h"
+#include "sys_ctx.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
@@ -59,11 +60,11 @@ void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_buffer)
         {
             if (LoaiIMEI == GSMIMEI)
             {
-                xSystem.Parameters.GSM_IMEI[tmp_cnt++] = IMEI_buffer[Count];
+                xSystem.Parameters.gsm_imei[tmp_cnt++] = IMEI_buffer[Count];
             }
             else
             {
-                xSystem.Parameters.SIM_IMEI[tmp_cnt++] = IMEI_buffer[Count];
+                xSystem.Parameters.sim_imei[tmp_cnt++] = IMEI_buffer[Count];
             }
         }
         if (tmp_cnt >= 20)
@@ -72,11 +73,11 @@ void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_buffer)
 
     if (LoaiIMEI == GSMIMEI)
     {
-        xSystem.Parameters.GSM_IMEI[tmp_cnt] = 0;
+        xSystem.Parameters.gsm_imei[tmp_cnt] = 0;
     }
     else
     {
-        xSystem.Parameters.SIM_IMEI[tmp_cnt] = 0;
+        xSystem.Parameters.sim_imei[tmp_cnt] = 0;
     }
 }
 
@@ -114,6 +115,28 @@ void gsm_get_short_apn(char *ShortAPN)
     }
 }
 #endif
+
+void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result)
+{
+    uint8_t count = 0;
+    uint8_t tmp_count = 0;
+
+    for (count = 0; count < strlen((char *)imei_buffer); count++)
+    {
+        if (imei_buffer[count] >= '0' && imei_buffer[count] <= '9')
+        {
+            result[tmp_count++] = imei_buffer[count];
+        }
+
+        if (tmp_count >= GSM_IMEI_MAX_LENGTH)
+        {
+            result[tmp_count-1] = 0;
+            break;
+        }
+    }
+
+    result[tmp_count] = 0;
+}
 
 /*
 +CUSD: 1,"84353078550. TKG: 0d, dung den 0h ngay 18/02/2020. Bam chon dang ky:1. 15K=3GB/3ngay2. 30K=7GB/7ngayHoac bam goi *098#",15
@@ -230,10 +253,11 @@ void gsm_get_network_operator(char *buffer)
 }
 
 // +HTTPACTION: 0,200,12314\r\n
+// +QHTTPGET: 0,200,12314\r\n
+// +QHTTPREAD: 0,200,12314\r\n
 bool gsm_utilities_parse_http_action_response(char *response, uint32_t *error_code, uint32_t *content_length)
 {
     bool retval = false;
-    char tmp[32];
     char *p;
     p = strstr(response, ": 0,");
     if (p)

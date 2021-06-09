@@ -154,7 +154,7 @@ static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
     {
         if (gsm_data_layer_is_module_sleeping())
         {
-            xSystem.Status.GSMSleepTime = xSystem.Parameters.TGGTDinhKy * 60;
+            xSystem.Status.gsm_sleep_time_s = xSystem.Parameters.period_send_message_to_server_min * 60;
         }
     }
     return 0;

@@ -72,21 +72,32 @@ int main(void)
     __enable_irq();
     InitSystem();
     adcStarted = 1;
- #if (__USE_MQTT__)
-    MqttClientSendFirstMessageWhenWakeup();
-#endif
+
+    gsm_internet_mode_t *internet_mode = gsm_get_internet_mode();
+
+    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+    {
+        MqttClientSendFirstMessageWhenWakeup();
+    } 
+    else
+    {
+
+    }
     app_cli_start();
     while (1)
     {
- //#if (__USE_MQTT__)
-#if 1
-        main_TcpNet();
-#endif
+        // if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+        if (1)
+        {
+            #warning "Always enable tcpNet"
+            main_TcpNet();
+        }
+
         #warning  "Output test gui tin"
         xSystem.Parameters.input.name.ma420 = 0;
         xSystem.Parameters.outputOnOff = 0;
-        xSystem.Parameters.TGGTDinhKy = 2;
-        xSystem.Parameters.TGDoDinhKy = 1;
+        xSystem.Parameters.period_send_message_to_server_min = 2;
+        xSystem.Parameters.period_measure_peripheral = 1;
 
         if (new_adc_data)
         {
@@ -211,19 +222,19 @@ int main(void)
 
                         uint32_t tick_before_sleep = rtc_counter_get();
 
-                        uint32_t min_interval = xSystem.Parameters.TGGTDinhKy;
-                        // If input 4-20mA enable && 4-20 measure interval < TGGTDinhKy
+                        uint32_t min_interval = xSystem.Parameters.period_send_message_to_server_min;
+                        // If input 4-20mA enable && 4-20 measure interval < period_send_message_to_server_min
                         // =>> Select sleeptime = measure interval
-                        if (xSystem.Parameters.TGGTDinhKy > xSystem.Parameters.TGDoDinhKy
+                        if (xSystem.Parameters.period_send_message_to_server_min > xSystem.Parameters.period_measure_peripheral
                             && xSystem.Parameters.input.name.ma420)
                         {
-                            min_interval = xSystem.Parameters.TGDoDinhKy;
+                            min_interval = xSystem.Parameters.period_measure_peripheral;
                         }
-                        uint32_t sleep_time = estimate_sleep_time_in_second(xSystem.Status.GSMSleepTime,
+                        uint32_t sleep_time = estimate_sleep_time_in_second(xSystem.Status.gsm_sleep_time_s,
                                                                             min_interval*60);       // 1 min = 60s
 
                         DEBUG_PRINTF("Before deep sleep, gsm time %us, estimate sleep time %usec\r\n", 
-                                        xSystem.Status.GSMSleepTime, 
+                                        xSystem.Status.gsm_sleep_time_s, 
                                         sleep_time);
                         sleep_time = 18;  // Due to watchdog
                         rtc_alarm_config(rtc_counter_get() + sleep_time);
@@ -236,28 +247,30 @@ int main(void)
                         ResetWatchdog();
 
                         uint32_t diff = rtc_counter_get() - tick_before_sleep;
-                        xSystem.Status.GSMSleepTime += diff;
+                        xSystem.Status.gsm_sleep_time_s += diff;
                         
-                        #if (__USE_MQTT__)
-                        SendMessageTick += diff;
-                        #endif
+                        if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+                        {
+                            SendMessageTick += diff;
+                        }
 
                         TimeOut1000ms = diff*1000;
                         TimeOut3000ms += diff*1000;
                         store_measure_result_timeout += diff;
                         Measure420mATick += diff;
                         DEBUG_PRINTF("After sleep, gsm sleep time %us\r\n", 
-                                        xSystem.Status.GSMSleepTime);
+                                        xSystem.Status.gsm_sleep_time_s);
                     }
                 }
                 else
                 {
                     DEBUG_PRINTF("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
                     pmu_to_sleepmode(WFI_CMD);
-                    xSystem.Status.GSMSleepTime++;
-#if (__USE_MQTT__)
-                    SendMessageTick++;
-#endif
+                    xSystem.Status.gsm_sleep_time_s++;
+                    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+                    {
+                        SendMessageTick++;
+                    }
                     store_measure_result_timeout++;
                     Measure420mATick++;
                 }
@@ -274,11 +287,11 @@ extern void GSM_ManagerTestSleep(void);
 static void ProcessTimeout10ms(void)
 {
 #if GSM_ENABLE
-    #if (__USE_MQTT__)
+    gsm_internet_mode_t *mode = gsm_get_internet_mode();
+    if (*mode == GSM_INTERNET_MODE_PPP_STACK)
+    {
         MQTT_Tick();
-    #else
-        //gsm_hardware_tick();
-    #endif
+    }
 #else
     GSM_ManagerTestSleep();
 #endif

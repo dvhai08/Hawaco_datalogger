@@ -967,9 +967,12 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 }
 #endif //__USED_HTTP__
 
-void gsm_hw_uart_send_raw(char* raw)
+void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
-    com_put_at_string(raw);
+    while (length--)
+    {
+        com_put_at_character(*raw++);
+    }
 }
 
-/********************************* END OF FILE *******************************/
+

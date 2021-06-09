@@ -49,6 +49,12 @@ typedef enum
     GSM_PPP_MODE
 } gsm_at_mode_t;
 
+typedef enum
+{
+    GSM_INTERNET_MODE_PPP_STACK,
+    GSM_INTERNET_MODE_AT_STACK
+} gsm_internet_mode_t;
+
 typedef struct
 {
     gsm_state_t state;
@@ -60,7 +66,7 @@ typedef struct
     uint8_t GSMReady;
     uint8_t FirstTimePower;
     uint8_t SendSMSAfterRead;
-    uint8_t PPPCommandState;
+    uint8_t ppp_cmd_state;
     uint16_t TimeOutConnection;
     uint16_t TimeOutCSQ;
     uint8_t TimeOutOffAfterReset;
@@ -70,8 +76,8 @@ typedef struct
 
 typedef void (*gsm_send_at_cb_t)(gsm_response_event_t event, void *ResponseBuffer);
 
-void gsm_hw_send_at_cmd(char *cmd, char *expect_resp, char *expect_resp_at_the_end
-                    ,uint32_t timeout,uint8_t retry_count, gsm_send_at_cb_t callback);
+void gsm_hw_send_at_cmd(char *cmd, char *expect_resp, char *expect_resp_at_the_end,
+                        uint32_t timeout,uint8_t retry_count, gsm_send_at_cb_t callback);
 
 void gsm_init_hw(void);
 void gsm_data_layer_initialize(void);
@@ -79,7 +85,14 @@ void gsm_uart_rx_cb(void);
 void gsm_manager_tick(void);
 void gsm_hardware_tick(void);
 
-void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_Buffer);
+/**
+ * @brief               Get gsm imei from buffer
+ * @param[in]           imei_buffer raw buffer from gsm module
+ * @param[out]          result result output
+ * @note                Maximum imei length is 15
+ */ 
+void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result);
+
 void gsm_get_short_apn(char *ShortAPN);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);
 void gsm_process_cusd_message(char *buffer);
@@ -174,6 +187,18 @@ void gsm_data_layter_exit_mode_http(void);
 
 uint16_t gsm_build_http_post_msg(void);
 
-void gsm_hw_uart_send_raw(char* raw);
+/**
+ * @brief       Send data directly to serial port
+ * @param[in]   raw Raw data send to serial port
+ * @param[in]   len Data length
+ */
+void gsm_hw_uart_send_raw(uint8_t *raw, uint32_t length);
+
+
+/**
+ * @brief       Get internet mode
+ * @retval      Internet mode
+ */
+gsm_internet_mode_t *gsm_get_internet_mode(void);
 
 #endif // __GSM_H__

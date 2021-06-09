@@ -131,16 +131,20 @@ void InitSystem(void)
 	measure_input_initialize();
 	Output_Init();
 
-        pmu_wakeup_pin_enable();
+    pmu_wakeup_pin_enable();
 
+    gsm_internet_mode_t *internet_mode = gsm_get_internet_mode();
+    
+    gsm_init_hw();
+    init_TcpNet();
+
+    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+    {
+        MQTT_Init();
+    }
+    
 #if GSM_ENABLE	
-	gsm_init_hw();
-        /* Khoi tao main Tcp_Net */ 
-	init_TcpNet();
 
- #if (__USE_MQTT__)
-	MQTT_Init();
-#endif
 #else
 	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);/*!< JTAG-DP disabled and SW-DP enabled */
 	// gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);
