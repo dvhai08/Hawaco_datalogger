@@ -202,7 +202,7 @@ void RCC_Config(void)
         /* Capture error */
         NVIC_SystemReset();
     } 
-    NVIC_SetPriority(SysTick_IRQn, 0x00);		
+    NVIC_SetPriority(SysTick_IRQn, 0x01);		
 
     nvic_priority_group_set(NVIC_PRIGROUP_PRE2_SUB2);
     nvic_irq_enable(LVD_IRQn, 0, 1);

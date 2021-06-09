@@ -33,7 +33,8 @@ void server_msg_process_cmd(char *buffer)
         {
             DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
             xSystem.Parameters.TGGTDinhKy = sendTime;
-            has_new_cfg++;
+            #warning "Turn off cycle send webchanged"
+            // has_new_cfg++;
         }
     }
 

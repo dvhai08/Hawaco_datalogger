@@ -108,22 +108,24 @@ void gsm_init_hw(void)
     exti_interrupt_flag_clear(GSM_RI_EXTI_LINE);
 #endif //__RI_INTERRUPT__
 
-    /* Cap nguon cho Module */
-    Delayms(3000);
-    GSM_PWR_RESET(0);
-    GSM_PWR_EN(1);
-    Delayms(1000); //Cho VBAT on dinh
+    ///* Cap nguon cho Module */
+    //Delayms(3000);
+    //GSM_PWR_RESET(0);
+    //GSM_PWR_EN(1);
+    //Delayms(1000); //Cho VBAT on dinh
 
-    /* Tao xung |_| de Power On module, min 1s  */
-    GSM_PWR_KEY(1);
-    Delayms(1500);
-    GSM_PWR_KEY(0);
-    Delayms(1000);
+    ///* Tao xung |_| de Power On module, min 1s  */
+    //GSM_PWR_KEY(1);
+    //Delayms(1500);
+    //GSM_PWR_KEY(0);
+    //Delayms(1000);
 
     /* Khoi tao UART cho GSM modem */
     UART_Init(GSM_UART, 115200);
 
     gsm_data_layer_initialize();
+
+    gsm_change_state(GSM_STATE_RESET); 
 
     gsm_manager.TimeOutOffAfterReset = 90;
 }
@@ -570,6 +572,19 @@ void gsm_uart_handler(void)
             usart_interrupt_disable(GSM_UART, USART_INT_TBE); /* Disable TXE interrupt */
             GSM_Hardware.modem.tx_active = __FALSE;
         }
+    }
+
+    if (usart_flag_get(GSM_UART, USART_FLAG_ORERR) == 1) //RBNE = 1
+    {
+        DEBUG_PRINTF("Overrun\r\n");
+        usart_data_receive(GSM_UART);
+        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_ERR_ORERR);
+    }
+
+    if (usart_flag_get(GSM_UART, USART_FLAG_FERR) == 1) //RBNE = 1
+    {
+        DEBUG_PRINTF("Frame error\r\n");
+        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_ERR_FERR);
     }
 }
 

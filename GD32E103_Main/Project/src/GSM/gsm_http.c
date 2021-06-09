@@ -5,8 +5,18 @@
 #include <stdio.h>
 #include <string.h>
 
-//#define m_http_packet_size 512
-#define  POST_SSL_LEVEL              1
+
+
+#define DEBUG_HTTP                  1
+#ifdef DEBUG_HTTP
+static uint32_t m_debug_http_post_count = 0;
+#define DEBUG_HTTP_POST_INC()           (m_debug_http_post_count++)
+#define DEBUG_HTTP_POST_GET_COUNT()     (m_debug_http_post_count)
+#else
+#define DEBUG_HTTP_POST_INC()
+#define DEBUG_HTTP_POST_GET_COUNT()     (0)
+#endif 
+
 
 static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
@@ -15,6 +25,7 @@ static uint32_t m_content_length = 0;
 static char m_http_cmd_buffer[256];
 static gsm_http_data_t post_rx_data;
 static bool m_renew_config_ssl = true;
+static bool m_renew_apn = true;
 
 static int32_t m_ssl_step = -1;
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
@@ -145,12 +156,24 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
 
             DEBUG_PRINTF("Set PDP context as 1\r\n");
-            gsm_hw_send_at_cmd("AT+QHTTPCFG=\"contextid\",1\r\n", 
-                                "OK\r\n", 
-                                "", 
-                                5000, 
-                                1, 
-                                gsm_http_query);
+            if (m_renew_apn)
+            {
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"contextid\",1\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    1, 
+                                    gsm_http_query);
+            }
+            else
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+            }
         }
         break;
 
@@ -170,6 +193,8 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
+                DEBUG_HTTP_POST_INC();
+                DEBUG_PRINTF("Post total %u msg\r\n", DEBUG_HTTP_POST_GET_COUNT());
                 gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",1\r\n", 
                                     "OK\r\n", 
                                     "", 
@@ -205,18 +230,27 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
         case 3:
         {
-            //if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
-            {
-                DEBUG_PRINTF("Config http header : %s, response %s\r\n", 
+            DEBUG_PRINTF("Config http header : %s, response %s\r\n", 
                                                 (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                                                 (char*)response_buffer);
+            if (m_renew_apn)
+            {
+                gsm_hw_send_at_cmd("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    1, 
+                                    gsm_http_query);
             }
-            gsm_hw_send_at_cmd("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1\r\n", 
-                                "OK\r\n", 
-                                "", 
-                                5000, 
+            else
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                "OK\r\n",
+                                "",
+                                1000, 
                                 1, 
-                                gsm_http_query);
+                                gsm_http_query); 
+            }
         }
         break;
 
@@ -225,7 +259,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             DEBUG_PRINTF("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1 : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                          (char*)response_buffer);
-
+            m_renew_apn = false;
             //gsm_hw_send_at_cmd("AT+QIACT=1\r\n", 
             //                    "OK\r\n",
             //                    "",
@@ -235,7 +269,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             gsm_hw_send_at_cmd("AT\r\n", 
                                 "OK\r\n",
                                 "",
-                                5000, 
+                                1000, 
                                 1, 
                                 gsm_http_query);
         }
@@ -481,6 +515,7 @@ gsm_http_config_t *gsm_http_get_config(void)
 void gsm_http_cleanup(void)
 {
     m_renew_config_ssl = true;
+    m_renew_apn = true;
     m_http_step = 0;
     m_total_bytes_recv = 0;
     m_content_length = 0;

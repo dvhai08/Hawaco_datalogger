@@ -19,6 +19,7 @@
 #include "Debug.h"
 #include "lpf.h"
 #include "stdbool.h"
+#include "app_cli.h"
 
 #if (__GSM_SLEEP_MODE__)
 #warning CHU Y DANG BUILD __GSM_SLEEP_MODE__ = 1
@@ -50,15 +51,15 @@ uint32_t sntpTimeoutInverval = 5;
 uint8_t adcStarted = 0;
 lpf_data_t AdcFilterdValue =
 {
-        .estimate_value = 0,
-        .gain = 0,
+    .estimate_value = 0,
+    .gain = 0,
 };
 volatile int32_t delay_sleeping_for_exit_wakeup = 0;
 
 extern volatile uint32_t SendMessageTick;
 volatile bool new_adc_data = false;
 
- __align(4) char g_umm_heap[2048];
+__align(4) char g_umm_heap[2048];
 
 /*!
     \brief      main function
@@ -74,6 +75,7 @@ int main(void)
  #if (__USE_MQTT__)
     MqttClientSendFirstMessageWhenWakeup();
 #endif
+    app_cli_start();
     while (1)
     {
  //#if (__USE_MQTT__)
@@ -83,8 +85,8 @@ int main(void)
         #warning  "Output test gui tin"
         xSystem.Parameters.input.name.ma420 = 0;
         xSystem.Parameters.outputOnOff = 0;
-        //xSystem.Parameters.TGGTDinhKy = 4;
-        //xSystem.Parameters.TGDoDinhKy = 1;
+        xSystem.Parameters.TGGTDinhKy = 2;
+        xSystem.Parameters.TGDoDinhKy = 1;
 
         if (new_adc_data)
         {
@@ -165,6 +167,7 @@ int main(void)
             {
                 if (xSystem.Status.DisconnectTimeout++ > 60)
                 {
+                    DEBUG_PRINTF("Disconnected timeout is over\r\n");
                     NVIC_SystemReset();
                 }
             }
@@ -262,6 +265,7 @@ int main(void)
             ResetWatchdog();
             ProcessTimeout1000ms();
         }
+        app_cli_poll();
         __WFI();
     }
 }
@@ -279,7 +283,7 @@ static void ProcessTimeout10ms(void)
     GSM_ManagerTestSleep();
 #endif
     measure_input_task();
-    Debug_Tick();
+    //Debug_Tick();
 }
 
 static void ProcessTimeout100ms(void)

@@ -67,7 +67,7 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
         if (gsmUartInit == false)
         {
             gsmUartInit = true;
-            nvic_irq_enable(GSM_UART_IRQ, 1, 0);
+            nvic_irq_enable(GSM_UART_IRQ, 0, 0);
 
             /* enable COM GPIO clock */
 //			rcu_periph_clock_enable(GSM_UART_GPIO);
@@ -76,10 +76,10 @@ void UART_Init(uint32_t USARTx, uint32_t BaudRate)
             rcu_periph_clock_enable(GSM_UART_CLK);
 
             /* connect port to USARTx_Tx */
-            gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, GSM_TX_PIN);
+            gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GSM_TX_PIN);
 
             /* connect port to USARTx_Rx */
-            gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, GSM_RX_PIN);
+            gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GSM_RX_PIN);
             found = true;
         }
     }

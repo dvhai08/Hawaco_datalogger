@@ -8,6 +8,8 @@
 
 //#define DEBUG_PRINTF            
 
+#define DEBUG_RTT               1
+
 #define DEBUG_PRINTF            app_debug_rtt
 #ifndef DEBUG_PRINTF
 #define DEBUG_PRINTF(String...)	SEGGER_RTT_printf(0, String)

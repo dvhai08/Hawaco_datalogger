@@ -25,6 +25,12 @@
 #include "app_queue/app_queue.h"
 #include "umm_malloc.h"
 
+typedef enum
+{
+    GSM_INTERNET_MODE_PPP_STACK,
+    GSM_INTERNET_MODE_AT_STACK
+} gsm_internet_mode_t;
+
 #define MAX_TIMEOUT_TO_SLEEP_S 60
 #define GSM_NEED_ENTER_HTTP_GET()           (m_enter_http_get)
 #define GSM_DONT_NEED_HTTP_GET()            (m_enter_http_get = false)
@@ -57,8 +63,6 @@ static char LenhATCanGui[30] = {0};
 static uint8_t YeuCauGuiATC = 0;
 static uint8_t TimeOutGuiLenhAT = 0;
 
-uint8_t WaitGSMReady = 0;
-uint8_t GSMNotReady = 0;
 uint8_t SendATOPeriod = 0;
 uint8_t ModuleNotMounted = 0;
 uint8_t InSleepModeTick = 0;
@@ -84,6 +88,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 
 static bool m_enter_http_get = false;
 static bool m_enter_http_post = false;
+static gsm_internet_mode_t m_internet_mode;
+static uint32_t malloc_count = 0;
 
 static app_queue_data_t m_last_http_msg = 
 {
@@ -251,72 +257,89 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_OK: /* PPP data mode */
-#if GSM_PPP_ENABLE
-        if (gsm_manager.GSMReady == 2)
         {
-            SendATOPeriod++;
-            if (SendATOPeriod > 2)
+            if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
             {
-                SendATOPeriod = 0;
-                gsm_hw_send_at_cmd("ATO\r\n", "CONNECT", "", 1000, 10, NULL);
-            }
-        }
-        else
-        {
-            SendATOPeriod = 0;
-        }
-#endif
-//			QuerySMS();
-
-//			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
-#if (__GSM_SLEEP_MODE__)
-        if (TimeoutToSleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
-        {
-            if (xSystem.Status.TCPNeedToClose == 0)
-            {
-                DEBUG_PRINTF("TCP need to close\r\n");
-                xSystem.Status.TCPNeedToClose = 1;
-            }
-
-            if (xSystem.Status.TCPCloseDone)
-            {
-                TimeoutToSleep = 81;
-                xSystem.Status.TCPCloseDone = 0;
-            }
-
-            if (TimeoutToSleep > 80)
-            {
-                TimeoutToSleep = 0;
-                /* Chỉ sleep khi :
-						- Đang không UDFW 
-						- Đang không trong thời gian gửi tin
-					*/
-                if (xSystem.FileTransfer.Retry == 0 && xSystem.Status.SendGPRSTimeout == 0)
+                if (gsm_manager.GSMReady == 2)
                 {
-                    DEBUG_PRINTF("GSM: Het viec roi, ngu thoi em...\r\n");
-                    gsm_manager.step = 0;
-                    gsm_manager.state = GSM_STATE_GOTO_SLEEP;
+                    SendATOPeriod++;
+                    if (SendATOPeriod > 2)
+                    {
+                        DEBUG_PRINTF("Send ATO\r\n");
+                        SendATOPeriod = 0;
+                        gsm_hw_send_at_cmd("ATO\r\n", "CONNECT", "", 1000, 10, NULL);
+                    }
+                }
+                else
+                {
+                    SendATOPeriod = 0;
                 }
             }
-        }
-#else
-        gsmWakeUpPeriodically();
-#endif
+    //			QuerySMS();
 
-        if (!app_queue_is_empty(&m_http_msq))
-        {
-            DEBUG_PRINTF("Post http data\r\n");
-            m_enter_http_post = true;
-            gsm_change_state(GSM_STATE_HTTP_POST);
-        }
-        else
-        {
-            if (gsm_manager.state == GSM_STATE_OK)
+    //			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
+            if (TimeoutToSleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
             {
-                if (GSM_NEED_ENTER_HTTP_GET())
+                if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
                 {
-                    gsm_change_state(GSM_STATE_HTTP_GET);
+                    if (xSystem.Status.TCPNeedToClose == 0)
+                    {
+                        DEBUG_PRINTF("TCP need to close\r\n");
+                        xSystem.Status.TCPNeedToClose = 1;
+                    }
+
+                    if (xSystem.Status.TCPCloseDone)
+                    {
+                        TimeoutToSleep = 81;
+                        xSystem.Status.TCPCloseDone = 0;
+                    }
+
+                    if (TimeoutToSleep > 80)
+                    {
+                        TimeoutToSleep = 0;
+                        /* Chỉ sleep khi :
+                                                        - Đang không UDFW 
+                                                        - Đang không trong thời gian gửi tin
+                                                */
+                        if (xSystem.FileTransfer.Retry == 0 && xSystem.Status.SendGPRSTimeout == 0)
+                        {
+                            DEBUG_PRINTF("GSM: Het viec roi, ngu thoi em...\r\n");
+                            gsm_manager.step = 0;
+                            gsm_manager.state = GSM_STATE_GOTO_SLEEP;
+                        }
+                    }
                 }
+                else
+                {
+                    DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");
+                }
+            }
+
+            gsmWakeUpPeriodically();
+
+            bool enter_sleep_in_http = true;
+            if (!app_queue_is_empty(&m_http_msq))
+            {
+                DEBUG_PRINTF("Post http data\r\n");
+                m_enter_http_post = true;
+                gsm_change_state(GSM_STATE_HTTP_POST);
+                enter_sleep_in_http = false;
+            }
+            else
+            {
+                if (gsm_manager.state == GSM_STATE_OK)
+                {
+                    if (GSM_NEED_ENTER_HTTP_GET())
+                    {
+                        gsm_change_state(GSM_STATE_HTTP_GET);
+                        enter_sleep_in_http = false;
+                    }
+                }
+            }
+
+            if (enter_sleep_in_http && m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
             }
         }
         break;
@@ -421,6 +444,7 @@ void gsm_manager_tick(void)
 #if __USE_MQTT__
         init_TcpNet();
 #endif
+        gsm_data_layer_initialize();
         gsm_change_state(GSM_STATE_RESET);
         break;
         
@@ -460,23 +484,6 @@ void gsm_manager_tick(void)
         break;
     }
 
-    //Timeout TAT GSM/GPS sau khi reset neu la DEN CAU
-#if __DENCAU__
-    if (gsm_manager.TimeOutOffAfterReset)
-    {
-        gsm_manager.TimeOutOffAfterReset--;
-        if (gsm_manager.TimeOutOffAfterReset == 0 && xSystem.Parameters.DenCauMode)
-        {
-            if (gsm_manager.isGSMOff == 0 && xSystem.Status.SendGPRSTimeout == 0)
-            {
-                DEBUG_PRINTF("After reset: GSM/GPS OFF");
-                ppp_close();
-                gsm_pwr_control(GSM_OFF);
-                GPS_PowerControl(GPS_OFF);
-            }
-        }
-    }
-#endif
 
     //Khong co SIM
     if (strlen(xSystem.Parameters.SIM_IMEI) < 15)
@@ -596,9 +603,10 @@ void gsm_data_layer_initialize(void)
     gsm_manager.Dial = 0;
     gsm_manager.TimeOutConnection = 0;
 
-    gsm_change_state(GSM_STATE_POWER_ON);
     gsm_http_cleanup();
     init_http_msq();
+
+    m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
 }
 
 /*****************************************************************************/
@@ -1726,6 +1734,7 @@ uint16_t gsm_build_http_post_msg(void)
     }
     else
     {
+        malloc_count++;
         DEBUG_PRINTF("[%s-%d] Malloc success\r\n", __FUNCTION__, __LINE__);
     }
 
@@ -1790,7 +1799,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             gsm_http_data_t *get_data = (gsm_http_data_t*)data;
             DEBUG_PRINTF("DATA: %s\r\n", get_data->data);
             server_msg_process_cmd((char*)get_data->data);
-            // 
         }
             break;
 
@@ -1809,17 +1817,21 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         case GSM_HTTP_GET_EVENT_FINISH_SUCCESS:
         {
             DEBUG_PRINTF("HTTP get : event success\r\n");
+            xSystem.Status.DisconnectTimeout = 0;
             gsm_change_state(GSM_STATE_OK);
+            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
         }
             break;
 
         case GSM_HTTP_POST_EVENT_FINISH_SUCCESS:
         {
             DEBUG_PRINTF("HTTP post : event success\r\n");
+            xSystem.Status.DisconnectTimeout = 0;
             if (m_last_http_msg.pointer)
             {
-                DEBUG_PRINTF("Free um memory\r\n");
+                malloc_count--;
                 umm_free(m_last_http_msg.pointer);
+                DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
                 m_last_http_msg.pointer = NULL;
             }
             gsm_change_state(GSM_STATE_OK);
@@ -1832,8 +1844,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             DEBUG_PRINTF("HTTP event failed\r\n");
             if (m_last_http_msg.pointer)
             {
-                DEBUG_PRINTF("Free um memory\r\n");
+                malloc_count--;
                 umm_free(m_last_http_msg.pointer);
+                DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
                 m_last_http_msg.pointer = NULL;
             }
         }

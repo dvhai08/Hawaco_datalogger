@@ -205,6 +205,12 @@
     <folder Name="app_queue">
       <file file_name="../app_queue/app_queue.h" />
     </folder>
+    <folder Name="app_cli">
+      <file file_name="../app_cli/app_cli.c" />
+      <file file_name="../app_cli/app_cli.h" />
+      <file file_name="../app_cli/app_shell.c" />
+      <file file_name="../app_cli/app_shell.h" />
+    </folder>
   </project>
   <configuration
     Name="External Keil ARMCC"
@@ -213,6 +219,6 @@
   <configuration Name="GD32E103x" hidden="Yes" />
   <configuration
     Name="GD32E103x External"
-    c_user_include_directories=".;../../Library/CMSIS;./../umm_malloc-1.0.1/src"
+    c_user_include_directories=".;../../Library/CMSIS;./../umm_malloc-1.0.1/src;./../app_cli"
     inherited_configurations="External Keil ARMCC;GD32E103x" />
 </solution>
