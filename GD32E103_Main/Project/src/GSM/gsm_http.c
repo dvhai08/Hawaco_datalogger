@@ -244,34 +244,42 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
-                gsm_hw_send_at_cmd("AT\r\n", 
-                                "OK\r\n",
-                                "",
-                                1000, 
-                                1, 
-                                gsm_http_query); 
+                gsm_hw_send_at_cmd("AT+QIACT?\r\n", 
+                                    "QIACT", 
+                                    "OK", 
+                                    3000, 
+                                    2, 
+                                    gsm_http_query);
             }
         }
         break;
 
         case 4:     // Activate context 1
         {
-            DEBUG_PRINTF("AT+QICSGP=1,1,\"v-internet\",\"\",\"\",1 : %s, response %s\r\n", 
+            DEBUG_PRINTF("Active AT+QIACT %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                          (char*)response_buffer);
+
             m_renew_apn = false;
-            //gsm_hw_send_at_cmd("AT+QIACT=1\r\n", 
-            //                    "OK\r\n",
-            //                    "",
-            //                    5000, 
-            //                    2, 
-            //                    gsm_http_query);
-            gsm_hw_send_at_cmd("AT\r\n", 
-                                "OK\r\n",
-                                "",
-                                1000, 
-                                1, 
-                                gsm_http_query);
+            if (strstr((char*)response_buffer, "+QIACT:"))
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n",
+                                    "",
+                                    1000, 
+                                    1, 
+                                    gsm_http_query);
+            }
+            else
+            {
+                gsm_hw_send_at_cmd("AT+QIACT=1\r\n", 
+                                    "OK\r\n",
+                                    "",
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+            }
+
         }
         break;
 
@@ -285,10 +293,10 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
             gsm_hw_send_at_cmd("AT+QIACT?\r\n", 
+                                "QIACT: ", 
                                 "OK\r\n", 
-                                "", 
-                                5000, 
-                                1, 
+                               3000, 
+                                2, 
                                 gsm_http_query);
         }
         break;
@@ -302,7 +310,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             gsm_hw_send_at_cmd("AT\r\n", 
                                 "OK\r\n", 
                                 "", 
-                                5000, 
+                                1000, 
                                 1, 
                                 setup_http_ssl);
         }
@@ -406,8 +414,8 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=30\r\n");
                         //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREADFILE=\"RAM:1.txt\",80\r\n");
                         gsm_hw_send_at_cmd(m_http_cmd_buffer, 
-                                            "CONNECT\r\n", 
-                                            "QHTTPREAD: 0", 
+                                            "QHTTPREAD: 0\r\n", 
+                                            "\r\n", 
                                             12000, 
                                             1, 
                                             gsm_http_query); // Close a GPRS context.
@@ -429,7 +437,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             else        // POST
             {
                 DEBUG_PRINTF("Input http post, len %u\r\n", strlen((char*)post_rx_data.data));
-                gsm_hw_uart_send_raw((char*)post_rx_data.header);
+                gsm_hw_uart_send_raw(post_rx_data.header, strlen((char*)post_rx_data.header));
                 gsm_hw_send_at_cmd((char*)post_rx_data.data, 
                                     "QHTTPPOST: ", 
                                     "\r\n", 

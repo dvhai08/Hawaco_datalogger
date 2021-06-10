@@ -44,6 +44,10 @@ static bool app_queue_is_full(app_queue_t *queue)
     {
         size = queue->rd_idx - queue->wr_idx - 1;
     }
+    else if (queue->wr_idx >= queue->rd_idx)
+    {
+        size = APP_QUEUE_MAX_SIZE - queue->wr_idx + queue->rd_idx - 1;
+    }
 
     if (size == 0)
     {

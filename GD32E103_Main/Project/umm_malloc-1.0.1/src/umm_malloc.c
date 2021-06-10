@@ -46,7 +46,7 @@
 
 /* ------------------------------------------------------------------------- */
 
-UMM_H_ATTPACKPRE typedef struct umm_ptr_t {
+typedef struct UMM_H_ATTPACKPRE umm_ptr_t {
   unsigned short int next;
   unsigned short int prev;
 } UMM_H_ATTPACKSUF umm_ptr;

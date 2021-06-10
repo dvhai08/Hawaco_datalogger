@@ -11,7 +11,8 @@
  ******************************************************************************/
 #include "DataDefine.h"
 
-#if (__USE_MQTT__ == 1)
+//#if (__USE_MQTT__ == 1)
+#if (1)
 
 #include <string.h>
 #include "Net_Config.h"

@@ -214,11 +214,6 @@ void RCC_Config(void)
     ///* configure the lvd threshold to 2.9v */
     pmu_lvd_select(PMU_LVDT_3);
 	
-#if 0
-//	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC, ENABLE);
-//	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4 | RCC_APB1Periph_USART3, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG | RCC_APB2Periph_USART1, ENABLE);
-#else
     /* PMU clock enable */
     rcu_periph_clock_enable(RCU_PMU);
     /* configure ckout0 source in RCU */
@@ -236,7 +231,6 @@ void RCC_Config(void)
     rcu_periph_clock_enable(RCU_DMA0);
     /* config ADC clock */
     rcu_adc_clock_config(RCU_CKADC_CKAPB2_DIV16);
-#endif
 }
 
 static void RtcConfiguration(void)

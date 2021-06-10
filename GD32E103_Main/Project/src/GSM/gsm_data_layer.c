@@ -193,7 +193,7 @@ void gsm_wakeup_periodically(void)
         }
         else
         {
-            gsm_build_http_post_msg();
+            //gsm_build_http_post_msg();
         }
 
         DEBUG_PRINTF("GSM: wakeup to send msg\r\n");
@@ -246,6 +246,7 @@ void gsm_manager_tick(void)
     case GSM_STATE_POWER_ON:
         if (gsm_manager.step == 0)
         {
+            DEBUG_PRINTF("GSM power on, query ATV1\r\n");
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 30, gsm_at_cb_power_on_gsm);
         }
@@ -317,11 +318,12 @@ void gsm_manager_tick(void)
         {
             DEBUG_PRINTF("Post http data\r\n");
             m_enter_http_post = true;
-            gsm_change_state(GSM_STATE_HTTP_POST);
             enter_sleep_in_http = false;
+            gsm_change_state(GSM_STATE_HTTP_POST);
         }
         else
         {
+            DEBUG_PRINTF("Queue empty\r\n");
             if (gsm_manager.state == GSM_STATE_OK)
             {
                 if (GSM_NEED_ENTER_HTTP_GET())
@@ -331,10 +333,20 @@ void gsm_manager_tick(void)
                 }
             }
         }
-
-        if (enter_sleep_in_http && m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
+        
+        if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
         {
-            gsm_change_state(GSM_STATE_SLEEP);
+            if (enter_sleep_in_http)
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
+            else
+            {
+                if (TimeoutToSleep > 15)
+                {
+                    TimeoutToSleep -= 15;
+                }
+            }
         }
     }
     break;
@@ -350,10 +362,12 @@ void gsm_manager_tick(void)
             gsm_manager.step = 1;
             if (gsm_manager.ppp_cmd_state == 0)
             {
+                DEBUG_PRINTF("Read sms +++\r\n");
                 gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2200, 5, gsm_at_cb_read_sms);
             }
             else
             {
+                DEBUG_PRINTF("Enter read sms cb\r\n");
                 gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_read_sms);
             }
         }
@@ -364,12 +378,14 @@ void gsm_manager_tick(void)
             break;
         if (gsm_manager.step == 0)
         {
+            DEBUG_PRINTF("Enter send sms cb\r\n");
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_at_cb_send_sms);
         }
         break;
 
     case GSM_STATE_REOPEN_PPP: /* Reopen PPP if lost */
+        DEBUG_PRINTF("Repen PPP\r\n");
         if (gsm_manager.step == 0)
         {
             gsm_manager.step = 1;
@@ -378,6 +394,7 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_GET_BTS_INFO: /* Get GSM Signel level */
+        DEBUG_PRINTF("Get BTS info\r\n");
         if (gsm_manager.step == 0)
         {
             gsm_manager.step = 1;
@@ -386,6 +403,7 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_SEND_ATC: /* Send AT command */
+        DEBUG_PRINTF("GSM state send ATC\r\n");
         if (gsm_manager.step == 0)
         {
             gsm_manager.step = 1;
@@ -428,6 +446,7 @@ void gsm_manager_tick(void)
     break;
 
     case GSM_STATE_GOTO_SLEEP: /* Vao che do sleep */
+        DEBUG_PRINTF("Prepare sleep\r\n");
         if (gsm_manager.step == 0)
         {
             gsm_manager.step = 1;
@@ -573,18 +592,17 @@ uint8_t gsm_check_idle(void)
     return 1;
 }
 
+static bool m_is_the_first_time = true;
 static void init_http_msq(void)
 {
 
     if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
     {
-        DEBUG_PRINTF("HTTP: init buffer\r\n");
-
-        static bool m_is_the_first_time = true;
         if (m_is_the_first_time)
         {
             m_is_the_first_time = false;
             umm_init();
+            DEBUG_PRINTF("HTTP: init buffer\r\n");
             app_queue_reset(&m_http_msq);
         }
     }
@@ -597,6 +615,7 @@ void gsm_data_layer_initialize(void)
     gsm_manager.TimeOutConnection = 0;
 
     gsm_http_cleanup();
+    m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
     init_http_msq();
 
     m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
@@ -682,6 +701,7 @@ void gsm_change_state(gsm_state_t new_state)
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 {
+    //DEBUG_PRINTF("%s\r\n", __FUNCTION__);
     switch (gsm_manager.step)
     {
     case 1:
@@ -695,21 +715,27 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         gsm_hw_send_at_cmd("ATE0\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+
     case 2: /* Use AT+CMEE=2 to enable result code and use verbose values */
         DEBUG_PRINTF("Disable AT echo : %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMEE=2\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+
     case 3:
         DEBUG_PRINTF("Set CMEE report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("ATI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+        break;
+
     case 4:
         DEBUG_PRINTF("Get module info: %s\r\n", resp_buffer);
         gsm_hw_send_at_cmd("AT+QURCCFG=\"URCPORT\",\"uart1\"\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
+
     case 5:
         DEBUG_PRINTF("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",2000\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+
     case 6:
         DEBUG_PRINTF("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
@@ -718,10 +744,12 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+
     case 8:
         DEBUG_PRINTF("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
+
     case 9:
         DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
@@ -742,6 +770,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+
     case 11:
         gsm_utilities_get_imei(resp_buffer, (uint8_t *)xSystem.Parameters.sim_imei);
         DEBUG_PRINTF("Get SIM IMSI: %s\r\n", xSystem.Parameters.sim_imei);
@@ -753,32 +782,46 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         gsm_hw_send_at_cmd("AT+QCCID\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm);
         break;
+
     case 12:
+    {
         DEBUG_PRINTF("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
+        gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "OK", 3000, 3, gsm_at_cb_power_on_gsm); 
+    }
+        break;
+
+    case 13:
+        DEBUG_PRINTF("CPIN: %s\r\n", (char *)resp_buffer);
         gsm_hw_send_at_cmd("AT+QIDEACT=1\r\n", "OK\r\n", "", 3000, 1, gsm_at_cb_power_on_gsm);
         break;
-    case 13:
+     
+    case 14:
         DEBUG_PRINTF("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"nwscanmode\",0\r\n", "OK\r\n", "", 5000, 2, gsm_at_cb_power_on_gsm); // Select mode AUTO
         break;
-    case 14:
+
+    case 15:
         DEBUG_PRINTF("Network search mode AUTO: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGDCONT=1,\"IP\",\"v-internet\"\r\n", "OK\r\n", "", 1000, 2, gsm_at_cb_power_on_gsm); /** <cid> = 1-24 */
         break;
-    case 15:
+
+    case 16:
         DEBUG_PRINTF("Define PDP context: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         //			SendATCommand ("AT+QIACT=1\r\n", "OK\r\n", "", 5000, 5, PowerOnModuleGSM);	/** Bật QIACT lỗi gửi tin với 1 số SIM dùng gói cước trả sau! */
         gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
-    case 16:
+
+    case 17:
         DEBUG_PRINTF("Activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGREG=2\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm); /** Query CGREG? => +CGREG: <n>,<stat>[,<lac>,<ci>[,<Act>]] */
         break;
-    case 17:
+
+    case 18:
         DEBUG_PRINTF("Network Registration Status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGREG?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
-    case 18:
+
+    case 19:
         DEBUG_PRINTF("Query Network Status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +CGREG: 2,1,"3279","487BD01",7 */
         if (event == GSM_EVENT_OK)
         {
@@ -786,13 +829,23 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
-    case 19:
+
+    case 20:
         DEBUG_PRINTF("Query Network Operator: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +COPS: 0,0,"Viettel Viettel",7 */
         if (event == GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("Network operator: %s\r\n", (char *)resp_buffer);
-            gsm_get_network_operator(resp_buffer);
+            gsm_utilities_get_network_operator(resp_buffer, 
+                                                (char*)xSystem.Status.network_operator, 
+                                                sizeof(xSystem.Status.network_operator));
+            if (strlen((char*)xSystem.Status.network_operator) < 5)
+            {
+                gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+                gsm_change_hw_polling_interval(200);
+                return;
+            }
+            DEBUG_PRINTF("Network operator: %s\r\n", (char *)xSystem.Status.network_operator);
         }
+        gsm_change_hw_polling_interval(5);
 #if 0
 #if (__GSM_SLEEP_MODE__)
 //			SendATCommand ("AT+QSCLK=1\r\n", "OK\r\n", "", 1000, 5, PowerOnModuleGSM);
@@ -805,14 +858,14 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 #endif
         break;
 
-    case 20:
+    case 21:
     {
         DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CCLK?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
 
-    case 21:
+    case 22:
     {
         DEBUG_PRINTF("Query CCLK: %s,%s\r\n",
                      (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
@@ -821,14 +874,14 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         gsm_utilities_parse_timestamp_buffer((char *)resp_buffer, &time);
         uint32_t timestamp = rtc_struct_to_counter(&time);
         __disable_irq();
-        xSystem.Status.TimeStamp = timestamp + 946681200 + 25200; // 1970 to 2000 + GMT=7
+        xSystem.Status.TimeStamp = timestamp + 946681200 + 25200 + 3600; // 1970 to 2000 + GMT=7
         rtc_counter_set(xSystem.Status.TimeStamp);
         __enable_irq();
         gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
 
-    case 22:
+    case 23:
         gsm_manager.step = 0;
         if (event != GSM_EVENT_OK)
         {
@@ -844,16 +897,19 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         if (xSystem.Status.CSQ == 99)
         {
             DEBUG_PRINTF("Invalid csq\r\n");
-            gsm_manager.step = 20;
+            gsm_manager.step = 21;
             gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+            gsm_change_hw_polling_interval(200);
         }
         else
         {
+            gsm_change_hw_polling_interval(5);
             gsm_manager.GSMReady = 1;
             xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
 
             if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
             {
+                DEBUG_PRINTF("Open ppp stack\r\n");
                 gsm_manager.step = 0;
                 gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_open_ppp_stack);
             }
@@ -862,6 +918,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
                 gsm_manager.step = 0;
                 gsm_build_http_post_msg();
                 gsm_change_state(GSM_STATE_OK);
+                return;
             }
         }
         break;
@@ -892,6 +949,7 @@ uint8_t convert_csq_to_percent(uint8_t csq)
 
 void gsm_at_cb_open_ppp_stack(gsm_response_event_t event, void *resp_buffer)
 {
+    DEBUG_PRINTF("%s\r\n", __FUNCTION__);
     static uint8_t retry_count = 0;
 
     switch (gsm_manager.step)
@@ -1059,6 +1117,7 @@ void gsm_check_sms_tick(void)
  */
 void gsm_at_cb_get_bts_info(gsm_response_event_t event, void *resp_buffer)
 {
+    DEBUG_PRINTF("[%s]\r\n", __FUNCTION__);
     switch (gsm_manager.step)
     {
     case 1:
@@ -1181,6 +1240,7 @@ void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_bu
  */
 void gsm_at_cb_goto_sleep(gsm_response_event_t event, void *resp_buffer)
 {
+    DEBUG_PRINTF("Send at cmd goto sleep\r\n");
     switch (gsm_manager.step)
     {
     case 1:
@@ -1239,6 +1299,7 @@ void gsm_at_cb_goto_sleep(gsm_response_event_t event, void *resp_buffer)
  */
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 {
+    DEBUG_PRINTF("%s\r\n", __FUNCTION__);
     switch (gsm_manager.step)
     {
     case 1:
@@ -1674,7 +1735,6 @@ void gsm_process_at_cmd(char *at_cmd)
  */
 void gsm_reconnect_tcp(void)
 {
-#if ((__USE_MQTT__))
     uint8_t i;
 
     DEBUG_PRINTF("Ket noi lai Server...\r\n");
@@ -1687,7 +1747,6 @@ void gsm_reconnect_tcp(void)
     }
 
     xSystem.Status.TCPNeedToClose = 2;
-#endif
 }
 
 void gsm_set_timeout_to_sleep(uint32_t sec)
@@ -1708,6 +1767,7 @@ uint16_t gsm_build_http_post_msg(void)
         DEBUG_PRINTF("HTTP msq full\r\n");
         app_queue_data_t *tmp;
         app_queue_get(&m_http_msq, tmp);
+        malloc_count--;
         umm_free(tmp->pointer);
     }
 
@@ -1720,7 +1780,7 @@ uint16_t gsm_build_http_post_msg(void)
     else
     {
         malloc_count++;
-        DEBUG_PRINTF("[%s-%d] Malloc success\r\n", __FUNCTION__, __LINE__);
+        DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, malloc_count);
     }
 
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%d\",", xSystem.Status.TimeStamp); //second since 1970
@@ -1744,6 +1804,7 @@ uint16_t gsm_build_http_post_msg(void)
     if (app_queue_put(&m_http_msq, &new_msq) == false)
     {
         DEBUG_PRINTF("Put to http msg failed\r\n");
+        malloc_count--;
         umm_free(new_msq.pointer);
         return 0;
     }
@@ -1780,7 +1841,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_GET_EVENT_DATA:
     {
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
-        DEBUG_PRINTF("DATA: %s\r\n", get_data->data);
+        DEBUG_PRINTF("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
         server_msg_process_cmd((char *)get_data->data);
     }
     break;
@@ -1789,10 +1850,18 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     {
         if (m_last_http_msg.pointer == NULL)
         {
-            app_queue_get(&m_http_msq, &m_last_http_msg);
-            ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg.pointer;
-            ((gsm_http_data_t *)data)->data_length = m_last_http_msg.length;
-            ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
+            DEBUG_PRINTF("Get http post data from queue\r\n");
+            if (!app_queue_get(&m_http_msq, &m_last_http_msg))
+            {
+                DEBUG_PRINTF("Get msg queue failed\r\n");
+                SystemReset(2);
+            }
+            else
+            {
+                ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg.pointer;
+                ((gsm_http_data_t *)data)->data_length = m_last_http_msg.length;
+                ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
+            }
         }
     }
     break;
@@ -1832,6 +1901,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
             m_last_http_msg.pointer = NULL;
         }
+        gsm_change_state(GSM_STATE_OK);
     }
     break;
 

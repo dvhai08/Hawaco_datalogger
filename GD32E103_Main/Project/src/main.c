@@ -86,11 +86,15 @@ int main(void)
     app_cli_start();
     while (1)
     {
-        // if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-        if (1)
+        if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
+        //if (1)
         {
             #warning "Always enable tcpNet"
             main_TcpNet();
+        }
+        else
+        {
+            gsm_hw_layer_run();
         }
 
         #warning  "Output test gui tin"
@@ -338,7 +342,7 @@ static void ProcessTimeOut3000ms(void)
 {
     static uint32_t SystemTickCount = 0;
 
-    DEBUG_PRINTF("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", ++SystemTickCount, ppp_is_up(),
+    DEBUG_PRINTF("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", xSystem.Status.TimeStamp, ppp_is_up(),
           localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1],
           localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
           xSystem.MeasureStatus.Vin);

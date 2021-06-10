@@ -38,7 +38,7 @@ gsm_hardware_t GSM_Hardware;
 GSM_Manager_t gsm_manager;
 
 static uint16_t CMEErrorCount = 0;
-static uint16_t CMEErrorTimeout = 0;
+//static uint16_t CMEErrorTimeout = 0;
 static __IO bool m_new_uart_data = false;
 
 /******************************************************************************
@@ -128,6 +128,7 @@ void gsm_init_hw(void)
     gsm_change_state(GSM_STATE_RESET); 
 
     gsm_manager.TimeOutOffAfterReset = 90;
+    gsm_change_hw_polling_interval(5);
 }
 
 void gsm_pwr_control(uint8_t State)
@@ -202,7 +203,10 @@ void gsm_uart_handler(void)
         {
             GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
             if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
+            {
+                DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
                 GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+            }
 
             GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
         }
@@ -334,7 +338,7 @@ void SendATCommand(char *cmd, char *expect_resp, uint16_t timeout,
     GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
     GSM_Hardware.atc.retry_count_atc = retry_count;
     GSM_Hardware.atc.send_at_callback = callback;
-    GSM_Hardware.atc.timeout_atc_ms = timeout / 10; //gsm_hardware_tick: 10ms /10, 100ms /100
+    GSM_Hardware.atc.timeout_atc_ms = timeout; //gsm_hardware_tick: 10ms /10, 100ms /100
     GSM_Hardware.atc.current_timeout_atc_ms = 0;
 
     memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
@@ -445,7 +449,7 @@ BOOL com_put_at_character(uint8_t c)
         Delayms(5);
         while ((uint8_t)(p->idx_in + 1) == p->idx_out)
         {
-            
+            Delayms(1);
         }
         DEBUG_PRINTF("Buffer free\r\n");
         //return (__FALSE);
@@ -468,7 +472,10 @@ BOOL com_put_at_character(uint8_t c)
         /* Add data to transmit buffer. */
         p->Buffer[p->idx_in++] = c;
         if (p->idx_in == MODEM_BUFFER_SIZE)
+        {
+            DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
             p->idx_in = 0;
+        }
     }
 
     /* Enable Ngat USART2 tro lai */
@@ -508,23 +515,29 @@ BOOL com_put_at_string(char *str)
  */
 int com_getchar(void)
 {
-    uint8_t retval;
-
-    /* Read a byte from serial interface */
-    gms_ppp_modem_buffer_t *p = &GSM_Hardware.modem.rx_buffer;
-
-    if (p->idx_in == p->idx_out)
+    int32_t retval = -1;
+    if (*gsm_get_internet_mode() == GSM_INTERNET_MODE_PPP_STACK)
     {
-        /* Serial receive buffer is empty. */
-        return (-1);
+
+        /* Read a byte from serial interface */
+        gms_ppp_modem_buffer_t *p = &GSM_Hardware.modem.rx_buffer;
+
+        if (p->idx_in == p->idx_out)
+        {
+            /* Serial receive buffer is empty. */
+            return (-1);
+        }
+
+        retval = p->Buffer[p->idx_out++];
+
+        if (p->idx_out == MODEM_BUFFER_SIZE)
+        {
+            p->idx_out = 0;
+        }
     }
 
-    retval = p->Buffer[p->idx_out++];
-
-    if (p->idx_out == MODEM_BUFFER_SIZE)
-        p->idx_out = 0;
-
     return retval;
+    
 }
 
 void gsm_uart_handler(void)
@@ -539,15 +552,34 @@ void gsm_uart_handler(void)
 
         if (GSM_STATE_RESET != gsm_manager.state)
         {
-            /* Receive Buffer Not Empty */
-            p = &GSM_Hardware.modem.rx_buffer;
-            if ((U8)(p->idx_in + 1) != p->idx_out)
+            if (*gsm_get_internet_mode() == GSM_INTERNET_MODE_AT_STACK)
             {
-                p->Buffer[p->idx_in++] = ch;
-                if (p->idx_in == MODEM_BUFFER_SIZE)
+                if (GSM_Hardware.atc.timeout_atc_ms)
                 {
-                    DEBUG_RAW("%s", p->Buffer);
-                    p->idx_in = 0;
+                    GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
+                    if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
+                    {
+                        DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
+                        GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+                    }
+
+                    GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
+                }
+            }
+            else
+            {
+                /* Receive Buffer Not Empty */
+                p = &GSM_Hardware.modem.rx_buffer;
+                if ((U8)(p->idx_in + 1) != p->idx_out)
+                {
+                    p->Buffer[p->idx_in++] = ch;
+                    if (p->idx_in == MODEM_BUFFER_SIZE)
+                    {
+                        DEBUG_RAW("%s", p->Buffer);
+                        p->idx_in = 0;
+                        p->Buffer[0] = 0;
+                    }
+                    p->Buffer[p->idx_in] = 0;
                 }
             }
         }
@@ -565,11 +597,16 @@ void gsm_uart_handler(void)
         {
             usart_data_transmit(GSM_UART, (p->Buffer[p->idx_out++]));
             if (p->idx_out == MODEM_BUFFER_SIZE)
+            {
+                DEBUG_PRINTF("UART TX buffer out : overflow\r\n");
                 p->idx_out = 0;
+            }
         }
         else
         {
             usart_interrupt_disable(GSM_UART, USART_INT_TBE); /* Disable TXE interrupt */
+            p->idx_in = 0;
+            p->idx_out = 0;
             GSM_Hardware.modem.tx_active = __FALSE;
         }
     }
@@ -700,89 +737,108 @@ void gsm_hw_uart_put_direct(uint8_t *data, uint32_t length)
  */
 void modem_run()
 {
-    if (GSM_Hardware.atc.timeout_atc_ms)
+    uint32_t now = sys_get_ms();
+    uint32_t diff;
+
+    if (now >= GSM_Hardware.atc.current_timeout_atc_ms)
     {
-        GSM_Hardware.atc.current_timeout_atc_ms++;
+        diff = now - GSM_Hardware.atc.current_timeout_atc_ms;
+    }
+    else
+    {
+        diff = 0xFFFFFFFF - GSM_Hardware.atc.current_timeout_atc_ms + now; 
+    }
 
-        if (GSM_Hardware.atc.current_timeout_atc_ms > GSM_Hardware.atc.timeout_atc_ms)
+    if (GSM_Hardware.atc.retry_count_atc
+        && (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), GSM_Hardware.atc.expect_resp_from_atc)))
+    {
+        bool do_cb = true;
+        if (GSM_Hardware.atc.expected_response_at_the_end 
+            && strlen(GSM_Hardware.atc.expected_response_at_the_end))
         {
-            GSM_Hardware.atc.current_timeout_atc_ms = 0;
+            //DEBUG_PRINTF("Expected end %s\r\n", GSM_Hardware.atc.expected_response_at_the_end);
+            uint32_t current_response_length = GSM_Hardware.atc.recv_buff.BufferIndex;
+            uint32_t expect_compare_length = strlen(GSM_Hardware.atc.expected_response_at_the_end);
 
-            if (GSM_Hardware.atc.retry_count_atc)
+            if (expect_compare_length < current_response_length)
             {
-                GSM_Hardware.atc.retry_count_atc--;
-            }
-
-            if (GSM_Hardware.atc.retry_count_atc == 0)
-            {
-                GSM_Hardware.atc.timeout_atc_ms = 0;
-
-                if (GSM_Hardware.atc.send_at_callback != NULL)
+                uint8_t *p_compare_end_str = &GSM_Hardware.atc.recv_buff.Buffer[current_response_length - expect_compare_length - 1];
+                if ((memcmp(p_compare_end_str, GSM_Hardware.atc.expected_response_at_the_end, expect_compare_length) == 0))
                 {
-                    GSM_Hardware.atc.send_at_callback(GSM_EVENT_TIMEOUT, NULL);
+                    do_cb = true;
                 }
             }
             else
             {
-                DEBUG("Resend ATC: %s\r\n", GSM_Hardware.atc.cmd);
-                com_put_at_string(GSM_Hardware.atc.cmd);
+                do_cb = false;
             }
         }
 
-        if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), GSM_Hardware.atc.expect_resp_from_atc))
+        if (do_cb)
         {
-#if 0
+            //DEBUG_PRINTF("Do callback\r\n");
+            GSM_Hardware.atc.timeout_atc_ms = 0;
+            GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
+            if (GSM_Hardware.atc.send_at_callback)
+            {
+                GSM_Hardware.atc.send_at_callback(GSM_EVENT_OK, GSM_Hardware.atc.recv_buff.Buffer);
+            }
+            GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+            memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
+        }
+    }
+    else 
+    {
+        char *p = strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "CME");
+        if (p && strstr(p, "\r\n"))
+        {
+            DEBUG_PRINTF("CME error %s", p);
+            GSM_Hardware.atc.timeout_atc_ms = 0;
+        }
+        else
+        {
+            if (GSM_Hardware.atc.retry_count_atc == 0)
+            {
+                if (GSM_Hardware.atc.recv_buff.BufferIndex > 10 && strstr((char*)GSM_Hardware.atc.recv_buff.Buffer+2, "\r\n"))
+                {
+                    DEBUG_PRINTF("Unhandled %s\r\n", GSM_Hardware.atc.recv_buff.Buffer);
+                    //GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+                    //GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;;
+                }
+            }
+        }
+
+    }
+
+    if (GSM_Hardware.atc.timeout_atc_ms && 
+        diff >= GSM_Hardware.atc.timeout_atc_ms)
+    {
+
+        if (GSM_Hardware.atc.retry_count_atc)
+        {
+            GSM_Hardware.atc.retry_count_atc--;
+        }
+
+        if (GSM_Hardware.atc.retry_count_atc == 0)
+        {
             GSM_Hardware.atc.timeout_atc_ms = 0;
 
             if (GSM_Hardware.atc.send_at_callback != NULL)
             {
-                GSM_Hardware.atc.send_at_callback(GSM_EVENT_OK, GSM_Hardware.atc.recv_buff.Buffer);
+                GSM_Hardware.atc.send_at_callback(GSM_EVENT_TIMEOUT, NULL);
             }
-#endif
-
-            bool do_cb = true;
-            if (GSM_Hardware.atc.expected_response_at_the_end 
-                && strlen(GSM_Hardware.atc.expected_response_at_the_end))
-            {
-                //DEBUG_PRINTF("Expected end %s\r\n", GSM_Hardware.atc.expected_response_at_the_end);
-                uint32_t current_response_length = GSM_Hardware.atc.recv_buff.BufferIndex;
-                uint32_t expect_compare_length = strlen(GSM_Hardware.atc.expected_response_at_the_end);
-
-                if (expect_compare_length < current_response_length)
-                {
-                    uint8_t *p_compare_end_str = &GSM_Hardware.atc.recv_buff.Buffer[current_response_length - expect_compare_length - 1];
-                    if ((memcmp(p_compare_end_str, GSM_Hardware.atc.expected_response_at_the_end, expect_compare_length) == 0))
-                    {
-                        do_cb = true;
-                    }
-                }
-                else
-                {
-                    do_cb = false;
-                }
-            }
-
-            if (do_cb)
-            {
-                GSM_Hardware.atc.timeout_atc_ms = 0;
-                if (GSM_Hardware.atc.send_at_callback)
-                {
-                    GSM_Hardware.atc.send_at_callback(GSM_EVENT_OK, GSM_Hardware.atc.recv_buff.Buffer);
-                }
-            }
+            GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+            GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;;
         }
-        else 
+        else
         {
-            char *p = strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "CME");
-            if (p && strstr(p, "\r\n"))
-            {
-                DEBUG_PRINTF("%s", p);
-                GSM_Hardware.atc.timeout_atc_ms = 0;
-            }
+            DEBUG("Resend ATC: %s, expect %s\r\n", GSM_Hardware.atc.cmd, GSM_Hardware.atc.expect_resp_from_atc);
+            GSM_Hardware.atc.current_timeout_atc_ms = now;
+            com_put_at_string(GSM_Hardware.atc.cmd);
         }
     }
 
-#if 1
+#if 0
     /* Xu ly time out +CME ERROR */
     if (CMEErrorCount > 0)
     {
@@ -800,6 +856,22 @@ void modem_run()
         }
     }
 #endif
+}
+
+uint32_t m_poll_interval;
+void gsm_hw_layer_run(void)
+{
+    static uint32_t m_last_poll = 0;
+    if (sys_get_ms() - m_last_poll >= m_poll_interval)
+    {
+        m_last_poll = sys_get_ms();
+        modem_run();
+    }
+}
+
+void gsm_change_hw_polling_interval(uint32_t ms)
+{
+    m_poll_interval = ms;
 }
 
 void gsm_hw_clear_at_serial_rx_buffer(void)
@@ -853,6 +925,12 @@ BOOL modem_process(uint8_t ch)
     if (GSM_Hardware.atc.timeout_atc_ms)
     {
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
+        if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
+        {
+            DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
+            GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+        }
+
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
     }
     else
@@ -862,6 +940,7 @@ BOOL modem_process(uint8_t ch)
 #endif /* __HOPQUY_GSM__ */
 
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
+        GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
         if (ch == '\r' || ch == '\n')
         {
             ///* Xu ly du lieu tien +CUSD: 0, "MobiQTKC:20051d,31/07/2016 KM2:50000d KM3:48500d KM1:27800d", 15 */
@@ -871,14 +950,14 @@ BOOL modem_process(uint8_t ch)
             //    MQTT_SendBufferToServer((char *)GSM_Hardware.atc.recv_buff.Buffer, "CUSD");
             //}
 
-            ///* Xu ly ban tin +CME ERROR */
-            //if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CME ERROR:"))
-            //{
-            //    CMEErrorCount++;
-            //}
+            /* Xu ly ban tin +CME ERROR */
+            if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "+CME ERROR:"))
+            {
+                CMEErrorCount++;
+            }
             if (GSM_Hardware.atc.recv_buff.BufferIndex>2)
             {
-                DEBUG_PRINTF("Unhandled msg %s", GSM_Hardware.atc.recv_buff.Buffer);
+                //DEBUG_PRINTF("Unhandled msg %s", GSM_Hardware.atc.recv_buff.Buffer);
             }
 
             GSM_Hardware.atc.recv_buff.BufferIndex = 0;
@@ -944,20 +1023,19 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 
     if (strlen(cmd) < 128)
     {
-        DEBUG_PRINTF("%s", cmd);
+        DEBUG_PRINTF("Send cmd %s", cmd);
     }
 
     GSM_Hardware.atc.cmd = cmd;
     GSM_Hardware.atc.expect_resp_from_atc = expect_resp;
     GSM_Hardware.atc.expected_response_at_the_end = expected_response_at_the_end_of_response;
-    GSM_Hardware.atc.recv_buff.BufferIndex = 0;
     GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
     GSM_Hardware.atc.retry_count_atc = retry_count;
     GSM_Hardware.atc.send_at_callback = callback;
-    GSM_Hardware.atc.timeout_atc_ms = timeout / 100;
-    GSM_Hardware.atc.current_timeout_atc_ms = 0;
+    GSM_Hardware.atc.timeout_atc_ms = timeout;
+    GSM_Hardware.atc.current_timeout_atc_ms = sys_get_ms();
 
-    mem_set(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
+    memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
     GSM_Hardware.atc.recv_buff.BufferIndex = 0;
     GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
 
@@ -969,6 +1047,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 
 void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
+    DEBUG_PRINTF("[%s]\r\n", __FUNCTION__);
     while (length--)
     {
         com_put_at_character(*raw++);

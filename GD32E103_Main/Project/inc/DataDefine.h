@@ -208,6 +208,7 @@ typedef struct
 
     //Debug
     uint8_t ADCOut;
+    uint8_t network_operator[32];
 
 } Status_t;
 
@@ -243,27 +244,13 @@ typedef struct
     uint32_t kFactor;
 } Parameters_t;
 
-#if (__USE_MQTT__ == 1)
+#if 1
 #define NUM_OF_MQTT_BUFFER 6
 
 typedef struct
 {
     MediumBuffer_t Buffer[NUM_OF_MQTT_BUFFER];
 } MQTT_ClientData_t;
-#else       // use http
-#define NUM_OF_HTTP_BUFFER 6
-typedef struct
-{
-    MediumBuffer_t Buffer[NUM_OF_HTTP_BUFFER];
-} HTTP_ClientData_t;
-// typedef struct
-// {
-//     SmallBuffer_t GPRS_Buffer[NUM_OF_GPRS_BUFFER];
-//     SmallBuffer_t LoginBuffer;
-
-//     uint8_t NewDataToSend;
-//     uint16_t DataLengthToSend;
-// } TCP_ClientData_t;
 #endif //__USE_MQTT__
 
 typedef struct
@@ -278,10 +265,9 @@ typedef struct
     HardwareInfo_t HardwareInfo;
     MeasureStatus_t MeasureStatus;
 
-#if (__USE_MQTT__ == 1)
+//#if (__USE_MQTT__ == 1)
+#if 1
     MQTT_ClientData_t MQTTData;
-#else
-    HTTP_ClientData_t http_data;
 #endif
 
 

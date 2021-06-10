@@ -97,7 +97,7 @@ void gsm_get_short_apn(char *ShortAPN);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);
 void gsm_process_cusd_message(char *buffer);
 void gsm_get_network_status(char *Buffer);
-void gsm_get_network_operator(char *Buffer);
+
 
 void gsm_query_sms(void);
 void gsm_process_cmd_from_sms(char *Buffer);
@@ -134,7 +134,7 @@ typedef struct
     char *expect_resp_from_atc;
     char *expected_response_at_the_end;
     uint16_t timeout_atc_ms;
-    uint16_t current_timeout_atc_ms;
+    uint32_t current_timeout_atc_ms;
     uint8_t retry_count_atc;
     SmallBuffer_t recv_buff;
     gsm_send_at_cb_t send_at_callback;
@@ -200,5 +200,16 @@ void gsm_hw_uart_send_raw(uint8_t *raw, uint32_t length);
  * @retval      Internet mode
  */
 gsm_internet_mode_t *gsm_get_internet_mode(void);
+
+/**
+ * @brief       GSM hardware uart polling
+ */
+void gsm_hw_layer_run(void);
+
+/**
+ * @brief       Change GSM hardware uart polling interval is ms
+ * @param[in]   Polling interval in ms
+ */
+void gsm_change_hw_polling_interval(uint32_t ms);
 
 #endif // __GSM_H__

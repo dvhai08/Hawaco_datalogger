@@ -47,9 +47,9 @@ __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
 
 static SmallBuffer_t m_sensor_uart_buffer;
 
-static uint8_t m_last_pulse_state = 0;
-static uint8_t m_cur_pulse_state = 0;
-static uint32_t m_pulse_length_in_ms = 0;
+//static uint8_t m_last_pulse_state = 0;
+//static uint8_t m_cur_pulse_state = 0;
+//static uint32_t m_pulse_length_in_ms = 0;
 uint8_t m_is_pulse_trigger = 0;
 uint32_t m_begin_pulse_timestamp, m_end_pulse_timestamp;
 int8_t m_pull_state = -1;
@@ -119,15 +119,19 @@ void MeasureTick1000ms(void)
         else
         {
             SENS_420mA_PWR_OFF();
- #if (__USE_MQTT__)
-            if (MQTT_PublishDataMsg() == 0) // No memory
+            gsm_internet_mode_t *mode = gsm_get_internet_mode();
+            if (*mode == GSM_INTERNET_MODE_PPP_STACK)
             {
-                MQTT_DiscardOldestDataMsg();
-                MQTT_PublishDataMsg();
+                if (MQTT_PublishDataMsg() == 0) // No memory
+                {
+                    MQTT_DiscardOldestDataMsg();
+                    MQTT_PublishDataMsg();
+                }
             }
- #else
-        gsm_build_http_post_msg();
- #endif
+            else
+            {
+                gsm_build_http_post_msg();
+            }
         }
     }
     if (m_measure_timeout > 0)

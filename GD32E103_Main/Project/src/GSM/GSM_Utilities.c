@@ -212,7 +212,7 @@ void gsm_get_network_status(char *buffer)
  * @version	:
  * @reviewer:	
  */
-void gsm_get_network_operator(char *buffer)
+void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t max_len)
 {
     /**
 	* AT+COPS=? 
@@ -227,7 +227,8 @@ void gsm_get_network_operator(char *buffer)
 	*
 	* OK
 	*/
-#if 0
+#if 1
+        *nw_operator = 0;
 	char *tmp_buff = strstr(buffer, "+COPS:");
 	if(tmp_buff == NULL) return;	
 	
@@ -239,15 +240,11 @@ void gsm_get_network_operator(char *buffer)
 	}
 	if(index >= 2)
 	{
-		uint8_t opLength = sizeof(xSystem.Status.GSMOperator);
 		uint8_t length = commaIndex[1] - commaIndex[0];
-		if(length > opLength) length = opLength;
+		if(length > max_len) length = max_len;
 		
 		//Copy operator name
-		memset(xSystem.Status.GSMOperator, 0, sizeof(xSystem.Status.GSMOperator));
-		memcpy(xSystem.Status.GSMOperator, &tmp_buff[commaIndex[0] + 1], length - 1);
-		
-		DEBUG ("\r\nOperator: %s", xSystem.Status.GSMOperator);
+		memcpy(nw_operator, &tmp_buff[commaIndex[0] + 1], length - 1);
 	}
 #endif
 }

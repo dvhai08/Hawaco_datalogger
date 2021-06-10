@@ -147,5 +147,14 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *da
 // */ 
 //bool gps_utilities_parse_timestamp_from_psuttz_message(char *buffer, date_time_t *date_time, int8_t *gsm_adjust);
 
+/**
+ * @brief       Get GSM network operator
+ * @param[in]   buffer : Pointer to buffer data will be parsed
+ * @param[out]  nw_operator : Network operator
+ * @param[in]   max_len : Max network operator name length
+ * @note : Format message "+COPS: 0,0,"Viettel Viettel",7\r\n"
+ */ 
+void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t max_len);
+
 #endif /* GSM_UTILITIES_H */
 
