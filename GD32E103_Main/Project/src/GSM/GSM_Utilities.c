@@ -17,70 +17,6 @@
 #include "DataDefine.h"
 #include "sys_ctx.h"
 
-/******************************************************************************
-                                   GLOBAL VARIABLES					    			 
- ******************************************************************************/
-extern System_t xSystem;
-extern GSM_Manager_t gsm_manager;
-
-/******************************************************************************
-                                   GLOBAL FUNCTIONS					    			 
- ******************************************************************************/
-
-/******************************************************************************
-                                   DATA TYPE DEFINE					    			 
- ******************************************************************************/
-
-/******************************************************************************
-                                   PRIVATE VARIABLES					    			 
- ******************************************************************************/
-
-/******************************************************************************
-                                   LOCAL FUNCTIONS					    			 
- ******************************************************************************/
-
-/*****************************************************************************/
-/**
- * @brief	:  Lay thong tin IMEI
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/01/2014
- * @version	:
- * @reviewer:	
- */
-void gsm_get_imei(uint8_t LoaiIMEI, uint8_t *IMEI_buffer)
-{
-    uint8_t Count = 0;
-    uint8_t tmp_cnt = 0;
-
-    for (Count = 0; Count < strlen((char *)IMEI_buffer); Count++)
-    {
-        if (IMEI_buffer[Count] >= '0' && IMEI_buffer[Count] <= '9')
-        {
-            if (LoaiIMEI == GSMIMEI)
-            {
-                xSystem.Parameters.gsm_imei[tmp_cnt++] = IMEI_buffer[Count];
-            }
-            else
-            {
-                xSystem.Parameters.sim_imei[tmp_cnt++] = IMEI_buffer[Count];
-            }
-        }
-        if (tmp_cnt >= 20)
-            break;
-    }
-
-    if (LoaiIMEI == GSMIMEI)
-    {
-        xSystem.Parameters.gsm_imei[tmp_cnt] = 0;
-    }
-    else
-    {
-        xSystem.Parameters.sim_imei[tmp_cnt] = 0;
-    }
-}
-
 bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq)
 {
     char *tmp_buff = strstr((char *)buffer, "+CSQ:");
@@ -93,28 +29,6 @@ bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq
     *csq = gsm_utilities_get_number_from_string(6, tmp_buff);
     return true;
 }
-
-#if __USE_APN_CONFIG__
-/*
-* Get APN name only, w/o username & password, ex: "v-internet"
-*/
-void gsm_get_short_apn(char *ShortAPN)
-{
-    uint8_t i = 0;
-
-    while (xSystem.Parameters.APNConfig[i] && i < 20)
-    {
-        if (xSystem.Parameters.APNConfig[i] == ',')
-            break;
-        i++;
-    }
-
-    if (i > 2)
-    {
-        memcpy(ShortAPN, xSystem.Parameters.APNConfig, i);
-    }
-}
-#endif
 
 void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result)
 {
@@ -163,17 +77,8 @@ void gsm_process_cusd_message(char *buffer)
 #endif
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  +CGREG: 2,1,"3279","487BD01",7
- * @retval	:
- * @author	:	Phinht
- * @created	:	15/10/2015
- * @version	:
- * @reviewer:	
- */
-void gsm_get_network_status(char *buffer)
+
+void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology)
 {
     /**
 	* +CGREG: 2,1,"3279","487BD01",7
@@ -184,21 +89,22 @@ void gsm_get_network_status(char *buffer)
     if (tmp_buff == NULL)
         return;
 
-    uint8_t commaIndex[10] = {0};
+    uint8_t comma_idx[12] = {0};
     uint8_t index = 0;
     for (uint8_t i = 0; i < strlen(tmp_buff); i++)
     {
         if (tmp_buff[i] == ',')
-            commaIndex[index++] = i;
+        {
+            comma_idx[index++] = i;
+        }
     }
+
     if (index >= 4)
     {
-        gsm_manager.AccessTechnology = gsm_utilities_get_number_from_string(commaIndex[3] + 1, tmp_buff);
-        gsm_manager.GSMReady = 1;
+        *access_technology = gsm_utilities_get_number_from_string(comma_idx[3] + 1, tmp_buff);
 
-        if (gsm_manager.AccessTechnology > 9)
-            gsm_manager.AccessTechnology = 9;
-        //		DEBUG ("\r\nNetwork status: %s - %u", tmp_buff, gsm_manager.AccessTechnology);
+        if (*access_technology > 9)
+            *access_technology  = 9;
     }
 }
 
@@ -232,19 +138,19 @@ void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t
 	char *tmp_buff = strstr(buffer, "+COPS:");
 	if(tmp_buff == NULL) return;	
 	
-	uint8_t commaIndex[5] = {0};
+	uint8_t comma_idx[5] = {0};
 	uint8_t index = 0;
 	for(uint8_t i = 0; i < strlen(tmp_buff); i++)
 	{
-		if(tmp_buff[i] == '"') commaIndex[index++] = i;
+		if(tmp_buff[i] == '"') comma_idx[index++] = i;
 	}
 	if(index >= 2)
 	{
-		uint8_t length = commaIndex[1] - commaIndex[0];
+		uint8_t length = comma_idx[1] - comma_idx[0];
 		if(length > max_len) length = max_len;
 		
 		//Copy operator name
-		memcpy(nw_operator, &tmp_buff[commaIndex[0] + 1], length - 1);
+		memcpy(nw_operator, &tmp_buff[comma_idx[0] + 1], length - 1);
 	}
 #endif
 }

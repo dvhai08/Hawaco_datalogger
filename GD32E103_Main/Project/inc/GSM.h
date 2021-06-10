@@ -1,7 +1,6 @@
 #ifndef __GSM_H__
 #define __GSM_H__
 
-#include "RTL.h"
 #include "DataDefine.h"
 #include <stdbool.h>
 
@@ -58,7 +57,6 @@ typedef enum
 typedef struct
 {
     gsm_state_t state;
-    gsm_at_mode_t Mode;
     uint8_t step;
     uint8_t RISignal;
     uint8_t Dial;
@@ -71,7 +69,7 @@ typedef struct
     uint16_t TimeOutCSQ;
     uint8_t TimeOutOffAfterReset;
     uint8_t isGSMOff;
-    uint8_t AccessTechnology;
+    uint8_t access_tech;
 } GSM_Manager_t;
 
 typedef struct
@@ -105,7 +103,6 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result);
 void gsm_get_short_apn(char *ShortAPN);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);
 void gsm_process_cusd_message(char *buffer);
-void gsm_get_network_status(char *Buffer);
 
 
 void gsm_query_sms(void);
@@ -150,7 +147,7 @@ bool gsm_data_layer_is_module_sleeping(void);
 void gsm_query_sms_tick(void);
 void gsm_check_sms_tick(void);
 void gsm_set_timeout_to_sleep(uint32_t second);
-BOOL com_put_at_string(char *str);
+
 
 //======================== FOR MODEM ========================//
 
@@ -207,18 +204,9 @@ typedef struct
 #endif //__USED_HTTP__
 
 
-void gsm_hw_clear_non_at_serial_rx_buffer(void);
-
-uint32_t gsm_hw_serial_at_cmd_rx_buffer_size(void);
-
-void gsm_hw_clear_at_serial_rx_buffer(void);
-
-uint32_t gsm_hw_direct_read_at_command_rx_buffer(uint8_t **output, uint32_t size);
-
-void gsm_data_layter_set_flag_switch_mode_http(void);   
-
-void gsm_data_layter_exit_mode_http(void);
-
+/**
+ * @brief       Build sensor msg 
+ */
 uint16_t gsm_build_http_post_msg(void);
 
 /**

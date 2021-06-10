@@ -20,7 +20,6 @@
 #include "HardwareManager.h"
 #include "Main.h"
 #include "gsm.h"
-#include "MQTTUser.h"
 #include "measure_input.h"
 #include "app_bkup.h"
 #include "InternalFlash.h"

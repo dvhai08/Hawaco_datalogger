@@ -186,14 +186,6 @@ typedef struct
 
     uint16_t PingTimeout;
     uint8_t YeuCauGuiTin;
-    uint8_t GuiGoiTinTCP;
-    uint16_t WaitToCloseTCP;
-
-    uint8_t ServerState;
-    uint8_t MQTTServerState;
-    uint8_t TCPSocket;
-    uint8_t TCPNeedToClose;
-    uint8_t TCPCloseDone;
 
     uint8_t SendGPRSTimeout;
     uint16_t gsm_sleep_time_s;

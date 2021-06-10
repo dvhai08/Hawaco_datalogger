@@ -321,22 +321,7 @@ void Delayms(uint16_t ms)
     }
 }
 
-static void time_cback(U32 time)
-{
-    if (time == 0)
-    {
-        DEBUG_PRINTF("NTP: Error, server not responding or bad response\r\n");
-    }
-    else
-    {
-        DEBUG_PRINTF("NTP: %d seconds elapsed since 1.1.1970\r\n", time);
 
-        xSystem.Status.TimeStamp = time + 25200;        // GMT+7
-        __disable_irq();
-        rtc_counter_set(xSystem.Status.TimeStamp);
-        __enable_irq();
-    }
-}
 
 uint32_t sys_get_ms(void)
 {

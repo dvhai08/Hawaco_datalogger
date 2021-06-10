@@ -20,7 +20,6 @@
 #include "InternalFlash.h"
 #include "main.h"
 #include "app_bkup.h"
-#include "MQTTUser.h"
 #include "gsm.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30

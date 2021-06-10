@@ -55,9 +55,6 @@ static char tmpBuffer[50] = {0};
 static char m_at_cmd_buffer[128];
 static bool m_request_to_send_at_cmd = false;
 static uint8_t m_timeout_switch_at_mode = 0;
-
-uint8_t SendATOPeriod = 0;
-uint8_t ModuleNotMounted = 0;
 uint8_t InSleepModeTick = 0;
 uint8_t TimeoutToSleep = 0;
 static app_queue_t m_http_msq;
@@ -82,31 +79,6 @@ static app_queue_data_t m_last_http_msg =
 {
     .pointer = NULL,
 };
-
-void gsm_data_layter_set_flag_switch_mode_http(void)
-{
-    m_enter_http_get = true;
-}
-
-void gsm_data_layter_exit_mode_http(void)
-{
-    m_enter_http_get = false;
-}
-
-bool gsm_data_layer_is_module_sleeping(void)
-{
-    //	return GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN);
-    if (gsm_manager.state == GSM_STATE_SLEEP)
-    {
-        return 1;
-    }
-    return 0;
-}
-
-void gsm_change_state_sleep(void)
-{
-    gsm_change_state(GSM_STATE_GOTO_SLEEP);
-}
 
 static uint32_t rtc_struct_to_counter(date_time_t *t)
 {
@@ -270,39 +242,7 @@ void gsm_manager_tick(void)
         //			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
         if (TimeoutToSleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
         {
-            if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-            {
-                if (xSystem.Status.TCPNeedToClose == 0)
-                {
-                    DEBUG_PRINTF("TCP need to close\r\n");
-                    xSystem.Status.TCPNeedToClose = 1;
-                }
-
-                if (xSystem.Status.TCPCloseDone)
-                {
-                    TimeoutToSleep = 81;
-                    xSystem.Status.TCPCloseDone = 0;
-                }
-
-                if (TimeoutToSleep > 80)
-                {
-                    TimeoutToSleep = 0;
-                    /* Chỉ sleep khi :
-                                                        - Đang không UDFW 
-                                                        - Đang không trong thời gian gửi tin
-                                                */
-                    if (xSystem.FileTransfer.Retry == 0 && xSystem.Status.SendGPRSTimeout == 0)
-                    {
-                        DEBUG_PRINTF("GSM: Het viec roi, ngu thoi em...\r\n");
-                        gsm_manager.step = 0;
-                        gsm_manager.state = GSM_STATE_GOTO_SLEEP;
-                    }
-                }
-            }
-            else
-            {
-                DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");
-            }
+            DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");
         }
 
         gsm_wakeup_periodically();
@@ -500,8 +440,6 @@ uint8_t gsm_check_idle(void)
         return 0;
 
     //Dang gui TCP -> busy
-    if (xSystem.Status.GuiGoiTinTCP)
-        return 0;
     if (xSystem.Status.SendGPRSTimeout)
         return 0;
 
@@ -535,34 +473,29 @@ void gsm_data_layer_initialize(void)
     init_http_msq();
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/01/2016
- * @version	:
- * @reviewer:	
- */
+bool gsm_data_layer_is_module_sleeping(void)
+{
+    //	return GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN);
+    if (gsm_manager.state == GSM_STATE_SLEEP)
+    {
+        return 1;
+    }
+    return 0;
+}
+
 void gsm_change_state(gsm_state_t new_state)
 {
     if (new_state == GSM_STATE_OK) //Command state -> Data state trong PPP mode
     {
-        gsm_hw_send_at_cmd("ATO\r\n", "CONNECT", "", 1000, 10, NULL);
         gsm_manager.GSMReady = 2;
-        gsm_manager.Mode = GSM_PPP_MODE;
         gsm_manager.ppp_cmd_state = 0;
 
         TimeoutToSleep = 0;
     }
     else
     {
-        gsm_manager.Mode = GSM_AT_MODE;
-
         if (new_state == GSM_STATE_RESET)
         {
-            ModuleNotMounted = 0;
             gsm_manager.FirstTimePower = 1;
         }
     }
@@ -731,21 +664,21 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 18:
-        DEBUG_PRINTF("Network Registration Status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_PRINTF("Network registration status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGREG?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 19:
-        DEBUG_PRINTF("Query Network Status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +CGREG: 2,1,"3279","487BD01",7 */
+        DEBUG_PRINTF("Query network status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +CGREG: 2,1,"3279","487BD01",7 */
         if (event == GSM_EVENT_OK)
         {
-            gsm_get_network_status(resp_buffer);
+            gsm_utilities_get_network_access_tech(resp_buffer, &gsm_manager.access_tech);
         }
         gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 20:
-        DEBUG_PRINTF("Query Network Operator: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +COPS: 0,0,"Viettel Viettel",7 */
+        DEBUG_PRINTF("Query network operator: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +COPS: 0,0,"Viettel Viettel",7 */
         if (event == GSM_EVENT_OK)
         {
             gsm_utilities_get_network_operator(resp_buffer, 
@@ -760,16 +693,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             DEBUG_PRINTF("Network operator: %s\r\n", (char *)xSystem.Status.network_operator);
         }
         gsm_change_hw_polling_interval(5);
-#if 0
-#if (__GSM_SLEEP_MODE__)
-//			SendATCommand ("AT+QSCLK=1\r\n", "OK\r\n", "", 1000, 5, PowerOnModuleGSM);
-			SendATCommand ("AT+QSCLK=0\r\n", "OK\r\n", "", 1000, 5, PowerOnModuleGSM);
-#else
-			SendATCommand ("AT+QSCLK=0\r\n", "OK\r\n", "", 1000, 5, PowerOnModuleGSM);
-#endif
-#else
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
-#endif
         break;
 
     case 21:
@@ -1036,7 +960,6 @@ void gsm_hard_reset(void)
     case 6:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
-        gsm_manager.Mode = GSM_AT_MODE;
         nvic_irq_enable(GSM_UART_IRQ, 1, 0);
         UART_Init(GSM_UART, 115200);
         gsm_manager.TimeOutOffAfterReset = 90;

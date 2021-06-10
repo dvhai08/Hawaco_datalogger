@@ -38,5 +38,6 @@ int app_debug_rtt(const char *fmt,...)
         SEGGER_RTT_Write(0, m_debug_buffer, n + time_stamp_size);
     }
     va_end(args);
+    
     return n;
 }

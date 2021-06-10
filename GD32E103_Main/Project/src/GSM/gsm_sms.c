@@ -8,7 +8,6 @@
 #include "main.h"
 
 static gsm_sms_msg_t m_sms_memory[3];
-//static bool send_sms(char *phone_number, char *message);
 
 gsm_sms_msg_t *gsm_get_sms_memory_buffer(void)
 {

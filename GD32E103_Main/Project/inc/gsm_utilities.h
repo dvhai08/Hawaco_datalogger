@@ -156,5 +156,13 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *da
  */ 
 void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t max_len);
 
+/**
+ * @brief       Get GSM access technology
+ * @param[in]   buffer : Pointer to buffer data will be parsed
+ * @param[out]  access_technology : Access technology result
+ * @note : Format message     +CGREG: 2,1,"3279","487BD01",7
+ */ 
+void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology);
+
 #endif /* GSM_UTILITIES_H */
 
