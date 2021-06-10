@@ -74,6 +74,15 @@ typedef struct
     uint8_t AccessTechnology;
 } GSM_Manager_t;
 
+typedef struct
+{
+    char phone_number[15];
+    char message[160];
+    uint8_t need_to_send;
+    uint8_t retry_count;
+} gsm_sms_msg_t;
+
+
 typedef void (*gsm_send_at_cb_t)(gsm_response_event_t event, void *ResponseBuffer);
 
 void gsm_hw_send_at_cmd(char *cmd, char *expect_resp, char *expect_resp_at_the_end,
@@ -101,7 +110,34 @@ void gsm_get_network_status(char *Buffer);
 
 void gsm_query_sms(void);
 void gsm_process_cmd_from_sms(char *Buffer);
-void gsm_send_sms(gsm_response_event_t event, void *ResponseBuffer);
+
+/**
+ * @brief Send sms to phone number
+ * @param[in] phone_number : Des phone number
+ * @param[in] message : A message send to phone number
+ */
+bool gsm_send_sms(char *phone_number, char *message);
+
+
+/**
+ * @brief Get SMS buffer size
+ * @retval Pointer to sms buffer size
+ */
+uint32_t gsm_get_max_sms_memory_buffer(void);
+
+/**
+ * @brief Get SMS context
+ * @retval Pointer to sms memory buffer
+ */
+gsm_sms_msg_t *gsm_get_sms_memory_buffer(void);
+
+
+/**
+ * @brief Process new sms message
+ * @param[in] buffer : Received buffer from serial port
+ */
+void gsm_sms_layer_process_cmd(char * buffer);
+
 void gsm_change_state(gsm_state_t NewState);
 void gsm_pwr_control(uint8_t State);
 void gsm_send_status_to_mobilephone(char *SDT);

@@ -63,16 +63,12 @@
       <file file_name="../src/InternalFlash.c" />
     </folder>
     <folder Name="GSM">
-      <file file_name="../src/GSM/GSM_SMSLayer.c">
-        <configuration
-          Name="GD32E103x External"
-          build_exclude_from_build="Yes" />
-      </file>
       <file file_name="../src/GSM/gsm_http.c" />
       <file file_name="../src/GSM/gsm_http.h" />
       <file file_name="../src/GSM/gsm_data_layer.c" />
       <file file_name="../src/GSM/gsm_hardware_layer.c" />
       <file file_name="../src/GSM/gsm_utilities.c" />
+      <file file_name="../src/GSM/gsm_sms.c" />
     </folder>
     <folder Name="MQTTUser">
       <file file_name="../src/MQTTUser/MQTT_ClientMessage.c" />

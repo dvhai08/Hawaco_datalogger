@@ -53,7 +53,7 @@ extern GSM_Manager_t gsm_manager;
 static char tmpBuffer[50] = {0};
 #endif
 
-static char m_at_cmd[32] = {0};
+static char m_at_cmd_buffer[128];
 static bool m_request_to_send_at_cmd = false;
 static uint8_t m_timeout_switch_at_mode = 0;
 
@@ -219,10 +219,44 @@ void gsm_wakeup_periodically(void)
  * @reviewer:	
  */
 uint8_t m_send_at_cmd_in_idle_mode = 0;
+bool m_do_read_sms = true;
 
 void GSM_ManagerTestSleep(void)
 {
     gsm_manager.state = GSM_STATE_SLEEP;
+}
+
+static void gsm_query_sms_buffer(void)
+{
+    uint8_t cnt = 0;
+    gsm_sms_msg_t *sms = gsm_get_sms_memory_buffer();
+    uint32_t max_sms = gsm_get_max_sms_memory_buffer();
+
+    for (cnt = 0; cnt < max_sms; cnt++)
+    {
+        if (sms[cnt].need_to_send == 1 
+            || sms[cnt].need_to_send == 2)
+        {
+            sms[cnt].retry_count++;
+            DEBUG_PRINTF("Send sms in buffer index %d\r\n", cnt);
+
+            /* Neu gui 3 lan khong thanh cong thi xoa khoi queue */
+            if (sms[cnt].retry_count < 3)
+            {
+                sms[cnt].need_to_send = 2;
+                DEBUG_PRINTF("Change gsm state to send sms\r\n");
+                gsm_change_state(GSM_STATE_SEND_SMS);
+            }
+            else
+            {
+                DEBUG_PRINTF("SMS buffer %u send FAIL %u times. Cancle!\r\n", 
+                                cnt, 
+                                sms[cnt].retry_count);
+                sms[cnt].need_to_send = 0;
+            }
+            return;
+        }
+    }
 }
 
 void gsm_manager_tick(void)
@@ -250,10 +284,17 @@ void gsm_manager_tick(void)
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 30, gsm_at_cb_power_on_gsm);
         }
+        //m_do_read_sms = true;
         break;
 
     case GSM_STATE_OK: /* PPP data mode */
     {
+        if (m_do_read_sms)
+        {
+            m_do_read_sms = false;
+            gsm_change_state(GSM_STATE_READ_SMS);
+        }
+
         if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
         {
             if (gsm_manager.GSMReady == 2)
@@ -313,38 +354,46 @@ void gsm_manager_tick(void)
 
         gsm_wakeup_periodically();
 
-        bool enter_sleep_in_http = true;
-        if (!app_queue_is_empty(&m_http_msq))
+        if (gsm_manager.state == GSM_STATE_OK)
         {
-            DEBUG_PRINTF("Post http data\r\n");
-            m_enter_http_post = true;
-            enter_sleep_in_http = false;
-            gsm_change_state(GSM_STATE_HTTP_POST);
-        }
-        else
-        {
-            DEBUG_PRINTF("Queue empty\r\n");
-            if (gsm_manager.state == GSM_STATE_OK)
-            {
-                if (GSM_NEED_ENTER_HTTP_GET())
-                {
-                    gsm_change_state(GSM_STATE_HTTP_GET);
-                    enter_sleep_in_http = false;
-                }
-            }
+            gsm_query_sms_buffer();
         }
         
-        if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
+        if (gsm_manager.state == GSM_STATE_OK)      // gsm state maybe changed in gsm_query_sms_buffer task
         {
-            if (enter_sleep_in_http)
+            bool enter_sleep_in_http = true;
+            if (!app_queue_is_empty(&m_http_msq))
             {
-                gsm_change_state(GSM_STATE_SLEEP);
+                DEBUG_PRINTF("Post http data\r\n");
+                m_enter_http_post = true;
+                enter_sleep_in_http = false;
+                gsm_change_state(GSM_STATE_HTTP_POST);
             }
             else
             {
-                if (TimeoutToSleep > 15)
+                DEBUG_PRINTF("Queue empty\r\n");
+                if (gsm_manager.state == GSM_STATE_OK)
                 {
-                    TimeoutToSleep -= 15;
+                    if (GSM_NEED_ENTER_HTTP_GET())
+                    {
+                        gsm_change_state(GSM_STATE_HTTP_GET);
+                        enter_sleep_in_http = false;
+                    }
+                }
+            }
+        
+            if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
+            {
+                if (enter_sleep_in_http)
+                {
+                    gsm_change_state(GSM_STATE_SLEEP);
+                }
+                else
+                {
+                    if (TimeoutToSleep > 15)
+                    {
+                        TimeoutToSleep -= 15;
+                    }
                 }
             }
         }
@@ -359,13 +408,19 @@ void gsm_manager_tick(void)
     case GSM_STATE_READ_SMS: /* Read SMS */
         if (gsm_manager.step == 0)
         {
-            gsm_manager.step = 1;
-            if (gsm_manager.ppp_cmd_state == 0)
+            bool enter_read_sms = true;
+            if (*gsm_get_internet_mode() == GSM_INTERNET_MODE_PPP_STACK)
             {
-                DEBUG_PRINTF("Read sms +++\r\n");
-                gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2200, 5, gsm_at_cb_read_sms);
+                gsm_manager.step = 1;
+                if (gsm_manager.ppp_cmd_state == 0)
+                {
+                    DEBUG_PRINTF("Read sms +++\r\n");
+                    gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2200, 5, gsm_at_cb_read_sms);
+                    enter_read_sms = false;
+                }
             }
-            else
+                    
+            if (enter_read_sms)
             {
                 DEBUG_PRINTF("Enter read sms cb\r\n");
                 gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_read_sms);
@@ -374,8 +429,10 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_SEND_SMS: /* Send SMS */
+
         if (!gsm_manager.GSMReady)
             break;
+
         if (gsm_manager.step == 0)
         {
             DEBUG_PRINTF("Enter send sms cb\r\n");
@@ -840,7 +897,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             if (strlen((char*)xSystem.Status.network_operator) < 5)
             {
                 gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
-                gsm_change_hw_polling_interval(200);
+                gsm_change_hw_polling_interval(1000);
                 return;
             }
             DEBUG_PRINTF("Network operator: %s\r\n", (char *)xSystem.Status.network_operator);
@@ -1192,13 +1249,13 @@ void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_bu
         if (event == GSM_EVENT_OK)
         {
             gsm_manager.ppp_cmd_state = 1;
-            if (strstr(m_at_cmd, "+CUSD"))
+            if (strstr(m_at_cmd_buffer, "+CUSD"))
             {
-                gsm_hw_send_at_cmd(m_at_cmd, "+CUSD", "\r\n", 5000, 5, gsm_data_layer_switch_mode_at_cmd);
+                gsm_hw_send_at_cmd(m_at_cmd_buffer, "+CUSD", "\r\n", 5000, 5, gsm_data_layer_switch_mode_at_cmd);
             }
             else
             {
-                gsm_hw_send_at_cmd(m_at_cmd, "OK\r\n", "", 2000, 5, gsm_data_layer_switch_mode_at_cmd);
+                gsm_hw_send_at_cmd(m_at_cmd_buffer, "OK\r\n", "", 2000, 5, gsm_data_layer_switch_mode_at_cmd);
             }
         }
         else
@@ -1214,7 +1271,7 @@ void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_bu
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            memset(m_at_cmd, 0, 20);
+            memset(m_at_cmd_buffer, 0, sizeof(m_at_cmd_buffer));
             DEBUG_PRINTF("Phan hoi: %s\r\n", resp_buffer);
         }
         m_request_to_send_at_cmd = false;
@@ -1472,252 +1529,212 @@ void gsm_query_sms(void)
  */
 void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer)
 {
-#if 0
-	static uint8_t SMSIndex = 0xFF;
-	static uint8_t RetryRead = 0;
-	
-	if(SMSIndex == 0xFF)
-	{
-		SMSIndex = 0;	/* Start at index 0 */
-		if(RetryRead == 0) RetryRead = 6;
-		
-//		//Test
-//		if(RetryRead == 0) {
-//				RetryRead = 3;
-//				isRetryReadSMS = 1;
-//				SMSIndex = 0xFF;
-//				DEBUG ("Read SMS failed, reset modem...");
-//				ChangeGSMState(GSM_RESET);
-//				return;
-//		}
-	}
-	else if(SMSIndex == 0xAA)   //Da xu ly xong SMS moi
-	{
-		SMSIndex = 0xFF;
-		
-		/* Kiem tra xem co SMS nao can gui khong */
-		gsm_manager.SendSMSAfterRead = 1;
-		QuerySMS(); 
-		
-		/* Neu ko co SMS nao can gui thi chuyen trang thai ve GSM_OK */
-		if(gsm_manager.state != GSM_SENSMS)
-		{
-			gsm_manager.SendSMSAfterRead = 0;
-			ChangeGSMState(GSM_OK);
-		}
-		return;
-	}
-	else
-	{
-		if(SMSIndex < 10) SMSIndex++;
-		if(SMSIndex == 10) SMSIndex = 0x55;
-	}
-			
-	DEBUG ("Read SMS resp: %s", (char*)resp_buffer);
-	if(strstr(resp_buffer,"UNREAD") || strstr(resp_buffer,"READ")) //REC UNREAD | REC READ
-	{
-		SMSIndex = 0xAA;
-		gsm_process_cmd_from_sms(resp_buffer);
-		SendATCommand ("AT+CMGD=1,4\r\n", "OK\r\n", "", 1000, 10, GSM_ReadSMS);
-		isNewSMSComing = 0;
-		isRetryReadSMS = 0;
-		RetryRead = 0;
-	}
-	else
-	{
-		if(SMSIndex < 0x55) 
-		{
-			sprintf(tmpBuffer,"AT+CMGR=%u\r\n",SMSIndex);
-			SendATCommand(tmpBuffer,"OK",1000,3,GSM_ReadSMS);
-			DEBUG ("Check SMS o buffer %u: %u,%s",SMSIndex, event, (char *)resp_buffer);
-		}
-		else
-		{
-			if(RetryRead) RetryRead--;
-			
-			DEBUG ("Cannot read SMS, retry: %u", RetryRead);
-			SMSIndex = 0xFF;
-				
-//			if(RetryRead) {
-//				isNewSMSComing = 1;
-//			} else {
-//				isNewSMSComing = 0;
-//			}
-//			ChangeGSMState(GSM_OK);
-			
-			if(RetryRead == 3) {
-				//Doc 3 lan khong duoc -> reset module
-				isRetryReadSMS = 1;
-				DEBUG ("Read SMS failed, reset modem...");
-				ChangeGSMState(GSM_RESET);
-				return;
-			}
-			else 
-			{
-				if(RetryRead == 0) {
-					isNewSMSComing = 0;
-					isRetryReadSMS = 0;
-				}
-				ChangeGSMState(GSM_OK);
-			}
-		}
-	}
-#endif //0
+static uint8_t tmp_num = 0xFF;
+
+    if ((resp_buffer && strstr(resp_buffer, "REC UNREAD")) 
+        || strstr(resp_buffer, "REC READ"))
+    {
+        gsm_manager.step = 2;
+    }
+
+    switch (gsm_manager.step)
+    {
+    case 0:
+    case 1:
+        if (tmp_num == 0xFF)
+            tmp_num = 1;
+        else
+            tmp_num++;
+
+        if (tmp_num > 10)
+        {
+            DEBUG_PRINTF("Cannot read SMS\r\n");
+            gsm_change_state(GSM_STATE_OK);
+            tmp_num = 0xFF;
+            return;
+        }
+
+        sprintf(m_at_cmd_buffer, "AT+CMGR=%u\r\n", tmp_num);
+        gsm_hw_send_at_cmd(m_at_cmd_buffer, 
+                            "REC UNREAD", 
+                            "OK\r\n",
+                            1000, 
+                            1, 
+                            gsm_at_cb_read_sms);
+        break;
+
+    case 2:
+        if (event == GSM_EVENT_OK)
+        {
+            gsm_sms_layer_process_cmd(resp_buffer);
+        }
+        else
+        {
+            DEBUG_PRINTF("Cannot read sms from storage\r\n");
+        }
+
+        /* Delete all SMS */
+        gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", 
+                            "OK\r\n", 
+                            NULL,
+                            3000, 
+                            10, 
+                            gsm_at_cb_read_sms);
+        tmp_num = 0xFF;
+        break;
+
+    case 3:
+        if (event == GSM_EVENT_OK)
+        {
+            DEBUG_PRINTF("Message deleted\r\n");
+        }
+        else
+        {
+            DEBUG_PRINTF("Cannot delete sms\r\n");
+        }
+        gsm_change_state(GSM_STATE_OK);
+        return;
+
+    default:
+        DEBUG_PRINTF("[%s] Unhandled switch case\r\n", __FUNCTION__);
+        break;
+    }
+
+    gsm_manager.step++;
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
+
 
 void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
 {
-    //	uint8_t ucCount;
-    //    static uint8_t retry_count = 0;
-    //
-    //    DEBUG ("Debug SEND SMS: %u %u,%s",gsm_manager.step,event, (char *)resp_buffer);
-    //
-    //	switch(gsm_manager.step)
-    //	{
-    //		case 1:
-    //			if(gsm_manager.SendSMSAfterRead || gsm_manager.ppp_cmd_state)
-    //			{
-    ////				gsm_manager.SendSMSAfterRead = 0;	//Neu gui loi lan 1 -> lan 2,3 se gui "+++"  -> khong thanh cong
-    //				SendATCommand ("ATV1\r\n", "OK\r\n", "", 1000, 3, GSM_SendSMS);
-    //			}
-    //			else
-    //				SendATCommand ("+++", "OK\r\n", "", 2200, 5, GSM_SendSMS);
-    //			break;
-    //
-    //		case 2:
-    //			if(gsm_manager.ppp_cmd_state == 0 && event != EVEN_OK)	//Data -> Command state Fail
-    //			{
-    //				gsm_manager.step = 0;
-    //				gsm_manager.SendSMSAfterRead = 0;
-    //				gsm_manager.state = GSM_OK;
-    //				return;
-    //			}
-    //			//Add: 22/12
-    //			if(event == EVEN_OK && gsm_manager.ppp_cmd_state == 0)
-    //				gsm_manager.ppp_cmd_state = 2;
-    //
-    //			for(ucCount = 0; ucCount < 3; ucCount++)
-    //			{
-    //				if(SMSMemory[ucCount].NeedToSent == 2)
-    //				{
-    //					DEBUG ("Nhan tin den so: %s. Noi dung: %s",
-    //						SMSMemory[ucCount].phone_number,SMSMemory[ucCount].Message);
-    //
-    //					sprintf(tmpBuffer,"AT+CMGS=\"%s\"\r\n",SMSMemory[ucCount].phone_number);
-    //					SendATCommand (tmpBuffer, ">", 3000, 5, GSM_SendSMS);
-    //					break;
-    //				}
-    //			}
-    //			break;
-    //		case 3:
-    //			if(event == EVEN_OK)
-    //			{
-    //				for(ucCount = 0; ucCount < 3; ucCount++)
-    //				{
-    //					if(SMSMemory[ucCount].NeedToSent == 2)
-    //					{
-    //						SMSMemory[ucCount].Message[strlen(SMSMemory[ucCount].Message)] = 26;
-    //						SMSMemory[ucCount].Message[strlen(SMSMemory[ucCount].Message)] = 13;
-    //
-    //						SendATCommand (SMSMemory[ucCount].Message, "+CMGS", 15000, 1, GSM_SendSMS);
-    //						DEBUG ("Bat dau gui SMS o buffer %u",ucCount);
-    //						break;
-    //					}
-    //				}
-    //			}
-    //			else
-    //			{
-    //				retry_count++;
-    //				if(retry_count < 3)
-    //				{
-    //					ChangeGSMState(GSM_SENSMS);
-    //					return;
-    //				}
-    //				else
-    //					goto SENDSMSFAIL;
-    //			}
-    //			break;
-    //		case 4:
-    //			if(event == EVEN_OK)
-    //			{
-    //				DEBUG ("SMS: Gui SMS thanh cong.");
+    uint8_t count;
+    static uint8_t retry_count = 0;
+    gsm_sms_msg_t *sms = gsm_get_sms_memory_buffer();
+    uint32_t max_sms = gsm_get_max_sms_memory_buffer();
 
-    //				for(ucCount = 0; ucCount < 3; ucCount++)
-    //				{
-    //					if(SMSMemory[ucCount].NeedToSent == 2)
-    //					{
-    //						SMSMemory[ucCount].NeedToSent = 0;
-    //
-    //						//Kiem tra xem con SMS can gui trong buffer khong, neu con -> quay lai gui tiep: add 22/12
-    //						for(ucCount = ucCount; ucCount < 3; ucCount++)
-    //						{
-    //							if(SMSMemory[ucCount].NeedToSent == 2)
-    //							{
-    //								retry_count = 0;
-    //								gsm_manager.step = 0;
-    //								gsm_manager.state = GSM_OK;
-    //								return;
-    //							}
-    //						}
-    //					}
-    //				}
-    //				retry_count = 0;
-    //				gsm_manager.SendSMSAfterRead = 0;
-    //				ChangeGSMState(GSM_OK);
-    //			}
-    //			else
-    //			{
-    //				DEBUG ("SMS: Nhan tin khong thanh cong.");
-    //				retry_count++;
-    //				if(retry_count < 3)
-    //				{
-    //					ChangeGSMState(GSM_SENSMS);
-    //					return;
-    //				}
-    //				else
-    //					goto SENDSMSFAIL;
-    //			}
-    //		return;
-    //	}
-    //	gsm_manager.step++;
-    //	return;
-    //
-    //SENDSMSFAIL:
-    //	for(ucCount = 0; ucCount < 3; ucCount++)
-    //	{
-    //		if(SMSMemory[ucCount].NeedToSent == 2)
-    //		{
-    //				SMSMemory[ucCount].NeedToSent = 1;
-    ////			ChangeGSMState(GSM_OK);
-    //		}
-    //	}
-    //	retry_count = 0;
-    //	gsm_manager.SendSMSAfterRead = 0;
-    //	ChangeGSMState(GSM_OK);
+    DEBUG_PRINTF("Debug SEND SMS : %u %u,%s\r\n", gsm_manager.step, event, resp_buffer);
+
+    switch (gsm_manager.step)
+    {
+    case 1:
+        for (count = 0; count < max_sms; count++)
+        {
+            if (sms[count].need_to_send == 2)
+            {
+                DEBUG_PRINTF("Sms to %s. Content : %s\r\n",
+                           sms[count].phone_number, sms[count].message);
+
+                sprintf(m_at_cmd_buffer, "AT+CMGS=\"%s\"\r", sms[count].phone_number);
+
+                gsm_hw_send_at_cmd(m_at_cmd_buffer, 
+                                    ">", NULL, 
+                                    15000, 
+                                    1, 
+                                    gsm_at_cb_send_sms);
+                break;
+            }
+        }
+        break;
+
+    case 2:
+        if (event == GSM_EVENT_OK)
+        {
+            for (count = 0; count < max_sms; count++)
+            {
+                if (sms[count].need_to_send == 2)
+                {
+                    sms[count].message[strlen(sms[count].message)] = 26;        // 26 = ctrl Z
+                    gsm_hw_send_at_cmd(sms[count].message, "+CMGS", 
+                                        NULL, 
+                                        30000, 
+                                        1, 
+                                        gsm_at_cb_send_sms);
+                    DEBUG_PRINTF("Sending sms in buffer %u\r\n", count);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            retry_count++;
+            if (retry_count < 3)
+            {
+                gsm_change_state(GSM_STATE_SEND_SMS);
+                return;
+            }
+            else
+            {
+                goto SEND_SMS_FAIL;
+            }
+        }
+        break;
+
+    case 3:
+        if (event == GSM_EVENT_OK)
+        {
+            DEBUG_PRINTF("SMS : Send sms success\r\n");
+
+            for (count = 0; count < max_sms; count++)
+            {
+                if (sms[count].need_to_send == 2)
+                {
+                    sms[count].need_to_send = 0;
+                }
+            }
+            retry_count = 0;
+            gsm_change_state(GSM_STATE_OK);
+        }
+        else
+        {
+            DEBUG_PRINTF("SMS : Send sms failed\r\n");
+            retry_count++;
+            if (retry_count < 3)
+            {
+                gsm_change_state(GSM_STATE_SEND_SMS);
+                return;
+            }
+            else
+            {
+                DEBUG_PRINTF("Send sms failed many times, cancle\r\n");
+                goto SEND_SMS_FAIL;
+            }
+        }
+        return;
+
+    default:
+        DEBUG_PRINTF("Unknown outgoing sms step %d\r\n", gsm_manager.step);
+        gsm_change_state(GSM_STATE_OK);
+        break;
+    }
+
+    gsm_manager.step++;
+
+    return;
+
+SEND_SMS_FAIL:
+    for (count = 0; count < gsm_get_max_sms_memory_buffer(); count++)
+    {
+        if (sms[count].need_to_send == 2)
+        {
+            sms[count].need_to_send = 1;
+            gsm_change_state(GSM_STATE_OK);
+        }
+    }
+
+    retry_count = 0;
 }
 
 void gsm_process_at_cmd(char *at_cmd)
 {
     uint8_t i = 0;
-    memset(m_at_cmd, 0, sizeof(m_at_cmd));
-    while (at_cmd[i] && i < sizeof(m_at_cmd))
+    memset(m_at_cmd_buffer, 0, sizeof(m_at_cmd_buffer));
+    while (m_at_cmd_buffer[i] && i < sizeof(m_at_cmd_buffer))
     {
-        m_at_cmd[i] = at_cmd[i];
+        m_at_cmd_buffer[i] = at_cmd[i];
         i++;
     }
-    if (m_at_cmd[i] != '\r')
-        m_at_cmd[i] = '\r';
+    if (m_at_cmd_buffer[i] != '\r')
+        m_at_cmd_buffer[i] = '\r';
 
     m_request_to_send_at_cmd = true;
     m_timeout_switch_at_mode = 60;
@@ -1737,7 +1754,7 @@ void gsm_reconnect_tcp(void)
 {
     uint8_t i;
 
-    DEBUG_PRINTF("Ket noi lai Server...\r\n");
+    DEBUG_PRINTF("Reconnect tcp...\r\n");
 
     /* Clear het cac buffer */
     for (i = 0; i < NUM_OF_MQTT_BUFFER; i++)

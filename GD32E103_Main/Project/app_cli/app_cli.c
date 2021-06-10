@@ -40,12 +40,14 @@ static shell_context_struct m_user_context;
 static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_trigger_fault(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
     {"reset",           "\treset: reset system\r\n",                            cli_reset_system,                           0},   
     {"fault",           "\tfault : Trigger fault\r\n",                          cli_trigger_fault,                          1},
     {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
+    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               2},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -160,5 +162,14 @@ static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
     return 0;
 }
 
+extern bool gsm_send_sms(char *phone_number, char *message);
+static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv)
+{
+    if (!gsm_send_sms(argv[1], argv[2]))
+    {
+        DEBUG_PRINTF("Send sms failed\r\n");
+    }
+    return  0;
+}
 
 #endif /* APP_CLI_ENABLE */

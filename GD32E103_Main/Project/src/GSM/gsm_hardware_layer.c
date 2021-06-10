@@ -832,7 +832,7 @@ void modem_run()
         }
         else
         {
-            DEBUG("Resend ATC: %s, expect %s\r\n", GSM_Hardware.atc.cmd, GSM_Hardware.atc.expect_resp_from_atc);
+            DEBUG("Resend ATC: %sExpect %s\r\n", GSM_Hardware.atc.cmd, GSM_Hardware.atc.expect_resp_from_atc);
             GSM_Hardware.atc.current_timeout_atc_ms = now;
             com_put_at_string(GSM_Hardware.atc.cmd);
         }
