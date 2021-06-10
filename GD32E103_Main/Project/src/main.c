@@ -7,26 +7,18 @@
 #include "gd32e10x_adc.h"
 #include <stdio.h>
 #include <string.h>
-#include "RTL.h"
-#include "Net_Config.h"
 #include "main.h"
 #include "HardwareManager.h"
 #include "InitSystem.h"
 #include "gsm.h"
-#include "MQTTUser.h"
 #include "measure_input.h"
 #include "ControlOutput.h"
-#include "Debug.h"
 #include "lpf.h"
 #include "stdbool.h"
 #include "app_cli.h"
-
-#if (__GSM_SLEEP_MODE__)
-#warning CHU Y DANG BUILD __GSM_SLEEP_MODE__ = 1
-#endif
+#include "app_wdt.h"
 
 extern System_t xSystem;
-extern LOCALM localm[];
 extern __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
 
 static uint8_t Timeout1ms = 0;
@@ -46,8 +38,6 @@ static void ProcessTimeOut3000ms(void);
 static void ProcessTimeout1000ms(void);
 static uint8_t convertVinToPercent(uint32_t vin);
 uint32_t estimate_sleep_time_in_second(uint32_t current_sec, uint32_t interval_sec);
-void getTimeNTP(void);
-uint32_t sntpTimeoutInverval = 5;
 uint8_t adcStarted = 0;
 lpf_data_t AdcFilterdValue =
 {
@@ -56,7 +46,6 @@ lpf_data_t AdcFilterdValue =
 };
 volatile int32_t delay_sleeping_for_exit_wakeup = 0;
 
-extern volatile uint32_t SendMessageTick;
 volatile bool new_adc_data = false;
 
 __align(4) char g_umm_heap[2048];
@@ -75,28 +64,11 @@ int main(void)
 
     gsm_internet_mode_t *internet_mode = gsm_get_internet_mode();
 
-    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-    {
-        MqttClientSendFirstMessageWhenWakeup();
-    } 
-    else
-    {
-
-    }
     app_cli_start();
     while (1)
     {
-        if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-        //if (1)
-        {
-            #warning "Always enable tcpNet"
-            main_TcpNet();
-        }
-        else
-        {
-            gsm_hw_layer_run();
-        }
-
+        gsm_hw_layer_run();
+   
         #warning  "Output test gui tin"
         xSystem.Parameters.input.name.ma420 = 0;
         xSystem.Parameters.outputOnOff = 0;
@@ -140,10 +112,6 @@ int main(void)
             RS485_PWR_OFF();
             UART_DeInit(RS485_UART);
         }
-        if (Timeout1ms >= 1)
-        {
-            Timeout1ms = 0;
-        }
 
         if (TimeOut10ms >= 10)
         {
@@ -154,7 +122,6 @@ int main(void)
 
         if (TimeOut100ms >= 100)
         {
-            timer_tick();
             TimeOut100ms = 0;
             ProcessTimeout100ms();
             if (delay_sleeping_for_exit_wakeup > 0)
@@ -243,20 +210,16 @@ int main(void)
                         sleep_time = 18;  // Due to watchdog
                         rtc_alarm_config(rtc_counter_get() + sleep_time);
                         rtc_lwoff_wait();
-                        ResetWatchdog();
+                        app_wdt_feed();
                         pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
                         SystemInit();
                         RCC_Config();
                         //rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);       // already called in RCC_Config
-                        ResetWatchdog();
+                        app_wdt_feed();
 
                         uint32_t diff = rtc_counter_get() - tick_before_sleep;
                         xSystem.Status.gsm_sleep_time_s += diff;
                         
-                        if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-                        {
-                            SendMessageTick += diff;
-                        }
 
                         TimeOut1000ms = diff*1000;
                         TimeOut3000ms += diff*1000;
@@ -271,15 +234,11 @@ int main(void)
                     DEBUG_PRINTF("Output 4-20mA enable %u\r\n", xSystem.Parameters.outputOnOff);
                     pmu_to_sleepmode(WFI_CMD);
                     xSystem.Status.gsm_sleep_time_s++;
-                    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-                    {
-                        SendMessageTick++;
-                    }
                     store_measure_result_timeout++;
                     Measure420mATick++;
                 }
             }
-            ResetWatchdog();
+            app_wdt_feed();
             ProcessTimeout1000ms();
         }
         app_cli_poll();
@@ -287,26 +246,15 @@ int main(void)
     }
 }
 
-extern void GSM_ManagerTestSleep(void);
 static void ProcessTimeout10ms(void)
 {
-#if GSM_ENABLE
-    gsm_internet_mode_t *mode = gsm_get_internet_mode();
-    if (*mode == GSM_INTERNET_MODE_PPP_STACK)
-    {
-        MQTT_Tick();
-    }
-#else
-    GSM_ManagerTestSleep();
-#endif
     measure_input_task();
-    //Debug_Tick();
 }
 
 static void ProcessTimeout100ms(void)
 {
     Hardware_XoaCoLoi();
-    ResetWatchdog();
+    app_wdt_feed();
 }
 
 /*****************************************************************************/
@@ -340,39 +288,15 @@ static void ProcessTimeout1000ms(void)
 
 static void ProcessTimeOut3000ms(void)
 {
-    static uint32_t SystemTickCount = 0;
-
-    DEBUG_PRINTF("System tick : %u,%u - IP: %u.%u.%u.%u, Vin: %umV\r\n", xSystem.Status.TimeStamp, ppp_is_up(),
-          localm[NETIF_PPP].IpAdr[0], localm[NETIF_PPP].IpAdr[1],
-          localm[NETIF_PPP].IpAdr[2], localm[NETIF_PPP].IpAdr[3],
-          xSystem.MeasureStatus.Vin);
-#if GSM_ENABLE | 0
-    //get NTP time
-    if (ppp_is_up() && (gsm_data_layer_is_module_sleeping() == 0))
-    {
-        if (getNTPTimeout % sntpTimeoutInverval == 0)
-        {
-            getTimeNTP();
-        }
-        getNTPTimeout++;
-    }
-    else
-    {
-        sntpTimeoutInverval = 5;
-        getNTPTimeout = 0;
-    }
-#endif
+    DEBUG_PRINTF("System tick : %u,%u. Vin: %umV\r\n", xSystem.Status.TimeStamp,
+                                                       xSystem.MeasureStatus.Vin);
 }
 
 void SystemManagementTask(void)
 {
     m_sys_tick++;
-
-    Timeout1ms++;
     TimeOut10ms++;
     TimeOut100ms++;
-    //	TimeOut1000ms++;
-    //	TimeOut3000ms++;
 }
 
 void Delay_Decrement(void)
@@ -392,7 +316,7 @@ void Delayms(uint16_t ms)
     while (TimingDelay)
     {
         if (TimingDelay % 5 == 0)
-            ResetWatchdog();
+            app_wdt_feed();
         __WFI();
     }
 }
@@ -406,21 +330,11 @@ static void time_cback(U32 time)
     else
     {
         DEBUG_PRINTF("NTP: %d seconds elapsed since 1.1.1970\r\n", time);
-        sntpTimeoutInverval = 120;
 
         xSystem.Status.TimeStamp = time + 25200;        // GMT+7
         __disable_irq();
         rtc_counter_set(xSystem.Status.TimeStamp);
         __enable_irq();
-    }
-}
-
-void getTimeNTP(void)
-{
-    U8 ntp_server[4] = {217, 79, 179, 106};
-    if (sntp_get_time(&ntp_server[0], time_cback) == __FALSE)
-    {
-        DEBUG_PRINTF("Failed, SNTP not ready or bad parameters\r\n");
     }
 }
 

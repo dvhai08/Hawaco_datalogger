@@ -119,19 +119,7 @@ void MeasureTick1000ms(void)
         else
         {
             SENS_420mA_PWR_OFF();
-            gsm_internet_mode_t *mode = gsm_get_internet_mode();
-            if (*mode == GSM_INTERNET_MODE_PPP_STACK)
-            {
-                if (MQTT_PublishDataMsg() == 0) // No memory
-                {
-                    MQTT_DiscardOldestDataMsg();
-                    MQTT_PublishDataMsg();
-                }
-            }
-            else
-            {
-                gsm_build_http_post_msg();
-            }
+            gsm_build_http_post_msg();
         }
     }
     if (m_measure_timeout > 0)
@@ -140,15 +128,7 @@ void MeasureTick1000ms(void)
         if (m_measure_timeout == 0)
         {
             DEBUG_PRINTF("--- Timeout measure ---r\n");
-#if (__USE_MQTT__)
-            if (MQTT_PublishDataMsg() == 0) // No memory
-            {
-                MQTT_DiscardOldestDataMsg();
-                MQTT_PublishDataMsg();
-            }
-#else
-        gsm_build_http_post_msg();
- #endif
+            gsm_build_http_post_msg();
             SENS_420mA_PWR_OFF();
         }
     }

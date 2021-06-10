@@ -19,7 +19,6 @@
 #include "hardware.h"
 #include "HardwareManager.h"
 #include "gsm.h"
-#include "MQTTUser.h"
 #include "gsm_http.h"
 #include "server_msg.h"
 #include "app_queue/app_queue.h"
@@ -61,18 +60,12 @@ uint8_t SendATOPeriod = 0;
 uint8_t ModuleNotMounted = 0;
 uint8_t InSleepModeTick = 0;
 uint8_t TimeoutToSleep = 0;
-static uint32_t m_get_csq_timeout_s = 0;
-
 static app_queue_t m_http_msq;
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer);
-void gsm_at_cb_open_ppp_stack(gsm_response_event_t event, void *resp_buffer);
-void gsm_query_sms(void);
 void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer);
-void gsm_at_cb_get_bts_info(gsm_response_event_t event, void *resp_buffer);
 void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_buffer);
-void gsm_at_cb_goto_sleep(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer);
 void gsm_hard_reset(void);
 uint8_t convert_csq_to_percent(uint8_t csq);
@@ -187,25 +180,10 @@ void gsm_wakeup_periodically(void)
     if (xSystem.Status.gsm_sleep_time_s >= xSystem.Parameters.period_send_message_to_server_min * 60)
     {
         xSystem.Status.gsm_sleep_time_s = 0;
-        if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-        {
-            MqttClientSendFirstMessageWhenWakeup();
-        }
-        else
-        {
-            //gsm_build_http_post_msg();
-        }
-
         DEBUG_PRINTF("GSM: wakeup to send msg\r\n");
         xSystem.Status.YeuCauGuiTin = 2;
         gsm_change_state(GSM_STATE_WAKEUP);
     }
-
-    //	//Lưu lại biến đếm vào RTC Reg sau mỗi 10s
-    //	if(xSystem.Status.gsm_sleep_time_s % 10 == 0)
-    //	{
-    //		RTC_WriteBackupRegister(GSM_SLEEP_TIME_ADDR, xSystem.Status.gsm_sleep_time_s);
-    //	}
 }
 
 /******************************************************************************/
@@ -219,7 +197,7 @@ void gsm_wakeup_periodically(void)
  * @reviewer:	
  */
 uint8_t m_send_at_cmd_in_idle_mode = 0;
-bool m_do_read_sms = true;
+bool m_do_read_sms = false;
 
 void GSM_ManagerTestSleep(void)
 {
@@ -266,14 +244,6 @@ void gsm_manager_tick(void)
     if (gsm_manager.isGSMOff == 1)
         return;
 
-    //	ResetWatchdog();
-
-    //	if(gsm_manager.FirstTimePower == 0)
-    //	{
-    //		gsm_manager.FirstTimePower = 1;
-    //		InitGSM_DataLayer();
-    //	}
-
     /* Cac trang thai lam viec module GSM */
     switch (gsm_manager.state)
     {
@@ -295,23 +265,6 @@ void gsm_manager_tick(void)
             gsm_change_state(GSM_STATE_READ_SMS);
         }
 
-        if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-        {
-            if (gsm_manager.GSMReady == 2)
-            {
-                SendATOPeriod++;
-                if (SendATOPeriod > 2)
-                {
-                    DEBUG_PRINTF("Send ATO\r\n");
-                    SendATOPeriod = 0;
-                    gsm_hw_send_at_cmd("ATO\r\n", "CONNECT", "", 1000, 10, NULL);
-                }
-            }
-            else
-            {
-                SendATOPeriod = 0;
-            }
-        }
         //			QuerySMS();
 
         //			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
@@ -359,7 +312,8 @@ void gsm_manager_tick(void)
             gsm_query_sms_buffer();
         }
         
-        if (gsm_manager.state == GSM_STATE_OK)      // gsm state maybe changed in gsm_query_sms_buffer task
+        if (gsm_manager.state == GSM_STATE_OK
+            && m_internet_mode == GSM_INTERNET_MODE_AT_STACK)      // gsm state maybe changed in gsm_query_sms_buffer task
         {
             bool enter_sleep_in_http = true;
             if (!app_queue_is_empty(&m_http_msq))
@@ -441,33 +395,6 @@ void gsm_manager_tick(void)
         }
         break;
 
-    case GSM_STATE_REOPEN_PPP: /* Reopen PPP if lost */
-        DEBUG_PRINTF("Repen PPP\r\n");
-        if (gsm_manager.step == 0)
-        {
-            gsm_manager.step = 1;
-            gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_open_ppp_stack);
-        }
-        break;
-
-    case GSM_STATE_GET_BTS_INFO: /* Get GSM Signel level */
-        DEBUG_PRINTF("Get BTS info\r\n");
-        if (gsm_manager.step == 0)
-        {
-            gsm_manager.step = 1;
-            gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_at_cb_get_bts_info);
-        }
-        break;
-
-    case GSM_STATE_SEND_ATC: /* Send AT command */
-        DEBUG_PRINTF("GSM state send ATC\r\n");
-        if (gsm_manager.step == 0)
-        {
-            gsm_manager.step = 1;
-            gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_data_layer_switch_mode_at_cmd);
-        }
-        break;
-
     case GSM_STATE_HTTP_POST:
     {
         if (GSM_NEED_ENTER_HTTP_POST())
@@ -502,23 +429,8 @@ void gsm_manager_tick(void)
     }
     break;
 
-    case GSM_STATE_GOTO_SLEEP: /* Vao che do sleep */
-        DEBUG_PRINTF("Prepare sleep\r\n");
-        if (gsm_manager.step == 0)
-        {
-            gsm_manager.step = 1;
-            gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_at_cb_goto_sleep);
-        }
-        break;
-
     case GSM_STATE_WAKEUP: /* Thoat che do sleep */
     {
-        if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-        {
-            init_TcpNet();      // When gsm wakeup from sleep,  we must reinit tcpnet,
-                                // If we dont reinit tcpNet =>> ppp stack never up
-                                // I dont know why
-        }
         gsm_data_layer_initialize();
         gsm_change_state(GSM_STATE_RESET);
     }
@@ -527,73 +439,29 @@ void gsm_manager_tick(void)
     case GSM_STATE_SLEEP: /* Dang trong che do Sleep */
         if (InSleepModeTick % 10 == 0)
         {
-            DEBUG_PRINTF("GSM is sleeping...PPP is %s\r\n", ppp_is_up() ? "up" : "down");
+            DEBUG_PRINTF("GSM is sleeping...\r\n");
         }
         InSleepModeTick++;
         TimeoutToSleep = 0;
         UART_DeInit(GSM_UART);
+        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
         GSM_PWR_KEY(0);
         /* Thuc day gui tin dinh ky */
         gsm_wakeup_periodically();
+
         break;
 
-    case GSM_STATE_AT_MODE_IDLE: /* AT mode - Hop quy GSM */
-#if 0
-			m_send_at_cmd_in_idle_mode++;
-			if(m_send_at_cmd_in_idle_mode == 10)
-			{
-				//Lấy thông tin mạng
-				DEBUG ("Get network info ...");
-				com_put_at_string("AT+COPS?\r\n");
-				m_send_at_cmd_in_idle_mode = 0;
-			}
-			else if(m_send_at_cmd_in_idle_mode == 15) {
-				//Lấy thông tin CSQ
-				DEBUG ("Get network CSQ...");
-				com_put_at_string("AT+CSQ\r");
-				m_send_at_cmd_in_idle_mode = 1;
-			}
-			if(m_send_at_cmd_in_idle_mode > 10) m_send_at_cmd_in_idle_mode = 0;
-#endif
+    default:
+        DEBUG_PRINTF("Unhandled case %u\r\n",gsm_manager.state);
         break;
     }
 
     //Khong co SIM
     if (strlen(xSystem.Parameters.sim_imei) < 15)
         return;
-
-    //	/* Giám sát thời gian gửi bản tin, 3 lần thức dậy ko gửi được phát nào -> reset GSM, reset mạch */
-    //	xSystem.Status.GSMSendFailedTimeout++;
-    //	if(xSystem.Status.GSMSendFailedTimeout > 3*xSystem.Parameters.period_send_message_to_server_min*60)
-    //	{
-    //		xSystem.Status.GSMSendFailedTimeout = 0;
-    //
-    //		DEBUG ("GSM: Send Failed timeout...");
-    //		gsm_change_state(GSM_RESET);
-    //		return;
-    //	}
-    //
-    /* Lay cuong do song sau moi 5 phut  */
-    if (gsm_manager.GSMReady == 1)
-    {
-        m_get_csq_timeout_s++;
-        if (m_get_csq_timeout_s >= GET_BTS_INFOR_TIMEOUT) //300
-        {
-            if (gsm_check_idle() && gsm_manager.Dial == 0)
-            {
-                m_get_csq_timeout_s = 0;
-                gsm_manager.step = 0;
-                gsm_manager.GetBTSInfor = 0;
-                gsm_manager.state = GSM_STATE_GET_BTS_INFO;
-            }
-            else
-            {
-                m_get_csq_timeout_s = GET_BTS_INFOR_TIMEOUT - 30; //check lai sau 30s
-            }
-        }
-    }
 
     /* Yeu cau gui lenh AT */
     if (gsm_manager.GSMReady == 1 && m_request_to_send_at_cmd == 1)
@@ -619,15 +487,6 @@ void gsm_manager_tick(void)
     }
 }
 
-/*
-* Kiem tra trang thai chan STATUS module GSM
-*/
-#if 0
-uint8_t CheckReadyStatus(void)
-{
-	return (GPIO_ReadInputDataBit(GSM_STATUS_PORT, GSM_STATUS_PIN));
-}
-#endif
 
 uint8_t gsm_check_idle(void)
 {
@@ -674,8 +533,6 @@ void gsm_data_layer_initialize(void)
     gsm_http_cleanup();
     m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
     init_http_msq();
-
-    m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
 }
 
 /*****************************************************************************/
@@ -963,20 +820,10 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             gsm_change_hw_polling_interval(5);
             gsm_manager.GSMReady = 1;
             xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
-
-            if (m_internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-            {
-                DEBUG_PRINTF("Open ppp stack\r\n");
-                gsm_manager.step = 0;
-                gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_open_ppp_stack);
-            }
-            else
-            {
-                gsm_manager.step = 0;
-                gsm_build_http_post_msg();
-                gsm_change_state(GSM_STATE_OK);
-                return;
-            }
+            gsm_manager.step = 0;
+            gsm_build_http_post_msg();
+            gsm_change_state(GSM_STATE_OK);
+            return;
         }
         break;
     }
@@ -1004,74 +851,6 @@ uint8_t convert_csq_to_percent(uint8_t csq)
     return ((csq - 10) * 100) / (31 - 10);
 }
 
-void gsm_at_cb_open_ppp_stack(gsm_response_event_t event, void *resp_buffer)
-{
-    DEBUG_PRINTF("%s\r\n", __FUNCTION__);
-    static uint8_t retry_count = 0;
-
-    switch (gsm_manager.step)
-    {
-    case 1:
-        gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_open_ppp_stack);
-        gsm_manager.step = 2;
-        break;
-    case 2:
-        if (event == GSM_EVENT_OK)
-        {
-            xSystem.Status.CSQ = 0;
-            gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &xSystem.Status.CSQ);
-            gsm_manager.GSMReady = 1;
-            xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
-            DEBUG_PRINTF("CSQ: %d\r\n", xSystem.Status.CSQ);
-        }
-        ppp_connect("*99#", "", "");
-        gsm_hw_send_at_cmd("ATD*99***1#\r\n", "CONNECT", "", 1000, 10, gsm_at_cb_open_ppp_stack);
-        gsm_manager.step = 3;
-        break;
-    case 3:
-        DEBUG_PRINTF("Open PPP stack : %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-
-        if (event != GSM_EVENT_OK)
-        {
-            retry_count++;
-            if (retry_count > 5)
-            {
-                retry_count = 0;
-
-                DEBUG_PRINTF("PPP open so many times error. Reset GSM!\r\n");
-                if (!gsm_data_layer_is_module_sleeping())
-                {
-                    /* Reset GSM */
-                    gsm_change_state(GSM_STATE_RESET);
-                }
-                else
-                {
-                    gsm_manager.step = 1;
-                    ppp_close();
-                    gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_open_ppp_stack);
-                }
-            }
-            else
-            {
-                gsm_manager.step = 1;
-                ppp_close();
-                gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_open_ppp_stack);
-            }
-        }
-        else //Truong hop AT->PPP, khong ChangeState de gui lenh ATO
-        {
-            retry_count = 0;
-            gsm_manager.step = 0;
-            gsm_manager.state = GSM_STATE_OK;
-            gsm_manager.Mode = GSM_PPP_MODE; //Response "CONNECT" chua chac ppp_is_up() = 1!
-            gsm_manager.GSMReady = 1;
-            gsm_manager.ppp_cmd_state = 0;
-        }
-        break;
-    default:
-        break;
-    }
-}
 
 /**
 * Check RI pin every 10ms
@@ -1164,196 +943,8 @@ void gsm_check_sms_tick(void)
 }
 #endif //__RI_WITHOUT_INTERRUPT__
 
-/*****************************************************************************/
-/**
- * @brief	:  Ham lay GSM signal level
- * @author	:	
- * @created	:	10/03/2016
- * @version	:
- * @reviewer:	
- */
-void gsm_at_cb_get_bts_info(gsm_response_event_t event, void *resp_buffer)
-{
-    DEBUG_PRINTF("[%s]\r\n", __FUNCTION__);
-    switch (gsm_manager.step)
-    {
-    case 1:
-        gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2000, 5, gsm_at_cb_get_bts_info);
-        break;
-    case 2:
-        if (event == GSM_EVENT_OK)
-        {
-            gsm_manager.ppp_cmd_state = 1;
-            gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_get_bts_info);
-        }
-        else
-        {
-            gsm_manager.step = 0;
-            gsm_manager.state = GSM_STATE_OK;
-            gsm_manager.ppp_cmd_state = 0;
-            return;
-        }
-        break;
-    case 3:
-        if (event == GSM_EVENT_OK)
-        {
-            xSystem.Status.CSQ = 0;
-            gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &xSystem.Status.CSQ);
-            gsm_manager.GSMReady = 1;
-            gsm_manager.TimeOutCSQ = 0;
-            xSystem.Status.CSQPercent = convert_csq_to_percent(xSystem.Status.CSQ);
-            DEBUG_PRINTF("CSQ: %d\r\n", xSystem.Status.CSQ);
 
-            /* Lay thong tin Network access selected */
-            gsm_hw_send_at_cmd("AT+CGREG?\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_get_bts_info);
-        }
-        break;
-    case 4:
-        if (event == GSM_EVENT_OK)
-        {
-            DEBUG_PRINTF("%s", resp_buffer);
-            gsm_get_network_status(resp_buffer);
-        }
-        gsm_change_state(GSM_STATE_OK);
 
-        /* Gửi tin khi thức dậy định kỳ */
-        if (xSystem.Status.YeuCauGuiTin == 2)
-            xSystem.Status.YeuCauGuiTin = 3;
-        break;
-
-    default:
-        break;
-    }
-    gsm_manager.step++;
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  Ham thuc hien lenh AT
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	29/03/2016
- * @version	:
- * @reviewer:	
- */
-void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_buffer)
-{
-    switch (gsm_manager.step)
-    {
-    case 1:
-        gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2000, 5, gsm_data_layer_switch_mode_at_cmd);
-        break;
-
-    case 2:
-        if (event == GSM_EVENT_OK)
-        {
-            gsm_manager.ppp_cmd_state = 1;
-            if (strstr(m_at_cmd_buffer, "+CUSD"))
-            {
-                gsm_hw_send_at_cmd(m_at_cmd_buffer, "+CUSD", "\r\n", 5000, 5, gsm_data_layer_switch_mode_at_cmd);
-            }
-            else
-            {
-                gsm_hw_send_at_cmd(m_at_cmd_buffer, "OK\r\n", "", 2000, 5, gsm_data_layer_switch_mode_at_cmd);
-            }
-        }
-        else
-        {
-            m_request_to_send_at_cmd = false;
-            gsm_manager.step = 0;
-            gsm_manager.state = GSM_STATE_OK;
-            gsm_manager.ppp_cmd_state = 0;
-            return;
-        }
-        break;
-
-    case 3:
-        if (event == GSM_EVENT_OK)
-        {
-            memset(m_at_cmd_buffer, 0, sizeof(m_at_cmd_buffer));
-            DEBUG_PRINTF("Phan hoi: %s\r\n", resp_buffer);
-        }
-        m_request_to_send_at_cmd = false;
-        m_timeout_switch_at_mode = 0;
-        gsm_change_state(GSM_STATE_OK);
-        break;
-
-    default:
-        break;
-    }
-    gsm_manager.step++;
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  Vao che do sleep
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	29/03/2016
- * @version	:
- * @reviewer:	
- */
-void gsm_at_cb_goto_sleep(gsm_response_event_t event, void *resp_buffer)
-{
-    DEBUG_PRINTF("Send at cmd goto sleep\r\n");
-    switch (gsm_manager.step)
-    {
-    case 1:
-        ppp_close();
-        gsm_hw_send_at_cmd("+++", "OK\r\n", "", 2000, 5, gsm_at_cb_goto_sleep);
-        break;
-    case 2:
-        if (event == GSM_EVENT_OK)
-        {
-            //				SendATCommand ("AT+QSCLK=1\r\n", "OK\r\n", "", 1000, 5, GSM_GotoSleepMode);
-            gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_goto_sleep);
-        }
-        else
-        {
-            DEBUG_PRINTF("Khong phan hoi lenh, bat buoc sleep!\r\n");
-            //Dieu khien chan DTR vao sleep
-            gsm_change_state_sleep();
-            gsm_manager.state = GSM_STATE_SLEEP;
-            return;
-        }
-        break;
-    case 3:
-        if (event == GSM_EVENT_OK)
-        {
-            DEBUG_PRINTF("Entry Sleep OK!\r\n");
-        }
-        //Dieu khien chan DTR vao sleep
-        gsm_change_state_sleep();
-        gsm_manager.state = GSM_STATE_SLEEP;
-
-        // Tat nguon
-        UART_DeInit(GSM_UART);
-        usart_interrupt_disable(GSM_UART, (usart_interrupt_enum)(USART_INT_RBNE | USART_INT_FLAG_TBE));
-        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
-        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
-        GSM_PWR_EN(0);
-        GSM_PWR_RESET(1);
-        GSM_PWR_KEY(0);
-        break;
-
-    default:
-        break;
-    }
-    gsm_manager.step++;
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  Thoat che do sleep
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	29/03/2016
- * @version	:
- * @reviewer:	
- */
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 {
     DEBUG_PRINTF("%s\r\n", __FUNCTION__);
@@ -1368,8 +959,7 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("Exit Sleep!");
-            m_get_csq_timeout_s = GET_BTS_INFOR_TIMEOUT - 3;
+            DEBUG_PRINTF("Exit sleep!");
             gsm_change_state(GSM_STATE_OK);
         }
         else
@@ -1468,54 +1058,6 @@ void gsm_hard_reset(void)
     }
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  Kiem tra tin nhan den khi dang o mode PPP
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/03/2016
- * @version	:
- * @reviewer:	
- */
-uint8_t m_last_ri_state = 0xFF, m_call_counter = 0xFF;
-void gsm_query_sms(void)
-{
-    //	uint8_t iTemp;
-    //
-    //	/* New SMS */
-    //	if(isNewSMSComing || isRetryReadSMS) {
-    //		ChangeGSMState(GSM_READSMS);
-    //		return;
-    //	}
-    //
-    //    /* Kiem tra cac buffer SMS de gui SMS */
-    //    for(iTemp = 0; iTemp < 3; iTemp++)
-    //    {
-    //        if(SMSMemory[iTemp].NeedToSent == 1 || SMSMemory[iTemp].NeedToSent == 2)
-    //        {
-    //            SMSMemory[iTemp].retry_count++;
-    //            DEBUG ("Gui SMS tai buffer %u", iTemp);
-
-    //            /* Neu gui thanh cong thi xoa di */
-    //            if(SMSMemory[iTemp].retry_count < 5)
-    //            {
-    //					SMSMemory[iTemp].NeedToSent = 2;
-    //					ChangeGSMState(GSM_SENSMS);
-    //            }
-    //            else
-    //            {
-    //                DEBUG ("Buffer SMS %u da gui qua %u lan, huy gui",iTemp,SMSMemory[iTemp].retry_count);
-    //                SMSMemory[iTemp].NeedToSent = 0;
-
-    //					//Add: 05/05/17
-    //					gsm_manager.SendSMSAfterRead = 0;
-    //					ChangeGSMState(GSM_OK);
-    //            }
-    //            break;
-    //        }
-    //    }
-}
 
 /*****************************************************************************/
 /**
@@ -1738,32 +1280,6 @@ void gsm_process_at_cmd(char *at_cmd)
 
     m_request_to_send_at_cmd = true;
     m_timeout_switch_at_mode = 60;
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/01/2016
- * @version	:
- * @reviewer:	
- */
-void gsm_reconnect_tcp(void)
-{
-    uint8_t i;
-
-    DEBUG_PRINTF("Reconnect tcp...\r\n");
-
-    /* Clear het cac buffer */
-    for (i = 0; i < NUM_OF_MQTT_BUFFER; i++)
-    {
-        xSystem.MQTTData.Buffer[i].State = BUFFER_STATE_IDLE;
-        xSystem.MQTTData.Buffer[i].BufferIndex = 0;
-    }
-
-    xSystem.Status.TCPNeedToClose = 2;
 }
 
 void gsm_set_timeout_to_sleep(uint32_t sec)

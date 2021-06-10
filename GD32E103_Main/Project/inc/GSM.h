@@ -182,7 +182,7 @@ typedef struct
     uint16_t idx_in;
     uint16_t idx_out;
     uint8_t Buffer[MODEM_BUFFER_SIZE];
-} gms_ppp_modem_buffer_t;
+} gsm_ppp_modem_buffer_t;
 
 typedef struct
 {
@@ -190,10 +190,8 @@ typedef struct
     uint8_t State;
     uint8_t tx_active;
 
-    gms_ppp_modem_buffer_t tx_buffer;
-    gms_ppp_modem_buffer_t rx_buffer;
-
-    uint8_t *dial_number;
+    gsm_ppp_modem_buffer_t tx_buffer;
+    //gsm_ppp_modem_buffer_t rx_buffer;
 } gsm_modem_t;
 
 typedef struct

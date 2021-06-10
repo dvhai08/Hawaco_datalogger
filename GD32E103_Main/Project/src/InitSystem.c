@@ -25,6 +25,7 @@
 #include "app_bkup.h"
 #include "InternalFlash.h"
 #include "ControlOutput.h"
+#include "app_wdt.h"
 
 #define ADC_DMA			1
 
@@ -103,63 +104,42 @@ void LockReadOutFlash(void)
  */
 void InitSystem(void) 
 { 
-	/* Set Vector table to offset address of main application - used with bootloader */
+    /* Set Vector table to offset address of main application - used with bootloader */
 //	RelocateVectorTable();
 
-	RCC_Config();
-	WatchDogInit();
-	RtcConfiguration();
-	InitIO();
-	InitVariable();
-	
+    RCC_Config();
+    app_wdt_start();
+    RtcConfiguration();
+    InitIO();
+    InitVariable();
+    
 //	UART_Init(DEBUG_UART, 115200);
 //	UART_Init(RS485_UART, 9600);
-	
-	ADC_Config();
-	
-	/*Init RTC backup register */
-	app_bkup_init();
-	
-	//Read protection -> luc nap lai se mass erase chip -> mat luon cau hinh
+    
+    ADC_Config();
+    
+    /*Init RTC backup register */
+    app_bkup_init();
+    
+    //Read protection -> luc nap lai se mass erase chip -> mat luon cau hinh
 //	LockReadOutFlash();
-	
-	DrawScreen();	
-	DetectResetReason();
-	
-	InternalFlash_ReadConfig();
-	
-	measure_input_initialize();
-	Output_Init();
+    
+    DrawScreen();	
+    DetectResetReason();
+    
+    InternalFlash_ReadConfig();
+    
+    measure_input_initialize();
+    Output_Init();
 
     pmu_wakeup_pin_enable();
 
     gsm_internet_mode_t *internet_mode = gsm_get_internet_mode();
     
     gsm_init_hw();
-    init_TcpNet();
-
-    if (*internet_mode == GSM_INTERNET_MODE_PPP_STACK)
-    {
-        MQTT_Init();
-    }
-    
-#if GSM_ENABLE	
-
-#else
-	gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE);/*!< JTAG-DP disabled and SW-DP enabled */
-	// gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, DISABLE);
 	
-	gpio_init(GSM_PWR_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_EN_PIN);
-	gpio_init(GSM_PWR_KEY_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_KEY_PIN);
-	gpio_init(GSM_RESET_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_RESET_PIN);
-	
-	//Tat nguon module
-	GSM_PWR_EN(0);
-	GSM_PWR_RESET(1);
-	GSM_PWR_KEY(0);
-#endif		
-	xSystem.Status.InitSystemDone = 1;
-	xSystem.Status.DisconnectTimeout = 1;
+    xSystem.Status.InitSystemDone = 1;
+    xSystem.Status.DisconnectTimeout = 1;
 }
 
 	

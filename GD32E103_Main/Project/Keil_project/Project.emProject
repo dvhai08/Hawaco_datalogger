@@ -36,12 +36,6 @@
       build_intermediate_directory="./output"
       build_output_directory="./output"
       build_output_file_name="./output/HWC_GW_02.axf" />
-    <folder Name="TCPNet">
-      <file file_name="../../Library/RL/TCPNet/Config/Net_Config.c" />
-      <file file_name="../../Library/RL/TCPNet/TCP_CM3.lib">
-        <configuration Name="External Keil ARMCC" file_type="Library" />
-      </file>
-    </folder>
     <folder Name="Application">
       <file file_name="../src/HardwareManager.c" />
       <file file_name="../src/InitSystem.c" />
@@ -69,23 +63,6 @@
       <file file_name="../src/GSM/gsm_hardware_layer.c" />
       <file file_name="../src/GSM/gsm_utilities.c" />
       <file file_name="../src/GSM/gsm_sms.c" />
-    </folder>
-    <folder Name="MQTTUser">
-      <file file_name="../src/MQTTUser/MQTT_ClientMessage.c" />
-      <file file_name="../src/MQTTUser/MQTT_HardwareLayer.c" />
-      <file file_name="../src/MQTTUser/MQTT_ServerMessage.c" />
-    </folder>
-    <folder Name="MQTTPaho">
-      <file file_name="../src/MQTTPaho/MQTTConnectClient.c" />
-      <file file_name="../src/MQTTPaho/MQTTConnectServer.c" />
-      <file file_name="../src/MQTTPaho/MQTTDeserializePublish.c" />
-      <file file_name="../src/MQTTPaho/MQTTFormat.c" />
-      <file file_name="../src/MQTTPaho/MQTTPacket.c" />
-      <file file_name="../src/MQTTPaho/MQTTSerializePublish.c" />
-      <file file_name="../src/MQTTPaho/MQTTSubscribeClient.c" />
-      <file file_name="../src/MQTTPaho/MQTTSubscribeServer.c" />
-      <file file_name="../src/MQTTPaho/MQTTUnsubscribeClient.c" />
-      <file file_name="../src/MQTTPaho/MQTTUnsubscribeServer.c" />
     </folder>
     <folder Name="Encrypt">
       <configuration Name="GD32E103x" build_exclude_from_build="Yes" />

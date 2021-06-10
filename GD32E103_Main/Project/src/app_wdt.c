@@ -1,7 +1,7 @@
 #include "app_wdt.h"
 #include "gd32e10x.h"
 
-#define APP_WDT_ENABLE      0
+#define APP_WDT_ENABLE      1
 #if APP_WDT_ENABLE == 0
 #warning "Wdt not enabled"
 #endif

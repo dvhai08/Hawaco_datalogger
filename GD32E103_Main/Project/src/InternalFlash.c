@@ -16,6 +16,7 @@
 #include "DataDefine.h"
 #include "Main.h"
 #include "DriverUART.h"
+#include "app_wdt.h"
 
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
@@ -101,7 +102,7 @@ uint8_t InternalFlash_Prepare(uint16_t StartPage, uint16_t EndPage)
 
     for (PageNum = StartPage; PageNum <= EndPage; PageNum++)
     {
-        ResetWatchdog();
+        app_wdt_feed();
         ControlAllUART(DISABLE);
 
         for (i = 0; i < 3; i++)
@@ -407,7 +408,7 @@ uint8_t InternalFlash_CopyData(uint32_t DesAddress, uint32_t SourceAddress, uint
         //Reset Watchdog
         if (i > 0 && (i % 100 == 0))
         {
-            ResetWatchdog();
+            app_wdt_feed();
         }
     }
 
@@ -436,7 +437,7 @@ uint8_t CheckFirmwareCRC(uint32_t FWCRC, uint32_t BeginAddr, uint32_t Length)
 
         if (i > 0 && (i % 500 == 0))
         {
-            ResetWatchdog();
+            app_wdt_feed();
         }
     }
 

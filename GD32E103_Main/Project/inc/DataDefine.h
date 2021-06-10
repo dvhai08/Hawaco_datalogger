@@ -244,33 +244,15 @@ typedef struct
     uint32_t kFactor;
 } Parameters_t;
 
-#if 1
-#define NUM_OF_MQTT_BUFFER 6
 
 typedef struct
 {
-    MediumBuffer_t Buffer[NUM_OF_MQTT_BUFFER];
-} MQTT_ClientData_t;
-#endif //__USE_MQTT__
-
-typedef struct
-{
-    //	Driver_t Driver;
-    //	Driver_RTC_t *Rtc;
-    //	Debug_t	*Debug;
     Status_t Status;
     Parameters_t Parameters;
 
     FileTransferStruct_t FileTransfer;
     HardwareInfo_t HardwareInfo;
     MeasureStatus_t MeasureStatus;
-
-//#if (__USE_MQTT__ == 1)
-#if 1
-    MQTT_ClientData_t MQTTData;
-#endif
-
-
 } System_t;
 
 #endif // __DATA_DEFINE_H__

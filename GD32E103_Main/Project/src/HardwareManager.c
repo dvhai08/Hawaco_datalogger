@@ -169,49 +169,6 @@ void GPIOToggle(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 }
 #endif
 
-void WatchDogInit(void)
-{
-#if 0
-	uint32_t LsiFreq = 40000;
-
-	/* IWDG timeout equal to 250 ms (the timeout may varies due to LSI frequency dispersion) */
-	/* Enable write access to IWDG_PR and IWDG_RLR registers */
-	IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
-
-	/* IWDG counter clock: LSI/32 */
-	IWDG_SetPrescaler(IWDG_Prescaler_128);
-
-	/* Set counter reload value to obtain 250ms IWDG TimeOut.
-	Counter Reload Value = 250ms/IWDG counter clock period
-				  = 250ms / (1/LSI/32)
-				  = 0.25s / (1/LsiFreq/32)
-				  = LsiFreq/(32 * 4)
-				  = LsiFreq/128
-	*/
-	IWDG_SetReload(LsiFreq/32);	//TimeOut 1s
-
-	/* Reload IWDG counter */
-	IWDG_ReloadCounter();
-
-	/* Enable IWDG (the LSI oscillator will be enabled by hardware) */
-	IWDG_Enable();
-#endif
-
-    app_wdt_start();
-}
-
-void ResetWatchdog(void)
-{
-#if 0
-	/* Reload IWDG counter */
-	if(xSystem.Status.TestInternalWDT == 0)
-	{
-		IWDG_ReloadCounter();  
-	}
-#endif
-
-    app_wdt_feed();
-}
 
 /*******************************************************************************
  * Function Name	: Hardware_XoaCoLoi

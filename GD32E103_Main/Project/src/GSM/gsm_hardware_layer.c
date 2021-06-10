@@ -10,7 +10,6 @@
                                    INCLUDES					    			 
  ******************************************************************************/
 #include <string.h>
-#include "Net_Config.h"
 #include "Main.h"
 #include "gsm.h"
 #include "hardware.h"
@@ -40,21 +39,8 @@ GSM_Manager_t gsm_manager;
 static uint16_t CMEErrorCount = 0;
 //static uint16_t CMEErrorTimeout = 0;
 static __IO bool m_new_uart_data = false;
+static void init_serial(void);
 
-/******************************************************************************
-                                   LOCAL FUNCTIONS					    			 
- ******************************************************************************/
-
-/*****************************************************************************/
-/**
- * @brief	:  
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
 void gsm_init_hw(void)
 {
     gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE); /*!< JTAG-DP disabled and SW-DP enabled */
@@ -129,6 +115,7 @@ void gsm_init_hw(void)
 
     gsm_manager.TimeOutOffAfterReset = 90;
     gsm_change_hw_polling_interval(5);
+    init_serial();
 }
 
 void gsm_pwr_control(uint8_t State)
@@ -183,367 +170,22 @@ void gsm_pwr_control(uint8_t State)
     }
 }
 
-#if __USED_HTTP__
-/*****************************************************************************/
-/**
- * @brief	:  	Init GSM serial
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void gsm_uart_handler(void)
+
+static void init_serial(void)
 {
-    if (usart_interrupt_flag_get(GSM_UART, USART_INT_FLAG_RBNE) != RESET)
-    {
-        uint8_t ch = usart_data_receive(GSM_UART);
-        if (GSM_Hardware.atc.timeout_atc_ms)
-        {
-            GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
-            if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
-            {
-                DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
-                GSM_Hardware.atc.recv_buff.BufferIndex = 0;
-            }
-
-            GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
-        }
-#if __USED_PPP__
-        else
-        {
-            GSM_Hardware.rx_buffer.Buffer[GSM_Hardware.rx_buffer.idx_in++] = ch;
-            if (GSM_Hardware.rx_buffer.idx_in >= MODEM_BUFFER_SIZE)
-                GSM_Hardware.rx_buffer.idx_in = 0;
-            GSM_Hardware.rx_buffer.Buffer[GSM_Hardware.rx_buffer.idx_in] = 0;
-        }
-#endif //__USED_PPP__
-
-        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
-        m_new_uart_data = true;
-    }
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  	Tick every 10ms
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void gsm_hardware_tick(void)
-{
-    if (GSM_Hardware.atc.timeout_atc_ms)
-    {
-        GSM_Hardware.atc.current_timeout_atc_ms++;
-
-        if (GSM_Hardware.atc.current_timeout_atc_ms > GSM_Hardware.atc.timeout_atc_ms)
-        {
-            GSM_Hardware.atc.current_timeout_atc_ms = 0;
-
-            if (GSM_Hardware.atc.retry_count_atc)
-            {
-                GSM_Hardware.atc.retry_count_atc--;
-            }
-
-            if (GSM_Hardware.atc.retry_count_atc == 0)
-            {
-                GSM_Hardware.atc.timeout_atc_ms = 0;
-
-                if (GSM_Hardware.atc.send_at_callback != NULL)
-                {
-                    GSM_Hardware.atc.send_at_callback(EVEN_TIMEOUT, NULL);
-                }
-            }
-            else
-            {
-                DEBUG("\r\nGui lai lenh AT : %s", GSM_Hardware.atc.cmd);
-                UART_Puts(GSM_UART, GSM_Hardware.atc.cmd);
-            }
-        }
-
-        if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), GSM_Hardware.atc.expect_resp_from_atc))
-        {
-            GSM_Hardware.atc.timeout_atc_ms = 0;
-
-            if (GSM_Hardware.atc.send_at_callback != NULL)
-            {
-                GSM_Hardware.atc.send_at_callback(EVEN_OK, GSM_Hardware.atc.recv_buff.Buffer);
-            }
-        }
-
-        /* A connection has been established; the DCE is moving from command state to online data state */
-        if (m_new_uart_data)
-        {
-            if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "CONNECT"))
-            {
-                DEBUG("\r\nModem da ket noi!");
-            }
-            m_new_uart_data = false;
-        }
-    }
-#if __USED_PPP__
-    else
-    {
-        if (m_new_uart_data)
-        {
-            /* The connection has been terminated or the attempt to establish a connection failed */
-            if (strstr((char *)(GSM_Hardware.rx_buffer.Buffer), "NO CARRIER"))
-            {
-                printf("\rModem mat ket noi, tu dong ket noi lai");
-                memset(GSM_Hardware.rx_buffer.Buffer, 0, MODEM_BUFFER_SIZE);
-                if (gsm_manager.PPPPhase != PPP_PHASE_RUNNING)
-                {
-                    gsm_manager.PPPPhase = PPP_PHASE_DEAD;
-                    ppp_close(ppp_control_block, 1);
-                }
-                else
-                {
-                    xSystem.GLStatus.LoginReason |= 1;
-                    gsm_manager.state = GSM_REOPENPPP;
-                    gsm_manager.step = 0;
-                }
-            }
-        }
-    }
-#endif //__USED_PPP__
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  	Send a command to GSM module
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void SendATCommand(char *cmd, char *expect_resp, uint16_t timeout,
-                   uint8_t retry_count, gsm_send_at_cb_t callback)
-{
-    if (timeout == 0 || callback == NULL)
-    {
-        UART_Puts(GSM_UART, cmd);
-        return;
-    }
-
-    GSM_Hardware.atc.cmd = cmd;
-    GSM_Hardware.atc.expect_resp_from_atc = expect_resp;
-    GSM_Hardware.atc.recv_buff.BufferIndex = 0;
-    GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
-    GSM_Hardware.atc.retry_count_atc = retry_count;
-    GSM_Hardware.atc.send_at_callback = callback;
-    GSM_Hardware.atc.timeout_atc_ms = timeout; //gsm_hardware_tick: 10ms /10, 100ms /100
-    GSM_Hardware.atc.current_timeout_atc_ms = 0;
-
-    memset(GSM_Hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
-    GSM_Hardware.atc.recv_buff.BufferIndex = 0;
-    GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
-
-    UART_Puts(GSM_UART, cmd);
-
-    DEBUG("\r\nSend AT : %s", cmd);
-}
-
-#else //USE_PPP
-/*****************************************************************************/
-/*						CAC HAM PHUC VU CHO PPP STACK						 */
-/*****************************************************************************/
-
-/*****************************************************************************/
-/**
- * @brief	:  	Init GSM serial
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void init_serial(void)
-{
-    GSM_Hardware.modem.rx_buffer.idx_in = 0;
-    GSM_Hardware.modem.rx_buffer.idx_out = 0;
     GSM_Hardware.modem.tx_buffer.idx_in = 0;
     GSM_Hardware.modem.tx_buffer.idx_out = 0;
-    GSM_Hardware.modem.tx_active = __FALSE;
+    GSM_Hardware.modem.tx_active = 0;
 
-    /* Enable USART2 interrupts. */
+    /* Enable GSM interrupts. */
     NVIC_EnableIRQ(GSM_UART_IRQ);
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  	Write a byte to serial interface in PPP mode
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-BOOL com_putchar(uint8_t c)
-{
-    gms_ppp_modem_buffer_t *p = &GSM_Hardware.modem.tx_buffer;
-
-    if (gsm_manager.Mode == GSM_AT_MODE)
-        return __FALSE;
-
-    /* Write a byte to serial interface */
-    if ((uint8_t)(p->idx_in + 1) == p->idx_out)
-    {
-        /* Serial transmit buffer is full. */
-        return (__FALSE);
-    }
-
-    /* Disable ngat USART2 */
-    NVIC_DisableIRQ(GSM_UART_IRQ);
-    __nop();
-
-    if (GSM_Hardware.modem.tx_active == __FALSE)
-    {
-        /* Send data to UART. */
-        usart_data_transmit(GSM_UART, (uint32_t)c);
-        usart_interrupt_enable(GSM_UART, USART_INT_TBE); /* Enable TBE interrupt */
-
-        GSM_Hardware.modem.tx_active = __TRUE;
-    }
-    else
-    {
-        /* Add data to transmit buffer. */
-        p->Buffer[p->idx_in++] = c;
-        if (p->idx_in == MODEM_BUFFER_SIZE)
-            p->idx_in = 0;
-    }
-
-    /* Enable Ngat USART2 tro lai */
-    NVIC_EnableIRQ(GSM_UART_IRQ);
-
-    return (__TRUE);
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  	Write a byte to serial interface in AT mode 
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-BOOL com_put_at_character(uint8_t c)
-{
-    gms_ppp_modem_buffer_t *p = &GSM_Hardware.modem.tx_buffer;
-
-    /* Write a byte to serial interface */
-    if ((uint8_t)(p->idx_in + 1) == p->idx_out)
-    {
-        /* Serial transmit buffer is full. */
-        DEBUG_PRINTF("Buffer full\r\n");
-        Delayms(5);
-        while ((uint8_t)(p->idx_in + 1) == p->idx_out)
-        {
-            Delayms(1);
-        }
-        DEBUG_PRINTF("Buffer free\r\n");
-        //return (__FALSE);
-    }
-
-    /* Disable ngat USART0 */
-    NVIC_DisableIRQ(GSM_UART_IRQ);
-    __nop();
-
-    if (GSM_Hardware.modem.tx_active == __FALSE)
-    {
-        /* Send data to UART. */
-        usart_data_transmit(GSM_UART, c);
-        usart_interrupt_enable(GSM_UART, USART_INT_TBE); /* Enable TXE interrupt */
-
-        GSM_Hardware.modem.tx_active = __TRUE;
-    }
-    else
-    {
-        /* Add data to transmit buffer. */
-        p->Buffer[p->idx_in++] = c;
-        if (p->idx_in == MODEM_BUFFER_SIZE)
-        {
-            DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
-            p->idx_in = 0;
-        }
-    }
-
-    /* Enable Ngat USART2 tro lai */
-    NVIC_EnableIRQ(GSM_UART_IRQ);
-
-    return (__TRUE);
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  	Write a byte to serial interface
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-BOOL com_put_at_string(char *str)
-{
-    while (*str)
-    {
-        com_put_at_character(*str++);
-    }
-
-    return __TRUE;
-}
-/*****************************************************************************/
-/**
- * @brief	:  	Read a byte from GSM serial interface
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-int com_getchar(void)
-{
-    int32_t retval = -1;
-    if (*gsm_get_internet_mode() == GSM_INTERNET_MODE_PPP_STACK)
-    {
-
-        /* Read a byte from serial interface */
-        gms_ppp_modem_buffer_t *p = &GSM_Hardware.modem.rx_buffer;
-
-        if (p->idx_in == p->idx_out)
-        {
-            /* Serial receive buffer is empty. */
-            return (-1);
-        }
-
-        retval = p->Buffer[p->idx_out++];
-
-        if (p->idx_out == MODEM_BUFFER_SIZE)
-        {
-            p->idx_out = 0;
-        }
-    }
-
-    return retval;
-    
-}
 
 void gsm_uart_handler(void)
 {
     /* Serial Rx and Tx interrupt handler. */
-    gms_ppp_modem_buffer_t *p;
+    gsm_ppp_modem_buffer_t *p;
 
     if (usart_flag_get(GSM_UART, USART_FLAG_RBNE) == 1) //RBNE = 1
     {
@@ -552,35 +194,16 @@ void gsm_uart_handler(void)
 
         if (GSM_STATE_RESET != gsm_manager.state)
         {
-            if (*gsm_get_internet_mode() == GSM_INTERNET_MODE_AT_STACK)
+            if (GSM_Hardware.atc.timeout_atc_ms)
             {
-                if (GSM_Hardware.atc.timeout_atc_ms)
+                GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
+                if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
                 {
-                    GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
-                    if (GSM_Hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
-                    {
-                        DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
-                        GSM_Hardware.atc.recv_buff.BufferIndex = 0;
-                    }
+                    DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
+                    GSM_Hardware.atc.recv_buff.BufferIndex = 0;
+                }
 
-                    GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
-                }
-            }
-            else
-            {
-                /* Receive Buffer Not Empty */
-                p = &GSM_Hardware.modem.rx_buffer;
-                if ((U8)(p->idx_in + 1) != p->idx_out)
-                {
-                    p->Buffer[p->idx_in++] = ch;
-                    if (p->idx_in == MODEM_BUFFER_SIZE)
-                    {
-                        DEBUG_RAW("%s", p->Buffer);
-                        p->idx_in = 0;
-                        p->Buffer[0] = 0;
-                    }
-                    p->Buffer[p->idx_in] = 0;
-                }
+                //GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
             }
         }
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
@@ -607,7 +230,8 @@ void gsm_uart_handler(void)
             usart_interrupt_disable(GSM_UART, USART_INT_TBE); /* Disable TXE interrupt */
             p->idx_in = 0;
             p->idx_out = 0;
-            GSM_Hardware.modem.tx_active = __FALSE;
+            GSM_Hardware.modem.tx_active = 0;
+            //DEBUG_PRINTF("Tx complete\r\n");
         }
     }
 
@@ -625,116 +249,12 @@ void gsm_uart_handler(void)
     }
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  Return status Transmitter active/not active. When transmit buffer is empty, 'tx_active' is FALSE.
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
 BOOL com_tx_active(void)
 {
     return GSM_Hardware.modem.tx_active;
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  	Initializes the modem variables and control signals DTR & RTS.
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void modem_init()
-{
-    GSM_Hardware.modem.State = MODEM_IDLE;
-}
 
-/*****************************************************************************/
-/**
- * @brief	:  	modem dial target number 'dialnum'
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void modem_dial(uint8_t *dialnum)
-{
-    GSM_Hardware.modem.dial_number = dialnum;
-    GSM_Hardware.modem.State = MODEM_DIAL;
-}
-/*****************************************************************************/
-/**
- * @brief	:  	This function puts modem into Answering Mode
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void modem_listen()
-{
-}
-
-/*****************************************************************************/
-/**
- * @brief	:  	This function clears DTR to force the modem to hang up if 
- *				it was on line and/or make the modem to go to command mode.
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-void modem_hangup()
-{
-}
-/*****************************************************************************/
-/**
- * @brief	:  	Checks if the modem is online. Return false when not
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
-BOOL modem_online()
-{
-    if (GSM_Hardware.modem.State == MODEM_ONLINE)
-    {
-        return __TRUE;
-    }
-    return __FALSE;
-}
-
-
-void gsm_hw_uart_put_direct(uint8_t *data, uint32_t length)
-{
-    
-}
-
-/*****************************************************************************/
-/**
- * @brief	: This is a main thread for MODEM Control module. It is called on every 
- *				system timer timer tick to implement delays easy (called by TCPNet system)
- *				By default this is every 100ms. The 'sytem tick' timeout is set in 'Net_Config.c'
- * @param	:  
- * @retval	:
- * @author	:	Khanhpd
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
 void modem_run()
 {
     uint32_t now = sys_get_ms();
@@ -834,28 +354,9 @@ void modem_run()
         {
             DEBUG("Resend ATC: %sExpect %s\r\n", GSM_Hardware.atc.cmd, GSM_Hardware.atc.expect_resp_from_atc);
             GSM_Hardware.atc.current_timeout_atc_ms = now;
-            com_put_at_string(GSM_Hardware.atc.cmd);
+            gsm_hw_uart_send_raw((uint8_t*)GSM_Hardware.atc.cmd, strlen(GSM_Hardware.atc.cmd));
         }
     }
-
-#if 0
-    /* Xu ly time out +CME ERROR */
-    if (CMEErrorCount > 0)
-    {
-        CMEErrorTimeout++;
-        if (CMEErrorTimeout > 350) /* Trong vong 35s xuat hien >= 10 lan +CME ERROR */
-        {
-            CMEErrorTimeout = 0;
-            if (CMEErrorCount >= 10)
-            {
-                DEBUG("+CME ERROR too much!\r\n");
-                gsm_manager.state = GSM_STATE_RESET;
-                gsm_manager.step = 0;
-            }
-            CMEErrorCount = 0;
-        }
-    }
-#endif
 }
 
 uint32_t m_poll_interval;
@@ -881,17 +382,6 @@ void gsm_hw_clear_at_serial_rx_buffer(void)
     GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
 }
 
-void gsm_hw_clear_non_at_serial_rx_buffer(void)
-{
-    memset(GSM_Hardware.modem.rx_buffer.Buffer, 0, sizeof(((gsm_hardware_t*)0)->modem.rx_buffer.Buffer));
-    GSM_Hardware.modem.rx_buffer.idx_in = 0;
-    GSM_Hardware.modem.rx_buffer.idx_out = 0;
-}
-
-uint32_t gsm_hw_serial_at_cmd_rx_buffer_size(void)
-{
-    return sizeof(((gsm_hardware_t*)0)->modem.rx_buffer.Buffer);
-}
 
 uint32_t gsm_hw_direct_read_at_command_rx_buffer(uint8_t **output, uint32_t size)
 {
@@ -909,17 +399,6 @@ uint32_t gsm_hw_direct_read_at_command_rx_buffer(uint8_t **output, uint32_t size
     return size;
 }
 
-/*****************************************************************************/
-/**
- * @brief	:  	modem character process event handler. This function is called when
- *				a new character has been received from the modem in command mode 
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	10/11/2014
- * @version	:
- * @reviewer:	
- */
 BOOL modem_process(uint8_t ch)
 {
     if (GSM_Hardware.atc.timeout_atc_ms)
@@ -935,10 +414,6 @@ BOOL modem_process(uint8_t ch)
     }
     else
     {
-#if __HOPQUY_GSM__
-        DEBUG_PRINTF("%c", ch); //DEBUG GSM : Hien thi noi dung gui ra tu module GSM
-#endif /* __HOPQUY_GSM__ */
-
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex++] = ch;
         GSM_Hardware.atc.recv_buff.Buffer[GSM_Hardware.atc.recv_buff.BufferIndex] = 0;
         if (ch == '\r' || ch == '\n')
@@ -965,39 +440,7 @@ BOOL modem_process(uint8_t ch)
         }
     }
 
-#if GSM_PPP_ENABLE
-    /* A connection has been established; the DCE is moving from command state to online data state */
-    if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "CONNECT"))
-    {
-        GSM_Hardware.modem.State = MODEM_ONLINE;
-        gsm_manager.GSMReady = 1;
-        return (__TRUE);
-    }
-
-
-    /* The connection has been terminated or the attempt to establish a connection failed */
-    if (strstr((char *)(GSM_Hardware.atc.recv_buff.Buffer), "NO CARRIER"))
-    {
-        memset(GSM_Hardware.atc.recv_buff.Buffer, 0, 20);
-
-        /* Khi goto sleep -> NOCARRIER -> Khong mo lai PPP nua de vao SLEEP mode */
-        if (gsm_manager.state != GSM_STATE_SLEEP 
-            && gsm_manager.state != GSM_STATE_GOTO_SLEEP 
-            && gsm_manager.state != GSM_STATE_READ_SMS)
-        {
-            DEBUG("\r\nModem disconnected, auto reconnect\r\n");
-            gsm_manager.state = GSM_STATE_REOPEN_PPP;
-            gsm_manager.step = 0;
-            gsm_manager.GSMReady = 0;
-        }
-        else
-        {
-            DEBUG("\r\nModem disconnect because of go to sleep mode\r\n");
-        }
-    }
-#endif
-
-    return (__FALSE);
+    return (0);
 }
 
 /*****************************************************************************/
@@ -1016,14 +459,14 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 {
     if (timeout == 0 || callback == NULL)
     {
-        com_put_at_string(cmd);
+        gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(GSM_Hardware.atc.cmd));
         return;
     }
     
 
     if (strlen(cmd) < 128)
     {
-        DEBUG_PRINTF("Send cmd %s", cmd);
+        DEBUG_PRINTF("ATC: %s", cmd);
     }
 
     GSM_Hardware.atc.cmd = cmd;
@@ -1039,18 +482,55 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     GSM_Hardware.atc.recv_buff.BufferIndex = 0;
     GSM_Hardware.atc.recv_buff.State = BUFFER_STATE_IDLE;
 
-    com_put_at_string(cmd);
-
-    //	DEBUG ("ATC: %s\r\n",cmd);
+    gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
 }
-#endif //__USED_HTTP__
 
 void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
-    DEBUG_PRINTF("[%s]\r\n", __FUNCTION__);
+
     while (length--)
     {
-        com_put_at_character(*raw++);
+        gsm_ppp_modem_buffer_t *p = &GSM_Hardware.modem.tx_buffer;
+
+        /* Write a byte to serial interface */
+        if ((uint8_t)(p->idx_in + 1) == p->idx_out)
+        {
+            /* Serial transmit buffer is full. */
+            DEBUG_PRINTF("Buffer full\r\n");
+            Delayms(5);
+            while ((uint8_t)(p->idx_in + 1) == p->idx_out)
+            {
+                Delayms(1);
+            }
+            DEBUG_PRINTF("Buffer free\r\n");
+        }
+
+        /* Disable ngat USART0 */
+        NVIC_DisableIRQ(GSM_UART_IRQ);
+        __nop();
+
+        if (GSM_Hardware.modem.tx_active == 0)
+        {
+            /* Send data to UART. */
+            usart_data_transmit(GSM_UART, *raw);
+            usart_interrupt_enable(GSM_UART, USART_INT_TBE); /* Enable TXE interrupt */
+
+            GSM_Hardware.modem.tx_active = __TRUE;
+        }
+        else
+        {
+            /* Add data to transmit buffer. */
+            p->Buffer[p->idx_in++] = *raw;
+            if (p->idx_in == MODEM_BUFFER_SIZE)
+            {
+                DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
+                p->idx_in = 0;
+            }
+        }
+
+        raw++;
+        /* Enable Ngat USART0 tro lai */
+        NVIC_EnableIRQ(GSM_UART_IRQ);
     }
 }
 
