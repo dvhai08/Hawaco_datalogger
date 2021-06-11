@@ -42,6 +42,7 @@ static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **
 static int32_t cli_trigger_fault(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -49,6 +50,7 @@ static const shell_command_context_t cli_command_table[] =
     {"fault",           "\tfault : Trigger fault\r\n",                          cli_trigger_fault,                          1},
     {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
     {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
+    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -180,5 +182,15 @@ static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv
     }
     return  0;
 }
+
+extern System_t xSystem;
+static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)
+{
+    xSystem.file_transfer.ota_is_running = 1;
+    sprintf(xSystem.file_transfer.url, "%s", 
+            "https://iot.wilad.vn/api/v1/860262050129720/attributes");
+    return 0;
+}
+
 
 #endif /* APP_CLI_ENABLE */

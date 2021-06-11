@@ -403,3 +403,30 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *da
 exit:
     return val;
 }
+
+void gsm_utilities_parse_file_handle(char *buffer, int32_t *file_handle)
+{
+	*file_handle = -1;
+	char *p = strstr(buffer, "+QFOPEN: ");
+	
+	if (p)
+	{
+		p += strlen("+QFOPEN: ");
+		*file_handle = gsm_utilities_get_number_from_string(0, p);
+	}
+}
+
+void gsm_utilities_get_qfile_content(char *buffer, uint8_t **content, uint32_t *size)
+{
+	char *p = strstr(buffer, "CONNECT ");
+	*size = 0;
+	*content = (void*)0;
+	if (p)
+	{
+		p += strlen("CONNECT ");
+		*size = gsm_utilities_get_number_from_string(0, p);
+		p = strstr(p, "\r\n");
+		p += 2;
+		*content = (uint8_t*)p;		
+	}
+}

@@ -72,7 +72,7 @@ typedef struct
 typedef struct
 {
     uint8_t Buffer[SMALL_BUFFER_SIZE];
-    uint8_t BufferIndex;
+    uint16_t BufferIndex;
     uint8_t State;
 } SmallBuffer_t;
 
@@ -142,21 +142,23 @@ typedef enum
 
 typedef struct
 {
-    char FTP_FileName[31];
-    Long_t FileSize;
-    Long_t FileCRC;
-    char FTP_Path[31];
-    char FTP_IPAddress[16];
-    IPStruct_t FTP_IP;
-    char FTP_UserName[16];
-    char FTP_Pass[16];
+    //char FTP_FileName[31];
+    //Long_t FileSize;
+    //Long_t FileCRC;
+    //char FTP_Path[31];
+    //char FTP_IPAddress[16];
+    //IPStruct_t FTP_IP;
+    //char FTP_UserName[16];
+    //char FTP_Pass[16];
 
     uint32_t FileAddress;
-    uint32_t DataTransfered;
+    //uint32_t DataTransfered;
     FileTransferState_t State;
-    FileTransferType_t Type;
-    uint8_t UDFWTarget;
-    uint8_t Retry;
+    //FileTransferType_t Type;
+    //uint8_t UDFWTarget;
+    //uint8_t Retry;
+    char url[256];
+    uint8_t ota_is_running;
 } FileTransferStruct_t;
 
 typedef struct
@@ -251,8 +253,7 @@ typedef struct
     Status_t Status;
     Parameters_t Parameters;
 
-    FileTransferStruct_t FileTransfer;
-    HardwareInfo_t HardwareInfo;
+    FileTransferStruct_t file_transfer;
     MeasureStatus_t MeasureStatus;
 } System_t;
 

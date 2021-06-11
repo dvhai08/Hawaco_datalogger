@@ -4,8 +4,7 @@
 #include "app_debug.h"
 #include <stdio.h>
 #include <string.h>
-
-
+#include "gsm.h"
 
 #define DEBUG_HTTP                  1
 #ifdef DEBUG_HTTP
@@ -17,6 +16,7 @@ static uint32_t m_debug_http_post_count = 0;
 #define DEBUG_HTTP_POST_GET_COUNT()     (0)
 #endif 
 
+#define OTA_RAM_FILE        "RAM:ota.bin"
 
 static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
@@ -26,10 +26,13 @@ static char m_http_cmd_buffer[256];
 static gsm_http_data_t post_rx_data;
 static bool m_renew_config_ssl = true;
 static bool m_renew_apn = true;
+static uint32_t m_start_download_timestamp;
 
 static void gsm_http_query(gsm_response_event_t event, void *response_buffer);
-
+static int32_t m_http_read_big_file_step = 0;
 static int32_t m_ssl_step = -1;
+static int32_t m_file_handle = -1;
+
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
 {
     if (!m_renew_config_ssl)
@@ -54,7 +57,7 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
             gsm_hw_send_at_cmd("AT+QHTTPCFG=\"sslctxid\",1\r\n", 
                                 "OK\r\n", 
                                 "", 
-                                1000, 
+                                2000, 
                                 1, 
                                 setup_http_ssl);
         }
@@ -129,6 +132,114 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
     }
 
     m_ssl_step++;
+}
+
+
+void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffer)
+{
+    DEBUG_PRINTF("Download big file step %u, result %s\r\n", 
+						m_http_read_big_file_step,
+                        (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
+                        (char*)response_buffer);
+    if (event != GSM_EVENT_OK)
+    {
+        if (m_http_cfg.on_event_cb)
+        {
+            m_total_bytes_recv = 0;
+            m_http_read_big_file_step = 0;
+			m_file_handle = -1;
+            if (m_http_cfg.on_event_cb) 
+                m_http_cfg.on_event_cb(GSM_HTTP_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+            return;
+        }
+    }
+
+    if (m_http_read_big_file_step == 0)
+    {
+        DEBUG_PRINTF("Speed %ukb/s\r\n", (m_content_length*1000/1024)/(gsm_get_current_tick() - m_start_download_timestamp));
+        sprintf(m_http_cmd_buffer, "AT+QFOPEN=\"%s\",2\r\n", OTA_RAM_FILE);
+        gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                            "+QFOPEN: ", 
+                            "OK\r\n", 
+                            2000, 
+                            1, 
+                            gsm_http_download_big_file);
+    }
+    else if (m_http_read_big_file_step == 1)     // Seek file
+    {
+		gsm_utilities_parse_file_handle((char*)response_buffer, &m_file_handle);
+        DEBUG_PRINTF("File handle %s\r\n", (char*)response_buffer);
+		
+		if (m_file_handle != -1)
+		{
+			sprintf(m_http_cmd_buffer, "AT+QFSEEK=%u,%u,0\r\n", m_file_handle, m_total_bytes_recv);
+			gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+								"OK\r\n",
+								"",
+								2000, 
+								1, 
+								gsm_http_download_big_file);
+		}
+		else
+		{
+			m_total_bytes_recv = 0;
+            m_http_read_big_file_step = 0;
+			m_file_handle = -1;
+            if (m_http_cfg.on_event_cb) 
+                m_http_cfg.on_event_cb(GSM_HTTP_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+            return;
+		}
+    }
+    else if (m_http_read_big_file_step == 2)    // Read file
+    {
+		sprintf(m_http_cmd_buffer, "AT+QFREAD=%u,%u\r\n", m_file_handle, 128);
+        gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                            "CONNECT ",
+                            "OK\r\n",
+                            2000, 
+                            1, 
+                            gsm_http_download_big_file);
+    }
+    else if(m_http_read_big_file_step == 3)
+    {
+		uint8_t *content;
+		uint32_t size;
+		gsm_utilities_get_qfile_content(response_buffer, &content, &size);
+			
+		DEBUG_PRINTF("Data size %d, %.*s\r\n", size, size, content);
+        m_total_bytes_recv += size;
+        if (m_total_bytes_recv >= m_content_length)
+        {
+			DEBUG_PRINTF("Closing file\r\n");
+			sprintf(m_http_cmd_buffer, "AT+QFCLOSE=%u\r\n", m_file_handle);
+			gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+								"OK\r\n",
+								"",
+								2000, 
+								1, 
+								gsm_http_download_big_file);
+        }
+		else
+		{
+			m_http_read_big_file_step = 2;
+			sprintf(m_http_cmd_buffer, "AT+QFREAD=%u,%u\r\n", m_file_handle, 128);
+			gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+								"CONNECT",
+								"OK\r\n",
+								2000, 
+								1, 
+								gsm_http_download_big_file);
+    
+		}
+    }
+	else if (m_http_read_big_file_step == 4)
+	{
+		DEBUG_PRINTF("All data received\r\n");
+		m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_SUCCESS, &m_total_bytes_recv);
+		return;
+	}
+
+    m_http_read_big_file_step++;
 }
 
 
@@ -248,7 +359,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             {
                 gsm_hw_send_at_cmd("AT+QIACT?\r\n", 
                                     "QIACT", 
-                                    "OK", 
+                                    "OK\r\n", 
                                     3000, 
                                     2, 
                                     gsm_http_query);
@@ -404,23 +515,41 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
                     if (gsm_utilities_parse_http_action_response((char*)response_buffer, 
                                                                 &http_response_code, 
-                                                                &m_content_length))
+                                                                &m_content_length)
+                        && m_content_length)
                     {
                         if (m_http_cfg.on_event_cb)
                         {
                             if (m_http_cfg.on_event_cb) m_http_cfg.on_event_cb(GSM_HTTP_EVENT_CONNTECTED, &m_content_length);
                         }
 
-                        m_total_bytes_recv = m_content_length;
                         DEBUG_PRINTF("Content length %u\r\n", m_content_length);
-                        sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=30\r\n");
-                        //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREADFILE=\"RAM:1.txt\",80\r\n");
-                        gsm_hw_send_at_cmd(m_http_cmd_buffer, 
-                                            "QHTTPREAD: 0\r\n", 
-                                            "\r\n", 
-                                            12000, 
-                                            1, 
-                                            gsm_http_query); // Close a GPRS context.
+                        if (!m_http_cfg.big_file_for_ota)
+                        {
+                            sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=12\r\n");
+                            //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREADFILE=\"RAM:1.txt\",80\r\n");
+                            gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                                                "QHTTPREAD: 0", 
+                                                "", 
+                                                12000, 
+                                                1, 
+                                                gsm_http_query); // Close a GPRS context.
+                            m_total_bytes_recv = m_content_length;
+                        }
+                        else
+                        {
+                            //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=75\r\n");
+                            sprintf(m_http_cmd_buffer, "AT+QHTTPREADFILE=\"%s\",80\r\n", OTA_RAM_FILE);
+                            gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                                                "OK\r\n", 
+                                                "+QHTTPREADFILE: 0\r\n", 
+                                                80000, 
+                                                1, 
+                                                gsm_http_download_big_file); // Close a GPRS context.
+                            m_http_read_big_file_step = 0;
+                            m_start_download_timestamp = gsm_get_current_tick();
+                            m_total_bytes_recv = 0;
+                        }
                     }
                     else
                     {

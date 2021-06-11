@@ -519,9 +519,9 @@
           <GroupName>gsm</GroupName>
           <Files>
             <File>
-              <FileName>GSM_Utilities.c</FileName>
+              <FileName>gsm_utilities.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\GSM\GSM_Utilities.c</FilePath>
+              <FilePath>..\src\GSM\gsm_utilities.c</FilePath>
             </File>
             <File>
               <FileName>gsm_data_layer.c</FileName>

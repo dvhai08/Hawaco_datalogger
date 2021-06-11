@@ -145,7 +145,13 @@ int main(void)
             MeasureTick1000ms();
             if (!gsm_data_layer_is_module_sleeping())
             {
-                if (xSystem.Status.DisconnectTimeout++ > 60)
+                uint32_t timeout_sec = 60;
+                if (xSystem.file_transfer.ota_is_running)
+                {
+                    timeout_sec = 120;
+                }
+
+                if (xSystem.Status.DisconnectTimeout++ > timeout_sec)
                 {
                     DEBUG_PRINTF("Disconnected timeout is over\r\n");
                     NVIC_SystemReset();
@@ -275,16 +281,16 @@ static void ProcessTimeout100ms(void)
 uint8_t ledToggle = 0;
 static void ProcessTimeout1000ms(void)
 {
-    if (xSystem.FileTransfer.State != FT_TRANSFERRING)
-    {
+    //if (xSystem.FileTransfer.State != FT_TRANSFERRING)
+    //{
         gsm_manager_tick();
-        if (gsm_data_layer_is_module_sleeping())
-        {
-            //DEBUG_PRINTF("Process timeout 1000ms in sleeping state\r\n");
-        }
-        //		ProcessPingTimeout();
-    }
-    //	DownloadFileTick();
+    //    if (gsm_data_layer_is_module_sleeping())
+    //    {
+    //        //DEBUG_PRINTF("Process timeout 1000ms in sleeping state\r\n");
+    //    }
+    //    //		ProcessPingTimeout();
+    //}
+    ////	DownloadFileTick();
 
     control_ouput_task();
     //LED1(1);

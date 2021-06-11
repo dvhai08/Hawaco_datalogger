@@ -182,8 +182,8 @@ void InternalFlashWriteBytes(uint8_t *Buffer, uint16_t Length)
             {
                 tmpWord.bytes[i] = MangByteCu[i];
             }
-            FLASH_ProgramWord(xSystem.FileTransfer.FileAddress, tmpWord.value);
-            xSystem.FileTransfer.FileAddress += 4;
+            FLASH_ProgramWord(xSystem.file_transfer.FileAddress, tmpWord.value);
+            xSystem.file_transfer.FileAddress += 4;
             //Reset mang
             SoByteCu = 0;
             memset(MangByteCu, 0, 5);
@@ -205,8 +205,8 @@ void InternalFlashWriteBytes(uint8_t *Buffer, uint16_t Length)
             {
                 tmpWord.bytes[i] = MangByteCu[i];
             }
-            FLASH_ProgramWord(xSystem.FileTransfer.FileAddress, tmpWord.value);
-            xSystem.FileTransfer.FileAddress += 4;
+            FLASH_ProgramWord(xSystem.file_transfer.FileAddress, tmpWord.value);
+            xSystem.file_transfer.FileAddress += 4;
             //Reset mang
             SoByteCu = 0;
             memset(MangByteCu, 0, 5);
@@ -232,8 +232,8 @@ void InternalFlashWriteBytes(uint8_t *Buffer, uint16_t Length)
                     tmpWord.bytes[2] = Buffer[i * 4 + 2 + ViTri];
                     tmpWord.bytes[3] = Buffer[i * 4 + 3 + ViTri];
 
-                    FLASH_ProgramWord(xSystem.FileTransfer.FileAddress, tmpWord.value);
-                    xSystem.FileTransfer.FileAddress += 4;
+                    FLASH_ProgramWord(xSystem.file_transfer.FileAddress, tmpWord.value);
+                    xSystem.file_transfer.FileAddress += 4;
                 }
             }
         }
@@ -260,8 +260,8 @@ void InternalFlashWriteBytes(uint8_t *Buffer, uint16_t Length)
                 tmpWord.bytes[1] = Buffer[i * 4 + 1];
                 tmpWord.bytes[2] = Buffer[i * 4 + 2];
                 tmpWord.bytes[3] = Buffer[i * 4 + 3];
-                FLASH_ProgramWord(xSystem.FileTransfer.FileAddress, tmpWord.value);
-                xSystem.FileTransfer.FileAddress += 4;
+                FLASH_ProgramWord(xSystem.file_transfer.FileAddress, tmpWord.value);
+                xSystem.file_transfer.FileAddress += 4;
             }
         }
     }

@@ -117,7 +117,7 @@ void gsm_pwr_control(uint8_t State)
     if (State == GSM_OFF)
     {
         //Neu dang trong qua trinh update FW -> Khong OFF
-        if (xSystem.FileTransfer.State != FT_NO_TRANSER)
+        if (xSystem.file_transfer.State != FT_NO_TRANSER)
             return;
 
         gsm_manager.isGSMOff = 1;
@@ -233,130 +233,147 @@ void gsm_uart_handler(void)
 
 
 uint32_t m_poll_interval;
+uint32_t current_response_length;
+uint32_t expect_compare_length;
+uint8_t *p_compare_end_str;
+uint8_t *uart_rx_pointer = m_gsm_hardware.atc.recv_buff.Buffer;
+uint8_t *expect_end_str;
 void gsm_hw_layer_run(void)
 {
     static uint32_t m_last_poll = 0;
     uint32_t now = sys_get_ms();
-    if (now- m_last_poll >= m_poll_interval)
+    if ((now - m_last_poll) < m_poll_interval)
     {
-        m_last_poll = now;
-        uint32_t diff;
-        bool ret_now = true;
+        return;
+    }
 
-        if (now >= m_gsm_hardware.atc.current_timeout_atc_ms)
+    uint32_t diff;
+    bool ret_now = true;
+
+    if (now >= m_gsm_hardware.atc.current_timeout_atc_ms)
+    {
+        diff = now - m_gsm_hardware.atc.current_timeout_atc_ms;
+    }
+    else
+    {
+        diff = 0xFFFFFFFF - m_gsm_hardware.atc.current_timeout_atc_ms + now; 
+    }
+
+    if (m_gsm_hardware.atc.retry_count_atc)
+    {
+        __disable_irq();
+
+        if (m_new_uart_data)
         {
-            diff = now - m_gsm_hardware.atc.current_timeout_atc_ms;
+            m_new_uart_data = false;
+            ret_now = false;
         }
-        else
+        __enable_irq();
+
+        if (ret_now == false
+        && (strstr((char *)(m_gsm_hardware.atc.recv_buff.Buffer), m_gsm_hardware.atc.expect_resp_from_atc)))
         {
-            diff = 0xFFFFFFFF - m_gsm_hardware.atc.current_timeout_atc_ms + now; 
+            bool do_cb = true;
+            if (m_gsm_hardware.atc.expected_response_at_the_end 
+                && strlen(m_gsm_hardware.atc.expected_response_at_the_end))
+            {
+                //DEBUG_PRINTF("Expected end %s\r\n", m_gsm_hardware.atc.expected_response_at_the_end);
+                current_response_length = m_gsm_hardware.atc.recv_buff.BufferIndex;
+                expect_compare_length = strlen(m_gsm_hardware.atc.expected_response_at_the_end);
+
+                if (expect_compare_length < current_response_length)
+                {
+                    p_compare_end_str = &m_gsm_hardware.atc.recv_buff.Buffer[current_response_length - expect_compare_length];
+                    if ((memcmp(p_compare_end_str, m_gsm_hardware.atc.expected_response_at_the_end, expect_compare_length) == 0))
+                    {
+                        do_cb = true;
+                    }
+					else
+					{
+						do_cb = false;
+						expect_end_str = m_gsm_hardware.atc.expected_response_at_the_end;
+						uart_rx_pointer = m_gsm_hardware.atc.recv_buff.Buffer;
+					}
+                }
+                else
+                {
+                    do_cb = false;
+                }
+            }
+
+            if (do_cb)
+            {
+                m_gsm_hardware.atc.timeout_atc_ms = 0;
+                m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;
+                if (m_gsm_hardware.atc.send_at_callback)
+                {
+                    m_gsm_hardware.atc.send_at_callback(GSM_EVENT_OK, m_gsm_hardware.atc.recv_buff.Buffer);
+                }
+                m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
+                memset(m_gsm_hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
+            }
         }
+        else if (ret_now == false)
+        {
+            char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.Buffer), "CME");
+            if (p && strstr(p, "\r\n"))
+            {
+                DEBUG_PRINTF("CME error %s", p);
+				if (m_gsm_hardware.atc.send_at_callback)
+                {
+                    m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.Buffer);
+                }
+                m_gsm_hardware.atc.timeout_atc_ms = 0;
+            }
+        }
+    }
+
+    if (m_gsm_hardware.atc.timeout_atc_ms && 
+        diff >= m_gsm_hardware.atc.timeout_atc_ms)
+    {
 
         if (m_gsm_hardware.atc.retry_count_atc)
         {
-            __disable_irq();
-
-            if (m_new_uart_data)
-            {
-                m_new_uart_data = false;
-                ret_now = false;
-            }
-            __enable_irq();
-
-            if (ret_now == false
-            && (strstr((char *)(m_gsm_hardware.atc.recv_buff.Buffer), m_gsm_hardware.atc.expect_resp_from_atc)))
-            {
-                bool do_cb = true;
-                if (m_gsm_hardware.atc.expected_response_at_the_end 
-                    && strlen(m_gsm_hardware.atc.expected_response_at_the_end))
-                {
-                    //DEBUG_PRINTF("Expected end %s\r\n", m_gsm_hardware.atc.expected_response_at_the_end);
-                    uint32_t current_response_length = m_gsm_hardware.atc.recv_buff.BufferIndex;
-                    uint32_t expect_compare_length = strlen(m_gsm_hardware.atc.expected_response_at_the_end);
-
-                    if (expect_compare_length < current_response_length)
-                    {
-                        uint8_t *p_compare_end_str = &m_gsm_hardware.atc.recv_buff.Buffer[current_response_length - expect_compare_length - 1];
-                        if ((memcmp(p_compare_end_str, m_gsm_hardware.atc.expected_response_at_the_end, expect_compare_length) == 0))
-                        {
-                            do_cb = true;
-                        }
-                    }
-                    else
-                    {
-                        do_cb = false;
-                    }
-                }
-
-                if (do_cb)
-                {
-                    m_gsm_hardware.atc.timeout_atc_ms = 0;
-                    m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;
-                    if (m_gsm_hardware.atc.send_at_callback)
-                    {
-                        m_gsm_hardware.atc.send_at_callback(GSM_EVENT_OK, m_gsm_hardware.atc.recv_buff.Buffer);
-                    }
-                    m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
-                    memset(m_gsm_hardware.atc.recv_buff.Buffer, 0, SMALL_BUFFER_SIZE);
-                }
-            }
-            else if (ret_now == false)
-            {
-                char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.Buffer), "CME");
-                if (p && strstr(p, "\r\n"))
-                {
-                    DEBUG_PRINTF("CME error %s", p);
-                    m_gsm_hardware.atc.timeout_atc_ms = 0;
-                }
-            }
+            m_gsm_hardware.atc.retry_count_atc--;
         }
-        
-        if (m_gsm_hardware.atc.timeout_atc_ms && 
-            diff >= m_gsm_hardware.atc.timeout_atc_ms)
-        {
-
-            if (m_gsm_hardware.atc.retry_count_atc)
-            {
-                m_gsm_hardware.atc.retry_count_atc--;
-            }
-
-            if (m_gsm_hardware.atc.retry_count_atc == 0)
-            {
-                m_gsm_hardware.atc.timeout_atc_ms = 0;
-
-                if (m_gsm_hardware.atc.send_at_callback != NULL)
-                {
-                    m_gsm_hardware.atc.send_at_callback(GSM_EVENT_TIMEOUT, NULL);
-                }
-                m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
-                m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
-            }
-            else
-            {
-                DEBUG("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
-                m_gsm_hardware.atc.current_timeout_atc_ms = now;
-                gsm_hw_uart_send_raw((uint8_t*)m_gsm_hardware.atc.cmd, strlen(m_gsm_hardware.atc.cmd));
-            }
-        }
-
-        if (m_gsm_hardware.atc.recv_buff.BufferIndex > 32 
-            && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "CUSD:"))
-            {
-                DEBUG_PRINTF("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
-            }
 
         if (m_gsm_hardware.atc.retry_count_atc == 0)
         {
-            if (m_gsm_hardware.atc.recv_buff.BufferIndex > 10 
-                && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "\r\n"))
+            m_gsm_hardware.atc.timeout_atc_ms = 0;
+
+            if (m_gsm_hardware.atc.send_at_callback != NULL)
             {
-                DEBUG_PRINTF("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
-                m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
-                m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
+                m_gsm_hardware.atc.send_at_callback(GSM_EVENT_TIMEOUT, NULL);
             }
+            m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
+            m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
+        }
+        else
+        {
+            DEBUG("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
+            m_gsm_hardware.atc.current_timeout_atc_ms = sys_get_ms();
+            gsm_hw_uart_send_raw((uint8_t*)m_gsm_hardware.atc.cmd, strlen(m_gsm_hardware.atc.cmd));
+        }
+    }
+
+    if (m_gsm_hardware.atc.recv_buff.BufferIndex > 32 
+        && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "CUSD:"))
+        {
+            DEBUG_PRINTF("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
         }
 
+    if (m_gsm_hardware.atc.retry_count_atc == 0)
+    {
+        if (m_gsm_hardware.atc.recv_buff.BufferIndex > 10 
+            && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "\r\n"))
+        {
+            DEBUG_PRINTF("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
+            m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
+            m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
+        }
     }
+
+    m_last_poll = sys_get_ms();
 }
 
 void gsm_change_hw_polling_interval(uint32_t ms)

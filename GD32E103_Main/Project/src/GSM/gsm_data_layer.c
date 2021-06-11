@@ -266,6 +266,7 @@ void gsm_manager_tick(void)
         
             if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
             {
+                #warning "Sleep in http mode is not enabled"
                 //if (enter_sleep_in_http)
                 if (0)
                 {
@@ -331,13 +332,27 @@ void gsm_manager_tick(void)
         if (GSM_NEED_ENTER_HTTP_GET())
         {
             static gsm_http_config_t cfg;
-            sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/attributes",
-                    xSystem.Parameters.gsm_imei);
-            cfg.on_event_cb = gsm_http_event_cb;
-            cfg.action = GSM_HTTP_ACTION_GET;
-            cfg.port = 443;
-            gsm_http_start(&cfg);
-            GSM_DONT_NEED_HTTP_GET();
+            if (!xSystem.file_transfer.ota_is_running)
+            {
+                sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/attributes",
+                        xSystem.Parameters.gsm_imei);
+                cfg.on_event_cb = gsm_http_event_cb;
+                cfg.action = GSM_HTTP_ACTION_GET;
+                cfg.port = 443;
+                cfg.big_file_for_ota = 0;
+                gsm_http_start(&cfg);
+                GSM_DONT_NEED_HTTP_GET();
+            }
+            else
+            {
+                sprintf(cfg.url, "%s", xSystem.file_transfer.url);
+                cfg.on_event_cb = gsm_http_event_cb;
+                cfg.action = GSM_HTTP_ACTION_GET;
+                cfg.port = 443;
+                cfg.big_file_for_ota = 1;
+                gsm_http_start(&cfg);
+                GSM_DONT_NEED_HTTP_GET();
+            }
         }
     }
     break;
@@ -409,7 +424,7 @@ uint8_t gsm_check_idle(void)
         return 0;
     if (gsm_manager.state != GSM_STATE_OK)
         return 0;
-    if (xSystem.FileTransfer.State != FT_NO_TRANSER)
+    if (xSystem.file_transfer.State != FT_NO_TRANSER)
         return 0;
 
     //Dang gui TCP -> busy
@@ -607,7 +622,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 12:
     {
         DEBUG_PRINTF("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
-        gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "OK", 3000, 3, gsm_at_cb_power_on_gsm); 
+        gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "", 3000, 3, gsm_at_cb_power_on_gsm); 
     }
         break;
 
@@ -648,7 +663,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         {
             gsm_utilities_get_network_access_tech(resp_buffer, &gsm_manager.access_tech);
         }
-        gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 20:
@@ -1318,3 +1333,9 @@ gsm_internet_mode_t *gsm_get_internet_mode(void)
 {
     return &m_internet_mode;
 }
+
+uint32_t gsm_get_current_tick(void)
+{
+    return sys_get_ms();
+}
+

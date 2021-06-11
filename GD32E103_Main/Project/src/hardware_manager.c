@@ -118,6 +118,7 @@ hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void)
     /* clear the reset flag */
     rcu_all_reset_flag_clear();
 #endif
+	return &m_reset_reason;
 }
 
 /*****************************************************************************/

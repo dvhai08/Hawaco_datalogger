@@ -165,7 +165,7 @@ typedef struct
     char *cmd;
     char *expect_resp_from_atc;
     char *expected_response_at_the_end;
-    uint16_t timeout_atc_ms;
+    uint32_t timeout_atc_ms;
     uint32_t current_timeout_atc_ms;
     uint8_t retry_count_atc;
     SmallBuffer_t recv_buff;
@@ -218,5 +218,11 @@ void gsm_set_flag_prepare_enter_read_sms_mode(void);
  * @brief       Enter read sms state
  */
 void gsm_enter_read_sms(void);
+
+/**
+ * @brief       Get current tick in ms
+ * @retval      Current tick in ms
+ */
+uint32_t gsm_get_current_tick(void);
 
 #endif // __GSM_H__

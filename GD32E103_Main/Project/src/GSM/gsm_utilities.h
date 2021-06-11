@@ -174,5 +174,22 @@ void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technol
 void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_len);
 
 
+/**
+ * @brief       Get file handle from QOPEN message
+ * @param[in]   buffer : Pointer to buffer data will be parsed
+ * @param[out]  file_handler : -1 on error
+ * @note : +QFOPEN: 3000\r\nOK\r\n
+ */ 
+void gsm_utilities_parse_file_handle(char *buffer, int32_t *file_handle);
+
+/**
+ * @brief       Get file content from QREAD message
+ * @param[in]   buffer : Pointer to buffer data will be parsed
+ * @param[out]  content : Pointer to positions of data
+ * @param[out]  size : Data size
+ * @note : CONNECT size\r\n+ Raw_data +OK\r\n
+ */ 
+void gsm_utilities_get_qfile_content(char *buffer, uint8_t **content, uint32_t *size);
+
 #endif /* GSM_UTILITIES_H */
 

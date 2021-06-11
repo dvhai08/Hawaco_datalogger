@@ -49,12 +49,13 @@ typedef struct
     char url[GSM_HTTP_MAX_URL_SIZE+1];
     gsm_http_action_t action;
     uint16_t port;
+    uint8_t big_file_for_ota;
 } gsm_http_config_t;
 
 
 /**
- * @brief Get max url size allowed
- * @retval Max url length
+ * @brief       Get max url size allowed
+ * @retval      Max url length
  */
 static inline uint32_t gsm_http_get_max_url_size(void)
 {
@@ -62,18 +63,18 @@ static inline uint32_t gsm_http_get_max_url_size(void)
 }
 
 /**
- * @brief Get current gsm http configuration
- * @retval Pointer to current gsm configuration
+ * @brief       Get current gsm http configuration
+ * @retval      Pointer to current gsm configuration
  */
 gsm_http_config_t *gsm_http_get_config(void);
 
 /**
- * @brief Clean up current configuration
+ * @brief       Clean up current configuration
  */
 void gsm_http_cleanup(void);
 
 /**
- * @brief Start gsm http download
+ * @brief       Start gsm http download
  * @param[in] config : HTTP configuration
  * @retval TRUE : Operation success
  *         FALSE : Operation failed

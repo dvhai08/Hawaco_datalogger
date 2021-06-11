@@ -78,6 +78,7 @@
     <folder Name="SeggerRTT">
       <file file_name="../src/SEGGER_RTT_V698b/RTT/SEGGER_RTT.c" />
       <file file_name="../src/SEGGER_RTT_V698b/RTT/SEGGER_RTT_printf.c" />
+      <file file_name="../src/SEGGER_RTT_V698b/RTT/SEGGER_RTT_Conf.h" />
     </folder>
     <folder Name="CMSIS">
       <file file_name="../../Library/CMSIS/GD/GD32E10x/Source/system_gd32e10x.c" />
