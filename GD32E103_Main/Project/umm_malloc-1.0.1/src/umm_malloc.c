@@ -37,10 +37,10 @@
 /* Use the default DBGLOG_LEVEL and DBGLOG_FUNCTION */
 
 #define DBGLOG_LEVEL 0
-#define DBGLOG_DEBUG
-#define DBGLOG_ERROR
-#define DBGLOG_FORCE
-#define DBGLOG_TRACE
+#define DBGLOG_DEBUG(...)
+#define DBGLOG_ERROR(...)
+#define DBGLOG_FORCE(...)
+#define DBGLOG_TRACE(...)
 
 //#include "dbglog/dbglog.h"
 

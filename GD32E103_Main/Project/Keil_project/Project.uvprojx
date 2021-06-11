@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,GD32E10X,IRC8M_VALUE=8000000</Define>
               <Undefine></Undefine>
-              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\src\MQTTUser;.\..\src\MQTTPaho;.\..\lowpass_filter;.\..\src</IncludePath>
+              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\lowpass_filter;.\..\src;..\app_cli;..\app_queue;..\umm_malloc-1.0.1\src;..\app_cli;..\src\gsm</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -380,21 +380,6 @@
         </TargetArmAds>
       </TargetOption>
       <Groups>
-        <Group>
-          <GroupName>TCPNet</GroupName>
-          <Files>
-            <File>
-              <FileName>Net_Config.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Library\RL\TCPNet\Config\Net_Config.c</FilePath>
-            </File>
-            <File>
-              <FileName>TCP_CM3.lib</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\Library\RL\TCPNet\TCP_CM3.lib</FilePath>
-            </File>
-          </Files>
-        </Group>
         <Group>
           <GroupName>Application</GroupName>
           <Files>
@@ -439,19 +424,24 @@
               <FilePath>..\src\Debug.c</FilePath>
             </File>
             <File>
-              <FileName>Utilities.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\Utilities.c</FilePath>
-            </File>
-            <File>
               <FileName>lwrb.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\lwrb\lwrb\src\lwrb\lwrb.c</FilePath>
             </File>
+            <File>
+              <FileName>utilities.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\utilities.c</FilePath>
+            </File>
+            <File>
+              <FileName>server_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\server_msg.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>Peripheral</GroupName>
+          <GroupName>peripheral</GroupName>
           <Files>
             <File>
               <FileName>app_bkup.c</FileName>
@@ -478,240 +468,100 @@
               <FileType>1</FileType>
               <FilePath>..\src\InternalFlash.c</FilePath>
             </File>
+            <File>
+              <FileName>app_bkup.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\app_bkup.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_flash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\app_flash.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_wdt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\app_wdt.h</FilePath>
+            </File>
+            <File>
+              <FileName>DataDefine.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\DataDefine.h</FilePath>
+            </File>
+            <File>
+              <FileName>server_msg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\server_msg.h</FilePath>
+            </File>
+            <File>
+              <FileName>sys_ctx.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\sys_ctx.h</FilePath>
+            </File>
+            <File>
+              <FileName>InternalFlash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\InternalFlash.h</FilePath>
+            </File>
+            <File>
+              <FileName>InitSystem.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\inc\InitSystem.h</FilePath>
+            </File>
+            <File>
+              <FileName>gsm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\gsm\gsm.h</FilePath>
+            </File>
+            <File>
+              <FileName>gsm_utilities.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\gsm\gsm_utilities.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>GSM</GroupName>
+          <GroupName>gsm</GroupName>
           <Files>
-            <File>
-              <FileName>GSM_DataLayer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\GSM\GSM_DataLayer.c</FilePath>
-            </File>
-            <File>
-              <FileName>GSM_HardwareLayer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\GSM\GSM_HardwareLayer.c</FilePath>
-            </File>
-            <File>
-              <FileName>GSM_SMSLayer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\GSM\GSM_SMSLayer.c</FilePath>
-              <FileOption>
-                <CommonProperty>
-                  <UseCPPCompiler>2</UseCPPCompiler>
-                  <RVCTCodeConst>0</RVCTCodeConst>
-                  <RVCTZI>0</RVCTZI>
-                  <RVCTOtherData>0</RVCTOtherData>
-                  <ModuleSelection>0</ModuleSelection>
-                  <IncludeInBuild>0</IncludeInBuild>
-                  <AlwaysBuild>2</AlwaysBuild>
-                  <GenerateAssemblyFile>2</GenerateAssemblyFile>
-                  <AssembleAssemblyFile>2</AssembleAssemblyFile>
-                  <PublicsOnly>2</PublicsOnly>
-                  <StopOnExitCode>11</StopOnExitCode>
-                  <CustomArgument></CustomArgument>
-                  <IncludeLibraryModules></IncludeLibraryModules>
-                  <ComprImg>1</ComprImg>
-                </CommonProperty>
-                <FileArmAds>
-                  <Cads>
-                    <interw>2</interw>
-                    <Optim>0</Optim>
-                    <oTime>2</oTime>
-                    <SplitLS>2</SplitLS>
-                    <OneElfS>2</OneElfS>
-                    <Strict>2</Strict>
-                    <EnumInt>2</EnumInt>
-                    <PlainCh>2</PlainCh>
-                    <Ropi>2</Ropi>
-                    <Rwpi>2</Rwpi>
-                    <wLevel>0</wLevel>
-                    <uThumb>2</uThumb>
-                    <uSurpInc>2</uSurpInc>
-                    <uC99>2</uC99>
-                    <uGnu>2</uGnu>
-                    <useXO>2</useXO>
-                    <v6Lang>0</v6Lang>
-                    <v6LangP>0</v6LangP>
-                    <vShortEn>2</vShortEn>
-                    <vShortWch>2</vShortWch>
-                    <v6Lto>2</v6Lto>
-                    <v6WtE>2</v6WtE>
-                    <v6Rtti>2</v6Rtti>
-                    <VariousControls>
-                      <MiscControls></MiscControls>
-                      <Define></Define>
-                      <Undefine></Undefine>
-                      <IncludePath></IncludePath>
-                    </VariousControls>
-                  </Cads>
-                </FileArmAds>
-              </FileOption>
-            </File>
             <File>
               <FileName>GSM_Utilities.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\GSM\GSM_Utilities.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>MQTTUser</GroupName>
-          <Files>
             <File>
-              <FileName>MQTT_ClientMessage.c</FileName>
+              <FileName>gsm_data_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\MQTTUser\MQTT_ClientMessage.c</FilePath>
+              <FilePath>..\src\gsm\gsm_data_layer.c</FilePath>
             </File>
             <File>
-              <FileName>MQTT_HardwareLayer.c</FileName>
+              <FileName>gsm_hardware_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\MQTTUser\MQTT_HardwareLayer.c</FilePath>
+              <FilePath>..\src\gsm\gsm_hardware_layer.c</FilePath>
             </File>
             <File>
-              <FileName>MQTT_ServerMessage.c</FileName>
+              <FileName>gsm_http.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\MQTTUser\MQTT_ServerMessage.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>MQTTPaho</GroupName>
-          <Files>
-            <File>
-              <FileName>MQTTConnectClient.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTConnectClient.c</FilePath>
+              <FilePath>..\src\gsm\gsm_http.c</FilePath>
             </File>
             <File>
-              <FileName>MQTTConnectServer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTConnectServer.c</FilePath>
+              <FileName>gsm_http.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\gsm\gsm_http.h</FilePath>
             </File>
             <File>
-              <FileName>MQTTDeserializePublish.c</FileName>
+              <FileName>gsm_sms.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTDeserializePublish.c</FilePath>
+              <FilePath>..\src\gsm\gsm_sms.c</FilePath>
             </File>
             <File>
-              <FileName>MQTTFormat.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTFormat.c</FilePath>
+              <FileName>gsm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\gsm\gsm.h</FilePath>
             </File>
             <File>
-              <FileName>MQTTPacket.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTPacket.c</FilePath>
-            </File>
-            <File>
-              <FileName>MQTTSerializePublish.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTSerializePublish.c</FilePath>
-            </File>
-            <File>
-              <FileName>MQTTSubscribeClient.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTSubscribeClient.c</FilePath>
-            </File>
-            <File>
-              <FileName>MQTTSubscribeServer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTSubscribeServer.c</FilePath>
-            </File>
-            <File>
-              <FileName>MQTTUnsubscribeClient.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTUnsubscribeClient.c</FilePath>
-            </File>
-            <File>
-              <FileName>MQTTUnsubscribeServer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\MQTTPaho\MQTTUnsubscribeServer.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Encrypt</GroupName>
-          <GroupOption>
-            <CommonProperty>
-              <UseCPPCompiler>0</UseCPPCompiler>
-              <RVCTCodeConst>0</RVCTCodeConst>
-              <RVCTZI>0</RVCTZI>
-              <RVCTOtherData>0</RVCTOtherData>
-              <ModuleSelection>0</ModuleSelection>
-              <IncludeInBuild>0</IncludeInBuild>
-              <AlwaysBuild>2</AlwaysBuild>
-              <GenerateAssemblyFile>2</GenerateAssemblyFile>
-              <AssembleAssemblyFile>2</AssembleAssemblyFile>
-              <PublicsOnly>2</PublicsOnly>
-              <StopOnExitCode>11</StopOnExitCode>
-              <CustomArgument></CustomArgument>
-              <IncludeLibraryModules></IncludeLibraryModules>
-              <ComprImg>1</ComprImg>
-            </CommonProperty>
-            <GroupArmAds>
-              <Cads>
-                <interw>2</interw>
-                <Optim>0</Optim>
-                <oTime>2</oTime>
-                <SplitLS>2</SplitLS>
-                <OneElfS>2</OneElfS>
-                <Strict>2</Strict>
-                <EnumInt>2</EnumInt>
-                <PlainCh>2</PlainCh>
-                <Ropi>2</Ropi>
-                <Rwpi>2</Rwpi>
-                <wLevel>0</wLevel>
-                <uThumb>2</uThumb>
-                <uSurpInc>2</uSurpInc>
-                <uC99>2</uC99>
-                <uGnu>2</uGnu>
-                <useXO>2</useXO>
-                <v6Lang>0</v6Lang>
-                <v6LangP>0</v6LangP>
-                <vShortEn>2</vShortEn>
-                <vShortWch>2</vShortWch>
-                <v6Lto>2</v6Lto>
-                <v6WtE>2</v6WtE>
-                <v6Rtti>2</v6Rtti>
-                <VariousControls>
-                  <MiscControls></MiscControls>
-                  <Define></Define>
-                  <Undefine></Undefine>
-                  <IncludePath></IncludePath>
-                </VariousControls>
-              </Cads>
-              <Aads>
-                <interw>2</interw>
-                <Ropi>2</Ropi>
-                <Rwpi>2</Rwpi>
-                <thumb>2</thumb>
-                <SplitLS>2</SplitLS>
-                <SwStkChk>2</SwStkChk>
-                <NoWarn>2</NoWarn>
-                <uSurpInc>2</uSurpInc>
-                <useXO>2</useXO>
-                <ClangAsOpt>0</ClangAsOpt>
-                <VariousControls>
-                  <MiscControls></MiscControls>
-                  <Define></Define>
-                  <Undefine></Undefine>
-                  <IncludePath></IncludePath>
-                </VariousControls>
-              </Aads>
-            </GroupArmAds>
-          </GroupOption>
-          <Files>
-            <File>
-              <FileName>aes.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\aes.c</FilePath>
-            </File>
-            <File>
-              <FileName>base64.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\base64.c</FilePath>
+              <FileName>gsm_utilities.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\src\gsm\gsm_utilities.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -867,13 +717,6 @@
         </Group>
         <Group>
           <GroupName>Doc</GroupName>
-          <Files>
-            <File>
-              <FileName>readme.txt</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\readme.txt</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>lowpass_filter</GroupName>
@@ -919,6 +762,79 @@
               <FilePath>..\fault\fault.h</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>app_queue</GroupName>
+          <Files>
+            <File>
+              <FileName>app_queue.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app_queue\app_queue.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>umm_malloc</GroupName>
+          <Files>
+            <File>
+              <FileName>umm_info.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_info.c</FilePath>
+            </File>
+            <File>
+              <FileName>umm_integrity.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_integrity.c</FilePath>
+            </File>
+            <File>
+              <FileName>umm_malloc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc.c</FilePath>
+            </File>
+            <File>
+              <FileName>umm_malloc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc.h</FilePath>
+            </File>
+            <File>
+              <FileName>umm_malloc_cfg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc_cfg.h</FilePath>
+            </File>
+            <File>
+              <FileName>umm_poison.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\umm_malloc-1.0.1\src\umm_poison.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_cli</GroupName>
+          <Files>
+            <File>
+              <FileName>app_cli.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app_cli\app_cli.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_cli.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app_cli\app_cli.h</FilePath>
+            </File>
+            <File>
+              <FileName>app_shell.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app_cli\app_shell.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_shell.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\app_cli\app_shell.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>server_msg</GroupName>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>
