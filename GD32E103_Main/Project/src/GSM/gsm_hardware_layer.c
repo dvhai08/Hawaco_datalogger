@@ -375,10 +375,10 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     }
     
 
-    //if (strlen(cmd) < 128)
-    //{
-    //    DEBUG_PRINTF("ATC: %s", cmd);
-    //}
+    if (strlen(cmd) < 64)
+    {
+        DEBUG_PRINTF("ATC: %s", cmd);
+    }
 
     m_gsm_hardware.atc.cmd = cmd;
     m_gsm_hardware.atc.expect_resp_from_atc = expect_resp;

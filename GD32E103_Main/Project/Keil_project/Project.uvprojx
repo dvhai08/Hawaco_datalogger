@@ -384,11 +384,6 @@
           <GroupName>Application</GroupName>
           <Files>
             <File>
-              <FileName>HardwareManager.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\HardwareManager.c</FilePath>
-            </File>
-            <File>
               <FileName>InitSystem.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\InitSystem.c</FilePath>
@@ -404,25 +399,25 @@
               <FilePath>..\src\gd32e10x_it.c</FilePath>
             </File>
             <File>
-              <FileName>ControlOutput.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\ControlOutput.c</FilePath>
-            </File>
-            <File>
               <FileName>measure_input.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\measure_input.c</FilePath>
+            </File>
+            <File>
+              <FileName>control_output.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\control_output.c</FilePath>
+            </File>
+            <File>
+              <FileName>hardware_manager.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\hardware_manager.c</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
           <GroupName>Utilities</GroupName>
           <Files>
-            <File>
-              <FileName>Debug.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\Debug.c</FilePath>
-            </File>
             <File>
               <FileName>lwrb.c</FileName>
               <FileType>1</FileType>
@@ -457,11 +452,6 @@
               <FileName>board_hw.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\board_hw.c</FilePath>
-            </File>
-            <File>
-              <FileName>DriverUART.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\DriverUART.c</FilePath>
             </File>
             <File>
               <FileName>InternalFlash.c</FileName>
@@ -517,6 +507,11 @@
               <FileName>gsm_utilities.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\src\gsm\gsm_utilities.h</FilePath>
+            </File>
+            <File>
+              <FileName>driver_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\src\driver_uart.c</FilePath>
             </File>
           </Files>
         </Group>

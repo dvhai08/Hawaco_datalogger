@@ -36,7 +36,7 @@ static void ProcessTimeout10ms(void);
 static void ProcessTimeout100ms(void);
 static void ProcessTimeOut3000ms(void);
 static void ProcessTimeout1000ms(void);
-static uint8_t convertVinToPercent(uint32_t vin);
+static uint8_t convert_vin_to_percent(uint32_t vin);
 uint32_t estimate_sleep_time_in_second(uint32_t current_sec, uint32_t interval_sec);
 uint8_t adcStarted = 0;
 lpf_data_t AdcFilterdValue =
@@ -72,8 +72,6 @@ int main(void)
         #warning  "Output test gui tin"
         xSystem.Parameters.input.name.ma420 = 0;
         xSystem.Parameters.outputOnOff = 0;
-        xSystem.Parameters.period_send_message_to_server_min = 2;
-        xSystem.Parameters.period_measure_peripheral = 1;
 
         if (new_adc_data)
         {
@@ -92,7 +90,7 @@ int main(void)
                     lpf_update_estimate(&AdcFilterdValue, &tmpVin);
                     xSystem.MeasureStatus.Vin = AdcFilterdValue.estimate_value / 100;
                 }
-                xSystem.MeasureStatus.batteryPercent = convertVinToPercent(xSystem.MeasureStatus.Vin);
+                xSystem.MeasureStatus.batteryPercent = convert_vin_to_percent(xSystem.MeasureStatus.Vin);
                 AdcStop();
                 adcStarted = 0;
             }
@@ -176,7 +174,7 @@ int main(void)
                             lpf_update_estimate(&AdcFilterdValue, &tmpVin);
                             xSystem.MeasureStatus.Vin = AdcFilterdValue.estimate_value / 100;
                         }
-                        xSystem.MeasureStatus.batteryPercent = convertVinToPercent(xSystem.MeasureStatus.Vin);
+                        xSystem.MeasureStatus.batteryPercent = convert_vin_to_percent(xSystem.MeasureStatus.Vin);
                         AdcStop();
                         adcStarted = 0;
                     }
@@ -186,47 +184,54 @@ int main(void)
                     }
                     else
                     {
-                        if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk))
+                        bool debugger_connected = (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) ? true : false;
+                        if (debugger_connected)
                         {
-                            dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
+
                         }
-
-                        uint32_t tick_before_sleep = rtc_counter_get();
-
-                        uint32_t min_interval = xSystem.Parameters.period_send_message_to_server_min;
-                        // If input 4-20mA enable && 4-20 measure interval < period_send_message_to_server_min
-                        // =>> Select sleeptime = measure interval
-                        if (xSystem.Parameters.period_send_message_to_server_min > xSystem.Parameters.period_measure_peripheral
-                            && xSystem.Parameters.input.name.ma420)
+                        if (debugger_connected)
                         {
-                            min_interval = xSystem.Parameters.period_measure_peripheral;
+                            //dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
                         }
-                        uint32_t sleep_time = estimate_sleep_time_in_second(xSystem.Status.gsm_sleep_time_s,
-                                                                            min_interval*60);       // 1 min = 60s
+                        else
+                        {
+                            uint32_t tick_before_sleep = rtc_counter_get();
 
-                        DEBUG_PRINTF("Before deep sleep, gsm time %us, estimate sleep time %usec\r\n", 
-                                        xSystem.Status.gsm_sleep_time_s, 
-                                        sleep_time);
-                        sleep_time = 18;  // Due to watchdog
-                        rtc_alarm_config(rtc_counter_get() + sleep_time);
-                        rtc_lwoff_wait();
-                        app_wdt_feed();
-                        pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
-                        SystemInit();
-                        RCC_Config();
-                        //rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);       // already called in RCC_Config
-                        app_wdt_feed();
+                            uint32_t min_interval = xSystem.Parameters.period_send_message_to_server_min;
+                            // If input 4-20mA enable && 4-20 measure interval < period_send_message_to_server_min
+                            // =>> Select sleeptime = measure interval
+                            if (xSystem.Parameters.period_send_message_to_server_min > xSystem.Parameters.period_measure_peripheral
+                                && xSystem.Parameters.input.name.ma420)
+                            {
+                                min_interval = xSystem.Parameters.period_measure_peripheral;
+                            }
+                            uint32_t sleep_time = estimate_sleep_time_in_second(xSystem.Status.gsm_sleep_time_s,
+                                                                                min_interval*60);       // 1 min = 60s
 
-                        uint32_t diff = rtc_counter_get() - tick_before_sleep;
-                        xSystem.Status.gsm_sleep_time_s += diff;
+                            DEBUG_PRINTF("Before deep sleep, gsm time %us, estimate sleep time %usec\r\n", 
+                                            xSystem.Status.gsm_sleep_time_s, 
+                                            sleep_time);
+                            sleep_time = 18;  // Due to watchdog
+                            rtc_alarm_config(rtc_counter_get() + sleep_time);
+                            rtc_lwoff_wait();
+                            app_wdt_feed();
+                            pmu_to_deepsleepmode(PMU_LDO_LOWPOWER, WFI_CMD);
+                            SystemInit();
+                            RCC_Config();
+                            //rcu_ckout0_config(RCU_CKOUT0SRC_CKSYS);       // already called in RCC_Config
+                            app_wdt_feed();
+
+                            uint32_t diff = rtc_counter_get() - tick_before_sleep;
+                            xSystem.Status.gsm_sleep_time_s += diff;
                         
 
-                        TimeOut1000ms = diff*1000;
-                        TimeOut3000ms += diff*1000;
-                        store_measure_result_timeout += diff;
-                        Measure420mATick += diff;
-                        DEBUG_PRINTF("After sleep, gsm sleep time %us\r\n", 
-                                        xSystem.Status.gsm_sleep_time_s);
+                            TimeOut1000ms = diff*1000;
+                            TimeOut3000ms += diff*1000;
+                            store_measure_result_timeout += diff;
+                            Measure420mATick += diff;
+                            DEBUG_PRINTF("After sleep, gsm sleep time %us\r\n", 
+                                            xSystem.Status.gsm_sleep_time_s);
+                        }
                     }
                 }
                 else
@@ -275,7 +280,7 @@ static void ProcessTimeout1000ms(void)
         gsm_manager_tick();
         if (gsm_data_layer_is_module_sleeping())
         {
-            DEBUG_PRINTF("Process timeout 1000ms in sleeping state\r\n");
+            //DEBUG_PRINTF("Process timeout 1000ms in sleeping state\r\n");
         }
         //		ProcessPingTimeout();
     }
@@ -328,7 +333,7 @@ uint32_t sys_get_ms(void)
     return m_sys_tick;
 }
 
-static uint8_t convertVinToPercent(uint32_t vin)
+static uint8_t convert_vin_to_percent(uint32_t vin)
 {
 #define VIN_MAX 4200
 #define VIN_MIN 3700

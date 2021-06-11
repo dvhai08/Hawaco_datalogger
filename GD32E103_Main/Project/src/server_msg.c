@@ -9,7 +9,7 @@
 
 extern System_t xSystem;
 
-void server_msg_process_cmd(char *buffer)
+void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;
     utilities_to_upper_case(buffer);
@@ -33,8 +33,8 @@ void server_msg_process_cmd(char *buffer)
         {
             DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
             xSystem.Parameters.period_send_message_to_server_min = sendTime;
-            #warning "Turn off cycle send webchanged"
-            // has_new_cfg++;
+            //#warning "Turn off cycle send webchanged"
+            has_new_cfg++;
         }
     }
 
@@ -189,4 +189,6 @@ void server_msg_process_cmd(char *buffer)
         gsm_set_timeout_to_sleep(5);        // Wait more 5 second
         DEBUG_PRINTF("CFG: has no new config\r\n");
     }
+
+    *new_config = has_new_cfg;
 }

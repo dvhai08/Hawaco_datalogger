@@ -225,3 +225,93 @@ void gsm_sms_layer_process_cmd(char *buffer)
 
 //    return false;
 //}
+
+static uint8_t gsm_read_sms_step = 0;
+static uint8_t m_sms_read_at_cmd_buffer[64];
+static void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer)
+{
+    static uint8_t tmp_num = 0xFF;
+
+    if ((resp_buffer && strstr(resp_buffer, "REC UNREAD")) 
+        || strstr(resp_buffer, "REC READ"))
+    {
+        gsm_read_sms_step = 2;
+    }
+
+    switch (gsm_read_sms_step)
+    {
+    case 0:
+    case 1:
+        if (tmp_num == 0xFF)
+            tmp_num = 1;
+        else
+            tmp_num++;
+
+        if (tmp_num > 10)
+        {
+            DEBUG_PRINTF("Cannot read SMS\r\n");
+            gsm_change_state(GSM_STATE_OK);
+            tmp_num = 0xFF;
+            return;
+        }
+
+        sprintf((char*)m_sms_read_at_cmd_buffer, "AT+CMGR=%u\r\n", tmp_num);
+        gsm_hw_send_at_cmd((char*)m_sms_read_at_cmd_buffer, 
+                            "REC UNREAD", 
+                            "OK\r\n",
+                            1000, 
+                            1, 
+                            gsm_at_cb_read_sms);
+        break;
+
+    case 2:
+        if (event == GSM_EVENT_OK)
+        {
+            gsm_sms_layer_process_cmd(resp_buffer);
+        }
+        else
+        {
+            DEBUG_PRINTF("Cannot read sms from storage\r\n");
+        }
+
+        /* Delete all SMS */
+        //gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", 
+        //                    "OK\r\n", 
+        //                    NULL,
+        //                    3000, 
+        //                    10, 
+        //                    gsm_at_cb_read_sms);
+        gsm_hw_send_at_cmd("AT\r\n", 
+                            "OK\r\n", 
+                            NULL,
+                            3000, 
+                            10, 
+                            gsm_at_cb_read_sms);
+        tmp_num = 0xFF;
+        break;
+
+    case 3:
+        if (event == GSM_EVENT_OK)
+        {
+            DEBUG_PRINTF("Message deleted\r\n");
+        }
+        else
+        {
+            DEBUG_PRINTF("Cannot delete sms\r\n");
+        }
+        gsm_read_sms_step = 0;
+        gsm_change_state(GSM_STATE_OK);
+        return;
+
+    default:
+        DEBUG_PRINTF("[%s] Unhandled switch case\r\n", __FUNCTION__);
+        break;
+    }
+
+    gsm_read_sms_step++;
+}
+
+void gsm_enter_read_sms(void)
+{
+    gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_read_sms);
+}

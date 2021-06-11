@@ -19,6 +19,7 @@
 #include "SEGGER_RTT.h"
 #endif
 #include "DataDefine.h"
+#include "gsm.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -47,7 +48,7 @@ static const shell_command_context_t cli_command_table[] =
     {"reset",           "\treset: reset system\r\n",                            cli_reset_system,                           0},   
     {"fault",           "\tfault : Trigger fault\r\n",                          cli_trigger_fault,                          1},
     {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
-    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               2},
+    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -165,9 +166,17 @@ static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
 extern bool gsm_send_sms(char *phone_number, char *message);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv)
 {
-    if (!gsm_send_sms(argv[1], argv[2]))
+    if (strstr(argv[1], "send"))
     {
-        DEBUG_PRINTF("Send sms failed\r\n");
+        if (!gsm_send_sms(argv[2], argv[3]))
+        {
+            DEBUG_PRINTF("Send sms failed\r\n");
+        }
+    }
+    else if (strstr(argv[1], "read"))
+    {
+        DEBUG_PRINTF("Enter read sms mode\r\n");
+        gsm_set_flag_prepare_enter_read_sms_mode();
     }
     return  0;
 }

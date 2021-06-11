@@ -208,4 +208,15 @@ void gsm_hw_layer_run(void);
  */
 void gsm_change_hw_polling_interval(uint32_t ms);
 
+/**
+ * @brief       Set flag to prepare enter read sms state
+ */
+void gsm_set_flag_prepare_enter_read_sms_mode(void);
+
+
+/**
+ * @brief       Enter read sms state
+ */
+void gsm_enter_read_sms(void);
+
 #endif // __GSM_H__
