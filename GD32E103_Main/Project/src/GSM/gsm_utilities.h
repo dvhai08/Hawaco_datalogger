@@ -164,5 +164,15 @@ void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t
  */ 
 void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology);
 
+/**
+ * @brief       Get GSM cusd money
+ * @param[in]   buffer : Pointer to buffer data will be parsed
+ * @param[out]  money : Money from str
+ * @param[in]   max_len : Max len of money string
+ * @note : +CUSD: 1,"84353078550. TKG: 0d, dung den 0h ngay 18/02/2020. Bam chon dang ky:1. 15K=3GB/3ngay2. 30K=7GB/7ngayHoac bam goi *098#",15
+ */ 
+void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_len);
+
+
 #endif /* GSM_UTILITIES_H */
 

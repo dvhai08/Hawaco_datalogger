@@ -5,7 +5,7 @@
 #include "gd32e10x.h"
 
 #include "hardware.h"
-#include "DriverUART.h"
+#include "driver_uart.h"
 
 #include "SEGGER_RTT.h"
 #include "app_debug.h"
@@ -162,7 +162,6 @@ typedef struct
 typedef struct
 {
     uint8_t HardwareVersion;
-    uint32_t ResetReasion;
     uint8_t SelfResetReasion;
     uint32_t SoLanReset;
 } HardwareInfo_t;
@@ -178,6 +177,12 @@ typedef struct
     uint16_t Pressure[4];
     uint8_t batteryPercent;
 } MeasureStatus_t;
+
+typedef union
+{
+    uint8_t value;
+} sys_ctx_alarm_value_t;
+
 
 typedef struct
 {
@@ -201,6 +206,8 @@ typedef struct
     //Debug
     uint8_t ADCOut;
     uint8_t network_operator[32];
+    
+    sys_ctx_alarm_value_t alarm_value;
 
 } Status_t;
 
@@ -210,10 +217,12 @@ typedef union
     {
         uint16_t pulse : 1;
         uint16_t ma420 : 1;
-        uint16_t rs485;
+        uint16_t rs485 : 1;
+        uint16_t reserve : 13;
     } name;
     uint16_t value;
-} InputConfig_t;
+} input_cfg_t;
+
 
 typedef struct
 {
@@ -230,8 +239,8 @@ typedef struct
     uint16_t period_measure_peripheral; //phut
     uint8_t outputOnOff; //0/1
     uint8_t output420ma; //4-20mA
-    InputConfig_t input;
-    uint8_t alarm;
+    input_cfg_t input;
+    uint8_t alarm_enable;
     uint32_t input1Offset;
     uint32_t kFactor;
 } Parameters_t;

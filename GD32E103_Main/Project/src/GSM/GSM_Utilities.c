@@ -59,21 +59,22 @@ hoac
 +CUSD: 4
 +CME ERROR: unknown
 */
-void gsm_process_cusd_message(char *buffer)
+void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_len)
 {
-#if 0
-	uint8_t sizeBuff = sizeof(xSystem.Status.GSMBalance);
-	memset(xSystem.Status.GSMBalance, 0, sizeBuff);
-	
-	char *cusd = strstr(buffer, "+CUSD");
-	if(cusd)
+#if 1	
+	char *cusd = strstr(buffer, "+CUSD: ");
+	if (cusd)
 	{
-		uint16_t cusdLeng = strlen(cusd);
-		if(cusdLeng >= sizeBuff) cusdLeng = sizeBuff - 1;
-	
-		memcpy(xSystem.Status.GSMBalance, cusd, cusdLeng);
-		gsm_manager.GSMReady = 1;
+            memcpy(money, cusd, max_len);
 	}
+        else
+        {
+            if (max_len > 3)
+            {
+                max_len = 3;
+                memcpy(money, "NA", max_len);
+            }
+        }
 #endif
 }
 
@@ -302,7 +303,19 @@ int32_t find_index_of_char(char char_to_find, char *buffer_to_find)
 bool gsm_utilities_copy_parameters(char *src, char *dst, char comma_begin, char comma_end)
 {
     int16_t begin_idx = find_index_of_char(comma_begin, src);
-    int16_t end_idx = find_index_of_char(comma_end, src);
+    int16_t end_idx;
+    if (comma_begin == comma_end)
+    {
+        end_idx = find_index_of_char(comma_end, src+1);
+        if (end_idx != -1)
+        {
+            end_idx++;
+        }
+    }
+    else
+    {
+        end_idx = find_index_of_char(comma_end, src);
+    }
     int16_t tmp_cnt, i = 0;
 
     if (begin_idx == -1 || end_idx == -1)

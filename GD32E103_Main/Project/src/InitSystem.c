@@ -17,7 +17,7 @@
 #include "DataDefine.h"
 #include "gsm_utilities.h"
 #include "InternalFlash.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "Main.h"
 #include "gsm.h"
 #include "measure_input.h"
@@ -112,8 +112,8 @@ void InitSystem(void)
     InitIO();
     InitVariable();
     
-//	UART_Init(DEBUG_UART, 115200);
-//	UART_Init(RS485_UART, 9600);
+//	driver_uart_initialize(DEBUG_UART, 115200);
+//	driver_uart_initialize(RS485_UART, 9600);
     
     ADC_Config();
     
@@ -124,12 +124,12 @@ void InitSystem(void)
 //	LockReadOutFlash();
     
     DrawScreen();	
-    DetectResetReason();
+    hardware_manager_get_reset_reason();
     
     InternalFlash_ReadConfig();
     
     measure_input_initialize();
-    Output_Init();
+    control_ouput_init();
 
     pmu_wakeup_pin_enable();
 

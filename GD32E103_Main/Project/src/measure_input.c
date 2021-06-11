@@ -16,7 +16,7 @@
 #include "DataDefine.h"
 #include "hardware.h"
 #include "gsm_utilities.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "InternalFlash.h"
 #include "main.h"
 #include "app_bkup.h"

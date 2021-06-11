@@ -1,3 +1,8 @@
+/**
+ * \file            gsm_http.h
+ * \brief           gsm_http - GSM http get and post
+ */
+
 #ifndef GSM_HTTP_H
 #define GSM_HTTP_H
 
@@ -75,7 +80,6 @@ void gsm_http_cleanup(void);
  */
 bool gsm_http_start(gsm_http_config_t * config);
 
-void gsm_http_query(gsm_response_event_t event, void *response_buffer);
 
 
 #endif /* GSM_HTTP_H */

@@ -121,7 +121,7 @@ void ProcessDownloadTick(void)
 			{
 				DEBUG_PRINTF("\rUpdate Bootloader [SUCCESS] Reset!");
 				Delayms(100);
-				SystemReset(8);
+				hardware_manager_sys_reset(8);
 			}
 			else
 			{
@@ -145,7 +145,7 @@ void ProcessDownloadTick(void)
 			EEPROM_WriteByte(UPDATEFW_RETRY, 0);
 
 			/* Reset */
-			SystemReset(7);
+			hardware_manager_sys_reset(7);
 		}
 		
     xSystem.FileTransfer.State = FT_NO_TRANSER;
@@ -432,7 +432,7 @@ void CopyDataFromFlashToMCU(uint32_t Leng)
 	InternalFlash_Init();
     DEBUG_PRINTF("\rCopy from 0x%X to 0x%X, amount: %d Bytes", DiaChi, BOOTLOADER_ADDR, Leng);
 	
-	ControlAllUART(DISABLE);
+	driver_uart_control_all_uart_port(DISABLE);
 	for(i = 0; i < Leng; i += 4)
 	{		
 		Flash_ReadBytes(DiaChi + i, ReadBuffer, 4);
@@ -451,7 +451,7 @@ void CopyDataFromFlashToMCU(uint32_t Leng)
 			ResetWatchdog();		
 		}	
 	}
-	ControlAllUART(ENABLE);
+	driver_uart_control_all_uart_port(ENABLE);
 	FLASH_Lock();   
 }
 

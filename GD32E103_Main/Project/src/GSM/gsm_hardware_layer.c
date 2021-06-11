@@ -13,15 +13,22 @@
 #include "Main.h"
 #include "gsm.h"
 #include "hardware.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "DataDefine.h"
+#include "lwrb.h"
 
 extern System_t xSystem;
 static gsm_hardware_t m_gsm_hardware;
 GSM_Manager_t gsm_manager;
 
+static lwrb_t m_ringbuffer_uart_tx = 
+{
+    .buff = NULL,
+};
+static uint8_t m_uart_tx_buffer[256];
 static volatile bool m_new_uart_data = false;
 static void init_serial(void);
+static volatile uint32_t m_tx_uart_run = 0;
 
 void gsm_init_hw(void)
 {
@@ -35,7 +42,7 @@ void gsm_init_hw(void)
     GSM_PWR_EN(0);
     GSM_PWR_RESET(1);
     GSM_PWR_KEY(0);
-
+    
 #if 0  //HW co RI pin
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;	
@@ -88,8 +95,13 @@ void gsm_init_hw(void)
     //GSM_PWR_KEY(0);
     //Delayms(1000);
 
+    if (m_ringbuffer_uart_tx.buff == NULL)
+    {
+        lwrb_init(&m_ringbuffer_uart_tx, m_uart_tx_buffer, sizeof(m_uart_tx_buffer));
+    }
+
     /* Khoi tao UART cho GSM modem */
-    UART_Init(GSM_UART, 115200);
+    driver_uart_initialize(GSM_UART, 115200);
 
     gsm_data_layer_initialize();
 
@@ -136,7 +148,7 @@ void gsm_pwr_control(uint8_t State)
         gsm_manager.isGSMOff = 0;
 
         //Khoi tao lai UART
-        UART_Init(GSM_UART, 115200);
+        driver_uart_initialize(GSM_UART, 115200);
 
         /* Cap nguon 4.2V */
         GSM_PWR_EN(1);
@@ -154,9 +166,9 @@ void gsm_pwr_control(uint8_t State)
 
 static void init_serial(void)
 {
-    m_gsm_hardware.modem.tx_buffer.idx_in = 0;
-    m_gsm_hardware.modem.tx_buffer.idx_out = 0;
-    m_gsm_hardware.modem.tx_active = 0;
+    //m_gsm_hardware.modem.tx_buffer.idx_in = 0;
+    //m_gsm_hardware.modem.tx_buffer.idx_out = 0;
+    m_tx_uart_run = 0;
 
     /* Enable GSM interrupts. */
     NVIC_EnableIRQ(GSM_UART_IRQ);
@@ -166,7 +178,7 @@ static void init_serial(void)
 void gsm_uart_handler(void)
 {
     /* Serial Rx and Tx interrupt handler. */
-    gsm_ppp_modem_buffer_t *p;
+    //gsm_ppp_modem_buffer_t *p;
 
     if (usart_flag_get(GSM_UART, USART_FLAG_RBNE) == 1) //RBNE = 1
     {
@@ -190,27 +202,18 @@ void gsm_uart_handler(void)
     }
 
     if ((usart_flag_get(GSM_UART, USART_FLAG_TBE) == 1) //TBE = 1
-        && (m_gsm_hardware.modem.tx_active))
+        && (m_tx_uart_run))
     {
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
-
-        /* Transmit Data Register Empty */
-        p = &m_gsm_hardware.modem.tx_buffer;
-        if (p->idx_in != p->idx_out)
+        uint8_t ch;
+        if (lwrb_read(&m_ringbuffer_uart_tx, &ch, 1))
         {
-            usart_data_transmit(GSM_UART, (p->Buffer[p->idx_out++]));
-            if (p->idx_out == MODEM_BUFFER_SIZE)
-            {
-                DEBUG_PRINTF("UART TX buffer out : overflow\r\n");
-                p->idx_out = 0;
-            }
+            usart_data_transmit(GSM_UART, ch);
         }
         else
         {
-            usart_interrupt_disable(GSM_UART, USART_INT_TBE); /* Disable TXE interrupt */
-            p->idx_in = 0;
-            p->idx_out = 0;
-            m_gsm_hardware.modem.tx_active = 0;
+            usart_interrupt_disable(GSM_UART, USART_INT_TBE); /* No more data need to transfer, disable TXE interrupt */
+            m_tx_uart_run = 0;
         }
     }
 
@@ -305,19 +308,6 @@ void gsm_hw_layer_run(void)
                     DEBUG_PRINTF("CME error %s", p);
                     m_gsm_hardware.atc.timeout_atc_ms = 0;
                 }
-                else
-                {
-                    if (m_gsm_hardware.atc.retry_count_atc == 0)
-                    {
-                        if (m_gsm_hardware.atc.recv_buff.BufferIndex > 10 && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+2, "\r\n"))
-                        {
-                            DEBUG_PRINTF("Unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
-                            //m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
-                            //m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
-                        }
-                    }
-                }
-
             }
         }
         
@@ -348,6 +338,24 @@ void gsm_hw_layer_run(void)
                 gsm_hw_uart_send_raw((uint8_t*)m_gsm_hardware.atc.cmd, strlen(m_gsm_hardware.atc.cmd));
             }
         }
+
+        if (m_gsm_hardware.atc.recv_buff.BufferIndex > 32 
+            && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "CUSD:"))
+            {
+                DEBUG_PRINTF("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
+            }
+
+        if (m_gsm_hardware.atc.retry_count_atc == 0)
+        {
+            if (m_gsm_hardware.atc.recv_buff.BufferIndex > 10 
+                && strstr((char*)m_gsm_hardware.atc.recv_buff.Buffer+10, "\r\n"))
+            {
+                DEBUG_PRINTF("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.Buffer);
+                m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
+                m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex] = 0;;
+            }
+        }
+
     }
 }
 
@@ -367,10 +375,10 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     }
     
 
-    if (strlen(cmd) < 128)
-    {
-        DEBUG_PRINTF("ATC: %s", cmd);
-    }
+    //if (strlen(cmd) < 128)
+    //{
+    //    DEBUG_PRINTF("ATC: %s", cmd);
+    //}
 
     m_gsm_hardware.atc.cmd = cmd;
     m_gsm_hardware.atc.expect_resp_from_atc = expect_resp;
@@ -393,44 +401,26 @@ void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 
     while (length--)
     {
-        gsm_ppp_modem_buffer_t *p = &m_gsm_hardware.modem.tx_buffer;
-
-        /* Write a byte to serial interface */
-        if ((uint8_t)(p->idx_in + 1) == p->idx_out)
+        while (lwrb_get_free(&m_ringbuffer_uart_tx) == 0)
         {
-            /* Serial transmit buffer is full. */
-            DEBUG_PRINTF("Buffer full\r\n");
-            Delayms(5);
-            while ((uint8_t)(p->idx_in + 1) == p->idx_out)
-            {
-                Delayms(1);
-            }
-            DEBUG_PRINTF("Buffer free\r\n");
-        }
 
+        }
         /* Disable ngat USART0 */
         NVIC_DisableIRQ(GSM_UART_IRQ);
         __nop();
 
-        if (m_gsm_hardware.modem.tx_active == 0)
+        if (m_tx_uart_run == 0)
         {
             /* Send data to UART. */
             usart_data_transmit(GSM_UART, *raw);
             usart_interrupt_enable(GSM_UART, USART_INT_TBE); /* Enable TXE interrupt */
-
-            m_gsm_hardware.modem.tx_active = 1;
+            m_tx_uart_run = 1;
         }
         else
         {
             /* Add data to transmit buffer. */
-            p->Buffer[p->idx_in++] = *raw;
-            if (p->idx_in == MODEM_BUFFER_SIZE)
-            {
-                DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
-                p->idx_in = 0;
-            }
+            lwrb_write(&m_ringbuffer_uart_tx, raw, 1);
         }
-
         raw++;
         /* Enable Ngat USART0 tro lai */
         NVIC_EnableIRQ(GSM_UART_IRQ);

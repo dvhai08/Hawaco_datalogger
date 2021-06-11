@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "main.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "InitSystem.h"
 #include "gsm.h"
 #include "measure_input.h"
@@ -105,12 +105,12 @@ int main(void)
         if (xSystem.Parameters.input.name.rs485)
         {
             RS485_PWR_ON();
-            UART_Init(RS485_UART, 115200);
+            driver_uart_initialize(RS485_UART, 115200);
         }
         else
         {
             RS485_PWR_OFF();
-            UART_DeInit(RS485_UART);
+            driver_uart_deinitialize(RS485_UART);
         }
 
         if (TimeOut10ms >= 10)
@@ -155,7 +155,7 @@ int main(void)
             }
             else
             {
-                UART_DeInit(GSM_UART);
+                driver_uart_deinitialize(GSM_UART);
                 //DEBUG_PRINTF("GPIO get level %u\r\n", getSwitchState());
                 if (xSystem.Parameters.outputOnOff == 0)
                 {
@@ -253,7 +253,7 @@ static void ProcessTimeout10ms(void)
 
 static void ProcessTimeout100ms(void)
 {
-    Hardware_XoaCoLoi();
+    hardware_manager_clear_uart_error_flag();
     app_wdt_feed();
 }
 
@@ -281,7 +281,7 @@ static void ProcessTimeout1000ms(void)
     }
     //	DownloadFileTick();
 
-    Output_Tick();
+    control_ouput_task();
     //LED1(1);
     //LED2(1);
 }

@@ -3,8 +3,14 @@
 
 #include "hardware.h"
 
-/************************* Analog  ***************************/
-void Output_Init(void);
-void Output_Tick(void);
+/**
+ * @brief       Init output peripheral 
+ */
+void control_ouput_init(void);
+
+/**
+ * @brief       Control output task
+ */
+void control_ouput_task(void);
 
 #endif // __CONTROL_OUTPUT_H__

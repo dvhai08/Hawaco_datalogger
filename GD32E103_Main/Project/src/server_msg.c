@@ -107,36 +107,38 @@ void server_msg_process_cmd(char *buffer)
     if (alarm != NULL)
     {
         uint8_t alrm = gsm_utilities_get_number_from_string(strlen("WARNING\":"), alarm) & 0x1;
-        if (xSystem.Parameters.alarm != alrm)
+        if (xSystem.Parameters.alarm_enable != alrm)
         {
             DEBUG_PRINTF("WARNING changed\r\n");
-            xSystem.Parameters.alarm = alrm;
+            xSystem.Parameters.alarm_enable = alrm;
             has_new_cfg++;
         }
     }
 
 
-    char *phone_num = strstr(buffer, "PHONENUM\":");
+    char *phone_num = strstr(buffer, "SOS\":");
     if (phone_num != NULL)
     {
-        phone_num +=  strlen("PHONENUM\":");
+        phone_num += strlen("SOS\":");
         char tmp_phone[30] = {0};
         if (gsm_utilities_copy_parameters(phone_num, tmp_phone, '"', '"'))
         {
-#if 0
-			uint8_t changed = 0;
-			for(uint8_t i = 0; i < 15; i++)
-			{
-				if(tmp_phone[i] != xSystem.Parameters.phone_number[i]) {
-					changed = 1;
-					has_new_cfg ++;
-				}
-				xSystem.Parameters.phone_number[i] = tmp_phone[i];
-			}
-			if (changed)
-			{
-				DEBUG_PRINTF("PHONENUM changed\r\n");
-			}
+#if 1
+            uint8_t changed = 0;
+            for(uint8_t i = 0; i < 15; i++)
+            {
+                if(tmp_phone[i] != xSystem.Parameters.phone_number[i]
+                    && changed == 0) 
+                {
+                        changed = 1;
+                        has_new_cfg++;
+                }
+                xSystem.Parameters.phone_number[i] = tmp_phone[i];
+            }
+            if (changed)
+            {
+                    DEBUG_PRINTF("PHONENUM changed\r\n");
+            }
 #endif
         }
     }

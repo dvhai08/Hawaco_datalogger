@@ -102,7 +102,6 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result);
 
 void gsm_get_short_apn(char *ShortAPN);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);
-void gsm_process_cusd_message(char *buffer);
 
 
 void gsm_query_sms(void);
@@ -173,35 +172,10 @@ typedef struct
     gsm_send_at_cb_t send_at_callback;
 } gsm_at_cmd_t;
 
-#if (__USED_HTTP__ == 0)
-typedef struct
-{
-    uint16_t idx_in;
-    uint16_t idx_out;
-    uint8_t Buffer[MODEM_BUFFER_SIZE];
-} gsm_ppp_modem_buffer_t;
-
-typedef struct
-{
-    uint8_t Step;
-    uint8_t State;
-    uint8_t tx_active;
-
-    gsm_ppp_modem_buffer_t tx_buffer;
-    //gsm_ppp_modem_buffer_t rx_buffer;
-} gsm_modem_t;
-
-typedef struct
-{
-    gsm_at_cmd_t atc;
-    gsm_modem_t modem;
-} gsm_hardware_t;
-#else
 typedef struct
 {
     gsm_at_cmd_t atc;
 } gsm_hardware_t;
-#endif //__USED_HTTP__
 
 
 /**

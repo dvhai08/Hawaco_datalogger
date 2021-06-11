@@ -12,10 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "InternalFlash.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "DataDefine.h"
 #include "Main.h"
-#include "DriverUART.h"
+#include "driver_uart.h"
 #include "app_wdt.h"
 
 /******************************************************************************
@@ -103,7 +103,7 @@ uint8_t InternalFlash_Prepare(uint16_t StartPage, uint16_t EndPage)
     for (PageNum = StartPage; PageNum <= EndPage; PageNum++)
     {
         app_wdt_feed();
-        ControlAllUART(DISABLE);
+        driver_uart_control_all_uart_port(DISABLE);
 
         for (i = 0; i < 3; i++)
         {
@@ -131,7 +131,7 @@ uint8_t InternalFlash_Prepare(uint16_t StartPage, uint16_t EndPage)
 #endif
         }
 
-        ControlAllUART(ENABLE);
+        driver_uart_control_all_uart_port(ENABLE);
     }
     FLASH_Lock();
 
@@ -527,7 +527,7 @@ uint8_t InternalFlash_WriteConfig(void)
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
 
         /* alarm */
-        tmp_align = xSystem.Parameters.alarm;
+        tmp_align = xSystem.Parameters.alarm_enable;
         if (FLASH_ProgramWord(CONFIG_ALARM_ADDR, tmp_align) != FLASH_COMPLETE)
             result++;
         fmc_flag_clear((fmc_flag_enum)(FMC_FLAG_END | FMC_FLAG_WPERR | FMC_FLAG_PGAERR | FMC_FLAG_PGERR));
@@ -666,7 +666,7 @@ void InternalFlash_ReadConfig(void)
         xSystem.Parameters.output420ma = 0;      //off
         xSystem.Parameters.input.value = 0;      //all input off
         xSystem.Parameters.input.name.pulse = 1; //on
-        xSystem.Parameters.alarm = 0;            //alarm off
+        xSystem.Parameters.alarm_enable = 0;            //alarm off
         xSystem.Parameters.kFactor = 1;
         xSystem.Parameters.input1Offset = 0;
         sprintf(xSystem.Parameters.phone_number, "%s", "000");
@@ -678,7 +678,7 @@ void InternalFlash_ReadConfig(void)
         xSystem.Parameters.outputOnOff = (*(__IO uint32_t *)(CONFIG_OUTPUT1_ADDR)) & 0xFF;
         xSystem.Parameters.output420ma = (*(__IO uint32_t *)(CONFIG_OUTPUT2_ADDR)) & 0xFF;
         xSystem.Parameters.input.value = (*(__IO uint32_t *)(CONFIG_INPUT_ADDR)) & 0xFF;
-        xSystem.Parameters.alarm = (*(__IO uint32_t *)(CONFIG_ALARM_ADDR)) & 0xFF;
+        xSystem.Parameters.alarm_enable = (*(__IO uint32_t *)(CONFIG_ALARM_ADDR)) & 0xFF;
         xSystem.Parameters.input1Offset = (*(__IO uint32_t *)(CONFIG_INPUT1_OFFSET)) & 0xFFFFFFFF;
         xSystem.Parameters.kFactor = (*(__IO uint32_t *)(CONFIG_INPUT1_K_FACTOR)) & 0xFFFFFFFF;;
 
@@ -694,7 +694,7 @@ void InternalFlash_ReadConfig(void)
     DEBUG_PRINTF("Freq: %u - %u\r\n", xSystem.Parameters.period_send_message_to_server_min, xSystem.Parameters.period_measure_peripheral);
     DEBUG_PRINTF("Out1: %u, out2: %umA\r\n", xSystem.Parameters.outputOnOff, xSystem.Parameters.output420ma);
     DEBUG_PRINTF("Input: %02X at addr 0x%08X\r\n", xSystem.Parameters.input.value, CONFIG_INPUT_ADDR);
-    DEBUG_PRINTF("Alarm: %u\r\n", xSystem.Parameters.alarm);
+    DEBUG_PRINTF("Alarm: %u\r\n", xSystem.Parameters.alarm_enable);
     DEBUG_PRINTF("Offset: %u, K %u\r\n", xSystem.Parameters.input1Offset, xSystem.Parameters.kFactor);
     DEBUG_PRINTF("Phone: %s\r\n", xSystem.Parameters.phone_number);
     DEBUG_PRINTF("Measure addr 0x%08X\r\n", MEASURE_PRESSURE_ADDR);

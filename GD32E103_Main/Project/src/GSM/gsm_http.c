@@ -27,6 +27,8 @@ static gsm_http_data_t post_rx_data;
 static bool m_renew_config_ssl = true;
 static bool m_renew_apn = true;
 
+static void gsm_http_query(gsm_response_event_t event, void *response_buffer);
+
 static int32_t m_ssl_step = -1;
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
 {

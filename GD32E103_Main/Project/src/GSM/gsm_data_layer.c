@@ -17,12 +17,13 @@
 #include "Main.h"
 //#include "Parameters.h"
 #include "hardware.h"
-#include "HardwareManager.h"
+#include "hardware_manager.h"
 #include "gsm.h"
 #include "gsm_http.h"
 #include "server_msg.h"
 #include "app_queue/app_queue.h"
 #include "umm_malloc.h"
+
 
 #define MAX_TIMEOUT_TO_SLEEP_S 60
 #define GSM_NEED_ENTER_HTTP_GET() (m_enter_http_get)
@@ -73,7 +74,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 static bool m_enter_http_get = false;
 static bool m_enter_http_post = false;
 static gsm_internet_mode_t m_internet_mode;
-static uint32_t malloc_count = 0;
+static uint32_t m_malloc_count = 0;
 
 static app_queue_data_t m_last_http_msg =
 {
@@ -383,7 +384,7 @@ void gsm_manager_tick(void)
         }
         InSleepModeTick++;
         TimeoutToSleep = 0;
-        UART_DeInit(GSM_UART);
+        driver_uart_deinitialize(GSM_UART);
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
         GSM_PWR_EN(0);
@@ -961,7 +962,7 @@ void gsm_hard_reset(void)
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
         nvic_irq_enable(GSM_UART_IRQ, 1, 0);
-        UART_Init(GSM_UART, 115200);
+        driver_uart_initialize(GSM_UART, 115200);
         gsm_manager.TimeOutOffAfterReset = 90;
         step++;
         break;
@@ -1218,12 +1219,31 @@ void gsm_set_timeout_to_sleep(uint32_t sec)
 uint16_t gsm_build_http_post_msg(void)
 {
     app_queue_data_t new_msq;
+    char alarm_str[32];
+    char *p = alarm_str;
+
+    // bat,temp,4glost,sensor_err,sensor_overflow
+    if (xSystem.MeasureStatus.batteryPercent < 20)
+    {
+        p += sprintf(p, "%u,", 1);
+    }
+    else
+    {
+        p += sprintf(p, "%u,", 0);
+    }
+    
+    //4glost,sensor_err,sensor_overflow
+    p += sprintf(p, "%u,", 0);
+    p += sprintf(p, "%u,", 0);
+    p += sprintf(p, "%u", 0);
+
+
     if (app_queue_is_full(&m_http_msq))
     {
         DEBUG_PRINTF("HTTP msq full\r\n");
         app_queue_data_t *tmp;
         app_queue_get(&m_http_msq, tmp);
-        malloc_count--;
+        m_malloc_count--;
         umm_free(tmp->pointer);
     }
 
@@ -1235,11 +1255,11 @@ uint16_t gsm_build_http_post_msg(void)
     }
     else
     {
-        malloc_count++;
-        DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, malloc_count);
+        m_malloc_count++;
+        DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, m_malloc_count);
     }
 
-    new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%d\",", xSystem.Status.TimeStamp); //second since 1970
+    new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", xSystem.Status.TimeStamp); //second since 1970
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"%s\",", xSystem.Parameters.gsm_imei);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", xSystem.Parameters.phone_number);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
@@ -1250,23 +1270,26 @@ uint16_t gsm_build_http_post_msg(void)
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output2\":\"%d\",", xSystem.Parameters.output420ma);    //dau ra 4-20mA
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", xSystem.Status.CSQPercent);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%d\",", xSystem.Status.Alarm);
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
 
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryDebug\":\"%d\",", xSystem.MeasureStatus.Vin);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"K\":\"%u\",", xSystem.Parameters.kFactor);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Offset\":\"%u\"}", xSystem.Parameters.input1Offset);
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u,os-%u\"}", 
+                                                                            xSystem.MeasureStatus.Vin,
+                                                                            hardware_manager_get_reset_reason()->value,
+                                                                             xSystem.Parameters.kFactor,
+                                                                             xSystem.Parameters.input1Offset);
+    hardware_manager_get_reset_reason()->value = 0;
 
     if (app_queue_put(&m_http_msq, &new_msq) == false)
     {
         DEBUG_PRINTF("Put to http msg failed\r\n");
-        malloc_count--;
+        m_malloc_count--;
         umm_free(new_msq.pointer);
         return 0;
     }
     else
     {
-        DEBUG_PRINTF("Put to http msg success, length %u\r\n", new_msq.length);
+        DEBUG_RAW("%s\r\n", (char*)new_msq.pointer);
         return new_msq.length;
     }
 }
@@ -1310,7 +1333,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             if (!app_queue_get(&m_http_msq, &m_last_http_msg))
             {
                 DEBUG_PRINTF("Get msg queue failed\r\n");
-                SystemReset(2);
+                hardware_manager_sys_reset(2);
             }
             else
             {
@@ -1327,7 +1350,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         DEBUG_PRINTF("HTTP get : event success\r\n");
         xSystem.Status.DisconnectTimeout = 0;
         gsm_change_state(GSM_STATE_OK);
-        DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
+        DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
     }
     break;
 
@@ -1337,9 +1360,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         xSystem.Status.DisconnectTimeout = 0;
         if (m_last_http_msg.pointer)
         {
-            malloc_count--;
+            m_malloc_count--;
             umm_free(m_last_http_msg.pointer);
-            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
+            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg.pointer = NULL;
         }
         gsm_change_state(GSM_STATE_OK);
@@ -1352,9 +1375,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         DEBUG_PRINTF("HTTP event failed\r\n");
         if (m_last_http_msg.pointer)
         {
-            malloc_count--;
+            m_malloc_count--;
             umm_free(m_last_http_msg.pointer);
-            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", malloc_count);
+            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg.pointer = NULL;
         }
         gsm_change_state(GSM_STATE_OK);
