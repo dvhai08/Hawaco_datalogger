@@ -17,6 +17,7 @@
 #include "stdbool.h"
 #include "app_cli.h"
 #include "app_wdt.h"
+#include "modbus_master.h"
 
 extern System_t xSystem;
 extern __IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
@@ -65,7 +66,9 @@ int main(void)
     gsm_internet_mode_t *internet_mode = gsm_get_internet_mode();
 
     app_cli_start();
-    while (1)
+	ModbusMaster_begin();
+    
+	while (1)
     {
         gsm_hw_layer_run();
    
@@ -193,13 +196,9 @@ int main(void)
                         bool debugger_connected = (CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) ? true : false;
                         if (debugger_connected)
                         {
-
+							dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
                         }
-                        if (debugger_connected)
-                        {
-                            //dbg_low_power_enable(DBG_LOW_POWER_DEEPSLEEP);
-                        }
-                        else
+//                        else
                         {
                             uint32_t tick_before_sleep = rtc_counter_get();
 
@@ -229,7 +228,7 @@ int main(void)
 
                             uint32_t diff = rtc_counter_get() - tick_before_sleep;
                             xSystem.Status.gsm_sleep_time_s += diff;
-                        
+							m_sys_tick += diff*1000;
 
                             TimeOut1000ms = diff*1000;
                             TimeOut3000ms += diff*1000;
@@ -360,3 +359,11 @@ uint32_t estimate_sleep_time_in_second(uint32_t current_sec, uint32_t weakup_int
     return (weakup_interval_s - current_sec);
 }
 
+void assert_param(int x)
+{
+	if (x == 0)
+	{
+		DEBUG_PRINTF("Assert failed\r\n");
+		while (1);
+	}
+}

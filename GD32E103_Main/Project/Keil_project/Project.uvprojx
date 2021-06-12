@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,GD32E10X,IRC8M_VALUE=8000000</Define>
               <Undefine></Undefine>
-              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\lowpass_filter;.\..\src;..\app_cli;..\app_queue;..\umm_malloc-1.0.1\src;..\app_cli;..\src\gsm;..\..\Library\CMSIS</IncludePath>
+              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\lowpass_filter;.\..\src;..\app_cli;..\app_queue;..\umm_malloc-1.0.1\src;..\app_cli;..\src\gsm;..\..\Library\CMSIS;..\free_modbus\port;..\free_modbus\modbus\include;..\free_modbus\modbus\rtu;..\modbus_master</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -830,6 +830,56 @@
         </Group>
         <Group>
           <GroupName>server_msg</GroupName>
+        </Group>
+        <Group>
+          <GroupName>free_modbus_master</GroupName>
+          <Files>
+            <File>
+              <FileName>bsp_board.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\bsp_board.h</FilePath>
+            </File>
+            <File>
+              <FileName>crc16.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\crc16.h</FilePath>
+            </File>
+            <File>
+              <FileName>modbus_master.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modbus_master\modbus_master.c</FilePath>
+            </File>
+            <File>
+              <FileName>modbus_master.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\modbus_master.h</FilePath>
+            </File>
+            <File>
+              <FileName>ringbuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modbus_master\ringbuffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>ringbuffer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\ringbuffer.h</FilePath>
+            </File>
+            <File>
+              <FileName>trans_recieve_buff_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\modbus_master\trans_recieve_buff_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>trans_recieve_buff_control.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\trans_recieve_buff_control.h</FilePath>
+            </File>
+            <File>
+              <FileName>word.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\modbus_master\word.h</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>::CMSIS</GroupName>

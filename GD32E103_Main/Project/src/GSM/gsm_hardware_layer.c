@@ -291,7 +291,8 @@ void gsm_hw_layer_run(void)
 					else
 					{
 						do_cb = false;
-						expect_end_str = m_gsm_hardware.atc.expected_response_at_the_end;
+						// For debug only
+						expect_end_str = (uint8_t*)m_gsm_hardware.atc.expected_response_at_the_end;
 						uart_rx_pointer = m_gsm_hardware.atc.recv_buff.Buffer;
 					}
                 }

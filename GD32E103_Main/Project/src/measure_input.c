@@ -84,8 +84,8 @@ void measure_input_task(void)
         m_sensor_uart_buffer.State--;
         if (m_sensor_uart_buffer.State == 0)
         {
-            process_rs485_uart();
-            m_sensor_uart_buffer.BufferIndex = 0;
+//            process_rs485_uart();
+//            m_sensor_uart_buffer.BufferIndex = 0;
         }
     }
 }
@@ -334,3 +334,22 @@ void EXTI2_IRQHandler(void)
 }
 #endif
 
+uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
+{
+	if (m_sensor_uart_buffer.BufferIndex)
+	{
+		*getbyte = m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex];
+		return 0;
+	}
+	return 1;
+}
+
+uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
+{
+    for (uint32_t i = 0; i < length; i++)
+    {
+        usart_data_transmit(USART2, buf[i]);
+        while (RESET == usart_flag_get(USART1, USART_FLAG_TBE));
+    }
+	return 0;
+}

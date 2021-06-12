@@ -266,9 +266,9 @@ void gsm_manager_tick(void)
         
             if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
             {
-                #warning "Sleep in http mode is not enabled"
-                //if (enter_sleep_in_http)
-                if (0)
+                //#warning "Sleep in http mode is not enabled"
+                if (enter_sleep_in_http)
+                //if (0)
                 {
                     gsm_change_state(GSM_STATE_SLEEP);
                 }
