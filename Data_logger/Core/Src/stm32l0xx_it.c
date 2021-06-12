@@ -164,7 +164,7 @@ void DMA1_Channel2_3_IRQHandler(void)
 	/* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
 	if(LL_DMA_IsActiveFlag_TC2(DMA1))
 	{
-		LL_DMA_ClearFlag_GI2(DMA1);
+		LL_DMA_ClearFlag_TC2(DMA1);
 		/* Call function Transmission complete Callback */
 		gsm_uart_tx_complete_callback(true);
 	}

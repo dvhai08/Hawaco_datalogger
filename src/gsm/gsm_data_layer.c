@@ -224,10 +224,7 @@ void gsm_manager_tick(void)
             m_do_read_sms = false;
             gsm_change_state(GSM_STATE_READ_SMS);
         }
-
-        //			QuerySMS();
-
-        //			/* Nếu không thực hiện công việc gì khác -> vào sleep sau 60s */
+        
         if (TimeoutToSleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
         {
             DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");

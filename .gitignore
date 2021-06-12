@@ -25,3 +25,6 @@ GD32E103_Main/Project/Keil_project/Project.uvguix.huybk
 *.crf
 *.d
 Data_logger/MDK-ARM/DebugConfig/Data_logger_STM32L083RZTx.dbgconf
+*.huybk
+*.htm
+*.dep

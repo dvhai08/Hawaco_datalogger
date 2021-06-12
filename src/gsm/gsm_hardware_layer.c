@@ -168,17 +168,17 @@ static void init_serial(void)
 static volatile uint32_t m_dma_rx_expected_size = 0;
 void gsm_uart_rx_dma_update_rx_index(bool rx_status)
 {
-	if (rx_status)
-	{
-		m_gsm_hardware.atc.recv_buff.BufferIndex += m_dma_rx_expected_size;
-		// TODO retried received
-	}
-	else
-	{
-		m_dma_rx_expected_size = 0;
-		m_gsm_hardware.atc.recv_buff.Buffer[0] = 0;
-		DEBUG_PRINTF("UART RX error, retry received\r\n");
-	}
+    if (rx_status)
+    {
+        m_gsm_hardware.atc.recv_buff.BufferIndex += m_dma_rx_expected_size;
+        // TODO retried received
+    }
+    else
+    {
+        m_dma_rx_expected_size = 0;
+        m_gsm_hardware.atc.recv_buff.Buffer[0] = 0;
+        DEBUG_PRINTF("UART RX error, retry received\r\n");
+    }
 }
 
 void gsm_uart_handler(void)
@@ -237,8 +237,8 @@ void gsm_uart_handler(void)
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_ERR_FERR);
     }
 #else
-	m_new_uart_data = true;
-	gsm_manager.TimeOutConnection = 0; //Reset UART data timeout
+    m_new_uart_data = true;
+    gsm_manager.TimeOutConnection = 0; //Reset UART data timeout
 #endif
 }
 
@@ -258,17 +258,8 @@ void gsm_hw_layer_run(void)
         return;
     }
 
-    uint32_t diff;
+    uint32_t diff = (uint32_t)(now - m_gsm_hardware.atc.current_timeout_atc_ms);
     bool ret_now = true;
-
-    if (now >= m_gsm_hardware.atc.current_timeout_atc_ms)
-    {
-        diff = now - m_gsm_hardware.atc.current_timeout_atc_ms;
-    }
-    else
-    {
-        diff = 0xFFFFFFFF - m_gsm_hardware.atc.current_timeout_atc_ms + now; 
-    }
 
     if (m_gsm_hardware.atc.retry_count_atc)
     {
@@ -299,13 +290,13 @@ void gsm_hw_layer_run(void)
                     {
                         do_cb = true;
                     }
-					else
-					{
-						do_cb = false;
-						// For debug only
-						expect_end_str = (uint8_t*)m_gsm_hardware.atc.expected_response_at_the_end;
-						uart_rx_pointer = m_gsm_hardware.atc.recv_buff.Buffer;
-					}
+                    else
+                    {
+                        do_cb = false;
+                        // For debug only
+                        expect_end_str = (uint8_t*)m_gsm_hardware.atc.expected_response_at_the_end;
+                        uart_rx_pointer = m_gsm_hardware.atc.recv_buff.Buffer;
+                    }
                 }
                 else
                 {
@@ -331,7 +322,7 @@ void gsm_hw_layer_run(void)
             if (p && strstr(p, "\r\n"))
             {
                 DEBUG_PRINTF("CME error %s", p);
-				if (m_gsm_hardware.atc.send_at_callback)
+                if (m_gsm_hardware.atc.send_at_callback)
                 {
                     m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.Buffer);
                 }
@@ -426,27 +417,54 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 }
 
 
-static void gsm_hw_transmit_dma(void)
+volatile uint32_t m_last_transfer_size = 0;
+
+static inline void config_dma(uint8_t *data, uint32_t len)
 {
-	if (lwrb_get_full(&m_ringbuffer_uart_tx) == 0)
-	{
-		m_tx_uart_run = false;
-		return;
-	}
-	
-	uint8_t *addr = lwrb_get_linear_block_write_address(&m_ringbuffer_uart_tx);
-	uint32_t dma_size = lwrb_get_linear_block_write_length(&m_ringbuffer_uart_tx);
-	if (m_tx_uart_run == false)
-	{
-		m_tx_uart_run = true;
-		// TODO send DMA
-		#warning "TODO transmit USART DMA TX"
-	}
+    LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
+    
+    LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
+                         (uint32_t)data,
+                         (uint32_t)&(USART1->TDR),
+                         LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+    
+    LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, len);
+    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMA_REQUEST_2);
+    
+    /* Enable DMA TX Interrupt */
+    LL_USART_EnableDMAReq_TX(USART1);
+    LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
+}
+
+static inline void gsm_hw_transmit_dma(void)
+{
+    if (lwrb_get_full(&m_ringbuffer_uart_tx) == 0)
+    {
+        m_tx_uart_run = false;
+        m_last_transfer_size = 0;
+        return;
+    }
+    
+    uint8_t *addr = lwrb_get_linear_block_read_address(&m_ringbuffer_uart_tx);
+    m_last_transfer_size = lwrb_get_linear_block_read_length(&m_ringbuffer_uart_tx);
+    uint32_t bytes_need_to_transfer =  lwrb_get_full(&m_ringbuffer_uart_tx);
+    
+    if (bytes_need_to_transfer < m_last_transfer_size)
+    {
+        m_last_transfer_size = bytes_need_to_transfer;
+    }
+    if (m_tx_uart_run == false)
+    {
+        m_tx_uart_run = true;
+        config_dma(addr, m_last_transfer_size);
+    }
 }
 
 void gsm_uart_tx_complete_callback(bool status)
 {
-	gsm_hw_transmit_dma();
+    m_tx_uart_run = false;
+    lwrb_skip(&m_ringbuffer_uart_tx, m_last_transfer_size);
+    gsm_hw_transmit_dma();
 }
 
 void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
@@ -479,29 +497,26 @@ void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         NVIC_EnableIRQ(GSM_UART_IRQ);
     }
 #else
-	
-	if (length == 0)
-	{
-		return;
-	}
-	
-	if (lwrb_get_full(&m_ringbuffer_uart_tx) == 0)
-	{
-		lwrb_reset(&m_ringbuffer_uart_tx);
-	}
-	
-	for (uint32_t i = 0; i < length; i++)
-	{
-		while (lwrb_write(&m_ringbuffer_uart_tx, raw + i, 1) == 0)
-		{
-			DEBUG_PRINTF("UART TX queue full\r\n");
-			sys_delay_ms(5);
-		}
-	}
-	__disable_irq();
-	gsm_hw_transmit_dma();
-	__enable_irq();
-	
+    
+    if (length == 0)
+    {
+        return;
+    }
+
+    if (lwrb_get_full(&m_ringbuffer_uart_tx) == 0)
+    {
+        lwrb_reset(&m_ringbuffer_uart_tx);
+    }
+
+    for (uint32_t i = 0; i < length; i++)
+    {
+        while (lwrb_write(&m_ringbuffer_uart_tx, raw + i, 1) == 0)
+        {
+            DEBUG_PRINTF("UART TX queue full\r\n");
+            sys_delay_ms(5);
+        }
+    }
+    gsm_hw_transmit_dma();
 #endif
 }
 
