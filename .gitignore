@@ -21,3 +21,7 @@ GD32E103_Main/Bootloader/Test_Images
 GD32E103_Main/Project/Keil_project/Project.emSession
 GD32E103_Main/Project/.vscode
 GD32E103_Main/Project/Keil_project/Project.uvguix.huybk
+*.o
+*.crf
+*.d
+Data_logger/MDK-ARM/DebugConfig/Data_logger_STM32L083RZTx.dbgconf

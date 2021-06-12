@@ -1,0 +1,342 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: µVision V5.33.0.0
+Copyright (C) 2020 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: wqesklh sajkfh, saksjdhas, LIC=76F5U-SP4C8-VEXHA-13H6Q-PB1KA-PPEDC
+ 
+Tool Versions:
+Toolchain:       MDK-ARM Plus  Version: 5.33.0.0
+Toolchain Path:  C:\Keil_v5\ARM\ARMCC\Bin
+C Compiler:      Armcc.exe V5.06 update 7 (build 960)
+Assembler:       Armasm.exe V5.06 update 7 (build 960)
+Linker/Locator:  ArmLink.exe V5.06 update 7 (build 960)
+Library Manager: ArmAr.exe V5.06 update 7 (build 960)
+Hex Converter:   FromElf.exe V5.06 update 7 (build 960)
+CPU DLL:         SARMCM3.DLL V5.33.0.0
+Dialog DLL:      DARMCM1.DLL V1.19.4.0
+Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.0.8.0
+Dialog DLL:      TARMCM1.DLL V1.14.3.0
+ 
+<h2>Project:</h2>
+E:\Project\BYT-Hawaco-GW\Data_logger\MDK-ARM\Data_logger.uvprojx
+Project File Date:  06/12/2021
+
+<h2>Output:</h2>
+*** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
+Build target 'Data_logger'
+compiling adc.c...
+compiling main.c...
+compiling gpio.c...
+compiling dac.c...
+compiling iwdg.c...
+compiling dma.c...
+compiling usart.c...
+compiling rtc.c...
+compiling stm32l0xx_it.c...
+compiling stm32l0xx_hal_msp.c...
+compiling app_debug.c...
+compiling app_cli.c...
+compiling gsm_hardware_layer.c...
+..\..\src\gsm\gsm_hardware_layer.c(95): warning:  #223-D: function "driver_uart_initialize" declared implicitly
+      driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_hardware_layer.c(95): error:  #20: identifier "GSM_UART" is undefined
+      driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_hardware_layer.c(119): warning:  #223-D: function "Delayms" declared implicitly
+              Delayms(1500);
+..\..\src\gsm\gsm_hardware_layer.c(123): warning:  #223-D: function "Delayms" declared implicitly
+          Delayms(5000);
+..\..\src\gsm\gsm_hardware_layer.c(134): warning:  #223-D: function "usart_disable" declared implicitly
+          usart_disable(GSM_UART);
+..\..\src\gsm\gsm_hardware_layer.c(134): error:  #20: identifier "GSM_UART" is undefined
+          usart_disable(GSM_UART);
+..\..\src\gsm\gsm_hardware_layer.c(135): warning:  #223-D: function "usart_deinit" declared implicitly
+          usart_deinit(GSM_UART);
+..\..\src\gsm\gsm_hardware_layer.c(142): warning:  #223-D: function "driver_uart_initialize" declared implicitly
+          driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_hardware_layer.c(142): error:  #20: identifier "GSM_UART" is undefined
+          driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_hardware_layer.c(146): warning:  #223-D: function "Delayms" declared implicitly
+          Delayms(1000); //Wait for VBAT stable
+..\..\src\gsm\gsm_hardware_layer.c(443): warning:  #1215-D: #warning directive: "TODO transmit USART DMA TX"
+  		#warning "TODO transmit USART DMA TX"
+..\..\src\gsm\gsm_hardware_layer.c: 8 warnings, 3 errors
+compiling gsm_data_layer.c...
+..\..\src\gsm\gsm_data_layer.c(374): warning:  #223-D: function "driver_uart_deinitialize" declared implicitly
+          driver_uart_deinitialize(GSM_UART);
+..\..\src\gsm\gsm_data_layer.c(374): error:  #20: identifier "GSM_UART" is undefined
+          driver_uart_deinitialize(GSM_UART);
+..\..\src\gsm\gsm_data_layer.c(375): warning:  #223-D: function "usart_interrupt_flag_clear" declared implicitly
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+..\..\src\gsm\gsm_data_layer.c(375): error:  #20: identifier "USART_INT_FLAG_RBNE" is undefined
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+..\..\src\gsm\gsm_data_layer.c(376): error:  #20: identifier "USART_INT_FLAG_TBE" is undefined
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
+..\..\src\gsm\gsm_data_layer.c(705): warning:  #223-D: function "rtc_counter_set" declared implicitly
+          rtc_counter_set(xSystem.Status.TimeStamp);
+..\..\src\gsm\gsm_data_layer.c(957): warning:  #223-D: function "nvic_irq_disable" declared implicitly
+          nvic_irq_disable(GSM_UART_IRQ);
+..\..\src\gsm\gsm_data_layer.c(957): error:  #20: identifier "GSM_UART_IRQ" is undefined
+          nvic_irq_disable(GSM_UART_IRQ);
+..\..\src\gsm\gsm_data_layer.c(979): warning:  #223-D: function "nvic_irq_enable" declared implicitly
+          nvic_irq_enable(GSM_UART_IRQ, 1, 0);
+..\..\src\gsm\gsm_data_layer.c(980): warning:  #223-D: function "driver_uart_initialize" declared implicitly
+          driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_data_layer.c(980): error:  #20: identifier "GSM_UART" is undefined
+          driver_uart_initialize(GSM_UART, 115200);
+..\..\src\gsm\gsm_data_layer.c(1290): warning:  #223-D: function "LED1" declared implicitly
+          LED1(0);
+..\..\src\gsm\gsm_data_layer.c(1305): warning:  #223-D: function "LED1" declared implicitly
+          LED1(0);
+..\..\src\gsm\gsm_data_layer.c: 8 warnings, 5 errors
+compiling gsm_http.c...
+compiling hardware_manager.c...
+compiling gsm_sms.c...
+compiling gsm_utilities.c...
+compiling app_bkup.c...
+..\..\src\measurement\app_bkup.c(2): error:  #5: cannot open source input file "gd32e10x.h": No such file or directory
+  #include "gd32e10x.h"
+..\..\src\measurement\app_bkup.c: 0 warnings, 1 error
+compiling driver_uart.c...
+..\..\src\src\driver_uart.c(68): error:  #20: identifier "GSM_UART" is undefined
+      if (USARTx == GSM_UART)
+..\..\src\src\driver_uart.c(73): warning:  #223-D: function "nvic_irq_enable" declared implicitly
+              nvic_irq_enable(GSM_UART_IRQ, 0, 0);
+..\..\src\src\driver_uart.c(73): error:  #20: identifier "GSM_UART_IRQ" is undefined
+              nvic_irq_enable(GSM_UART_IRQ, 0, 0);
+..\..\src\src\driver_uart.c(79): warning:  #223-D: function "rcu_periph_clock_enable" declared implicitly
+              rcu_periph_clock_enable(GSM_UART_CLK);
+..\..\src\src\driver_uart.c(79): error:  #20: identifier "GSM_UART_CLK" is undefined
+              rcu_periph_clock_enable(GSM_UART_CLK);
+..\..\src\src\driver_uart.c(82): warning:  #223-D: function "gpio_init" declared implicitly
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GSM_TX_PIN);
+..\..\src\src\driver_uart.c(82): error:  #20: identifier "GSM_UART_GPIO" is undefined
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GSM_TX_PIN);
+..\..\src\src\driver_uart.c(82): error:  #20: identifier "GPIO_OSPEED_50MHZ" is undefined
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GSM_TX_PIN);
+..\..\src\src\driver_uart.c(82): error:  #20: identifier "GSM_TX_PIN" is undefined
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GSM_TX_PIN);
+..\..\src\src\driver_uart.c(85): error:  #20: identifier "GPIO_MODE_IN_FLOATING" is undefined
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GSM_RX_PIN);
+..\..\src\src\driver_uart.c(85): error:  #20: identifier "GSM_RX_PIN" is undefined
+              gpio_init(GSM_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GSM_RX_PIN);
+..\..\src\src\driver_uart.c(107): error:  #20: identifier "RS485_UART" is undefined
+      else if (USARTx == RS485_UART)
+..\..\src\src\driver_uart.c(112): warning:  #223-D: function "nvic_irq_enable" declared implicitly
+              nvic_irq_enable(RS485_UART_IRQ, 1, 1);
+..\..\src\src\driver_uart.c(112): error:  #20: identifier "RS485_UART_IRQ" is undefined
+              nvic_irq_enable(RS485_UART_IRQ, 1, 1);
+..\..\src\src\driver_uart.c(118): warning:  #223-D: function "rcu_periph_clock_enable" declared implicitly
+              rcu_periph_clock_enable(RS485_UART_CLK);
+..\..\src\src\driver_uart.c(118): error:  #20: identifier "RS485_UART_CLK" is undefined
+              rcu_periph_clock_enable(RS485_UART_CLK);
+..\..\src\src\driver_uart.c(121): warning:  #223-D: function "gpio_init" declared implicitly
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
+..\..\src\src\driver_uart.c(121): error:  #20: identifier "RS485_UART_GPIO" is undefined
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
+..\..\src\src\driver_uart.c(121): error:  #20: identifier "GPIO_OSPEED_10MHZ" is undefined
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
+..\..\src\src\driver_uart.c(121): error:  #20: identifier "RS485_TX_PIN" is undefined
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_AF_PP, GPIO_OSPEED_10MHZ, RS485_TX_PIN);
+..\..\src\src\driver_uart.c(124): error:  #20: identifier "GPIO_MODE_IN_FLOATING" is undefined
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, RS485_RX_PIN);
+..\..\src\src\driver_uart.c(124): error:  #20: identifier "RS485_RX_PIN" is undefined
+              gpio_init(RS485_UART_GPIO, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, RS485_RX_PIN);
+..\..\src\src\driver_uart.c(132): warning:  #223-D: function "usart_deinit" declared implicitly
+          usart_deinit(USARTx);
+..\..\src\src\driver_uart.c(133): warning:  #223-D: function "usart_word_length_set" declared implicitly
+          usart_word_length_set(USARTx, USART_WL_8BIT);
+..\..\src\src\driver_uart.c(133): error:  #20: identifier "USART_WL_8BIT" is undefined
+          usart_word_length_set(USARTx, USART_WL_8BIT);
+..\..\src\src\driver_uart.c(134): warning:  #223-D: function "usart_stop_bit_set" declared implicitly
+          usart_stop_bit_set(USARTx, USART_STB_1BIT);
+..\..\src\src\driver_uart.c(134): error:  #20: identifier "USART_STB_1BIT" is undefined
+          usart_stop_bit_set(USARTx, USART_STB_1BIT);
+..\..\src\src\driver_uart.c(135): warning:  #223-D: function "usart_parity_config" declared implicitly
+          usart_parity_config(USARTx, USART_PM_NONE);
+..\..\src\src\driver_uart.c(135): error:  #20: identifier "USART_PM_NONE" is undefined
+          usart_parity_config(USARTx, USART_PM_NONE);
+..\..\src\src\driver_uart.c(136): warning:  #223-D: function "usart_baudrate_set" declared implicitly
+          usart_baudrate_set(USARTx, baudrate);
+..\..\src\src\driver_uart.c(137): warning:  #223-D: function "usart_receive_config" declared implicitly
+          usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
+..\..\src\src\driver_uart.c(137): error:  #20: identifier "USART_RECEIVE_ENABLE" is undefined
+          usart_receive_config(USARTx, USART_RECEIVE_ENABLE);
+..\..\src\src\driver_uart.c(138): warning:  #223-D: function "usart_transmit_config" declared implicitly
+          usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
+..\..\src\src\driver_uart.c(138): error:  #20: identifier "USART_TRANSMIT_ENABLE" is undefined
+          usart_transmit_config(USARTx, USART_TRANSMIT_ENABLE);
+..\..\src\src\driver_uart.c(140): warning:  #223-D: function "usart_interrupt_enable" declared implicitly
+          usart_interrupt_enable(USARTx, USART_INT_RBNE);
+..\..\src\src\driver_uart.c(140): error:  #20: identifier "USART_INT_RBNE" is undefined
+          usart_interrupt_enable(USARTx, USART_INT_RBNE);
+..\..\src\src\driver_uart.c(144): warning:  #223-D: function "usart_interrupt_flag_clear" declared implicitly
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+..\..\src\src\driver_uart.c(144): error:  #20: identifier "GSM_UART" is undefined
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+..\..\src\src\driver_uart.c(144): error:  #20: identifier "USART_INT_FLAG_RBNE" is undefined
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
+..\..\src\src\driver_uart.c(145): error:  #20: identifier "USART_INT_FLAG_TBE" is undefined
+          usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
+..\..\src\src\driver_uart.c(147): warning:  #223-D: function "usart_enable" declared implicitly
+          usart_enable(USARTx);
+..\..\src\src\driver_uart.c(153): error:  #20: identifier "RS485_UART" is undefined
+      if (m_rs485_uart_started && USARTx == RS485_UART)
+..\..\src\src\driver_uart.c(156): warning:  #223-D: function "nvic_irq_disable" declared implicitly
+          nvic_irq_disable(RS485_UART_IRQ);
+..\..\src\src\driver_uart.c(156): error:  #20: identifier "RS485_UART_IRQ" is undefined
+          nvic_irq_disable(RS485_UART_IRQ);
+..\..\src\src\driver_uart.c(157): warning:  #223-D: function "usart_disable" declared implicitly
+          usart_disable(RS485_UART_IRQ);
+..\..\src\src\driver_uart.c(158): warning:  #223-D: function "usart_deinit" declared implicitly
+          usart_deinit(RS485_UART_IRQ);
+..\..\src\src\driver_uart.c(159): warning:  #223-D: function "rcu_periph_clock_disable" declared implicitly
+          rcu_periph_clock_disable(RS485_UART_CLK);
+..\..\src\src\driver_uart.c(159): error:  #20: identifier "RS485_UART_CLK" is undefined
+          rcu_periph_clock_disable(RS485_UART_CLK);
+..\..\src\src\driver_uart.c(161): error:  #20: identifier "GSM_UART" is undefined
+      else if (m_gsm_uart_started && USARTx == GSM_UART)
+..\..\src\src\driver_uart.c(164): warning:  #223-D: function "nvic_irq_disable" declared implicitly
+          nvic_irq_disable(GSM_UART_IRQ);
+..\..\src\src\driver_uart.c(164): error:  #20: identifier "GSM_UART_IRQ" is undefined
+          nvic_irq_disable(GSM_UART_IRQ);
+..\..\src\src\driver_uart.c: 21 warnings, 30 errors
+compiling control_output.c...
+..\..\src\inc\InternalFlash.h(22): warning:  #47-D: incompatible redefinition of macro "FLASH_PAGE_SIZE"  (declared at line 126 of "../Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_flash.h")
+  #define		FLASH_PAGE_SIZE	0x400	/* 1024 Bytes */
+..\..\src\measurement\control_output.c(22): error:  #5: cannot open source input file "ControlOutput.h": No such file or directory
+  #include "ControlOutput.h"
+..\..\src\measurement\control_output.c: 1 warning, 1 error
+compiling measure_input.c...
+..\..\src\inc\InternalFlash.h(22): warning:  #47-D: incompatible redefinition of macro "FLASH_PAGE_SIZE"  (declared at line 126 of "../Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_hal_flash.h")
+  #define		FLASH_PAGE_SIZE	0x400	/* 1024 Bytes */
+..\..\src\measurement\measure_input.c(115): warning:  #223-D: function "SENS_420mA_PWR_ON" declared implicitly
+              SENS_420mA_PWR_ON();
+..\..\src\measurement\measure_input.c(120): warning:  #223-D: function "SENS_420mA_PWR_OFF" declared implicitly
+              SENS_420mA_PWR_OFF();
+..\..\src\measurement\measure_input.c(131): warning:  #223-D: function "SENS_420mA_PWR_OFF" declared implicitly
+              SENS_420mA_PWR_OFF();
+..\..\src\measurement\measure_input.c(164): warning:  #223-D: function "gpio_init" declared implicitly
+      gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+..\..\src\measurement\measure_input.c(164): error:  #20: identifier "SWITCH_IN_PORT" is undefined
+      gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+..\..\src\measurement\measure_input.c(164): error:  #20: identifier "GPIO_MODE_IN_FLOATING" is undefined
+      gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+..\..\src\measurement\measure_input.c(164): error:  #20: identifier "GPIO_OSPEED_10MHZ" is undefined
+      gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+..\..\src\measurement\measure_input.c(164): error:  #20: identifier "SWITCH_IN_PIN" is undefined
+      gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
+..\..\src\measurement\measure_input.c(167): error:  #20: identifier "SENS_PULSE_PORT" is undefined
+      gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+..\..\src\measurement\measure_input.c(167): error:  #20: identifier "GPIO_MODE_IPU" is undefined
+      gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+..\..\src\measurement\measure_input.c(167): error:  #20: identifier "SENS_PULSE_PIN" is undefined
+      gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
+..\..\src\measurement\measure_input.c(170): error:  #20: identifier "SENS_DIR_PORT" is undefined
+      gpio_init(SENS_DIR_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_DIR_PIN);
+..\..\src\measurement\measure_input.c(170): error:  #20: identifier "GPIO_MODE_IPD" is undefined
+      gpio_init(SENS_DIR_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_DIR_PIN);
+..\..\src\measurement\measure_input.c(170): error:  #20: identifier "SENS_DIR_PIN" is undefined
+      gpio_init(SENS_DIR_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_DIR_PIN);
+..\..\src\measurement\measure_input.c(173): warning:  #223-D: function "nvic_irq_enable" declared implicitly
+      nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
+..\..\src\measurement\measure_input.c(173): error:  #20: identifier "EXTI0_IRQn" is undefined
+      nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
+..\..\src\measurement\measure_input.c(176): warning:  #223-D: function "gpio_exti_source_select" declared implicitly
+      gpio_exti_source_select(SWITCH_PORT_SOURCE, SWITCH_PIN_SOURCE);
+..\..\src\measurement\measure_input.c(176): error:  #20: identifier "SWITCH_PORT_SOURCE" is undefined
+      gpio_exti_source_select(SWITCH_PORT_SOURCE, SWITCH_PIN_SOURCE);
+..\..\src\measurement\measure_input.c(176): error:  #20: identifier "SWITCH_PIN_SOURCE" is undefined
+      gpio_exti_source_select(SWITCH_PORT_SOURCE, SWITCH_PIN_SOURCE);
+..\..\src\measurement\measure_input.c(179): warning:  #223-D: function "exti_init" declared implicitly
+      exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+..\..\src\measurement\measure_input.c(179): error:  #20: identifier "SWITCH_EXTI_LINE" is undefined
+      exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+..\..\src\measurement\measure_input.c(179): error:  #20: identifier "EXTI_INTERRUPT" is undefined
+      exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+..\..\src\measurement\measure_input.c(179): error:  #20: identifier "EXTI_TRIG_FALLING" is undefined
+      exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
+..\..\src\measurement\measure_input.c(180): warning:  #223-D: function "exti_interrupt_flag_clear" declared implicitly
+      exti_interrupt_flag_clear(SWITCH_EXTI_LINE);
+..\..\src\measurement\measure_input.c(181): warning:  #223-D: function "exti_interrupt_enable" declared implicitly
+      exti_interrupt_enable(SWITCH_EXTI_LINE);
+..\..\src\measurement\measure_input.c(184): error:  #20: identifier "EXTI2_IRQn" is undefined
+      nvic_irq_enable(EXTI2_IRQn, 2U, 1U);
+..\..\src\measurement\measure_input.c(187): error:  #20: identifier "SENS_PULSE_PORT_SOURCE" is undefined
+      gpio_exti_source_select(SENS_PULSE_PORT_SOURCE, SENS_PULSE_PIN_SOURCE);
+..\..\src\measurement\measure_input.c(187): error:  #20: identifier "SENS_PULSE_PIN_SOURCE" is undefined
+      gpio_exti_source_select(SENS_PULSE_PORT_SOURCE, SENS_PULSE_PIN_SOURCE);
+..\..\src\measurement\measure_input.c(190): error:  #20: identifier "SENS_PULSE_EXTI_LINE" is undefined
+      exti_init(SENS_PULSE_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+..\..\src\measurement\measure_input.c(190): error:  #20: identifier "EXTI_TRIG_BOTH" is undefined
+      exti_init(SENS_PULSE_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
+..\..\src\measurement\measure_input.c(207): warning:  #223-D: function "GPIO_ReadOutputDataBit" declared implicitly
+      return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
+..\..\src\measurement\measure_input.c(207): error:  #20: identifier "RS485_PWR_EN_PORT" is undefined
+      return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
+..\..\src\measurement\measure_input.c(207): error:  #20: identifier "RS485_PWR_EN_PIN" is undefined
+      return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
+..\..\src\measurement\measure_input.c(226): error:  #20: identifier "ADC_VREF" is undefined
+          float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF / ADC_12BIT_FACTOR;
+..\..\src\measurement\measure_input.c(272): warning:  #223-D: function "usart_interrupt_flag_get" declared implicitly
+      if (usart_interrupt_flag_get(RS485_UART, USART_INT_FLAG_RBNE) != RESET)
+..\..\src\measurement\measure_input.c(272): error:  #20: identifier "RS485_UART" is undefined
+      if (usart_interrupt_flag_get(RS485_UART, USART_INT_FLAG_RBNE) != RESET)
+..\..\src\measurement\measure_input.c(272): error:  #20: identifier "USART_INT_FLAG_RBNE" is undefined
+      if (usart_interrupt_flag_get(RS485_UART, USART_INT_FLAG_RBNE) != RESET)
+..\..\src\measurement\measure_input.c(274): warning:  #223-D: function "usart_interrupt_flag_clear" declared implicitly
+          usart_interrupt_flag_clear(RS485_UART, USART_INT_FLAG_RBNE);
+..\..\src\measurement\measure_input.c(275): warning:  #223-D: function "USART_ReceiveData" declared implicitly
+          rs485_add_uart_data(USART_ReceiveData(RS485_UART));
+..\..\src\measurement\measure_input.c(290): warning:  #223-D: function "exti_interrupt_flag_get" declared implicitly
+      if (RESET != exti_interrupt_flag_get(EXTI_2))
+..\..\src\measurement\measure_input.c(290): error:  #20: identifier "EXTI_2" is undefined
+      if (RESET != exti_interrupt_flag_get(EXTI_2))
+..\..\src\measurement\measure_input.c(293): warning:  #223-D: function "getPulseState" declared implicitly
+          if (getPulseState())
+..\..\src\measurement\measure_input.c(314): warning:  #223-D: function "GPIO_ReadInputDataBit" declared implicitly
+                  DEBUG_PRINTF("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
+..\..\src\measurement\measure_input.c(314): error:  #20: identifier "SENS_DIR_PORT" is undefined
+                  DEBUG_PRINTF("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
+..\..\src\measurement\measure_input.c(314): error:  #20: identifier "SENS_DIR_PIN" is undefined
+                  DEBUG_PRINTF("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
+..\..\src\measurement\measure_input.c(332): warning:  #223-D: function "exti_interrupt_flag_clear" declared implicitly
+          exti_interrupt_flag_clear(EXTI_2);
+..\..\src\measurement\measure_input.c(351): warning:  #223-D: function "usart_data_transmit" declared implicitly
+          usart_data_transmit(USART2, buf[i]);
+..\..\src\measurement\measure_input.c(352): warning:  #223-D: function "usart_flag_get" declared implicitly
+          while (RESET == usart_flag_get(USART1, USART_FLAG_TBE));
+..\..\src\measurement\measure_input.c(352): error:  #20: identifier "USART_FLAG_TBE" is undefined
+          while (RESET == usart_flag_get(USART1, USART_FLAG_TBE));
+..\..\src\measurement\measure_input.c: 20 warnings, 30 errors
+"Data_logger\Data_logger.axf" - 70 Error(s), 58 Warning(s).
+
+<h2>Software Packages used:</h2>
+
+Package Vendor: ARM
+                http://www.keil.com/pack/ARM.CMSIS.5.7.0.pack
+                ARM.CMSIS.5.7.0
+                CMSIS (Cortex Microcontroller Software Interface Standard)
+   * Component: CORE Version: 5.4.0
+
+Package Vendor: Keil
+                http://www.keil.com/pack/Keil.STM32L0xx_DFP.2.1.0.pack
+                Keil.STM32L0xx_DFP.2.1.0
+                STMicroelectronics STM32L0 Series Device Support, Drivers and Examples
+
+<h2>Collection of Component include folders:</h2>
+  .\RTE\_Data_logger
+  C:\Users\huybk213\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include
+  C:\Users\huybk213\AppData\Local\Arm\Packs\Keil\STM32L0xx_DFP\2.1.0\Drivers\CMSIS\Device\ST\STM32L0xx\Include
+
+<h2>Collection of Component Files used:</h2>
+
+   * Component: ARM::CMSIS:CORE:5.4.0
+      Include file:  CMSIS\Core\Include\tz_context.h
+Target not created.
+Build Time Elapsed:  00:00:18
+</pre>
+</body>
+</html>

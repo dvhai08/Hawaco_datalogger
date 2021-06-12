@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,GD32E10X,IRC8M_VALUE=8000000</Define>
               <Undefine></Undefine>
-              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;.\..\inc;.\..\src\SEGGER_RTT_V698b\RTT;.\..\src\SEGGER_RTT_V698b\Syscalls;.\..\lwrb\lwrb\src\include\lwrb;.\..\..\Project;.\..\lowpass_filter;.\..\src;..\app_cli;..\app_queue;..\umm_malloc-1.0.1\src;..\app_cli;..\src\gsm;..\..\Library\CMSIS;..\free_modbus\port;..\free_modbus\modbus\include;..\free_modbus\modbus\rtu;..\modbus_master</IncludePath>
+              <IncludePath>.\..\..\Library\CMSIS\GD\GD32E10x\Include;.\..\..\Library\GD32E10x_standard_peripheral\Include;.\..\..\Library\CMSIS\GD\GD32E10x\Source\ARM;..\..\..\src\inc;..\..\..\src\SEGGER_RTT_V698b\RTT;..\..\..\src\lwrb\lwrb\src\include\lwrb;.\..\..\Project;..\..\..\src\lowpass_filter;.\..\src;..\..\..\src\app_queue;..\..\..\src\umm_malloc-1.0.1\src;..\..\..\src\app_cli;..\..\..\src\gsm;..\..\Library\CMSIS;..\..\..\src\modbus_master;..\..\..\src\modbus_master;..\..\..\src\app_debug;..\inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -419,11 +419,6 @@
           <GroupName>Utilities</GroupName>
           <Files>
             <File>
-              <FileName>lwrb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\lwrb\lwrb\src\lwrb\lwrb.c</FilePath>
-            </File>
-            <File>
               <FileName>utilities.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\utilities.c</FilePath>
@@ -499,16 +494,6 @@
               <FilePath>..\inc\InitSystem.h</FilePath>
             </File>
             <File>
-              <FileName>gsm.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\src\gsm\gsm.h</FilePath>
-            </File>
-            <File>
-              <FileName>gsm_utilities.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\src\gsm\gsm_utilities.h</FilePath>
-            </File>
-            <File>
               <FileName>driver_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\src\driver_uart.c</FilePath>
@@ -519,44 +504,44 @@
           <GroupName>gsm</GroupName>
           <Files>
             <File>
-              <FileName>gsm_utilities.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\src\GSM\gsm_utilities.c</FilePath>
+              <FileName>gsm.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\src\gsm\gsm.h</FilePath>
             </File>
             <File>
               <FileName>gsm_data_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\gsm\gsm_data_layer.c</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_data_layer.c</FilePath>
             </File>
             <File>
               <FileName>gsm_hardware_layer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\gsm\gsm_hardware_layer.c</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_hardware_layer.c</FilePath>
             </File>
             <File>
               <FileName>gsm_http.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\gsm\gsm_http.c</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_http.c</FilePath>
             </File>
             <File>
               <FileName>gsm_http.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\src\gsm\gsm_http.h</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_http.h</FilePath>
             </File>
             <File>
               <FileName>gsm_sms.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\gsm\gsm_sms.c</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_sms.c</FilePath>
             </File>
             <File>
-              <FileName>gsm.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\src\gsm\gsm.h</FilePath>
+              <FileName>gsm_utilities.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\gsm\gsm_utilities.c</FilePath>
             </File>
             <File>
               <FileName>gsm_utilities.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\src\gsm\gsm_utilities.h</FilePath>
+              <FilePath>..\..\..\src\gsm\gsm_utilities.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -566,12 +551,22 @@
             <File>
               <FileName>SEGGER_RTT.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT.c</FilePath>
+              <FilePath>..\..\..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT.c</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT.h</FilePath>
+            </File>
+            <File>
+              <FileName>SEGGER_RTT_Conf.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT_Conf.h</FilePath>
             </File>
             <File>
               <FileName>SEGGER_RTT_printf.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT_printf.c</FilePath>
+              <FilePath>..\..\..\src\SEGGER_RTT_V698b\RTT\SEGGER_RTT_printf.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -719,12 +714,12 @@
             <File>
               <FileName>lpf.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\lowpass_filter\lpf.c</FilePath>
+              <FilePath>..\..\..\src\lowpass_filter\lpf.c</FilePath>
             </File>
             <File>
               <FileName>lpf.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\lowpass_filter\lpf.h</FilePath>
+              <FilePath>..\..\..\src\lowpass_filter\lpf.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -734,12 +729,12 @@
             <File>
               <FileName>app_debug.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\src\app_debug.c</FilePath>
+              <FilePath>..\..\..\src\app_debug\app_debug.c</FilePath>
             </File>
             <File>
               <FileName>app_debug.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\src\app_debug.h</FilePath>
+              <FilePath>..\..\..\src\app_debug\app_debug.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -749,12 +744,12 @@
             <File>
               <FileName>fault.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\fault\fault.c</FilePath>
+              <FilePath>..\..\..\src\fault\fault.c</FilePath>
             </File>
             <File>
               <FileName>fault.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\fault\fault.h</FilePath>
+              <FilePath>..\..\..\src\fault\fault.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -764,7 +759,7 @@
             <File>
               <FileName>app_queue.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\app_queue\app_queue.h</FilePath>
+              <FilePath>..\..\..\src\app_queue\app_queue.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -774,32 +769,32 @@
             <File>
               <FileName>umm_info.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_info.c</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_info.c</FilePath>
             </File>
             <File>
               <FileName>umm_integrity.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_integrity.c</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_integrity.c</FilePath>
             </File>
             <File>
               <FileName>umm_malloc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc.c</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_malloc.c</FilePath>
             </File>
             <File>
               <FileName>umm_malloc.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc.h</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_malloc.h</FilePath>
             </File>
             <File>
               <FileName>umm_malloc_cfg.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_malloc_cfg.h</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_malloc_cfg.h</FilePath>
             </File>
             <File>
               <FileName>umm_poison.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\umm_malloc-1.0.1\src\umm_poison.c</FilePath>
+              <FilePath>..\..\..\src\umm_malloc-1.0.1\src\umm_poison.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -809,22 +804,22 @@
             <File>
               <FileName>app_cli.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\app_cli\app_cli.c</FilePath>
+              <FilePath>..\..\..\src\app_cli\app_cli.c</FilePath>
             </File>
             <File>
               <FileName>app_cli.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\app_cli\app_cli.h</FilePath>
+              <FilePath>..\..\..\src\app_cli\app_cli.h</FilePath>
             </File>
             <File>
               <FileName>app_shell.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\app_cli\app_shell.c</FilePath>
+              <FilePath>..\..\..\src\app_cli\app_shell.c</FilePath>
             </File>
             <File>
               <FileName>app_shell.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\app_cli\app_shell.h</FilePath>
+              <FilePath>..\..\..\src\app_cli\app_shell.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -837,47 +832,57 @@
             <File>
               <FileName>bsp_board.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\bsp_board.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\bsp_board.h</FilePath>
             </File>
             <File>
               <FileName>crc16.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\crc16.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\crc16.h</FilePath>
             </File>
             <File>
               <FileName>modbus_master.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\modbus_master\modbus_master.c</FilePath>
+              <FilePath>..\..\..\src\modbus_master\modbus_master.c</FilePath>
             </File>
             <File>
               <FileName>modbus_master.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\modbus_master.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\modbus_master.h</FilePath>
             </File>
             <File>
               <FileName>ringbuffer.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\modbus_master\ringbuffer.c</FilePath>
+              <FilePath>..\..\..\src\modbus_master\ringbuffer.c</FilePath>
             </File>
             <File>
               <FileName>ringbuffer.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\ringbuffer.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\ringbuffer.h</FilePath>
             </File>
             <File>
               <FileName>trans_recieve_buff_control.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\modbus_master\trans_recieve_buff_control.c</FilePath>
+              <FilePath>..\..\..\src\modbus_master\trans_recieve_buff_control.c</FilePath>
             </File>
             <File>
               <FileName>trans_recieve_buff_control.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\trans_recieve_buff_control.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\trans_recieve_buff_control.h</FilePath>
             </File>
             <File>
               <FileName>word.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\modbus_master\word.h</FilePath>
+              <FilePath>..\..\..\src\modbus_master\word.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>lwrb</GroupName>
+          <Files>
+            <File>
+              <FileName>lwrb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\lwrb\lwrb\src\lwrb\lwrb.c</FilePath>
             </File>
           </Files>
         </Group>
