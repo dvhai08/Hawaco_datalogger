@@ -21,7 +21,19 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include <stdbool.h>
+#include "lwrb.h"
+#include "app_debug.h"
 
+#define UART1_RX_BUFFER_SIZE    256
+
+static lwrb_t m_ringbuffer_uart1_tx = 
+{
+    .buff = NULL,
+};
+static uint8_t m_uart1_tx_buffer[256];
+static inline void uart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
+static uint8_t m_uart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 /* USER CODE END 0 */
 
 /* LPUART1 init function */
@@ -172,16 +184,228 @@ void MX_USART1_UART_Init(void)
   LL_USART_Enable(USART1);
   /* USER CODE BEGIN USART1_Init 2 */
   /* Enable DMA transfer complete/error interrupts  */
-  LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_3);
-  LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_3);
-  LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
-  LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_2);
+  
+    if (m_ringbuffer_uart1_tx.buff == NULL)
+    {
+        lwrb_init(&m_ringbuffer_uart1_tx, m_uart1_tx_buffer, sizeof(m_uart1_tx_buffer));
+    }
+    uart1_hw_uart_rx_raw(m_uart1_rx_buffer, sizeof(m_uart1_rx_buffer));
+
+
+    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_3);
+    LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_3);
+    LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
+    LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_2);
+    LL_USART_EnableIT_IDLE(USART1);
+    uart1_hw_uart_rx_raw(m_uart1_rx_buffer, UART1_RX_BUFFER_SIZE);
   /* USER CODE END USART1_Init 2 */
 
 }
 
 /* USER CODE BEGIN 1 */
+static inline void config_dma_tx(uint8_t *data, uint32_t len)
+{
+    LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
+    
+    LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_2,
+                         (uint32_t)data,
+                         (uint32_t)&(USART1->TDR),
+                         LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
+    
+    LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, len);
+    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMA_REQUEST_4);
+    
+    /* Enable DMA TX Interrupt */
+    LL_USART_EnableDMAReq_TX(USART1);
+    LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
+}
 
+
+static volatile bool m_tx_uart_run = false;
+volatile uint32_t m_last_transfer_size = 0;
+static bool m_uart1_is_enabled = true;
+void uart1_control(bool enable)
+{	
+	if (m_uart1_is_enabled == enable)
+	{
+		DEBUG_PRINTF("UART state : no changed\r\n");
+		return;
+	}
+	
+	m_uart1_is_enabled = enable;
+	
+	if (!m_uart1_is_enabled)
+	{
+		while (m_tx_uart_run);
+		LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+		GPIO_InitStruct.Pin = GSM_TX_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+		LL_GPIO_Init(GSM_TX_GPIO_Port, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = GSM_RX_Pin;
+		GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+		LL_GPIO_Init(GSM_RX_GPIO_Port, &GPIO_InitStruct);
+        
+        // TX
+		LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_2);
+		LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_2);
+        
+        // RX
+		LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_3);
+		LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_3);
+		
+		__HAL_RCC_DMA1_CLK_DISABLE();
+		NVIC_DisableIRQ(USART1_IRQn);
+		LL_USART_Disable(USART1);
+		/* Peripheral clock enable */
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+	}
+	else
+	{
+	    /* DMA controller clock enable */
+		__HAL_RCC_DMA1_CLK_ENABLE();
+		MX_USART1_UART_Init();
+	}
+}
+static inline void uart1_hw_transmit_dma(void)
+{
+    if (lwrb_get_full(&m_ringbuffer_uart1_tx) == 0)	// No more data
+    {
+        m_tx_uart_run = false;
+        m_last_transfer_size = 0;
+        return;
+    }	
+	
+    uint8_t *addr = lwrb_get_linear_block_read_address(&m_ringbuffer_uart1_tx);
+    m_last_transfer_size = lwrb_get_linear_block_read_length(&m_ringbuffer_uart1_tx);
+    uint32_t bytes_need_to_transfer =  lwrb_get_full(&m_ringbuffer_uart1_tx);
+    
+    if (bytes_need_to_transfer < m_last_transfer_size)
+    {
+        m_last_transfer_size = bytes_need_to_transfer;
+    }
+    
+    NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
+    if (m_tx_uart_run == false)
+    {
+        m_tx_uart_run = true;
+        NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+        config_dma_tx(addr, m_last_transfer_size);
+    }
+    else
+    {
+        NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+    }
+}
+
+void uart_tx_complete_callback(bool status)
+{
+    m_tx_uart_run = false;
+    lwrb_skip(&m_ringbuffer_uart1_tx, m_last_transfer_size);
+    uart1_hw_transmit_dma();
+}
+
+void uart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
+{
+    if (length == 0 || m_uart1_is_enabled == false)
+    {
+        DEBUG_PRINTF("[%s] Invalid params\r\n", __FUNCTION__);
+        return;
+    }
+
+    if (lwrb_get_full(&m_ringbuffer_uart1_tx) == 0)
+    {
+        lwrb_reset(&m_ringbuffer_uart1_tx);
+    }
+
+    for (uint32_t i = 0; i < length; i++)
+    {
+        while (lwrb_write(&m_ringbuffer_uart1_tx, raw + i, 1) == 0)
+        {
+            DEBUG_PRINTF("UART TX queue full\r\n");
+            HAL_Delay(5);
+        }
+    }
+    uart1_hw_transmit_dma();
+}
+
+static volatile bool m_uart_rx_ongoing = false;
+static inline void uart1_hw_uart_rx_raw(uint8_t *data, uint32_t length)
+{
+    NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
+    if (!m_uart_rx_ongoing)
+    {  
+        m_uart_rx_ongoing = true;
+        NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+                
+        /* Enable DMA Channel Rx */
+        LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_3);
+    
+        LL_DMA_ConfigAddresses(DMA1, LL_DMA_CHANNEL_3,
+                              (uint32_t)&(USART1->RDR),
+                             (uint32_t)data,
+                             LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+        
+        LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_3, length);
+        LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_3, LL_DMA_REQUEST_4);
+        
+        /* Enable DMA RX Interrupt */
+        LL_USART_EnableDMAReq_RX(USART1);
+        LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_3);
+        
+    }
+    else
+    {
+        NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
+    }
+}
+
+
+
+void uart_rx_complete_callback(bool status)
+{
+    if (status)
+    {
+        static volatile size_t old_pos;
+        size_t pos;
+
+        /* Calculate current position in buffer */
+        pos = UART1_RX_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_3);
+        if (pos != old_pos) 
+        {                       /* Check change in received data */
+            if (pos > old_pos) 
+            {   /* Current position is over previous one */
+                /* We are in "linear" mode */
+                /* Process data directly by subtracting "pointers" */
+                  DEBUG_RAW("%.*s", pos - old_pos, &m_uart1_rx_buffer[old_pos]);
+//                usart_process_data(&usart_rx_dma_buffer[old_pos], pos - old_pos);   // TODO puts data to GSM buffer
+            } 
+            else 
+            {
+                /* We are in "overflow" mode */
+                /* First process data to the end of buffer */
+                /* Check and continue with beginning of buffer */
+                if (pos > 0) 
+                {
+//                    usart_process_data(&usart_rx_dma_buffer[0], pos);
+                        DEBUG_RAW("%.*s", pos, &m_uart1_rx_buffer[0]);
+                }
+            }
+            old_pos = pos;                          /* Save current position as old */
+        }
+//        m_uart_rx_ongoing = false;
+    }
+    else
+    {
+        m_uart_rx_ongoing = false;
+    }
+    uart1_hw_uart_rx_raw(m_uart1_rx_buffer, sizeof(m_uart1_rx_buffer));
+}
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

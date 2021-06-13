@@ -18,11 +18,15 @@
 //#include "Parameters.h"
 #include "hardware.h"
 #include "hardware_manager.h"
-#include "gsm.h"
 #include "gsm_http.h"
 #include "server_msg.h"
 #include "app_queue.h"
 #include "umm_malloc.h"
+
+#ifdef STM32L083xx
+#include "usart.h"
+#include "app_rtc.h"
+#endif
 
 #define CUSD_ENABLE     0
 #define MAX_TIMEOUT_TO_SLEEP_S 60
@@ -38,13 +42,7 @@ extern System_t xSystem;
 //extern SMSStruct_t SMSMemory[3];
 extern GSM_Manager_t gsm_manager;
 
-/******************************************************************************
-                                   GLOBAL FUNCTIONS					    			 
- ******************************************************************************/
 
-/******************************************************************************
-                                   DATA TYPE DEFINE					    			 
- ******************************************************************************/
 #define GET_BTS_INFOR_TIMEOUT 300
 /******************************************************************************
                                    PRIVATE VARIABLES					    			 
@@ -368,9 +366,13 @@ void gsm_manager_tick(void)
         }
         InSleepModeTick++;
         TimeoutToSleep = 0;
+#ifdef GD32E10X
         driver_uart_deinitialize(GSM_UART);
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
+#else
+        uart1_control(false);
+#endif
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
         GSM_PWR_KEY(0);
@@ -951,7 +953,9 @@ void gsm_hard_reset(void)
     case 2:
         GSM_PWR_RESET(0);
         DEBUG_PRINTF("Gsm power on\r\n");
+#ifdef GD32E10X
         nvic_irq_disable(GSM_UART_IRQ);
+#endif
         GSM_PWR_EN(1);
         step++;
         break;
@@ -973,8 +977,12 @@ void gsm_hard_reset(void)
     case 6:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
+#ifdef GD32E10X
         nvic_irq_enable(GSM_UART_IRQ, 1, 0);
         driver_uart_initialize(GSM_UART, 115200);
+#else
+        uart1_control(true);
+#endif
         gsm_manager.TimeOutOffAfterReset = 90;
         step++;
         break;

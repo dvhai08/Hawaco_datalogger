@@ -21,4 +21,5 @@ void app_bkup_write_pulse_counter(uint32_t counter);
  */
 uint32_t app_bkup_read_pulse_counter(void);
 
+
 #endif /* APP_BKUP_H */

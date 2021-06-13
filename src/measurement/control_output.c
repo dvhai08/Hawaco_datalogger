@@ -19,7 +19,7 @@
 #include "hardware_manager.h"
 #include "InternalFlash.h"
 #include "main.h"
-#include "ControlOutput.h"
+#include "control_output.h"
 #include "app_bkup.h"
 
 /******************************************************************************

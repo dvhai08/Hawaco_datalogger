@@ -28,7 +28,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
@@ -39,6 +39,20 @@ void MX_LPUART1_UART_Init(void);
 void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+/**
+ * @brief       Send raw data to usart1 port
+ * @param[in]   raw Raw data to send
+ * @param[in]   length Data length
+ */
+void uart1_hw_uart_send_raw(uint8_t* raw, uint32_t length);
+
+/**
+ * @brief       Control uart1 port
+ * @param[in]   enable TRUE - enable uart1 port
+                        FALSE - disable uart1 port
+ */
+void usart1_control(bool enable);
 
 /* USER CODE END Prototypes */
 

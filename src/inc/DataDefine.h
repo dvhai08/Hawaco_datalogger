@@ -8,8 +8,8 @@
 
 #include "SEGGER_RTT.h"
 #include "app_debug.h"
-#define DEBUG DEBUG_PRINTF
-#define DEBUG_RAW DEBUG_PRINTF
+//#define DEBUG DEBUG_PRINTF
+//#define DEBUG_RAW DEBUG_PRINTF
 
 //#define 	DEBUG_PRINTFString...) 	SEGGER_RTT_printf(0, String)
 //#define DEBUG_RAW(String...)        SEGGER_RTT_printf(0, String)

@@ -21,14 +21,20 @@ extern System_t xSystem;
 static gsm_hardware_t m_gsm_hardware;
 GSM_Manager_t gsm_manager;
 
+#ifdef GD32E10X
 static lwrb_t m_ringbuffer_uart_tx = 
 {
     .buff = NULL,
 };
 static uint8_t m_uart_tx_buffer[256];
+static volatile uint32_t m_tx_uart_run = 0;
+#else
+    #define Delayms     sys_delay_ms
+#include "usart.h"
+#endif
 static volatile bool m_new_uart_data = false;
 static void init_serial(void);
-static volatile uint32_t m_tx_uart_run = 0;
+
 
 void gsm_init_hw(void)
 {
@@ -86,14 +92,15 @@ void gsm_init_hw(void)
     exti_interrupt_flag_clear(GSM_RI_EXTI_LINE);
 #endif //__RI_INTERRUPT__
 
+#ifdef GD32E10Xs
     if (m_ringbuffer_uart_tx.buff == NULL)
     {
         lwrb_init(&m_ringbuffer_uart_tx, m_uart_tx_buffer, sizeof(m_uart_tx_buffer));
     }
-
-    /* Khoi tao UART cho GSM modem */
     driver_uart_initialize(DRIVER_UART_PORT_GSM, 115200);
-
+#else
+    usart1_control(true);
+#endif
     gsm_data_layer_initialize();
 
     gsm_change_state(GSM_STATE_RESET); 
@@ -131,16 +138,23 @@ void gsm_pwr_control(uint8_t State)
         //xSystem.Status.MQTTServerState = MQTT_INIT;
 
         //Disable luon UART
+#ifdef GD32E10X
         usart_disable(GSM_UART);
         usart_deinit(GSM_UART);
+#else
+        usart1_control(false);
+#endif
     }
     else if (State == GSM_ON)
     {
         gsm_manager.isGSMOff = 0;
 
         //Khoi tao lai UART
+#ifdef GD32E10X
         driver_uart_initialize(GSM_UART, 115200);
-
+#else
+        usart1_control(true);
+#endif
         /* Cap nguon 4.2V */
         GSM_PWR_EN(1);
         Delayms(1000); //Wait for VBAT stable
@@ -159,8 +173,8 @@ static void init_serial(void)
 {
     //m_gsm_hardware.modem.tx_buffer.idx_in = 0;
     //m_gsm_hardware.modem.tx_buffer.idx_out = 0;
-    m_tx_uart_run = 0;
 #ifdef GD32E10X
+    m_tx_uart_run = 0;
     /* Enable GSM interrupts. */
     NVIC_EnableIRQ(GSM_UART_IRQ);
 #endif
@@ -353,7 +367,7 @@ void gsm_hw_layer_run(void)
         }
         else
         {
-            DEBUG("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
+            DEBUG_PRINTF("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
             m_gsm_hardware.atc.current_timeout_atc_ms = sys_get_ms();
             gsm_hw_uart_send_raw((uint8_t*)m_gsm_hardware.atc.cmd, strlen(m_gsm_hardware.atc.cmd));
         }
@@ -388,6 +402,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
                         char * expected_response_at_the_end_of_response, uint32_t timeout,
                         uint8_t retry_count, gsm_send_at_cb_t callback)
 {
+    #warning "Please handle uart rx cplt in usart.c"
     if (timeout == 0 || callback == NULL)
     {
         gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(m_gsm_hardware.atc.cmd));
@@ -416,7 +431,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
 }
 
-
+#ifdef GD32E10Xs
 volatile uint32_t m_last_transfer_size = 0;
 
 static inline void config_dma(uint8_t *data, uint32_t len)
@@ -466,6 +481,7 @@ void gsm_uart_tx_complete_callback(bool status)
     lwrb_skip(&m_ringbuffer_uart_tx, m_last_transfer_size);
     gsm_hw_transmit_dma();
 }
+#endif
 
 void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
@@ -497,26 +513,7 @@ void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         NVIC_EnableIRQ(GSM_UART_IRQ);
     }
 #else
-    
-    if (length == 0)
-    {
-        return;
-    }
-
-    if (lwrb_get_full(&m_ringbuffer_uart_tx) == 0)
-    {
-        lwrb_reset(&m_ringbuffer_uart_tx);
-    }
-
-    for (uint32_t i = 0; i < length; i++)
-    {
-        while (lwrb_write(&m_ringbuffer_uart_tx, raw + i, 1) == 0)
-        {
-            DEBUG_PRINTF("UART TX queue full\r\n");
-            sys_delay_ms(5);
-        }
-    }
-    gsm_hw_transmit_dma();
+    uart1_hw_uart_send_raw(raw, length);
 #endif
 }
 

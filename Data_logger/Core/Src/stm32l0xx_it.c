@@ -53,6 +53,7 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+extern void uart1_rx_complete_callback(bool status);
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -166,12 +167,12 @@ void DMA1_Channel2_3_IRQHandler(void)
 	{
 		LL_DMA_ClearFlag_TC2(DMA1);
 		/* Call function Transmission complete Callback */
-		gsm_uart_tx_complete_callback(true);
+//		gsm_uart_tx_complete_callback(true);
 	}
 	else if(LL_DMA_IsActiveFlag_TE2(DMA1))
 	{
 		/* Call Error function */
-		gsm_uart_tx_complete_callback(false);
+//		gsm_uart_tx_complete_callback(false);
 	}
   /* USER CODE END DMA1_Channel2_3_IRQn 0 */
 
@@ -211,7 +212,30 @@ void ADC1_COMP_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-
+    if (LL_USART_IsEnabledIT_IDLE(USART1) && LL_USART_IsActiveFlag_IDLE(USART1)) 
+    {
+        LL_USART_ClearFlag_IDLE(USART1);        /* Clear IDLE line flag */
+        uart1_rx_complete_callback(true);
+    }
+    
+    if (LL_USART_IsActiveFlag_ORE(USART1))
+    {
+        DEBUG_PRINTF("Over run\r\n");
+        uint32_t tmp = USART1->RDR;
+        LL_USART_ClearFlag_ORE(USART1);
+    }
+    
+    if (LL_USART_IsActiveFlag_ORE(USART1))
+    {
+        DEBUG_PRINTF("Frame error\r\n");
+        LL_USART_ClearFlag_FE(USART1);
+    }
+    
+    if (LL_USART_IsActiveFlag_NE(USART1))
+    {
+        DEBUG_PRINTF("Noise error\r\n");
+        LL_USART_ClearFlag_NE(USART1);
+    }
   /* USER CODE END USART1_IRQn 0 */
   /* USER CODE BEGIN USART1_IRQn 1 */
 

@@ -9,6 +9,8 @@
 //#define DEBUG_PRINTF            
 
 #define DEBUG_RTT               1
+#define DEBUG_RAW               app_debug_rtt_raw
+
 
 #define DEBUG_PRINTF            app_debug_rtt
 #ifndef DEBUG_PRINTF
@@ -20,6 +22,8 @@
 #endif
 
 int app_debug_rtt(const char *fmt,...);
+
+int app_debug_rtt_raw(const char *fmt,...);
 
 
 #endif // !APP_DEBUG_H

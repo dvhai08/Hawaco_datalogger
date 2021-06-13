@@ -189,7 +189,12 @@
 
 #define GSM_UART				0
 #define RS485_UART				1
-							
+#define LED1(x)             {	if (x) \
+									LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+								else	\
+									LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+                            }		
+                            
 #endif
 
 #endif /* __HARDWARE_H__ */

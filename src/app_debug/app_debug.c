@@ -43,3 +43,29 @@ int app_debug_rtt(const char *fmt,...)
     
     return n;
 }
+
+int app_debug_rtt_raw(const char *fmt,...)
+{
+    int     n;
+
+    char *p = &m_debug_buffer[0];
+    int size = RTT_PRINTF_BUFFER_SIZE;
+    int time_stamp_size;
+    time_stamp_size = (p-m_debug_buffer);
+    size -= time_stamp_size;
+    va_list args;
+
+    va_start (args, fmt);
+    n = vsnprintf(p, size, fmt, args);
+    if (n > (int)size) 
+    {
+        SEGGER_RTT_Write(0, m_debug_buffer, size + time_stamp_size);
+    } 
+    else if (n > 0) 
+    {
+        SEGGER_RTT_Write(0, m_debug_buffer, n + time_stamp_size);
+    }
+    va_end(args);
+    
+    return n;
+}
