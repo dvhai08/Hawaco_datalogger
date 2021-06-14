@@ -42,7 +42,7 @@ void app_bkup_write_data(bkp_data_register_enum regAddr, uint16_t data)
 }
 #endif /* GD32E10X */
 
-void app_bkup_write_pulse_counter(uint32_t counter)
+void app_bkup_write_pulse_counter(uint32_t counter0, uint32_t counter1)
 {
 #ifdef GD32E10X
 	// Write flag
@@ -53,11 +53,12 @@ void app_bkup_write_pulse_counter(uint32_t counter)
 	bkp_data_write(BACKUP_PULSE_COUNTER_ADDR2, counter & 0xFFFF);
 #else
     LL_PWR_EnableBkUpAccess();
-    LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR1, counter);
+    LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR1, counter0);
+	LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR2, counter1);
 #endif
 }
 
-uint32_t app_bkup_read_pulse_counter(void)
+void app_bkup_read_pulse_counter(uint32_t *counter0, uint32_t *counter1)
 {
 #ifdef GD32E10X
 	uint16_t flag = bkp_data_read(BACKUP_FLAG_ADDR);
@@ -73,11 +74,15 @@ uint32_t app_bkup_read_pulse_counter(void)
 	}
 	return 0;
 #else
-    uint32_t retval = 0;
     if (RTC_BACKUP_VALID_DATA == LL_RTC_BAK_GetRegister(RTC, LL_RTC_BKP_DR0))
 	{
-        retval = LL_RTC_BAK_GetRegister(RTC, LL_RTC_BKP_DR1);
+        *counter0 = LL_RTC_BAK_GetRegister(RTC, LL_RTC_BKP_DR1);
+		*counter1 = LL_RTC_BAK_GetRegister(RTC, LL_RTC_BKP_DR2);
 	}
-    return retval;
+	else
+	{
+		*counter0 = 0;
+		*counter1 = 0;
+	}
 #endif
 }

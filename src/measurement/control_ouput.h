@@ -1,5 +1,5 @@
-#ifndef __CONTROL_OUTPUT_H__
-#define __CONTROL_OUTPUT_H__
+#ifndef CONTROL_OUTPUT_H
+#define CONTROL_OUTPUT_H
 
 #include "hardware.h"
 
@@ -13,4 +13,4 @@ void control_ouput_init(void);
  */
 void control_ouput_task(void);
 
-#endif // __CONTROL_OUTPUT_H__
+#endif // CONTROL_OUTPUT_H

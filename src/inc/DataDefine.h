@@ -170,7 +170,7 @@ typedef struct
 typedef struct
 {
     uint32_t Vin;
-    uint32_t PulseCounterInBkup;
+//    uint32_t PulseCounterInBkup;
     uint32_t PulseCounterInFlash;
     uint16_t Vsens;
     float Input420mA;

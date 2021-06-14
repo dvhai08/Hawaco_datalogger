@@ -371,7 +371,7 @@ void gsm_manager_tick(void)
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
         usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
 #else
-        uart1_control(false);
+        usart1_control(false);
 #endif
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
@@ -981,7 +981,7 @@ void gsm_hard_reset(void)
         nvic_irq_enable(GSM_UART_IRQ, 1, 0);
         driver_uart_initialize(GSM_UART, 115200);
 #else
-        uart1_control(true);
+        usart1_control(true);
 #endif
         gsm_manager.TimeOutOffAfterReset = 90;
         step++;

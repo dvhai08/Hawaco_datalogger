@@ -194,7 +194,11 @@
 								else	\
 									LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
                             }		
-                            
+
+#define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
+#define SENS_420mA_PWR_ON()	LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
+							
 #endif
+
 
 #endif /* __HARDWARE_H__ */

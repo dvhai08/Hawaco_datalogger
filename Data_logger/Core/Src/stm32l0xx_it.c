@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "gsm.h"
+#include "measure_input.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -248,7 +249,35 @@ void USART1_IRQHandler(void)
 void AES_RNG_LPUART1_IRQHandler(void)
 {
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 0 */
-
+    if (LL_USART_IsActiveFlag_ORE(LPUART1))
+    {
+        DEBUG_PRINTF("Over run\r\n");
+        uint32_t tmp = LPUART1->RDR;
+        LL_USART_ClearFlag_ORE(USART1);
+    }
+    
+    if (LL_USART_IsActiveFlag_ORE(LPUART1))
+    {
+        DEBUG_PRINTF("Frame error\r\n");
+        LL_USART_ClearFlag_FE(LPUART1);
+    }
+    
+    if (LL_USART_IsActiveFlag_NE(LPUART1))
+    {
+        DEBUG_PRINTF("Noise error\r\n");
+        LL_USART_ClearFlag_NE(LPUART1);
+    }
+	
+	if (LL_USART_IsActiveFlag_RXNE(LPUART1))
+	{
+		measure_input_rs485_uart_handler(LPUART1->RDR);
+	}
+	
+	if (LL_USART_IsActiveFlag_IDLE(LPUART1))
+	{
+		measure_input_rs485_idle_detect();
+	}
+	
   /* USER CODE END AES_RNG_LPUART1_IRQn 0 */
 
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 1 */
