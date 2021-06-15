@@ -6,6 +6,9 @@
 #define APP_FLASH_NB_OFF_4_20MA_INPUT       4
 #define APP_FLASH_RS485_MAX_SIZE            32
 
+#include <stdint.h>
+#include <stdbool.h>
+
 typedef struct
 {
     uint32_t pwm_f;     // forward

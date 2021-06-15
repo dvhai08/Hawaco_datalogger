@@ -28,3 +28,4 @@ Data_logger/MDK-ARM/DebugConfig/Data_logger_STM32L083RZTx.dbgconf
 *.huybk
 *.htm
 *.dep
+.vscode
