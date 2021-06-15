@@ -243,6 +243,7 @@ typedef struct
     input_cfg_t input;
     uint8_t alarm_enable;
     uint32_t input1Offset;
+	uint32_t input2Offset;
     uint32_t kFactor;
 } Parameters_t;
 

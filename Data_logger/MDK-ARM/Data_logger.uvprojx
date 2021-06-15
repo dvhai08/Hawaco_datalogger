@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32L083xx,RTC_BACKUP_VALID_DATA=0x12345613,DG_G2</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc;..\..\src\server_msg</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -921,6 +921,31 @@
               <FileName>app_rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\src\app_rtc\app_rtc.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>eeprom</GroupName>
+          <Files>
+            <File>
+              <FileName>app_eeprom.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_eeprom\app_eeprom.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>server_msg</GroupName>
+          <Files>
+            <File>
+              <FileName>server_msg.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\server_msg\server_msg.c</FilePath>
+            </File>
+            <File>
+              <FileName>server_msg.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\server_msg\server_msg.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -22,6 +22,7 @@
 #include "server_msg.h"
 #include "app_queue.h"
 #include "umm_malloc.h"
+#include "app_bkup.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -1194,13 +1195,19 @@ uint16_t gsm_build_http_post_msg(void)
         m_malloc_count++;
         DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, m_malloc_count);
     }
-
+	
+	#warning "Please store default input 2 offset"
+	uint32_t counter0, counter1;
+	app_bkup_read_pulse_counter(&counter0, &counter1);
+	counter0 = counter0 / xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset;
+	counter1 = counter1 / xSystem.Parameters.kFactor + xSystem.Parameters.input2Offset;
+	
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", xSystem.Status.TimeStamp); //second since 1970
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"%s\",", xSystem.Parameters.gsm_imei);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", xSystem.Parameters.phone_number);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1\":\"%d\",",
-                              xSystem.MeasureStatus.PulseCounterInBkup / xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset); //so xung
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1\":[\"%u\",\"%u\"],",
+                              counter0, counter1); //so xung
 
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA); //dau vao 4-20mA
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
@@ -1209,11 +1216,12 @@ uint16_t gsm_build_http_post_msg(void)
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
 
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u,os-%u\"}", 
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u,os-%u-%u\"}", 
                                                                             xSystem.MeasureStatus.Vin,
                                                                             hardware_manager_get_reset_reason()->value,
                                                                              xSystem.Parameters.kFactor,
-                                                                             xSystem.Parameters.input1Offset);
+                                                                             xSystem.Parameters.input1Offset,
+																			xSystem.Parameters.input2Offset);
     hardware_manager_get_reset_reason()->value = 0;
 
     if (app_queue_put(&m_http_msq, &new_msq) == false)

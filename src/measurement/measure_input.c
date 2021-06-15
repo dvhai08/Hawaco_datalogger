@@ -140,21 +140,22 @@ void MeasureTick1000ms(void)
             SENS_420mA_PWR_OFF();
         }
     }
+	
+	#warning "Please implement save data to flash cmd"
+//    /* Save pulse counter to flash every 30s */
+//    if (store_measure_result_timeout >= STORE_MEASURE_INVERVAL_SEC)
+//    {
+//        store_measure_result_timeout = 0;
 
-    /* Save pulse counter to flash every 30s */
-    if (store_measure_result_timeout >= STORE_MEASURE_INVERVAL_SEC)
-    {
-        store_measure_result_timeout = 0;
-
-        // Neu counter in BKP != in flash -> luu flash
-        if (xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
-        {
-            xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
-            InternalFlash_WriteMeasures();
-            uint8_t res = InternalFlash_WriteConfig();
-            DEBUG_PRINTF("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK");
-        }
-    }
+//        // Neu counter in BKP != in flash -> luu flash
+//        if (xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
+//        {
+//            xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
+//            InternalFlash_WriteMeasures();
+//            uint8_t res = InternalFlash_WriteConfig();
+//            DEBUG_PRINTF("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK");
+//        }
+//    }
 }
 
 /*****************************************************************************/
@@ -208,12 +209,9 @@ void measure_input_initialize(void)
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
     */
-    xSystem.MeasureStatus.PulseCounterInBkup = app_bkup_read_pulse_counter();
-    if (xSystem.MeasureStatus.PulseCounterInBkup < xSystem.MeasureStatus.PulseCounterInFlash)
-    {
-        xSystem.MeasureStatus.PulseCounterInBkup = xSystem.MeasureStatus.PulseCounterInFlash;
-    }
-    DEBUG_PRINTF("Pulse counter in BKP: %d\r\n", xSystem.MeasureStatus.PulseCounterInBkup);
+	uint32_t counter0, counter_1;
+	app_bkup_read_pulse_counter(&counter0, &counter_1);
+    DEBUG_PRINTF("Pulse counter in BKP: %u-%u\r\n", counter0, counter_1);
 }
 
 uint8_t measure_input_is_rs485_power_on(void)
