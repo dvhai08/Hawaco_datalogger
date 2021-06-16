@@ -1,6 +1,9 @@
 #include "app_flash.h"
 #include "main.h"
 #include "stm32l0xx_ll_gpio.h"
+#include "app_debug.h"
+#include <string.h>
+#include "spi.h"
 
 #define FL164K 1        // 8 MB
 #define FL127S 2        // 16 MB
@@ -57,11 +60,15 @@ static uint8_t flash_self_test(void);
 static uint8_t flash_check_first_run(void);
 uint8_t flash_test(void);
 static uint8_t m_flash_version;
+static bool m_flash_inited = false;
 
 static void reset_flash(void)
 {
-    FLASH_SPI_SendByte(WB_RESET_STEP0_CMD);
-    LASH_SPI_SendByte(WB_RESET_STEP1_CMD);
+	uint8_t cmd = WB_RESET_STEP0_CMD;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = WB_RESET_STEP1_CMD;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 }
 
 static inline void enable_ext_flash(bool enable)
@@ -78,9 +85,7 @@ static inline void enable_ext_flash(bool enable)
 
 void InitFlash(void)
 {
-    uint16_t flash_test = 0;
-
-    Init_MemorySPI(FLASH_SPI);
+    uint16_t flash_test_status = 0;
 
     if (flash_self_test())
     {
@@ -102,80 +107,86 @@ void InitFlash(void)
         case W25Q256JV: //32MB
             DEBUG_RAW("W25Q256JV. ");
             break;
+		case W25Q80DLZPIG:
+			DEBUG_RAW("W25Q80DLZPIG. ");
+			break;
         default:
             DEBUG_PRINTF("UNKNOWN: %u", m_flash_version);
             break;
         }
-        xSystem.status.DeviceState.Name.Flash = TRANGTHAI_OK;
+        m_flash_inited = true;
     }
     else
     {
-        xSystem.status.DeviceState.Name.Flash = TRANGTHAI_FAIL;
-        DEBUG_PRINTF("Khoi tao Flash: [FAIL]");
+        m_flash_inited = false;
+        DEBUG_PRINTF("Khoi tao Flash: [FAIL]\r\n");
         return;
     }
 
     if (!flash_check_first_run()) //Neu lan dau khoi dong
     {
-        flash_test = flash_test();
+        flash_test_status = flash_test();
 
         DEBUG_PRINTF("Test R/W Flash: ");
-        if (flash_test)
+        if (flash_test_status)
         {
-            DEBUG_RAW("[FAIL], N = %u\r\n", flash_test);
-            xSystem.status.DeviceState.Name.Flash = TRANGTHAI_FAIL;
+            DEBUG_RAW("[FAIL], N = %u\r\n", flash_test_status);
+            m_flash_inited = false;
         }
         else
         {
             DEBUG_RAW("[OK]\r\n");
-            xSystem.status.DeviceState.Name.Flash = TRANGTHAI_OK;
+            m_flash_inited = true;
         }
     }
 }
 
-static uint8_t FLASH_SPI_SendByte(uint8_t byte)
-{
-    uint32_t timeout = 1000;
+//static uint8_t FLASH_SPI_SendByte(uint8_t byte)
+//{
+//    uint32_t timeout = 1000;
 
-    while ((SPI_I2S_GetFlagStatus(FLASH_SPI, SPI_I2S_FLAG_TXE) == RESET) && timeout)
-    {
-        __WFI();
-        timeout--;
-    }
+//    while ((SPI_I2S_GetFlagStatus(FLASH_SPI, SPI_I2S_FLAG_TXE) == RESET) && timeout)
+//    {
+//        __WFI();
+//        timeout--;
+//    }
 
-    if (timeout == 0)
-    {
-        DEBUG_PRINTF("Write SPI failed\r\n");
-    }
+//    if (timeout == 0)
+//    {
+//        DEBUG_PRINTF("Write SPI failed\r\n");
+//    }
 
-    SPI_I2S_SendData(FLASH_SPI, byte);
+//    SPI_I2S_SendData(FLASH_SPI, byte);
 
-    timeout = 1000;
-    while ((SPI_I2S_GetFlagStatus(FLASH_SPI, SPI_I2S_FLAG_RXNE) == RESET) && timeout)
-    {
-        __WFI();
-        timeout--;
-    }
-    if (timeout == 0)
-    {
-        DEBUG_PRINTF("Read SPI failed\r\n");
-    }
+//    timeout = 1000;
+//    while ((SPI_I2S_GetFlagStatus(FLASH_SPI, SPI_I2S_FLAG_RXNE) == RESET) && timeout)
+//    {
+//        __WFI();
+//        timeout--;
+//    }
+//    if (timeout == 0)
+//    {
+//        DEBUG_PRINTF("Read SPI failed\r\n");
+//    }
 
-    return SPI_I2S_ReceiveData(FLASH_SPI);
-}
+//    return SPI_I2S_ReceiveData(FLASH_SPI);
+//}
 
 static void flash_write_control(uint8_t enable, uint32_t addr)
 {
+	uint8_t cmd;
     if (enable)
     {
         enable_ext_flash(1);
-        FLASH_SPI_SendByte(WREN_CMD);
+		cmd = WREN_CMD;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
         enable_ext_flash(0);
     }
     else
     {
         enable_ext_flash(1);
-        FLASH_SPI_SendByte(WRDI_CMD);
+		cmd = WRDI_CMD;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
         enable_ext_flash(0);
     }
 }
@@ -187,15 +198,16 @@ static void wait_write_in_process(uint32_t addr)
 
     /* Doc thanh ghi */
     enable_ext_flash(1);
-    FLASH_SPI_SendByte(RDSR_CMD);
+	uint8_t cmd = RDSR_CMD;
+	
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
     while (timeout)
     {
         timeout--;
-        if (timeout % 100 == 0)
-            ResetWatchdog();
-
-        status = FLASH_SPI_SendByte(SPI_DUMMY);
+        cmd = SPI_DUMMY;
+		HAL_SPI_Receive(&hspi2, &cmd, 1, 100);
+		
         if ((status & 1) == 0)
             break;
     }
@@ -205,38 +217,46 @@ static void wait_write_in_process(uint32_t addr)
 static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
 {
     uint16_t i = 0;
-    uint32_t OldAddress = addr;
+    uint32_t old_addr = addr;
 
     flash_write_control(1, addr);
     enable_ext_flash(1);
 
-    ResetWatchdog();
+//    ResetWatchdog();
+	uint8_t cmd;
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
-        /* Gui lenh ghi */
-        FLASH_SPI_SendByte(PP_CMD4);
+		/* Gui lenh ghi */
+		cmd = PP_CMD4;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
-        /* Gui 4 byte dia chi */
-        FLASH_SPI_SendByte((addr >> 24) & 0xFF);
+//        /* Gui 4 byte dia chi */
+		cmd = (addr >> 24) & 0xFF;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
     else
     {
         /* Gui lenh ghi */
-        FLASH_SPI_SendByte(PP_CMD);
+		cmd = PP_CMD;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
 
     /* Gui 3 byte dia chi */
-    FLASH_SPI_SendByte((addr >> 16) & 0xFF);
-    FLASH_SPI_SendByte((addr >> 8) & 0xFF);
-    FLASH_SPI_SendByte(addr & 0xFF);
+	cmd = (addr >> 16) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = (addr >> 8) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = addr & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
     /* Gui du lieu */
     for (i = 0; i < length; i++)
-        FLASH_SPI_SendByte(buffer[i]);
+        HAL_SPI_Transmit(&hspi2, buffer + i, 1, 100);
 
     enable_ext_flash(0);
-    Delayms(1); //Khong cho lenh nay ghi k thanh cong!!
-    wait_write_in_process(OldAddress);
+    wait_write_in_process(old_addr);
 }
 
 /*****************************************************************************/
@@ -292,38 +312,49 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 
         addr += length_need_to_write;
 
-        ResetWatchdog();
+//        ResetWatchdog();
     }
 }
 
 void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 {
     uint16_t i = 0;
-
+	uint8_t cmd;
     enable_ext_flash(1);
-
+	
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
         /* Gui lenh doc */
-        FLASH_SPI_SendByte(READ_DATA_CMD4);
+		cmd = READ_DATA_CMD4;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+//        FLASH_SPI_SendByte(READ_DATA_CMD4);
 
         /* Gui 4 byte dia chi */
-        FLASH_SPI_SendByte((addr >> 24) & 0xFF);
+//        FLASH_SPI_SendByte((addr >> 24) & 0xFF);
+		cmd = (addr >> 24) & 0xFF;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
     else
     {
         /* Gui lenh doc */
-        FLASH_SPI_SendByte(READ_DATA_CMD);
+		cmd = READ_DATA_CMD;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+//        FLASH_SPI_SendByte(READ_DATA_CMD);
     }
 
     /* Gui 3 byte dia chi */
-    FLASH_SPI_SendByte((addr >> 16) & 0xFF);
-    FLASH_SPI_SendByte((addr >> 8) & 0xFF);
-    FLASH_SPI_SendByte(addr & 0xFF);
-
+	cmd = (addr >> 16) & 0xFF;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = (addr >> 8) & 0xFF;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = addr & 0xFF;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = SPI_DUMMY;
     /* Lay du lieu */
-    for (i = 0; i < length; i++)
-        buffer[i] = FLASH_SPI_SendByte(SPI_DUMMY);
+	HAL_SPI_Receive(&hspi2, buffer, length, 100);
 
     enable_ext_flash(0);
 }
@@ -338,42 +369,48 @@ void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
  * @version	:
  * @reviewer:	
  */
-void FlashEraseSector4K(uint16_t SectorCount)
+void flash_erase_sector_4k(uint16_t sector_count)
 {
     uint32_t addr = 0;
-    uint32_t OldAddress = 0;
-
-    addr = SectorCount * 4096; //Sector 4KB
-    OldAddress = addr;
+    uint32_t old_addr = 0;
+	uint8_t cmd;
+    addr = sector_count * 4096; //Sector 4KB
+    old_addr = addr;
 
     flash_write_control(1, addr);
-    Delayms(1);
-
     enable_ext_flash(1);
-    Delayms(1);
 
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
         /* Gui lenh */
-        FLASH_SPI_SendByte(SE_CMD4);
+		cmd = SE_CMD4;
+//        FLASH_SPI_SendByte(SE_CMD4);
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
         /* Gui 4 bytes dia chi */
-        FLASH_SPI_SendByte((addr >> 24) & 0xFF);
+		cmd = (addr >> 24) & 0xFF;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
     else
     {
         /* Gui lenh */
-        FLASH_SPI_SendByte(SE_CMD);
+		cmd = SE_CMD;
+//        FLASH_SPI_SendByte(SE_CMD);
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
 
     /* Gui 3 bytes dia chi */
-    FLASH_SPI_SendByte((addr >> 16) & 0xFF);
-    FLASH_SPI_SendByte((addr >> 8) & 0xFF);
-    FLASH_SPI_SendByte(addr & 0xFF);
+	cmd = (addr >> 16) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = (addr >> 8) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = addr & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
     enable_ext_flash(0);
-    Delayms(1);
-    wait_write_in_process(OldAddress);
+    wait_write_in_process(old_addr);
 }
 
 /*****************************************************************************/
@@ -386,42 +423,50 @@ void FlashEraseSector4K(uint16_t SectorCount)
  * @version	:
  * @reviewer:	
  */
-void FlashEraseBlock64K(uint16_t SectorCount)
+void flash_erase_block_64K(uint16_t sector_count)
 {
     uint32_t addr = 0;
-    uint32_t OldAddress = 0;
-
-    addr = SectorCount * 65536; //Sector 64KB
-    OldAddress = addr;
+    uint32_t old_addr = 0;
+	uint8_t cmd;
+	
+    addr = sector_count * 65536; //Sector 64KB
+    old_addr = addr;
 
     flash_write_control(1, addr);
-    Delayms(1);
 
     enable_ext_flash(1);
-    Delayms(1);
+
 
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
         /* Gui lenh */
-        FLASH_SPI_SendByte(BE_CMD4);
+		cmd = BE_CMD4;
+		HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+//        FLASH_SPI_SendByte(BE_CMD4);
 
         /* Gui 4 bytes dia chi */
-        FLASH_SPI_SendByte((addr >> 24) & 0xFF);
+		cmd = (addr >> 24) & 0xFF;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
     else
     {
         /* Gui lenh */
-        FLASH_SPI_SendByte(BE_CMD);
+		cmd = BE_CMD;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     }
 
     /* Gui 3 bytes dia chi */
-    FLASH_SPI_SendByte((addr >> 16) & 0xFF);
-    FLASH_SPI_SendByte((addr >> 8) & 0xFF);
-    FLASH_SPI_SendByte(addr & 0xFF);
+	cmd = (addr >> 16) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = (addr >> 8) & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+	
+	cmd = addr & 0xFF;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
     enable_ext_flash(0);
-    Delayms(1);
-    wait_write_in_process(OldAddress);
+    wait_write_in_process(old_addr);
 }
 
 /*****************************************************************************/
@@ -440,22 +485,26 @@ uint8_t flash_self_test(void)
     uint8_t device_id = 0xFF;
     uint8_t reg_status = 0;
     uint8_t loop_count;
-
+	uint8_t cmd;
+	
     //Retry init 3 times
     for (loop_count = 0; loop_count < 3; loop_count++)
     {
         enable_ext_flash(1);
 
         /* Lenh */
-        FLASH_SPI_SendByte(READ_ID_CMD); /* 0x90 */
+		cmd = READ_ID_CMD;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
         /* 3 byte address */
-        FLASH_SPI_SendByte(0);
-        FLASH_SPI_SendByte(0);
-        FLASH_SPI_SendByte(0);
-
-        manufacture_id = FLASH_SPI_SendByte(0xFF);
-        device_id = FLASH_SPI_SendByte(0xFF);
+		cmd = 0;
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+        HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+		
+		cmd = 0xFF;
+		HAL_SPI_TransmitReceive(&hspi2, &cmd, &manufacture_id, 1, 100);
+        HAL_SPI_TransmitReceive(&hspi2, &cmd, &device_id, 1, 100);
 
         enable_ext_flash(0);
 
@@ -466,7 +515,7 @@ uint8_t flash_self_test(void)
         //    else if (device_id == 0x18)	/* FL256S - 1 chan CS 256Mb */
         //        m_flash_version = FL256S;
 
-        DEBUG_PRINTF("device id: %X, manufacture id: %X", device_id, manufacture_id);
+        DEBUG_PRINTF("device id: %X, manufacture id: %X\r\n", device_id, manufacture_id);
         if (manufacture_id == 0x01 && device_id == 0x16) /* FL164K - 64Mb */
             m_flash_version = FL164K;
         else if (manufacture_id == 0x01 && device_id == 0x17) /* FL127S - 1 chan CS 128Mb */
@@ -479,25 +528,28 @@ uint8_t flash_self_test(void)
 
             //Vao che do 4-Byte addr
             enable_ext_flash(1);
-            FLASH_SPI_SendByte(EN4B_MODE_CMD); //0xB7
+			cmd = EN4B_MODE_CMD;
+            HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
             enable_ext_flash(0);
 
-            Delayms(10);
+            sys_delay_ms(10);
             //Doc thanh ghi status 2, bit ADS - 5
             enable_ext_flash(1);
-            FLASH_SPI_SendByte(RDSR2_CMD);
-
-            reg_status = FLASH_SPI_SendByte(SPI_DUMMY);
+			cmd = RDSR2_CMD;
+            HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+			
+			cmd = SPI_DUMMY;
+			HAL_SPI_TransmitReceive(&hspi2, &cmd, &reg_status, 1, 100);
             enable_ext_flash(0);
 
-            DEBUG_PRINTF("status register: %02X", reg_status);
+            DEBUG_PRINTF("status register: %02X\r\n", reg_status);
             if (reg_status & 0x20)
             {
-                DEBUG_PRINTF("Da vao che do 32 bits dia chi");
+                DEBUG_PRINTF("Da vao che do 32 bits dia chi\r\n");
             }
             else
             {
-                Delayms(500);
+                sys_delay_ms(500);
                 continue;
             }
         }
@@ -509,19 +561,23 @@ uint8_t flash_self_test(void)
                 m_flash_version = W25Q256JV;
                 //Vao che do 4-Byte addr
                 enable_ext_flash(1);
-                FLASH_SPI_SendByte(EN4B_MODE_CMD); //0xB7
+				cmd = EN4B_MODE_CMD;
+                HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
                 enable_ext_flash(0);
 
-                Delayms(10);
+                sys_delay_ms(10);
                 //Doc thanh ghi status 3, bit ADS  (S16) - bit 0
                 enable_ext_flash(1);
-                FLASH_SPI_SendByte(RDSR3_CMD);
-
-                reg_status = FLASH_SPI_SendByte(SPI_DUMMY);
-                DEBUG_PRINTF("status register: %02X", reg_status);
+				cmd = RDSR3_CMD;
+                HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
+				
+				cmd = SPI_DUMMY;
+                HAL_SPI_TransmitReceive(&hspi2, &cmd, &reg_status, 1, 100);
+				
+                DEBUG_PRINTF("status register: %02X\r\n", reg_status);
                 if (reg_status & 0x01)
                 {
-                    DEBUG_PRINTF("Da vao che do 32 bits dia chi");
+                    DEBUG_PRINTF("Da vao che do 32 bits dia chi\r\n");
                 }
                 enable_ext_flash(0);
             }
@@ -552,9 +608,7 @@ uint8_t flash_self_test(void)
 
         if (m_flash_version == 0xFF || manufacture_id == 0xFF)
         {
-            BuzzerBeep(2000);
-            DEBUG_PRINTF("DevID: %X, FacID: %X", device_id, manufacture_id);
-            Delayms(500);
+            DEBUG_PRINTF("DevID: %X, FacID: %X\r\n", device_id, manufacture_id);
         }
         else
         {
@@ -575,7 +629,6 @@ uint8_t flash_test(void)
     flash_write_bytes(FLASH_CHECK_FIRST_RUN + 15, buffer_test, 10);
 
     /* Doc lai va kiem tra */
-    Delayms(100);
     memset(buffer_test, 0, 10);
     flash_read_bytes(FLASH_CHECK_FIRST_RUN + 15, buffer_test, 10);
 
@@ -599,28 +652,33 @@ uint8_t flash_test(void)
  * @version	:
  * @reviewer:	
  */
-void FLASH_Clear(void)
+void flash_clear(void)
 {
     uint8_t status = 0xFF;
-    DEBUG_PRINTF("Erase all flash");
-
+    uint8_t cmd;
+	DEBUG_PRINTF("Erase all flash\r\n");
+	
     flash_write_control(1, 0);
     enable_ext_flash(1);
-    FLASH_SPI_SendByte(CE_CMD);
+	
+	cmd = CE_CMD;
+    HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
     enable_ext_flash(0);
 
     /* Doc thanh ghi status */
-    Delayms(100);
+    sys_delay_ms(100);
     enable_ext_flash(1);
-    FLASH_SPI_SendByte(RDSR_CMD);
+	cmd = RDSR_CMD;
+	HAL_SPI_Transmit(&hspi2, &cmd, 1, 100);
 
     while (1)
     {
-        ResetWatchdog();
-        status = FLASH_SPI_SendByte(SPI_DUMMY);
+//        ResetWatchdog();
+		cmd = SPI_DUMMY;
+        HAL_SPI_TransmitReceive(&hspi2, &cmd, &status, 1, 100);
         if ((status & 1) == 0)
             break;
-        Delayms(10);
+        sys_delay_ms(10);
     }
     enable_ext_flash(0);
 
@@ -647,7 +705,7 @@ static uint8_t flash_check_first_run(void)
     if (tmp != 0xA5)
     {
         DEBUG_PRINTF("Erase block 64kb\r\n");
-        FlashEraseBlock64K(0); //Xoa sector dau tien cho nhanh
+        flash_erase_block_64K(0); //Xoa sector dau tien cho nhanh
 
         tmp_buff[0] = 0xA5;
         flash_write_bytes(FLASH_CHECK_FIRST_RUN, tmp_buff, 1);

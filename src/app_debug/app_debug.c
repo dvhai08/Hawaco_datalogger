@@ -2,6 +2,9 @@
 #include "stdarg.h"
 #include "stdio.h"
 #include "main.h"
+#include <string.h>
+#include "ctype.h"
+
 //#include "gd32e10x.h"
 
 #define RTT_PRINTF_BUFFER_SIZE 256
@@ -68,4 +71,47 @@ int app_debug_rtt_raw(const char *fmt,...)
     va_end(args);
     
     return n;
+}
+
+void app_debug_dump(const void* data, int len, const char* string, ...)
+{
+	uint8_t* p = (uint8_t*)data;
+    uint8_t  buffer[16];
+    int32_t i_len;
+    int32_t i;
+
+    DEBUG_RAW("%s %u bytes\n", string, len);
+    while (len > 0)
+    {
+        i_len = (len > 16) ? 16 : len;
+        memset(buffer, 0, 16);
+        memcpy(buffer, p, i_len);
+        for (i = 0; i < 16; i++)
+        {
+            if (i < i_len)
+                DEBUG_RAW("%02X ", buffer[i]);
+            else
+                DEBUG_RAW("   ");
+        }
+        DEBUG_RAW("\t");
+        for (i = 0; i < 16; i++)
+        {
+            if (i < i_len)
+            {
+                if (isprint(buffer[i]))
+				{
+                    DEBUG_RAW("%c", (char)buffer[i]);
+				}
+                else
+				{
+                    DEBUG_RAW(".");
+				}
+            }
+            else
+                DEBUG_RAW(" ");
+        }
+        DEBUG_RAW("\r\n");
+        len -= i_len;
+        p += i_len;
+    }
 }

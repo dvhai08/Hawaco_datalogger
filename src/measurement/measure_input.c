@@ -22,6 +22,7 @@
 #include "app_bkup.h"
 #include "gsm.h"
 #include "lwrb.h"
+#include "app_eeprom.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 
@@ -66,14 +67,18 @@ static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static void measure_adc_input(void);
 static void process_rs485_uart(void);
 static measure_input_water_meter_input_t m_water_meter_input[2];
-static uint32_t m_pulse_counter_in_backup[2];
+static uint32_t m_pulse_counter_in_backup[4];
+static measure_input_perpheral_data_t m_measure_data;
+
 static void measure_input_pulse_counter_poll(void)
 {
     if (m_is_pulse_trigger)
     {
         //Store to BKP register
         app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0],
-									m_pulse_counter_in_backup[1]);
+									m_pulse_counter_in_backup[1],
+									m_pulse_counter_in_backup[2],
+									m_pulse_counter_in_backup[3]);
         m_is_pulse_trigger = 0;
         DEBUG_PRINTF("+++++++++ in %ums\r\n", m_pull_diff);
     }
@@ -85,6 +90,13 @@ void measure_input_task(void)
 {
     measure_input_pulse_counter_poll();
 
+	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
+	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
+	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
+	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
+	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
+	m_measure_data.water_pulse_counter[1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin) ? 0 : 1;
+	
     if (xSystem.Status.InitSystemDone == 0)
         return;
 
@@ -93,16 +105,17 @@ void measure_input_task(void)
         m_sensor_uart_buffer.State--;
         if (m_sensor_uart_buffer.State == 0)
         {
-//            process_rs485_uart();
-//            m_sensor_uart_buffer.BufferIndex = 0;
+			
         }
     }
 }
 
 volatile uint32_t store_measure_result_timeout = 0;
 volatile uint32_t Measure420mATick = 0;
+
 void MeasureTick1000ms(void)
 {
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     measure_adc_input();
 
     if (xSystem.Status.ADCOut)
@@ -114,7 +127,7 @@ void MeasureTick1000ms(void)
 
     /* === DO DAU VAO 4-20mA DINH KY === //
 	*/
-    if (Measure420mATick >= xSystem.Parameters.period_measure_peripheral * 60)
+    if (Measure420mATick*1000 >= cfg->measure_interval_ms)
     {
         Measure420mATick = 0;
 
@@ -209,9 +222,9 @@ void measure_input_initialize(void)
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
     */
-	uint32_t counter0, counter_1;
-	app_bkup_read_pulse_counter(&counter0, &counter_1);
-    DEBUG_PRINTF("Pulse counter in BKP: %u-%u\r\n", counter0, counter_1);
+	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
+	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
+    DEBUG_PRINTF("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
 }
 
 uint8_t measure_input_is_rs485_power_on(void)
@@ -405,4 +418,11 @@ uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
 uint32_t Modbus_Master_Millis(void)
 {
 	return sys_get_ms();
+}
+
+
+measure_input_perpheral_data_t *measure_input_current_data(void)
+{
+	#warning "Please implement measurement data"
+	return &m_measure_data;
 }

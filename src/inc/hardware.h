@@ -169,35 +169,58 @@
 #define	DAC_OUT_PIN		GPIO_PIN_5	//DAC_OUT1
 #else
 #include "main.h"
-#define GSM_PWR_EN(x)		{	if (x) \
-									LL_GPIO_SetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
-								else	\
-									LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
-							}
+#define GSM_PWR_EN(x)			{	if (x) \
+										LL_GPIO_SetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
+								}
 
-#define GSM_PWR_RESET(x)	{	if (x) \
-									LL_GPIO_SetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);	\
-								else	\
-									LL_GPIO_ResetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);	\
-							}
+#define GSM_PWR_RESET(x)		{	if (x) \
+										LL_GPIO_SetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);	\
+								}
 
-#define GSM_PWR_KEY(x)		{	if (x) \
-									LL_GPIO_SetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);	\
-								else	\
-									LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);	\
-							}		
+#define GSM_PWR_KEY(x)			{	if (x) \
+										LL_GPIO_SetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);	\
+								}		
 
 #define GSM_UART				0
 #define RS485_UART				1
-#define LED1(x)             {	if (x) \
-									LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
-								else	\
-									LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
-                            }		
+#define LED1(x)             	{	if (x) \
+										LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+								}		
 
 #define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
-#define SENS_420mA_PWR_ON()	LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
+#define SENS_420mA_PWR_ON()			LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
 							
+#define TRANS_1_OUTPUT(x)      {	if (x) \
+										LL_GPIO_SetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
+								}	
+
+#define TRANS_2_OUTPUT(x)      {	if (x) \
+										LL_GPIO_SetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
+								}	
+
+#define TRANS_3_OUTPUT(x)      {	if (x) \
+										LL_GPIO_SetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
+								}	
+
+#define TRANS_4_OUTPUT(x)      {	if (x) \
+										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
+                            }								
 #endif
 
 

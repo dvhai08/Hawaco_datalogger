@@ -1,0 +1,7 @@
+Test case:
+1. Độ chính xác khi đọc pulse
+2. Line break
+3. Cảnh báo 
+4. Mất mạng
+5. Ota update
+6. DAC, ADC

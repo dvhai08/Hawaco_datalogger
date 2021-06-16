@@ -171,12 +171,12 @@ typedef struct
 {
     uint32_t Vin;
 //    uint32_t PulseCounterInBkup;
-    uint32_t PulseCounterInFlash;
+//    uint32_t PulseCounterInFlash;
     uint16_t Vsens;
     float Input420mA;
-    uint8_t batteryLevel;
+//    uint8_t batteryLevel;
     uint16_t Pressure[4];
-    uint8_t batteryPercent;
+//    uint8_t batteryPercent;
 } MeasureStatus_t;
 
 typedef union
@@ -212,39 +212,11 @@ typedef struct
 
 } Status_t;
 
-typedef union
-{
-    struct input
-    {
-        uint16_t pulse : 1;
-        uint16_t ma420 : 1;
-        uint16_t rs485 : 1;
-        uint16_t reserve : 13;
-    } name;
-    uint16_t value;
-} input_cfg_t;
-
 
 typedef struct
 {
     char gsm_imei[25];
     char sim_imei[25];
-
-    char MQTTUser[25];
-    char MQTTPass[25];
-    HostStruct_t MQTTHost;
-
-    //Thong so cau hinh
-    char phone_number[15];
-    uint16_t period_send_message_to_server_min; //phut
-    uint16_t period_measure_peripheral; //phut
-    uint8_t outputOnOff; //0/1
-    uint8_t output420ma; //4-20mA
-    input_cfg_t input;
-    uint8_t alarm_enable;
-    uint32_t input1Offset;
-	uint32_t input2Offset;
-    uint32_t kFactor;
 } Parameters_t;
 
 

@@ -21,7 +21,7 @@ typedef struct
     uint8_t rs485[APP_FLASH_RS485_MAX_SIZE];
     uint8_t temp;
     uint16_t vbat;
-    uint8_t input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];
+    uint8_t input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 1.3mA =>> 13
     uint32_t timestamp;
     uint32_t system_code;
     uint32_t write_index;

@@ -8,6 +8,7 @@
 #include "app_debug.h"
 //#include "board_hw.h"
 //#include "app_flash.h"
+#include "app_eeprom.h"
 
 #define PRINTF_OVER_RTT             DEBUG_RTT
 #define PRINTF_OVER_UART            (!PRINTF_OVER_RTT)
@@ -159,7 +160,7 @@ static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
     {
         if (gsm_data_layer_is_module_sleeping())
         {
-            xSystem.Status.gsm_sleep_time_s = xSystem.Parameters.period_send_message_to_server_min * 60;
+            xSystem.Status.gsm_sleep_time_s = app_eeprom_read_config_data()->send_to_server_interval_ms / 1000;
         }
     }
     return 0;

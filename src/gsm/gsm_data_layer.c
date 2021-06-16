@@ -23,6 +23,9 @@
 #include "app_queue.h"
 #include "umm_malloc.h"
 #include "app_bkup.h"
+#include "app_eeprom.h"
+#include "measure_input.h"
+#include "version_control.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -141,12 +144,13 @@ void gsm_set_flag_prepare_enter_read_sms_mode(void)
 
 void gsm_wakeup_periodically(void)
 {
-    DEBUG_PRINTF("Sleep time %u, periodic send msg %u, remaining %uS\r\n",
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+    DEBUG_PRINTF("Sleep time %u, periodic send msg %u, remaining %us\r\n",
                  xSystem.Status.gsm_sleep_time_s,
-                 xSystem.Parameters.period_send_message_to_server_min * 60,
-                 xSystem.Parameters.period_send_message_to_server_min * 60 - xSystem.Status.gsm_sleep_time_s);
+                 cfg->send_to_server_interval_ms,
+                 cfg->send_to_server_interval_ms - xSystem.Status.gsm_sleep_time_s * 1000);
 
-    if (xSystem.Status.gsm_sleep_time_s >= xSystem.Parameters.period_send_message_to_server_min * 60)
+    if (xSystem.Status.gsm_sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
     {
         xSystem.Status.gsm_sleep_time_s = 0;
         DEBUG_PRINTF("GSM: wakeup to send msg\r\n");
@@ -1152,14 +1156,23 @@ void gsm_set_timeout_to_sleep(uint32_t sec)
 }
 
 //static LargeBuffer_t m_http_buffer;
+/* {
+	"Timestamp":"1623849775","ID":"860262050129720","PhoneNum":"000","Money":"0","Input1":"5558",
+	"Input2":"0.0","Output1":"0","Output2":"0","SignalStrength":"100","WarningLevel":"0",
+	"BatteryLevel":"77","BatteryDebug":"4086","K":"1","Offset":"5480"}
+ */
+static uint32_t m_malloc_failed_count = 0;
 uint16_t gsm_build_http_post_msg(void)
 {
     app_queue_data_t new_msq;
-    char alarm_str[32];
+    app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
+	
+	char alarm_str[32];
     char *p = alarm_str;
 
-    // bat,temp,4glost,sensor_err,sensor_overflow
-    if (xSystem.MeasureStatus.batteryPercent < 20)
+    // bat,temp,4glost,sensor_err,sensor_overflow, sensor break
+    if (measure_input->vbat_percent < 10)
     {
         p += sprintf(p, "%u,", 1);
     }
@@ -1172,56 +1185,103 @@ uint16_t gsm_build_http_post_msg(void)
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u", 0);
+	bool found_break_pulse_input = false;
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+	{
+		if (measure_input->water_pulse_counter[i].line_break_detect)
+		{
+			found_break_pulse_input = true;
+			break;
+		}
+	}
+	
+	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
 
 
     if (app_queue_is_full(&m_http_msq))
     {
         DEBUG_PRINTF("HTTP msq full\r\n");
         return 0;
-        //app_queue_data_t tmp;
-        //app_queue_get(&m_http_msq, tmp);
-        //m_malloc_count--;
-        //umm_free(tmp.pointer);
     }
 
     new_msq.pointer = umm_malloc(256);
     if (new_msq.pointer == NULL)
     {
         DEBUG_PRINTF("[%s-%d] No memory\r\n", __FUNCTION__, __LINE__);
+		m_malloc_failed_count = 0;
+		if (m_malloc_failed_count == 0)
+		{
+			NVIC_SystemReset();
+		}
         return 0;
     }
     else
     {
         m_malloc_count++;
+		m_malloc_failed_count = 0;
         DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, m_malloc_count);
     }
 	
 	#warning "Please store default input 2 offset"
-	uint32_t counter0, counter1;
-	app_bkup_read_pulse_counter(&counter0, &counter1);
-	counter0 = counter0 / xSystem.Parameters.kFactor + xSystem.Parameters.input1Offset;
-	counter1 = counter1 / xSystem.Parameters.kFactor + xSystem.Parameters.input2Offset;
+	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
+	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
+	
+	counter0_f = counter0_f / cfg->k0 + cfg->offset0;
+	counter1_f = counter1_f / cfg->k1 + cfg->offset1;
 	
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", xSystem.Status.TimeStamp); //second since 1970
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"%s\",", xSystem.Parameters.gsm_imei);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", xSystem.Parameters.phone_number);
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG2-%s\",", xSystem.Parameters.gsm_imei);
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", cfg->phone);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1\":[\"%u\",\"%u\"],",
-                              counter0, counter1); //so xung
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J1\":\"%u\",\"Input1_J2\":\"%u\",",
+                              counter0_f, counter1_f); //so xung
+	
+	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+	{
+		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J1_R\":\"%u\",",
+									counter0_r);
+	}
+	
+	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+	{
+		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J2_R\":\"%u\",",
+									counter1_r);
+	}
 
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input2\":\"%.1f\",", xSystem.MeasureStatus.Input420mA); //dau vao 4-20mA
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output1\":\"%d\",", xSystem.Parameters.outputOnOff);    //dau ra on/off
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output2\":\"%d\",", xSystem.Parameters.output420ma);    //dau ra 4-20mA
+	for (uint32_t i = 0; i < 4; i++)
+	{
+		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J3_%u\":\"%u.%u\",", 
+																			i,
+																			measure_input->input_4_20mA[i]/10, 
+																			measure_input->input_4_20mA[i]%10); // dau vao 4-20mA 0
+	}
+
+	for (uint32_t i = 0; i < 4; i++)
+	{
+		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J9_%u\":\"%u\",", 
+																			i,
+																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
+	}	
+	
+	for (uint32_t i = 0; i < 4; i++)
+	{
+		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output%u\":\"%u\",", 
+																			i,
+																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
+	}	
+	
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", xSystem.Status.CSQPercent);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
 
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", xSystem.MeasureStatus.batteryPercent);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u,os-%u-%u\"}", 
-                                                                            xSystem.MeasureStatus.Vin,
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", measure_input->vbat_percent);
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u-%u,os-%u-%u,m-%u,%u,%s-%s\"}", 
+                                                                            measure_input->vbat_raw,
                                                                             hardware_manager_get_reset_reason()->value,
-                                                                             xSystem.Parameters.kFactor,
-                                                                             xSystem.Parameters.input1Offset,
-																			xSystem.Parameters.input2Offset);
+                                                                            cfg->k0, cfg->k1,
+                                                                            cfg->offset0, cfg->offset1,
+																			cfg->meter_mode[0], cfg->meter_mode[1],
+																			VERSION_CONTROL_FW, VERSION_CONTROL_HW);
     hardware_manager_get_reset_reason()->value = 0;
 
     if (app_queue_put(&m_http_msq, &new_msq) == false)

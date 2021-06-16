@@ -23,6 +23,7 @@
 #include "dac.h"
 #include "dma.h"
 #include "iwdg.h"
+#include "lptim.h"
 #include "usart.h"
 #include "rtc.h"
 #include "spi.h"
@@ -30,7 +31,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_eeprom.h"
+#include "measure_input.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -100,14 +102,18 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_RTC_Init();
   MX_SPI2_Init();
+  MX_LPTIM1_Init();
   /* USER CODE BEGIN 2 */
 #endif
+//	HAL_ADC
+    app_eeprom_init();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  measure_input_poll();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -160,10 +166,12 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_LPUART1
-                              |RCC_PERIPHCLK_RTC;
+                              |RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.LptimClockSelection = RCC_LPTIM1CLKSOURCE_PCLK;
+
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
