@@ -38,13 +38,6 @@ static void init_serial(void);
 
 void gsm_init_hw(void)
 {
-#if GD32E10X
-    gpio_pin_remap_config(GPIO_SWJ_SWDPENABLE_REMAP, ENABLE); /*!< JTAG-DP disabled and SW-DP enabled */
-
-    gpio_init(GSM_PWR_EN_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_EN_PIN);
-    gpio_init(GSM_PWR_KEY_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_PWR_KEY_PIN);
-    gpio_init(GSM_RESET_PORT, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GSM_RESET_PIN);
-#endif
     //Tat nguon module
     GSM_PWR_EN(0);
     GSM_PWR_RESET(1);
@@ -74,33 +67,7 @@ void gsm_init_hw(void)
 	NVIC_Init(&NVIC_InitStructure);
 #endif //0
 
-#if GD32E10X
-    /* configure RI (PA11) pin as input */
-    gpio_init(GSM_RI_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_RI_PIN);
-    gpio_init(GSM_STATUS_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, GSM_STATUS_PIN);
-#endif
-
-#if 0  //HW co RI pin
-    /* enable and set key user EXTI interrupt to the lowest priority */
-    nvic_irq_enable(EXTI10_15_IRQn, 2U, 1U);
-
-    /* connect key user EXTI line to key GPIO pin */
-    gpio_exti_source_select(GSM_RI_PORT_SOURCE, GSM_RI_PIN_SOURCE);
-
-    /* configure key user EXTI line */
-    exti_init(GSM_RI_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
-    exti_interrupt_flag_clear(GSM_RI_EXTI_LINE);
-#endif //__RI_INTERRUPT__
-
-#ifdef GD32E10Xs
-    if (m_ringbuffer_uart_tx.buff == NULL)
-    {
-        lwrb_init(&m_ringbuffer_uart_tx, m_uart_tx_buffer, sizeof(m_uart_tx_buffer));
-    }
-    driver_uart_initialize(DRIVER_UART_PORT_GSM, 115200);
-#else
-    usart1_control(true);
-#endif
+	usart1_control(true);
     gsm_data_layer_initialize();
 
     gsm_change_state(GSM_STATE_RESET); 
@@ -138,23 +105,14 @@ void gsm_pwr_control(uint8_t State)
         //xSystem.Status.MQTTServerState = MQTT_INIT;
 
         //Disable luon UART
-#ifdef GD32E10X
-        usart_disable(GSM_UART);
-        usart_deinit(GSM_UART);
-#else
-        usart1_control(false);
-#endif
+		usart1_control(false);
     }
     else if (State == GSM_ON)
     {
         gsm_manager.isGSMOff = 0;
 
         //Khoi tao lai UART
-#ifdef GD32E10X
-        driver_uart_initialize(GSM_UART, 115200);
-#else
-        usart1_control(true);
-#endif
+		usart1_control(true);
         /* Cap nguon 4.2V */
         GSM_PWR_EN(1);
         Delayms(1000); //Wait for VBAT stable
@@ -402,7 +360,6 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
                         char * expected_response_at_the_end_of_response, uint32_t timeout,
                         uint8_t retry_count, gsm_send_at_cb_t callback)
 {
-    #warning "Please handle uart rx cplt in usart.c"
     if (timeout == 0 || callback == NULL)
     {
         gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(m_gsm_hardware.atc.cmd));
@@ -483,38 +440,28 @@ void gsm_uart_tx_complete_callback(bool status)
 }
 #endif
 
+extern void usart1_hw_uart_send_raw(uint8_t *data, uint32_t length);
 void gsm_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
-#ifdef GD32E10X
-    while (length--)
-    {
-        while (lwrb_get_free(&m_ringbuffer_uart_tx) == 0)
-        {
+    usart1_hw_uart_send_raw(raw, length);
+}
 
-        }
-        /* Disable ngat USART0 */
-        NVIC_DisableIRQ(GSM_UART_IRQ);
-        __nop();
-
-        if (m_tx_uart_run == 0)
-        {
-            /* Send data to UART. */
-            usart_data_transmit(GSM_UART, *raw);
-            usart_interrupt_enable(GSM_UART, USART_INT_TBE); /* Enable TXE interrupt */
-            m_tx_uart_run = 1;
-        }
-        else
-        {
-            /* Add data to transmit buffer. */
-            lwrb_write(&m_ringbuffer_uart_tx, raw, 1);
-        }
-        raw++;
-        /* Enable Ngat USART0 tro lai */
-        NVIC_EnableIRQ(GSM_UART_IRQ);
-    }
-#else
-    uart1_hw_uart_send_raw(raw, length);
-#endif
+void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
+{
+	if (length)
+	{			
+		m_new_uart_data = true;
+		for (uint32_t i = 0; i < length; i++)
+		{
+			m_gsm_hardware.atc.recv_buff.Buffer[m_gsm_hardware.atc.recv_buff.BufferIndex++] = data[i];
+			if (m_gsm_hardware.atc.recv_buff.BufferIndex >= SMALL_BUFFER_SIZE)
+			{
+				DEBUG_PRINTF("[%s] Overflow\r\n", __FUNCTION__);
+				m_gsm_hardware.atc.recv_buff.BufferIndex = 0;
+				return;
+			}
+		}
+	}
 }
 
 

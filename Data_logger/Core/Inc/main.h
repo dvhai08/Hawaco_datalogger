@@ -83,8 +83,6 @@ void Error_Handler(void);
 #define ADC_VBAT_GPIO_Port GPIOC
 #define BUZZER_Pin LL_GPIO_PIN_3
 #define BUZZER_GPIO_Port GPIOC
-#define CHARGE_EN_Pin LL_GPIO_PIN_0
-#define CHARGE_EN_GPIO_Port GPIOA
 #define ADC_24V_Pin LL_GPIO_PIN_1
 #define ADC_24V_GPIO_Port GPIOA
 #define OPTOIN1_Pin LL_GPIO_PIN_2
@@ -160,6 +158,12 @@ uint32_t sys_get_ms(void);
  * @param[in] 	ms Delay in ms
  */
 void sys_delay_ms(uint32_t ms);
+
+/**
+ * @brief		Set system timeout before enabling deepsleep
+ * @param[in] 	ms Delay in ms
+ */
+void sys_set_delay_time_before_deep_sleep(uint32_t ms);
 
 /* USER CODE END Private defines */
 

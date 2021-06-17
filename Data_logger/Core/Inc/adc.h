@@ -28,6 +28,32 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
+typedef struct
+{
+	uint32_t bat_mv;			// battery voltage in MV
+	uint32_t bat_percent;		// battery voltage in percent
+	uint32_t vin_24;			// 24V input
+	uint8_t i_4_20ma_in[4];
+	int32_t temp;
+} adc_input_value_t;
+
+/**
+ * @brief		Get adc input result of serveral sersor
+ */
+adc_input_value_t *adc_get_input_result(void);
+
+/**
+ * @brief		Convert adc value
+ */
+void adc_convert(void);
+
+/**
+ * @brief		Check if adc conversion is complete
+ * @retval		TRUE ADC convert is completed
+ *				FALSE ADC convert is inprogess
+ */
+bool adc_conversion_cplt(bool clear_on_exit);
 
 /* USER CODE END Includes */
 
@@ -40,6 +66,11 @@ extern ADC_HandleTypeDef hadc;
 void MX_ADC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+/**
+ * @brief		Start adc task
+ */
+void adc_start(void);
 
 /* USER CODE END Prototypes */
 

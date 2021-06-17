@@ -20,10 +20,10 @@
 
 
 #define DEBUG_DUMP                           app_debug_dump
-#define DEBUG_INFO(s, args...)               debug_print(KGRN "[I] %s " s KNRM, __FILE__, ##args)
-#define DEBUG_ERROR(s, args...)              debug_print(KRED "[E] %s " s KNRM, __FILE__, ##args)
-#define DEBUG_WARN(s, args...)               debug_print(KYEL "[W] %s " s KNRM, __FILE__, ##args)
-#define DEBUG_COLOR(color, s, args...)       debug_print(color s KNRM, ##args)
+#define DEBUG_INFO(s, args...)               app_debug_rtt_raw(KGRN "[I] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
+#define DEBUG_ERROR(s, args...)              app_debug_rtt_raw(KRED "[E] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
+#define DEBUG_WARN(s, args...)               app_debug_rtt_raw(KYEL "[W] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
+#define DEBUG_COLOR(color, s, args...)       app_debug_rtt_raw(color s KNRM, ##args)
 
 
 #define DEBUG_PRINTF            app_debug_rtt
@@ -34,6 +34,8 @@
 #ifndef DEBUG_FLUSH
 #define DEBUG_FLUSH()      while(0)
 #endif
+
+extern uint32_t sys_get_ms(void);
 
 int app_debug_rtt(const char *fmt,...);
 

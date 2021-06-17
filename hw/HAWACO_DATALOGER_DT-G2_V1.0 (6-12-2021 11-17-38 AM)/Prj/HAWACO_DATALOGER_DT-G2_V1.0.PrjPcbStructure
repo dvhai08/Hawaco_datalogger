@@ -1,0 +1,6 @@
+Record=TopLevelDocument|FileName=00. Root.SchDoc
+Record=SheetSymbol|SourceDocument=00. Root.SchDoc|Designator=U_01|SchDesignator=U_01|FileName=01. Cover.SchDoc|SymbolType=Normal|RawFileName=01. Cover.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=00. Root.SchDoc|Designator=U_02|SchDesignator=U_02|FileName=02. Block diagram.SchDoc|SymbolType=Normal|RawFileName=02. Block diagram.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=00. Root.SchDoc|Designator=U_03|SchDesignator=U_03|FileName=03. Power.SchDoc|SymbolType=Normal|RawFileName=03. Power.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=00. Root.SchDoc|Designator=U_04|SchDesignator=U_04|FileName=04. MCU + ANALOG.SchDoc|SymbolType=Normal|RawFileName=04. MCU + ANALOG.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=00. Root.SchDoc|Designator=U_05|SchDesignator=U_05|FileName=05. 4G Module.SchDoc|SymbolType=Normal|RawFileName=05. 4G Module.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 

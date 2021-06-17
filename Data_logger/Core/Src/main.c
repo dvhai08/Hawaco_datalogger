@@ -42,6 +42,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define UMM_HEAP_SIZE				2048
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -63,7 +64,9 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+/* memory for ummalloc */
+uint8_t g_umm_heap[UMM_HEAP_SIZE];
+static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 /* USER CODE END 0 */
 
 /**
@@ -107,13 +110,14 @@ int main(void)
 #endif
 //	HAL_ADC
     app_eeprom_init();
+	measure_input_initialize();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  measure_input_poll();
+	  measure_input_task();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -178,6 +182,12 @@ void SystemClock_Config(void)
   }
 }
 
+void sys_set_delay_time_before_deep_sleep(uint32_t ms)
+{
+	m_delay_afer_wakeup_from_deep_sleep_to_measure_data = 0;
+	#warning "Please implement delay timeout afer wakeup from deep sleep"
+}
+
 /* USER CODE BEGIN 4 */
 
 uint32_t sys_get_ms()
@@ -187,7 +197,16 @@ uint32_t sys_get_ms()
 
 void sys_delay_ms(uint32_t ms)
 {
-	HAL_Delay(ms);
+	uint32_t current_tick = HAL_GetTick();
+	
+	while (1)
+	{
+		__WFI();
+		if (HAL_GetTick() - current_tick >= ms)
+		{
+			break;
+		}
+	}
 }
 
 /* USER CODE END 4 */

@@ -353,7 +353,7 @@ void USART1_IRQHandler(void)
     if (LL_USART_IsEnabledIT_IDLE(USART1) && LL_USART_IsActiveFlag_IDLE(USART1)) 
     {
         LL_USART_ClearFlag_IDLE(USART1);        /* Clear IDLE line flag */
-        uart1_rx_complete_callback(true);
+        usart1_rx_complete_callback(true);
     }
     
     if (LL_USART_IsActiveFlag_ORE(USART1))

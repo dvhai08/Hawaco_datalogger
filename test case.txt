@@ -5,3 +5,4 @@ Test case:
 4. Mất mạng
 5. Ota update
 6. DAC, ADC
+7 Sleep khi 485 ADC DAC is in progress

@@ -104,13 +104,40 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* dacHandle)
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_4);
 
   /* USER CODE BEGIN DAC_MspDeInit 1 */
-
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	GPIO_InitStruct.Pin = GPIO_PIN_4;
+	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   /* USER CODE END DAC_MspDeInit 1 */
   }
 }
 
 /* USER CODE BEGIN 1 */
 
+void dac_stop(void)
+{
+	HAL_DAC_Stop(&hdac, DAC_CHANNEL_1);
+	HAL_DAC_MspDeInit(&hdac);
+}
+
+void dac_output_value(uint32_t value)
+{
+	/*##-3- Set DAC Channel1 DHR register ######################################*/
+	if (HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value) != HAL_OK)
+	{
+		/* Setting value Error */
+		Error_Handler();
+	}
+
+	/*##-4- Enable DAC Channel1 ################################################*/
+	if (HAL_DAC_Start(&hdac, DAC_CHANNEL_1) != HAL_OK)
+	{
+		/* Start Error */
+		Error_Handler();
+	}
+}
+			
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

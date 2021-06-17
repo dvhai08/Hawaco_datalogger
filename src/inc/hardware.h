@@ -198,29 +198,46 @@
 #define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
 #define SENS_420mA_PWR_ON()			LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
 							
-#define TRANS_1_OUTPUT(x)      {	if (x) \
-										LL_GPIO_SetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
-									else	\
+#define TRANS_1_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
 								}	
 
-#define TRANS_2_OUTPUT(x)      {	if (x) \
-										LL_GPIO_SetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
-									else	\
+#define TRANS_2_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
 								}	
 
-#define TRANS_3_OUTPUT(x)      {	if (x) \
-										LL_GPIO_SetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
-									else	\
+#define TRANS_3_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
 								}	
 
-#define TRANS_4_OUTPUT(x)      {	if (x) \
-										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
-									else	\
+#define TRANS_4_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
-                            }								
+									else	\
+										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
+								}								
+
+#define ENABLE_NTC_POWER(x)     		
+								
+								
+#define ENABLE_INOUT_2_20MA_POWER(x)	{	if (x) \
+												LL_GPIO_ResetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
+											else	\
+												LL_GPIO_SetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
+										}
+
+#define ENABLE_OUTPUT_2_20MA_POWER(x)	{	if (x) \
+												LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+											else	\
+												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+										}	
+
+										
 #endif
 
 

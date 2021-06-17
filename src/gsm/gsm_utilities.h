@@ -6,75 +6,78 @@
 #include <stdbool.h>
 
 /**
- * @brief Get gsm imei from buffer
- * @param[in] IMEI raw buffer from gsm module
- * @param[out] IMEI result
+ * @brief               Get gsm imei from buffer
+ * @param[in]           imei_buffer raw buffer from gsm module
+ * @param[out]          result result output
+ * @param[in]           max_lenth Max result length
+ * @note                Maximum imei length is 15
  */ 
-void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result);
+void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result, uint8_t max_lenth);
+
 
 /**
- * @brief Get signal strength from buffer
- * @param[in] buffer buffer response from GSM module
- * @param[out] CSQ value
- * @note buffer = "+CSQ:..."
- * @retval TRUE Get csq success
- *         FALSE Get csq fail
+ * @brief				Get signal strength from buffer
+ * @param[in]			buffer buffer response from GSM module
+ * @param[out]			CSQ value
+ * @note 				buffer = "+CSQ:..."
+ * @retval 				TRUE Get csq success
+ *         				FALSE Get csq fail
  */ 
 bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq);
 
 /**
- * @brief Get Number from string
- * @param[in] Index Begin index of buffer want to find
- * @param[in] buffer Data want to search
- * @note buffer = "abc124mff" =>> gsm_utilities_get_number_from_string(3, buffer) = 123
- * @retval Number result from string
+ * @brief				Get Number from string
+ * @param[in]			Index Begin index of buffer want to find
+ * @param[in]			buffer Data want to search
+ * @note				buffer = "abc124mff" =>> gsm_utilities_get_number_from_string(3, buffer) = 123
+ * @retval				Number result from string
  */ 
 uint32_t gsm_utilities_get_number_from_string(uint16_t index, char* buffer);
 
 /**
- * @brief Get Number from buffer
- * @param[in] Index Begin index of buffer want to find
- * @param[in] buffer Data want to search
- * @param[in] length Buffer length
- * @note buffer = "abc124mff" =>> gsm_utilities_get_number_from_buffer(3, buffer) = 123
- * @retval Number result from string
+ * @brief				Get Number from buffer
+ * @param[in]			Index Begin index of buffer want to find
+ * @param[in]			buffer Data want to search
+ * @param[in]			length Buffer length
+ * @note				buffer = "abc124mff" =>> gsm_utilities_get_number_from_buffer(3, buffer) = 123
+ * @retval				Number result from string
  */ 
 uint32_t gsm_utilities_get_number_from_buffer(char* buffer, uint8_t offset, uint8_t length);
   
 /**
- * @brief Caculate CRC16
- * @param[in] data_p Data to caculate CRC16 value
- * @param[in] length Length of data
- * @retval CRC16 value
+ * @brief				Caculate CRC16
+ * @param[in]			data_p Data to caculate CRC16 value
+ * @param[in]			length Length of data
+ * @retval				CRC16 value
  */ 
 uint16_t gsm_utilities_crc16(const uint8_t* data_p, uint8_t length);
 
 /**
- * @brief get phone number from AT+CLIP message
- * @param[in] data : Pointer to buffer data will be parsed
- * @param[in] result : Phone number result
- * @note : Format input data "0942018895",129,"",0,"",0
+ * @brief				get phone number from AT+CLIP message
+ * @param[in]			data : Pointer to buffer data will be parsed
+ * @param[in]			result : Phone number result
+ * @note 				Format input data "0942018895",129,"",0,"",0
  */ 
 void gsm_utilities_get_phone_number_from_at_clip(char * data, char * result);
 
 /**
- * @brief Parse HTTP action response
- * @param[in] response : Pointer to buffer data will be parsed
- * @param[out] error_code : HTTP response code
- * @param[out] content_length : HTTP response length
- * @note : Format data input "+HTTPACTION: 0,200,12314\r\n"
- * @retval TRUE  : Message is valid format, operation success
- *         FALSE : Message is invalid format, operation failed
+ * @brief				Parse HTTP action response
+ * @param[in]			response : Pointer to buffer data will be parsed
+ * @param[out]			error_code : HTTP response code
+ * @param[out]			content_length : HTTP response length
+ * @note				Format data input "+HTTPACTION: 0,200,12314\r\n"
+ * @retval				TRUE  : Message is valid format, operation success
+ *         				FALSE : Message is invalid format, operation failed
  */ 
 bool gsm_utilities_parse_http_action_response(char* response, uint32_t *error_code, uint32_t *content_length);
 
 /**
- * @brief Parse HTTPRREAD message response size
- * @param[in] buffer : Pointer to buffer data will be parsed
- * @param[out] begin_data_pointer : Address of user data in buffer
- * @note : Format data input "+HTTPREAD: 123\r\nData...."
- * @retval -1  : GSM HTTPREAD message error
- *         Otherwise : HTTP DATA size
+ * @brief				Parse HTTPRREAD message response size
+ * @param[in]			buffer : Pointer to buffer data will be parsed
+ * @param[out]			begin_data_pointer : Address of user data in buffer
+ * @note				Format data input "+HTTPREAD: 123\r\nData...."
+ * @retval				-1  : GSM HTTPREAD message error
+ *         				Otherwise : HTTP DATA size
  */ 
 int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_pointer);
 

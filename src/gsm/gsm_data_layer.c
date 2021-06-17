@@ -596,7 +596,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 10:
-        gsm_utilities_get_imei(resp_buffer, (uint8_t *)xSystem.Parameters.gsm_imei);
+        gsm_utilities_get_imei(resp_buffer, (uint8_t *)xSystem.Parameters.gsm_imei, 15);
         DEBUG_PRINTF("Get GSM IMEI: %s\r\n", xSystem.Parameters.gsm_imei);
         if (strlen(xSystem.Parameters.gsm_imei) < 15)
         {
@@ -612,7 +612,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 11:
-        gsm_utilities_get_imei(resp_buffer, (uint8_t *)xSystem.Parameters.sim_imei);
+        gsm_utilities_get_imei(resp_buffer, (uint8_t *)xSystem.Parameters.sim_imei, 15);
         DEBUG_PRINTF("Get SIM IMSI: %s\r\n", xSystem.Parameters.sim_imei);
         if (strlen(xSystem.Parameters.sim_imei) < 15)
         {

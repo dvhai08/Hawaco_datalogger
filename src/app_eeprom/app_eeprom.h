@@ -14,21 +14,27 @@ typedef union
 {
 	struct
 	{
-		uint16_t output0 : 1;		// output0-3 enable
-		uint16_t output1 : 1;
-		uint16_t output2 : 1;
-		uint16_t output3 : 1;
+		uint32_t output0 : 1;		// output0-3 enable
+		uint32_t output1 : 1;
+		uint32_t output2 : 1;
+		uint32_t output3 : 1;
+		uint32_t input0 : 1;
+		uint32_t input1 : 1;
+		uint32_t input2 : 1;
+		uint32_t input3 : 1;
 		
-		uint16_t input0 : 1;
-		uint16_t input1 : 1;
-		uint16_t input2 : 1;
-		uint16_t input3 : 1;
-		uint16_t rs485_en : 1;
-		uint16_t warning : 1;
-		uint16_t sos : 1;
-		uint16_t reserve : 5;
+		uint32_t rs485_en : 1;
+		uint32_t warning : 1;
+		uint32_t sos : 1;
+		uint32_t input_4_20ma_enable : 1;
+		uint32_t output_4_20ma_enable : 1;
+		
+		uint32_t output_4_20ma_timeout_100ms : 8;
+		uint32_t output_4_20ma_value : 5;
+		
+		uint32_t reserve : 6;
 	} __attribute__((packed)) name;
-	uint16_t value;
+	uint32_t value;
 } __attribute__((packed)) app_eeprom_io_enable_t;
 
 typedef struct

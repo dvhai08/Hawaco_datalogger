@@ -72,4 +72,10 @@ void MeasureTick1000ms(void);
  */
 measure_input_perpheral_data_t *measure_input_current_data(void);
 
+/**
+ * @brief       Set Vin voltage
+ * @param[in]	New Vin data
+ */
+void measure_intput_set_vin_mv(uint32_t mv);
+
 #endif // __MEASUREMENT_H__

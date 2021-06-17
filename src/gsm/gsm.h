@@ -92,13 +92,6 @@ void gsm_uart_rx_cb(void);
 void gsm_manager_tick(void);
 void gsm_hardware_tick(void);
 
-/**
- * @brief               Get gsm imei from buffer
- * @param[in]           imei_buffer raw buffer from gsm module
- * @param[out]          result result output
- * @note                Maximum imei length is 15
- */ 
-void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result);
 
 void gsm_get_short_apn(char *ShortAPN);
 void gsm_get_cell_id_and_signal_strength(char *Buffer);

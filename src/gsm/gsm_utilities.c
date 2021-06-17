@@ -30,7 +30,7 @@ bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq
     return true;
 }
 
-void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result)
+void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result, uint8_t max_lenth)
 {
     uint8_t count = 0;
     uint8_t tmp_count = 0;
@@ -42,7 +42,7 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result)
             result[tmp_count++] = imei_buffer[count];
         }
 
-        if (tmp_count >= GSM_IMEI_MAX_LENGTH)
+        if (tmp_count >= max_lenth)
         {
             result[tmp_count-1] = 0;
             break;

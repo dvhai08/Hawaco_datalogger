@@ -40,6 +40,15 @@ extern DAC_HandleTypeDef hdac;
 void MX_DAC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/**
+ * @brief		Stop DAC
+ */
+void dac_stop(void);
+
+/**
+ * @brief		Start dac output value
+ */
+void dac_output_value(uint32_t value);
 
 /* USER CODE END Prototypes */
 

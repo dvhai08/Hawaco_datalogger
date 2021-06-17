@@ -23,6 +23,8 @@
 #include "gsm.h"
 #include "lwrb.h"
 #include "app_eeprom.h"
+#include "adc.h"
+
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 
@@ -64,11 +66,12 @@ static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /******************************************************************************
                                    LOCAL FUNCTIONS					    			 
  ******************************************************************************/
-static void measure_adc_input(void);
 static void process_rs485_uart(void);
 static measure_input_water_meter_input_t m_water_meter_input[2];
 static uint32_t m_pulse_counter_in_backup[4];
 static measure_input_perpheral_data_t m_measure_data;
+volatile uint32_t store_measure_result_timeout = 0;
+volatile uint32_t Measure420mATick = 0;
 
 static void measure_input_pulse_counter_poll(void)
 {
@@ -84,10 +87,11 @@ static void measure_input_pulse_counter_poll(void)
     }
 }
 
-
+static uint32_t m_last_measure_time = 0;
 static uint8_t m_measure_timeout = 0;
 void measure_input_task(void)
 {
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
 
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
@@ -108,52 +112,21 @@ void measure_input_task(void)
 			
         }
     }
-}
-
-volatile uint32_t store_measure_result_timeout = 0;
-volatile uint32_t Measure420mATick = 0;
-
-void MeasureTick1000ms(void)
-{
-	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-    measure_adc_input();
-
-    if (xSystem.Status.ADCOut)
-    {
-        DEBUG_PRINTF("ADC: Vin: %d, Vsens: %d\r\n", ADC_RegularConvertedValueTab[ADCMEM_VSYS],
-              ADC_RegularConvertedValueTab[ADCMEM_V20mV]);
-        DEBUG_PRINTF("Vin: %d mV, Vsens: %d mV\r\n", xSystem.MeasureStatus.Vin, xSystem.MeasureStatus.Vsens);
-    }
-
-    /* === DO DAU VAO 4-20mA DINH KY === //
-	*/
-    if (Measure420mATick*1000 >= cfg->measure_interval_ms)
-    {
-        Measure420mATick = 0;
-
-        //Cho phep do thi moi do
-        if (xSystem.Parameters.input.name.ma420)
-        {
-            SENS_420mA_PWR_ON();
-            m_measure_timeout = 10;
-        }
-        else
-        {
-            SENS_420mA_PWR_OFF();
-            gsm_build_http_post_msg();
-        }
-    }
-    if (m_measure_timeout > 0)
-    {
-        m_measure_timeout--;
-        if (m_measure_timeout == 0)
-        {
-            DEBUG_PRINTF("--- Timeout measure ---r\n");
-            gsm_build_http_post_msg();
-            SENS_420mA_PWR_OFF();
-        }
-    }
 	
+    if ((sys_get_ms() - m_last_measure_time) >= cfg->measure_interval_ms)
+    {
+		if (adc_conversion_cplt(true))
+		{
+			adc_convert();
+			m_last_measure_time = sys_get_ms();
+			gsm_build_http_post_msg();
+			DEBUG_INFO("Measurement data finished\r\n");
+		}
+		else
+		{
+			adc_start();
+		}
+    }	
 	#warning "Please implement save data to flash cmd"
 //    /* Save pulse counter to flash every 30s */
 //    if (store_measure_result_timeout >= STORE_MEASURE_INVERVAL_SEC)
@@ -170,6 +143,7 @@ void MeasureTick1000ms(void)
 //        }
 //    }
 }
+
 
 /*****************************************************************************/
 /**
@@ -237,29 +211,29 @@ uint8_t measure_input_is_rs485_power_on(void)
 }
 
 
-/*****************************************************************************/
-/**
- * @brief	:  	Do dien ap nguon Solar va Battery. Tick every 1s
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/03/2016
- * @version	:
- * @reviewer:	
- */
-static void measure_adc_input(void)
-{
-    //Dau vao 4-20mA: chi tinh toan khi thuc hien do
-    if (m_measure_timeout > 0)
-    {
-        float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF / ADC_12BIT_FACTOR;
-        xSystem.MeasureStatus.Input420mA = V20mA / 124; //R = 124
-    }
-}
-uint16_t measure_input_get_Vin(void)
-{
-    return xSystem.MeasureStatus.Vin;
-}
+///*****************************************************************************/
+///**
+// * @brief	:  	Do dien ap nguon Solar va Battery. Tick every 1s
+// * @param	:  
+// * @retval	:
+// * @author	:	
+// * @created	:	15/03/2016
+// * @version	:
+// * @reviewer:	
+// */
+//static void measure_adc_input(void)
+//{
+//    //Dau vao 4-20mA: chi tinh toan khi thuc hien do
+//    if (m_measure_timeout > 0)
+//    {
+//        float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF / ADC_12BIT_FACTOR;
+//        xSystem.MeasureStatus.Input420mA = V20mA / 124; //R = 124
+//    }
+//}
+//uint16_t measure_input_get_Vin(void)
+//{
+//    return xSystem.MeasureStatus.Vin;
+//}
 
 /*******************************************************************************
  * Function Name  	: USART1_IRQHandler 
@@ -294,7 +268,6 @@ void measure_input_rs485_idle_detect(void)
     \param[out] none
     \retval     none
 */
-extern volatile uint32_t delay_sleeping_for_exit_wakeup;
 #ifdef GD32E10X
 void EXTI2_IRQHandler(void)
 {
@@ -390,7 +363,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 				}
 			}
 		}
-		delay_sleeping_for_exit_wakeup = 2;
+		sys_set_delay_time_before_deep_sleep(2000);
 	}
 }
 #endif
