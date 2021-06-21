@@ -51,7 +51,6 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
 {
     // TODO write data to flash
     // ASSERT(length > 16)
-    bool val = false;
 	
 	m_ota_is_running = true;
     if (m_found_header == false)
@@ -128,5 +127,4 @@ static bool verify_checksum(uint32_t begin_addr, uint32_t length)
     {
         return false;
     }
-    return true;
 }

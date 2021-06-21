@@ -318,7 +318,6 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 
 void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 {
-    uint16_t i = 0;
 	uint8_t cmd;
     enable_ext_flash(1);
 	
