@@ -73,6 +73,9 @@
 "data_logger\umm_malloc.o"
 "data_logger\umm_poison.o"
 "data_logger\utilities.o"
+"data_logger\sys_ctx.o"
+"data_logger\ota_update.o"
+"data_logger\app_md5.o"
 --library_type=microlib --strict --scatter "Data_logger\Data_logger.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

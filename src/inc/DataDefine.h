@@ -123,15 +123,7 @@ typedef struct
 //    uint8_t Second;
 //} DateTime_t;
 
-typedef struct
-{
-    uint8_t year;       // From 2000
-    uint8_t month;
-    uint8_t day;
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-} date_time_t;
+
 
 typedef enum
 {
@@ -191,7 +183,6 @@ typedef struct
     uint8_t TestInternalWDT;
 
     uint16_t PingTimeout;
-    uint8_t YeuCauGuiTin;
 
     uint8_t SendGPRSTimeout;
     uint16_t gsm_sleep_time_s;
@@ -202,7 +193,7 @@ typedef struct
 
     //Time stamp
     uint32_t TimeStamp;
-    uint32_t DisconnectTimeout;
+//    uint32_t DisconnectTimeout;
 
     //Debug
     uint8_t ADCOut;

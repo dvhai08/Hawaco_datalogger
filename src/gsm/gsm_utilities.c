@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include "gsm.h"
 #include "gsm_utilities.h"
-#include "DataDefine.h"
+#include "app_rtc.h"
 #include "sys_ctx.h"
 
 bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq)
@@ -338,7 +338,7 @@ bool gsm_utilities_copy_parameters(char *src, char *dst, char comma_begin, char 
     return true;
 }
 
-bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *date_time)
+bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time)
 {
     // Parse response buffer
     // "\r\n+CCLK : "yy/MM/dd,hh:mm:ss+zz"\r\n\r\nOK\r\n        zz : timezone
@@ -364,8 +364,8 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *da
 
     memset(tmp, 0, sizeof(tmp));
     memcpy(tmp, response_buffer, 2);
-    date_time->year = atoi((char*)tmp);
-    if (date_time->year < 20) // 2020
+    ((rct_date_time_t*)date_time)->year = atoi((char*)tmp);
+    if (((rct_date_time_t*)date_time)->year < 20) // 2020
     {
         // Invalid timestamp
         val = false;
@@ -375,27 +375,27 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, date_time_t *da
         // MM
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 3, 2);
-        date_time->month = atoi((char*)tmp);
+        ((rct_date_time_t*)date_time)->month = atoi((char*)tmp);
 
         // dd
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 6, 2);
-        date_time->day = atoi((char*)tmp);
+        ((rct_date_time_t*)date_time)->day = atoi((char*)tmp);
 
         // hh
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 9, 2);
-        date_time->hour = atoi((char*)tmp);
+        ((rct_date_time_t*)date_time)->hour = atoi((char*)tmp);
 
         // mm
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 12, 2);
-        date_time->minute = atoi((char*)tmp);
+        ((rct_date_time_t*)date_time)->minute = atoi((char*)tmp);
 
         // ss
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 15, 2);
-        date_time->second = atoi((char*)tmp);
+        ((rct_date_time_t*)date_time)->second = atoi((char*)tmp);
 
         val = true;
     }

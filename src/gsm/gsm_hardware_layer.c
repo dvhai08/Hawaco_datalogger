@@ -17,7 +17,6 @@
 #include "DataDefine.h"
 #include "lwrb.h"
 
-extern System_t xSystem;
 static gsm_hardware_t m_gsm_hardware;
 GSM_Manager_t gsm_manager;
 
@@ -34,7 +33,9 @@ static volatile uint32_t m_tx_uart_run = 0;
 #endif
 static volatile bool m_new_uart_data = false;
 static void init_serial(void);
-
+static char m_gsm_imei[16];
+static char m_sim_imei[16];
+static char m_nw_operator[32];
 
 void gsm_init_hw(void)
 {
@@ -81,12 +82,8 @@ void gsm_pwr_control(uint8_t State)
 {
     if (State == GSM_OFF)
     {
-        //Neu dang trong qua trinh update FW -> Khong OFF
-        if (xSystem.file_transfer.State != FT_NO_TRANSER)
-            return;
-
-        gsm_manager.isGSMOff = 1;
-        if (gsm_manager.GSMReady)
+        gsm_manager.is_gsm_power_off = 1;
+        if (gsm_manager.gsm_ready)
         {
             /* Tao xung |_| de Power Off module, min 1s  */
             GSM_PWR_KEY(1);
@@ -99,7 +96,7 @@ void gsm_pwr_control(uint8_t State)
         GSM_PWR_EN(0);
 
         //Reset cac bien
-        gsm_manager.GSMReady = 0;
+        gsm_manager.gsm_ready = 0;
         gsm_manager.RISignal = 0;
         //xSystem.Status.ServerState = NOT_CONNECTED;
         //xSystem.Status.MQTTServerState = MQTT_INIT;
@@ -109,7 +106,7 @@ void gsm_pwr_control(uint8_t State)
     }
     else if (State == GSM_ON)
     {
-        gsm_manager.isGSMOff = 0;
+        gsm_manager.is_gsm_power_off = 0;
 
         //Khoi tao lai UART
 		usart1_control(true);
@@ -464,4 +461,69 @@ void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
 	}
 }
 
+char* gsm_get_sim_imei(void)
+{
+	return m_sim_imei;
+}
+
+
+char* gsm_get_module_imei(void)
+{
+	return m_gsm_imei;
+}
+
+void gsm_set_sim_imei(char *imei)
+{
+	memcpy(m_sim_imei, imei, 15);
+	m_sim_imei[15] = 0;
+}
+
+
+void gsm_set_module_imei(char *imei)
+{
+	memcpy(m_gsm_imei, imei, 15);
+	m_gsm_imei[15] = 0;
+}
+
+void gsm_set_network_operator(char *nw_operator)
+{
+	snprintf(m_nw_operator, sizeof(m_nw_operator)-1, "%s", nw_operator);
+	m_nw_operator[sizeof(m_nw_operator)-1] = 0;
+}
+
+char *gsm_get_network_operator(void)
+{
+	return m_nw_operator;
+}
+
+static uint8_t m_csq, m_csq_percent;
+
+
+void gsm_set_csq(uint8_t csq)
+{
+	m_csq = csq;
+	if (m_csq == 99)      // 99 is invalid CSQ
+    {
+        m_csq = 0;
+    }
+
+    if (m_csq > 31)
+    {
+        m_csq = 31;
+    }
+
+    if (m_csq < 10)
+    {
+        m_csq = 10;
+    }
+
+    m_csq_percent = ((m_csq - 10) * 100) / (31 - 10);
+}
+
+
+
+uint8_t gsm_get_csq_in_percent()
+{
+	return m_csq_percent;
+}
 

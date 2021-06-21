@@ -101,9 +101,6 @@ void measure_input_task(void)
 	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
 	m_measure_data.water_pulse_counter[1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin) ? 0 : 1;
 	
-    if (xSystem.Status.InitSystemDone == 0)
-        return;
-
     if (m_sensor_uart_buffer.State)
     {
         m_sensor_uart_buffer.State--;

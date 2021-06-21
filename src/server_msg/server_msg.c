@@ -10,8 +10,6 @@
 #include "hardware.h"
 #include "version_control.h"
 
-extern System_t xSystem;
-
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;

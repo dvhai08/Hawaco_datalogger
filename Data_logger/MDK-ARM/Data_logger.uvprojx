@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32L083xx,RTC_BACKUP_VALID_DATA=0x12345613,DG_G2</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc;..\..\src\server_msg;..\..\src\app_flash;..\..\src\app_eeprom;..\..\src\lowpass_filter;..\..\src\umm_malloc-1.0.1\src</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc;..\..\src\server_msg;..\..\src\app_flash;..\..\src\app_eeprom;..\..\src\lowpass_filter;..\..\src\umm_malloc-1.0.1\src;..\..\src\sys_ctx;..\..\src\ota_update;..\..\src\app_md5</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1250,6 +1250,51 @@
               <FileName>utilities.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\utilities\utilities.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>sys_ctx</GroupName>
+          <Files>
+            <File>
+              <FileName>sys_ctx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\sys_ctx\sys_ctx.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_ctx.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\sys_ctx\sys_ctx.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>ota_update</GroupName>
+          <Files>
+            <File>
+              <FileName>ota_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\ota_update\ota_update.c</FilePath>
+            </File>
+            <File>
+              <FileName>ota_update.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\ota_update\ota_update.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_md5</GroupName>
+          <Files>
+            <File>
+              <FileName>app_md5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\app_md5\app_md5.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_md5.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_md5\app_md5.h</FilePath>
             </File>
           </Files>
         </Group>

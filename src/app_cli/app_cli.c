@@ -150,19 +150,19 @@ static int32_t cli_trigger_fault(p_shell_context_t context, int32_t argc, char *
 
 static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
 {
-    extern System_t xSystem;
-    extern bool gsm_data_layer_is_module_sleeping();
-    if (strstr(argv[1], "enter"))
-    {
-        
-    }
-    else if (strstr(argv[1], "exit"))
-    {
-        if (gsm_data_layer_is_module_sleeping())
-        {
-            xSystem.Status.gsm_sleep_time_s = app_eeprom_read_config_data()->send_to_server_interval_ms / 1000;
-        }
-    }
+//    extern System_t xSystem;
+//    extern bool gsm_data_layer_is_module_sleeping();
+//    if (strstr(argv[1], "enter"))
+//    {
+//        
+//    }
+//    else if (strstr(argv[1], "exit"))
+//    {
+//        if (gsm_data_layer_is_module_sleeping())
+//        {
+//            xSystem.Status.gsm_sleep_time_s = app_eeprom_read_config_data()->send_to_server_interval_ms / 1000;
+//        }
+//    }
     return 0;
 }
 
@@ -184,12 +184,12 @@ static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv
     return  0;
 }
 
-extern System_t xSystem;
+//extern System_t xSystem;
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)
 {
-    xSystem.file_transfer.ota_is_running = 1;
-    sprintf(xSystem.file_transfer.url, "%s", 
-            "https://iot.wilad.vn/api/v1/860262050129720/attributes");
+//    xSystem.file_transfer.ota_is_running = 1;
+//    sprintf(xSystem.file_transfer.url, "%s", 
+//            "https://iot.wilad.vn/api/v1/860262050129720/attributes");
     return 0;
 }
 

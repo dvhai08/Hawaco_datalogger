@@ -17,10 +17,6 @@
 #include "hardware_manager.h"
 #include "app_wdt.h"
 
-/******************************************************************************
-                                   GLOBAL VARIABLES					    			 
- ******************************************************************************/
-extern System_t xSystem;
 
 static hardware_manager_reset_reason_t m_reset_reason = 
 {

@@ -7,11 +7,22 @@
 #define rtc_counter_set     app_rtc_set_counter
 #define rtc_counter_get     app_rtc_get_counter
 
+
+typedef struct
+{
+    uint8_t year;       // From 2000
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+} rct_date_time_t;
+
 /**
  * @brief          Set counter to RTC
  * @param[in]      counter RTC counter value
  */
-void app_rtc_set_counter(uint32_t counter);
+void app_rtc_set_counter(rct_date_time_t *date_time);
 
 
 /**

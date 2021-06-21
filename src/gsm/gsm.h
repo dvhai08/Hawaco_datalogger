@@ -61,14 +61,14 @@ typedef struct
     uint8_t RISignal;
     uint8_t Dial;
     uint8_t GetBTSInfor;
-    uint8_t GSMReady;
+    uint8_t gsm_ready;
     uint8_t FirstTimePower;
     uint8_t SendSMSAfterRead;
     uint8_t ppp_cmd_state;
     uint16_t TimeOutConnection;
     uint16_t TimeOutCSQ;
     uint8_t TimeOutOffAfterReset;
-    uint8_t isGSMOff;
+    uint8_t is_gsm_power_off;
     uint8_t access_tech;
 } GSM_Manager_t;
 
@@ -131,8 +131,6 @@ void gsm_change_state(gsm_state_t NewState);
 void gsm_pwr_control(uint8_t State);
 void gsm_send_status_to_mobilephone(char *SDT);
 //void gsm_send_sms(char *Buffer, uint8_t CallFrom);
-void gsm_process_at_cmd(char *Lenh);
-void gsm_reconnect_tcp(void);
 void gsm_change_state_sleep(void);
 void gsm_test_read_sms(void);
 bool gsm_data_layer_is_module_sleeping(void);
@@ -232,5 +230,60 @@ void gsm_uart_rx_dma_update_rx_index(bool rx_status);
  *				FALSE transmit data is invalid
  */
 void gsm_uart_tx_complete_callback(bool status);
+
+/**
+ * @brief		Get SIM IMEI
+ * @retval		SIM IMEI
+ */
+char* gsm_get_sim_imei(void);
+
+/**
+ * @brief		Get GSM IMEI
+ * @retval		GSM IMEI
+ */
+char* gsm_get_module_imei(void);
+
+
+/**
+ * @brief		Set SIM IMEI
+ * @param[in]	SIM IMEI
+ */
+void gsm_set_sim_imei(char *imei);
+
+/**
+ * @brief		Set GSM IMEI
+ * @param[in]	GSM IMEI
+ */
+void gsm_set_module_imei(char *imei);
+
+/**
+ * @brief		Set network operator
+ * @param[in]	Network operator
+ */
+void gsm_set_network_operator(char *nw_operator);
+
+/**
+ * @brief		Get network operator
+ * @retval		Network operator
+ */
+char *gsm_get_network_operator(void);
+
+/**
+ * @brief		Set GSM CSQ
+ * @param[in]	CSQ GSM CSQ
+ */
+void gsm_set_csq(uint8_t csq);
+
+/**
+ * @brief		Get GSM CSQ
+ * @retval	 	GSM CSQ
+ */
+uint8_t gsm_get_csq(void);
+
+/**
+ * @brief		Get GSM CSQ in percent
+ * @retval	 	GSM CSQ in percent
+ */
+uint8_t gsm_get_csq_in_percent(void);
 
 #endif // __GSM_H__

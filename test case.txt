@@ -6,3 +6,9 @@ Test case:
 5. Ota update
 6. DAC, ADC
 7 Sleep khi 485 ADC DAC is in progress
+8. Test flash
+9. Reduce SPI current
+10. RS485
+11. DAC và delay
+12. DEBUG : Thêm sim imei
+13. Test RTC : counter to struct and struct to couter
