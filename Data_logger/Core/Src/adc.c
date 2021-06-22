@@ -28,6 +28,7 @@
 #include "app_eeprom.h"
 
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
+#ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				7
 #define ADC_VBAT_RESISTOR_DIV				7911
 #define ADC_VIN_RESISTOR_DIV				7911
@@ -40,6 +41,16 @@
 #define V_INPUT_0_4_20MA_CHANNEL_INDEX		4
 #define VBAT_CHANNEL_INDEX					5
 #define V_TEMP_CHANNEL_INDEX				6
+#else
+#define ADC_CHANNEL_DMA_COUNT				4
+#define ADC_VBAT_RESISTOR_DIV				7911
+#define ADC_VIN_RESISTOR_DIV				7911
+#define ADC_VREF							3300	
+#define VIN_24V_CHANNEL_INDEX				2		
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
+#define VBAT_CHANNEL_INDEX					0
+#define V_TEMP_CHANNEL_INDEX				3	
+#endif
 
 static volatile bool m_adc_started = false;
 static uint32_t m_adc_conversion_count = 0;
@@ -48,7 +59,6 @@ static lpf_data_t m_adc_filterd_data[ADC_CHANNEL_DMA_COUNT];
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc;
-DMA_HandleTypeDef hdma_adc;
 
 /* ADC init function */
 void MX_ADC_Init(void)
@@ -67,9 +77,9 @@ void MX_ADC_Init(void)
   */
   hadc.Instance = ADC1;
   hadc.Init.OversamplingMode = DISABLE;
-  hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV64;
+  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
   hadc.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
+  hadc.Init.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
   hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
   hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc.Init.ContinuousConvMode = DISABLE;
@@ -77,18 +87,18 @@ void MX_ADC_Init(void)
   hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc.Init.DMAContinuousRequests = DISABLE;
-  hadc.Init.EOCSelection = ADC_EOC_SEQ_CONV;
-  hadc.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
-  hadc.Init.LowPowerAutoWait = ENABLE;
-  hadc.Init.LowPowerFrequencyMode = ENABLE;
-  hadc.Init.LowPowerAutoPowerOff = ENABLE;
+  hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
+  hadc.Init.LowPowerAutoWait = DISABLE;
+  hadc.Init.LowPowerFrequencyMode = DISABLE;
+  hadc.Init.LowPowerAutoPowerOff = DISABLE;
   if (HAL_ADC_Init(&hadc) != HAL_OK)
   {
     Error_Handler();
   }
   /** Configure for the selected ADC regular channel to be converted.
   */
-  sConfig.Channel = ADC_CHANNEL_0;
+  sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
@@ -96,14 +106,7 @@ void MX_ADC_Init(void)
   }
   /** Configure for the selected ADC regular channel to be converted.
   */
-  sConfig.Channel = ADC_CHANNEL_1;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel to be converted.
-  */
-  sConfig.Channel = ADC_CHANNEL_5;
+  sConfig.Channel = ADC_CHANNEL_4;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -117,21 +120,7 @@ void MX_ADC_Init(void)
   }
   /** Configure for the selected ADC regular channel to be converted.
   */
-  sConfig.Channel = ADC_CHANNEL_7;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel to be converted.
-  */
   sConfig.Channel = ADC_CHANNEL_11;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel to be converted.
-  */
-  sConfig.Channel = ADC_CHANNEL_15;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -158,45 +147,20 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC GPIO Configuration
     PC1     ------> ADC_IN11
-    PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
-    PA5     ------> ADC_IN5
+    PA4     ------> ADC_IN4
     PA6     ------> ADC_IN6
-    PA7     ------> ADC_IN7
-    PC5     ------> ADC_IN15
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_5;
+    GPIO_InitStruct.Pin = GPIO_PIN_1;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_6;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* ADC1 DMA Init */
-    /* ADC Init */
-    hdma_adc.Instance = DMA1_Channel1;
-    hdma_adc.Init.Request = DMA_REQUEST_0;
-    hdma_adc.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_adc.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_adc.Init.MemInc = DMA_MINC_ENABLE;
-    hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-    hdma_adc.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
-    hdma_adc.Init.Mode = DMA_NORMAL;
-    hdma_adc.Init.Priority = DMA_PRIORITY_LOW;
-    if (HAL_DMA_Init(&hdma_adc) != HAL_OK)
-    {
-      Error_Handler();
-    }
-
-    __HAL_LINKDMA(adcHandle,DMA_Handle,hdma_adc);
-
-    /* ADC1 interrupt Init */
-    HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
   /* USER CODE END ADC1_MspInit 1 */
@@ -216,23 +180,14 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
     /**ADC GPIO Configuration
     PC1     ------> ADC_IN11
-    PA0     ------> ADC_IN0
     PA1     ------> ADC_IN1
-    PA5     ------> ADC_IN5
+    PA4     ------> ADC_IN4
     PA6     ------> ADC_IN6
-    PA7     ------> ADC_IN7
-    PC5     ------> ADC_IN15
     */
-    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_1|GPIO_PIN_5);
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_1);
 
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_5|GPIO_PIN_6
-                          |GPIO_PIN_7);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_6);
 
-    /* ADC1 DMA DeInit */
-    HAL_DMA_DeInit(adcHandle->DMA_Handle);
-
-    /* ADC1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(ADC1_COMP_IRQn);
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
   /* USER CODE END ADC1_MspDeInit 1 */
@@ -253,7 +208,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 		m_adc_started = false;
 		m_adc_new_data = true;
 		ENABLE_NTC_POWER(0);
-		ENABLE_INOUT_2_20MA_POWER(0);
+		ENABLE_INOUT_4_20MA_POWER(0);
 	}
 	else
 	{
@@ -284,7 +239,7 @@ void adc_start(void)
 		app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
 		if (cfg->io_enable.name.input_4_20ma_enable)
 		{
-			ENABLE_INOUT_2_20MA_POWER(1);
+			ENABLE_INOUT_4_20MA_POWER(1);
 		}
 		
 		ENABLE_NTC_POWER(1);
@@ -327,10 +282,11 @@ void adc_convert(void)
 	
 	/* ADC input 4-20mA */
 	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
+#ifdef DTG02
 	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
 	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
 	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
-	
+#endif
 	/* v_temp */
 	m_adc_input.temp = m_adc_filterd_data[V_TEMP_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
 }

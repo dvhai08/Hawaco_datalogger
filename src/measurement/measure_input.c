@@ -60,7 +60,7 @@ int8_t m_pull_state = -1;
 static uint32_t m_pull_diff;
 #else
 uint32_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT] = {-1, -1};
+int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 #endif
 /******************************************************************************
@@ -93,14 +93,17 @@ void measure_input_task(void)
 {
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
-
+#ifdef DTG02
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
+	
 	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
 	m_measure_data.water_pulse_counter[1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin) ? 0 : 1;
-	
+#else	// DTG01	
+	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
+#endif	
     if (m_sensor_uart_buffer.State)
     {
         m_sensor_uart_buffer.State--;
@@ -185,11 +188,13 @@ void measure_input_initialize(void)
     exti_interrupt_flag_clear(SENS_PULSE_EXTI_LINE);
     exti_interrupt_enable(SWITCH_EXTI_LINE);
 #else
-	#ifdef DG_G1
-		#warning "Please implement DTG1 magnet"
-	#endif
+	#warning "Please implement DTG1 magnet"
 #endif
-
+	
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+	{
+		m_pull_state[i] = -1;
+	}
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
     */

@@ -73,7 +73,7 @@ void gsm_init_hw(void)
 
     gsm_change_state(GSM_STATE_RESET); 
 
-    gsm_manager.TimeOutOffAfterReset = 90;
+    gsm_manager.timeout_after_reset = 90;
     gsm_change_hw_polling_interval(5);
     init_serial();
 }
@@ -385,7 +385,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
 }
 
-#ifdef GD32E10Xs
+#ifdef GD32E10X
 volatile uint32_t m_last_transfer_size = 0;
 
 static inline void config_dma(uint8_t *data, uint32_t len)
@@ -469,7 +469,9 @@ char* gsm_get_sim_imei(void)
 
 char* gsm_get_module_imei(void)
 {
-	return m_gsm_imei;
+	#warning "Hardcode module imei"
+	return "863674040981159";
+//	return m_gsm_imei;
 }
 
 void gsm_set_sim_imei(char *imei)

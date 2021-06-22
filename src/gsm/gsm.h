@@ -67,7 +67,7 @@ typedef struct
     uint8_t ppp_cmd_state;
     uint16_t TimeOutConnection;
     uint16_t TimeOutCSQ;
-    uint8_t TimeOutOffAfterReset;
+    uint8_t timeout_after_reset;
     uint8_t is_gsm_power_off;
     uint8_t access_tech;
 } GSM_Manager_t;

@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "gsm.h"
 #include "measure_input.h"
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,12 +59,8 @@ extern void uart1_rx_complete_callback(bool status);
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_adc;
-extern ADC_HandleTypeDef hadc;
 extern LPTIM_HandleTypeDef hlptim1;
 extern RTC_HandleTypeDef hrtc;
-extern DMA_HandleTypeDef hdma_spi2_rx;
-extern DMA_HandleTypeDef hdma_spi2_tx;
 extern SPI_HandleTypeDef hspi2;
 /* USER CODE BEGIN EV */
 
@@ -164,95 +161,6 @@ void RTC_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles EXTI line 2 and line 3 interrupts.
-  */
-void EXTI2_3_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI2_3_IRQn 0 */
-
-  /* USER CODE END EXTI2_3_IRQn 0 */
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_2) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_2);
-    /* USER CODE BEGIN LL_EXTI_LINE_2 */
-
-    /* USER CODE END LL_EXTI_LINE_2 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_3);
-    /* USER CODE BEGIN LL_EXTI_LINE_3 */
-
-    /* USER CODE END LL_EXTI_LINE_3 */
-  }
-  /* USER CODE BEGIN EXTI2_3_IRQn 1 */
-
-  /* USER CODE END EXTI2_3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line 4 to 15 interrupts.
-  */
-void EXTI4_15_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI4_15_IRQn 0 */
-
-  /* USER CODE END EXTI4_15_IRQn 0 */
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_4) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
-    /* USER CODE BEGIN LL_EXTI_LINE_4 */
-
-    /* USER CODE END LL_EXTI_LINE_4 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_7) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_7);
-    /* USER CODE BEGIN LL_EXTI_LINE_7 */
-
-    /* USER CODE END LL_EXTI_LINE_7 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_8) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
-    /* USER CODE BEGIN LL_EXTI_LINE_8 */
-
-    /* USER CODE END LL_EXTI_LINE_8 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
-    /* USER CODE BEGIN LL_EXTI_LINE_9 */
-
-    /* USER CODE END LL_EXTI_LINE_9 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_14) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_14);
-    /* USER CODE BEGIN LL_EXTI_LINE_14 */
-
-    /* USER CODE END LL_EXTI_LINE_14 */
-  }
-  /* USER CODE BEGIN EXTI4_15_IRQn 1 */
-
-  /* USER CODE END EXTI4_15_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel 1 interrupt.
-  */
-void DMA1_Channel1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_adc);
-  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel1_IRQn 1 */
-}
-
-/**
   * @brief This function handles DMA1 channel 2 and channel 3 interrupts.
   */
 void DMA1_Channel2_3_IRQHandler(void)
@@ -262,58 +170,31 @@ void DMA1_Channel2_3_IRQHandler(void)
 	{
 		LL_DMA_ClearFlag_TC2(DMA1);
 		/* Call function Transmission complete Callback */
-//		gsm_uart_tx_complete_callback(true);
+		usart1_tx_complete_callback(true);
+		usart1_start_dma_rx();
 	}
 	else if(LL_DMA_IsActiveFlag_TE2(DMA1))
 	{
+		DEBUG_PRINTF("USART2 TE2 error\r\n");
 		/* Call Error function */
-//		gsm_uart_tx_complete_callback(false);
+		usart1_tx_complete_callback(false);
 	}
   /* USER CODE END DMA1_Channel2_3_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
-//	if(LL_DMA_IsActiveFlag_TC3(DMA1))
-//	{
-//		LL_DMA_ClearFlag_GI3(DMA1);
-//		/* Call function Reception complete Callback */
-//		gsm_uart_rx_dma_update_rx_index(true);
-//	}
-//	else if(LL_DMA_IsActiveFlag_TE3(DMA1))
-//	{
-//		/* Call Error function */
-//		gsm_uart_rx_dma_update_rx_index(false);
-//		USART_TransferError_Callback();
-//	}
+	if(LL_DMA_IsActiveFlag_TC3(DMA1))
+	{
+		LL_DMA_ClearFlag_GI3(DMA1);
+		/* Call function Reception complete Callback */
+		usart1_rx_complete_callback(true);
+	}
+	else if(LL_DMA_IsActiveFlag_TE3(DMA1))
+	{
+		/* Call Error function */
+		usart1_rx_complete_callback(false);
+		// USART_TransferError_Callback();
+	}
   /* USER CODE END DMA1_Channel2_3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 channel 4, channel 5, channel 6 and channel 7 interrupts.
-  */
-void DMA1_Channel4_5_6_7_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 0 */
-
-  /* USER CODE END DMA1_Channel4_5_6_7_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_spi2_rx);
-  HAL_DMA_IRQHandler(&hdma_spi2_tx);
-  /* USER CODE BEGIN DMA1_Channel4_5_6_7_IRQn 1 */
-
-  /* USER CODE END DMA1_Channel4_5_6_7_IRQn 1 */
-}
-
-/**
-  * @brief This function handles ADC, COMP1 and COMP2 interrupts (COMP interrupts through EXTI lines 21 and 22).
-  */
-void ADC1_COMP_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC1_COMP_IRQn 0 */
-
-  /* USER CODE END ADC1_COMP_IRQn 0 */
-  HAL_ADC_IRQHandler(&hadc);
-  /* USER CODE BEGIN ADC1_COMP_IRQn 1 */
-
-  /* USER CODE END ADC1_COMP_IRQn 1 */
 }
 
 /**
@@ -358,7 +239,7 @@ void USART1_IRQHandler(void)
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_PRINTF("Over run\r\n");
+        DEBUG_PRINTF("GSM UART : Over run\r\n");
         uint32_t tmp = USART1->RDR;
         LL_USART_ClearFlag_ORE(USART1);
     }
@@ -388,7 +269,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 0 */
     if (LL_USART_IsActiveFlag_ORE(LPUART1))
     {
-        DEBUG_PRINTF("Over run\r\n");
+        DEBUG_PRINTF("LPUART1 Over run\r\n");
         uint32_t tmp = LPUART1->RDR;
         LL_USART_ClearFlag_ORE(USART1);
     }

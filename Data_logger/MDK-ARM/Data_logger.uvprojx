@@ -337,9 +337,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32L083xx,RTC_BACKUP_VALID_DATA=0x12345613,DG_G2</Define>
+              <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32L083xx,RTC_BACKUP_VALID_DATA=0x12345613</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc;..\..\src\server_msg;..\..\src\app_flash;..\..\src\app_eeprom;..\..\src\lowpass_filter;..\..\src\umm_malloc-1.0.1\src;..\..\src\sys_ctx;..\..\src\ota_update;..\..\src\app_md5</IncludePath>
+              <IncludePath>../Core/Inc; ../Drivers/STM32L0xx_HAL_Driver/Inc; ../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32L0xx/Include; ../Drivers/CMSIS/Include; ..\..\src\SEGGER_RTT_V698b\RTT; ..\..\src\app_cli; ..\..\src\app_queue; ..\..\src\fault; ..\..\src\app_debug; ..\..\src\gsm; ..\..\src\inc; ..\..\src\umm_malloc-1.0.1\src; ..\..\src\lwrb\lwrb\src\include\lwrb; ..\..\src\utilities; ..\..\src\measurement; ..\..\src\app_rtc; ..\..\src\server_msg; ..\..\src\app_flash; ..\..\src\app_eeprom; ..\..\src\lowpass_filter; ..\..\src\umm_malloc-1.0.1\src; ..\..\src\sys_ctx; ..\..\src\ota_update; ..\..\src\app_md5; ..\..\src\app_sync; ..\..\src\app_bkup</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1112,16 +1112,6 @@
           <GroupName>measurement</GroupName>
           <Files>
             <File>
-              <FileName>app_bkup.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\src\measurement\app_bkup.c</FilePath>
-            </File>
-            <File>
-              <FileName>app_bkup.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\src\measurement\app_bkup.h</FilePath>
-            </File>
-            <File>
               <FileName>control_output.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\src\measurement\control_output.c</FilePath>
@@ -1295,6 +1285,51 @@
               <FileName>app_md5.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\app_md5\app_md5.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_sync</GroupName>
+          <Files>
+            <File>
+              <FileName>app_sync.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\app_sync\app_sync.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_sync.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_sync\app_sync.h</FilePath>
+            </File>
+            <File>
+              <FileName>clist.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_sync\clist.h</FilePath>
+            </File>
+            <File>
+              <FileName>sync_drv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\app_sync\sync_drv.c</FilePath>
+            </File>
+            <File>
+              <FileName>sync_drv.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_sync\sync_drv.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_backup</GroupName>
+          <Files>
+            <File>
+              <FileName>app_bkup.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\app_bkup\app_bkup.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_bkup.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_bkup\app_bkup.h</FilePath>
             </File>
           </Files>
         </Group>

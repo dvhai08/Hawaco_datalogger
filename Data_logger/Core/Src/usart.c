@@ -57,21 +57,21 @@ void MX_LPUART1_UART_Init(void)
   PB10   ------> LPUART1_TX
   PB11   ------> LPUART1_RX
   */
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_10;
+  GPIO_InitStruct.Pin = RS485_TX_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  LL_GPIO_Init(RS485_TX_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_11;
+  GPIO_InitStruct.Pin = RS485_RX_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  LL_GPIO_Init(RS485_RX_GPIO_Port, &GPIO_InitStruct);
 
   /* LPUART1 interrupt Init */
   NVIC_SetPriority(AES_RNG_LPUART1_IRQn, 0);
@@ -113,14 +113,6 @@ void MX_USART1_UART_Init(void)
   PA9   ------> USART1_TX
   PA10   ------> USART1_RX
   */
-  GPIO_InitStruct.Pin = GSM_TX_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
-  LL_GPIO_Init(GSM_TX_GPIO_Port, &GPIO_InitStruct);
-
   GPIO_InitStruct.Pin = GSM_RX_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
@@ -129,14 +121,39 @@ void MX_USART1_UART_Init(void)
   GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
   LL_GPIO_Init(GSM_RX_GPIO_Port, &GPIO_InitStruct);
 
+  GPIO_InitStruct.Pin = GSM_TX_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
+  LL_GPIO_Init(GSM_TX_GPIO_Port, &GPIO_InitStruct);
+
   /* USART1 DMA Init */
+
+  /* USART1_RX Init */
+  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_3, LL_DMA_REQUEST_3);
+
+  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_3, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
+
+  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PRIORITY_HIGH);
+
+  LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MODE_CIRCULAR);
+
+  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PERIPH_NOINCREMENT);
+
+  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MEMORY_INCREMENT);
+
+  LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PDATAALIGN_BYTE);
+
+  LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MDATAALIGN_BYTE);
 
   /* USART1_TX Init */
   LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMA_REQUEST_3);
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
 
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_2, LL_DMA_PRIORITY_LOW);
+  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_2, LL_DMA_PRIORITY_HIGH);
 
   LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MODE_NORMAL);
 
@@ -148,25 +165,8 @@ void MX_USART1_UART_Init(void)
 
   LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MDATAALIGN_BYTE);
 
-  /* USART1_RX Init */
-  LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_3, LL_DMA_REQUEST_3);
-
-  LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_3, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
-
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PRIORITY_LOW);
-
-  LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MODE_NORMAL);
-
-  LL_DMA_SetPeriphIncMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PERIPH_NOINCREMENT);
-
-  LL_DMA_SetMemoryIncMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MEMORY_INCREMENT);
-
-  LL_DMA_SetPeriphSize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PDATAALIGN_BYTE);
-
-  LL_DMA_SetMemorySize(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MDATAALIGN_BYTE);
-
   /* USART1 interrupt Init */
-  NVIC_SetPriority(USART1_IRQn, 0);
+  NVIC_SetPriority(USART1_IRQn, 2);
   NVIC_EnableIRQ(USART1_IRQn);
 
   /* USER CODE BEGIN USART1_Init 1 */
@@ -185,13 +185,6 @@ void MX_USART1_UART_Init(void)
   /* USER CODE BEGIN USART1_Init 2 */
   /* Enable DMA transfer complete/error interrupts  */
   
-    if (m_ringbuffer_usart1_tx.buff == NULL)
-    {
-        lwrb_init(&m_ringbuffer_usart1_tx, m_usart1_tx_buffer, sizeof(m_usart1_tx_buffer));
-    }
-    usart1_hw_uart_rx_raw(m_usart1_rx_buffer, sizeof(m_usart1_rx_buffer));
-
-
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_3);
     LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_3);
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
@@ -213,7 +206,7 @@ static inline void config_dma_tx(uint8_t *data, uint32_t len)
                          LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
     
     LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_2, len);
-    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMA_REQUEST_4);
+    LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_2, LL_DMA_REQUEST_3);
     
     /* Enable DMA TX Interrupt */
     LL_USART_EnableDMAReq_TX(USART1);
@@ -236,7 +229,10 @@ void usart1_control(bool enable)
 	
 	if (!m_usart1_is_enabled)
 	{
-		while (m_tx_uart_run);
+		while (m_tx_uart_run)
+		{
+			__WFI();
+		}
 		LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 		GPIO_InitStruct.Pin = GSM_TX_Pin;
@@ -259,6 +255,10 @@ void usart1_control(bool enable)
 		LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_3);
 		LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_3);
 		
+		LL_DMA_ClearFlag_TC2(DMA1);
+		LL_DMA_ClearFlag_GI3(DMA1);
+		LL_DMA_ClearFlag_TE3(DMA1);
+		
 		__HAL_RCC_DMA1_CLK_DISABLE();
 		NVIC_DisableIRQ(USART1_IRQn);
 		LL_USART_Disable(USART1);
@@ -278,6 +278,7 @@ static inline void usart1_hw_transmit_dma(void)
     {
         m_tx_uart_run = false;
         m_last_transfer_size = 0;
+//		DEBUG_PRINTF("TX cplt\r\n");
         return;
     }	
 	
@@ -303,7 +304,7 @@ static inline void usart1_hw_transmit_dma(void)
     }
 }
 
-void uart_tx_complete_callback(bool status)
+void usart1_tx_complete_callback(bool status)
 {
     m_tx_uart_run = false;
     lwrb_skip(&m_ringbuffer_usart1_tx, m_last_transfer_size);
@@ -312,6 +313,11 @@ void uart_tx_complete_callback(bool status)
 
 void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
+	if (m_ringbuffer_usart1_tx.buff == NULL)
+    {
+        lwrb_init(&m_ringbuffer_usart1_tx, m_usart1_tx_buffer, sizeof(m_usart1_tx_buffer));
+    }
+	
     if (length == 0 || m_usart1_is_enabled == false)
     {
         DEBUG_PRINTF("[%s] Invalid params\r\n", __FUNCTION__);
@@ -328,7 +334,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         while (lwrb_write(&m_ringbuffer_usart1_tx, raw + i, 1) == 0)
         {
             DEBUG_PRINTF("UART TX queue full\r\n");
-            HAL_Delay(5);
+            sys_delay_ms(5);
         }
     }
     usart1_hw_transmit_dma();
@@ -352,12 +358,11 @@ static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length)
                              LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
         
         LL_DMA_SetDataLength(DMA1, LL_DMA_CHANNEL_3, length);
-        LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_3, LL_DMA_REQUEST_4);
+        LL_DMA_SetPeriphRequest(DMA1, LL_DMA_CHANNEL_3, LL_DMA_REQUEST_3);
         
         /* Enable DMA RX Interrupt */
         LL_USART_EnableDMAReq_RX(USART1);
         LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_3);
-        
     }
     else
     {
@@ -382,7 +387,7 @@ void usart1_rx_complete_callback(bool status)
             {   /* Current position is over previous one */
                 /* We are in "linear" mode */
                 /* Process data directly by subtracting "pointers" */
-                DEBUG_RAW("%.*s", pos - old_pos, &m_usart1_rx_buffer[old_pos]);
+//                DEBUG_RAW("%.*s", pos - old_pos, &m_usart1_rx_buffer[old_pos]);
 				gsm_hw_layer_uart_fill_rx(&m_usart1_rx_buffer[old_pos], pos-old_pos);
             } 
             else 
@@ -403,8 +408,14 @@ void usart1_rx_complete_callback(bool status)
     {
         m_uart_rx_ongoing = false;
     }
-    usart1_hw_uart_rx_raw(m_usart1_rx_buffer, sizeof(m_usart1_rx_buffer));
 }
+
+void usart1_start_dma_rx(void)
+{
+	usart1_hw_uart_rx_raw(m_usart1_rx_buffer, UART1_RX_BUFFER_SIZE);
+}
+
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

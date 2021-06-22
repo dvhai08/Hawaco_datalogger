@@ -33,6 +33,15 @@
 /* USER CODE BEGIN Includes */
 #include "app_eeprom.h"
 #include "measure_input.h"
+#include "lpf.h"
+#include "stdbool.h"
+#include "app_cli.h"
+#include "app_wdt.h"
+#include "app_sync.h"
+#include "hardware_manager.h"
+#include "app_bkup.h"
+#include "control_output.h"
+#include "gsm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,6 +76,8 @@ void SystemClock_Config(void);
 /* memory for ummalloc */
 uint8_t g_umm_heap[UMM_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
+static void task_feed_wdt(void *arg);
+static void gsm_mnr_task(void *arg);
 /* USER CODE END 0 */
 
 /**
@@ -76,7 +87,8 @@ static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+//	__enable_irq();
+	hardware_manager_get_reset_reason();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -98,26 +110,44 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
+  MX_IWDG_Init();
+  MX_RTC_Init();
+  MX_LPTIM1_Init();
   MX_ADC_Init();
   MX_DAC_Init();
-  MX_IWDG_Init();
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
-  MX_RTC_Init();
   MX_SPI2_Init();
-  MX_LPTIM1_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
+	app_cli_start();
+	app_bkup_init();
     app_eeprom_init();
 	measure_input_initialize();
+	control_ouput_init();
+//	adc_start();
+	gsm_init_hw();
+	
+	app_sync_config_t config;
+	config.get_ms = sys_get_ms;
+	config.polling_interval_ms = 1;
+	app_sync_sytem_init(&config);
+	
+	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  measure_input_task();
+	gsm_hw_layer_run();
+	control_ouput_task();
+	measure_input_task();
+	app_cli_poll();
+	app_sync_polling_task();
+	__WFI();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -138,20 +168,17 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Configure LSE Drive Capability
-  */
-  HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI
-                              |RCC_OSCILLATORTYPE_LSE;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLLMUL_3;
+  RCC_OscInitStruct.PLL.PLLDIV = RCC_PLLDIV_3;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -160,7 +187,7 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
@@ -173,7 +200,7 @@ void SystemClock_Config(void)
                               |RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
   PeriphClkInit.LptimClockSelection = RCC_LPTIM1CLKSOURCE_PCLK;
 
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -182,13 +209,13 @@ void SystemClock_Config(void)
   }
 }
 
+/* USER CODE BEGIN 4 */
 void sys_set_delay_time_before_deep_sleep(uint32_t ms)
 {
 	m_delay_afer_wakeup_from_deep_sleep_to_measure_data = 0;
 	#warning "Please implement delay timeout afer wakeup from deep sleep"
 }
 
-/* USER CODE BEGIN 4 */
 
 uint32_t sys_get_ms()
 {
@@ -207,6 +234,18 @@ void sys_delay_ms(uint32_t ms)
 			break;
 		}
 	}
+}
+
+static void task_feed_wdt(void *arg)
+{
+#ifdef WDT_ENABLE
+	LL_IWDG_ReloadCounter(IWDG);
+#endif
+}
+
+static void gsm_mnr_task(void *arg)
+{
+	gsm_manager_tick();
 }
 
 /* USER CODE END 4 */

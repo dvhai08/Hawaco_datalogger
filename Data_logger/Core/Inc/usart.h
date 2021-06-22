@@ -54,6 +54,27 @@ void uart1_hw_uart_send_raw(uint8_t* raw, uint32_t length);
  */
 void usart1_control(bool enable);
 
+/**
+ * @brief       New uart TX callback
+ * @param[in]   enable TRUE - Data is valid
+                        FALSE - Error orcurs
+ */
+void usart1_tx_complete_callback(bool status);
+
+
+/**
+ * @brief       New uart RX callback
+ * @param[in]   enable TRUE - Data is valid
+                        FALSE - Error orcurs
+ */
+void usart1_rx_complete_callback(bool status);
+
+
+/**
+ * @brief       Start DMA RX
+ */
+void usart1_start_dma_rx(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

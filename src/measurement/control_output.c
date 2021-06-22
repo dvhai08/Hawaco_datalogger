@@ -41,7 +41,7 @@ void control_ouput_task(void)
 {
 	if (m_max_dac_output_ms == 0)
 	{
-		ENABLE_OUTPUT_2_20MA_POWER(0);
+		ENABLE_OUTPUT_4_20MA_POWER(0);
 		return;
 	}
 	
@@ -53,7 +53,7 @@ void control_ouput_task(void)
 		&& cfg->io_enable.name.output_4_20ma_value <= 20)
 	{
 		//dieu khien dau ra output DAC on/off
-		ENABLE_OUTPUT_2_20MA_POWER(1);
+		ENABLE_OUTPUT_4_20MA_POWER(1);
 
 		if (!m_dac_is_enabled)
 		{
@@ -76,7 +76,7 @@ void control_ouput_task(void)
 		if (m_dac_is_enabled)
 		{
 			m_dac_is_enabled = 0;
-			ENABLE_OUTPUT_2_20MA_POWER(0);
+			ENABLE_OUTPUT_4_20MA_POWER(0);
 			dac_stop();
 		}
 	}
@@ -102,7 +102,7 @@ static void dac_config(void)
 	}
 	else
 	{
-		ENABLE_OUTPUT_2_20MA_POWER(0);
+		ENABLE_OUTPUT_4_20MA_POWER(0);
 		dac_stop();
 	}
 }

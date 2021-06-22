@@ -225,13 +225,13 @@
 #define ENABLE_NTC_POWER(x)     		
 								
 								
-#define ENABLE_INOUT_2_20MA_POWER(x)	{	if (x) \
+#define ENABLE_INOUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_ResetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
 											else	\
 												LL_GPIO_SetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
 										}
 
-#define ENABLE_OUTPUT_2_20MA_POWER(x)	{	if (x) \
+#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 											else	\
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\

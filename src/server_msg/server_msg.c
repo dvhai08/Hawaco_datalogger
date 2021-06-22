@@ -40,7 +40,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;
         }
     }
-
+#ifdef DTG02
     char *output1 = strstr(buffer, "OUTPUT1\":");
     if (output1 != NULL)
     {
@@ -49,10 +49,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             config->io_enable.name.output0 = out1;
             has_new_cfg++;
-            DEBUG_PRINTF("Output 1 changed\r\n");
+            DEBUG_PRINTF("4-20MA output1 1 changed\r\n");
             //Dk ngoai vi luon
-			#warning "Please control output 1 immediately"
-			TRANS_1_OUTPUT(out1);
+			#warning "Please control output 1 4-20mA with delay"
         }
     }
 
@@ -95,7 +94,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			TRANS_4_OUTPUT(out4);
         }
     }
-	
+#endif
 	
     char *mode_j1 = strstr(buffer, "INPUT_J1\":");		// mode
     if (mode_j1 != NULL)

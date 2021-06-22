@@ -489,19 +489,24 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 10:
-        gsm_utilities_get_imei(resp_buffer, (uint8_t *)gsm_get_module_imei(), 15);
-        DEBUG_PRINTF("Get GSM IMEI: %s\r\n", gsm_get_module_imei());
+	{
+		uint8_t *imei_buffer = (uint8_t*)gsm_get_module_imei();
+        gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
+        DEBUG_PRINTF("Get GSM IMEI: %s\r\n", imei_buffer);
         if (strlen(gsm_get_module_imei()) < 15)
         {
-            DEBUG_PRINTF("IMEI's invalid!r\n");
+            DEBUG_PRINTF("IMEI's invalid!\r\n");
             gsm_change_state(GSM_STATE_RESET); //Khong doc dung IMEI -> reset module GSM!
             return;
         }
         gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+	}
         break;
 
     case 11:
-        gsm_utilities_get_imei(resp_buffer, (uint8_t *)gsm_get_sim_imei(), 15);
+	{
+		uint8_t *imei_buffer = (uint8_t*)gsm_get_sim_imei();
+        gsm_utilities_get_imei(resp_buffer, imei_buffer, 16);
         DEBUG_PRINTF("Get SIM IMSI: %s\r\n", gsm_get_sim_imei());
         if (strlen(gsm_get_sim_imei()) < 15)
         {
@@ -510,6 +515,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             return;
         }
         gsm_hw_send_at_cmd("AT+QCCID\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm);
+	}
         break;
 
     case 12:
@@ -848,13 +854,8 @@ void gsm_hard_reset(void)
     case 6:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
-#ifdef GD32E10X
-        nvic_irq_enable(GSM_UART_IRQ, 1, 0);
-        driver_uart_initialize(GSM_UART, 115200);
-#else
-        usart1_control(true);
-#endif
-        gsm_manager.TimeOutOffAfterReset = 90;
+		usart1_control(true);
+        gsm_manager.timeout_after_reset = 90;
         step++;
         break;
 
@@ -1099,7 +1100,7 @@ uint16_t gsm_build_http_post_msg(void)
 									counter1_r);
 	}
 
-	for (uint32_t i = 0; i < 4; i++)
+	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
 		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J3_%u\":\"%u.%u\",", 
 																			i,
@@ -1107,19 +1108,21 @@ uint16_t gsm_build_http_post_msg(void)
 																			measure_input->input_4_20mA[i]%10); // dau vao 4-20mA 0
 	}
 
-	for (uint32_t i = 0; i < 4; i++)
+#ifdef DTG02
+	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
 		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J9_%u\":\"%u\",", 
 																			i,
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
-	
-	for (uint32_t i = 0; i < 4; i++)
+
+	for (uint32_t i = 0; i < NUMBER_OF_OUT_ON_OFF; i++)
 	{
 		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output%u\":\"%u\",", 
 																			i,
 																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
 	}	
+#endif
 	
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", gsm_get_csq_in_percent());

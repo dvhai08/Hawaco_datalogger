@@ -29,7 +29,7 @@ void MX_IWDG_Init(void)
 {
 
   /* USER CODE BEGIN IWDG_Init 0 */
-
+#ifdef WDT_ENABLE
   /* USER CODE END IWDG_Init 0 */
 
   /* USER CODE BEGIN IWDG_Init 1 */
@@ -45,7 +45,7 @@ void MX_IWDG_Init(void)
 
   LL_IWDG_ReloadCounter(IWDG);
   /* USER CODE BEGIN IWDG_Init 2 */
-
+#endif
   /* USER CODE END IWDG_Init 2 */
 
 }
