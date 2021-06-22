@@ -202,22 +202,19 @@ void gsm_manager_tick(void)
                 }
             }
         
-            if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
-            {
-                //#warning "Sleep in http mode is not enabled"
-                if (enter_sleep_in_http)
-                //if (0)
-                {
-                    gsm_change_state(GSM_STATE_SLEEP);
-                }
-                else
-                {
-                    if (m_timeout_to_sleep > 15)
-                    {
-                        m_timeout_to_sleep -= 15;
-                    }
-                }
-            }
+			//#warning "Sleep in http mode is not enabled"
+			if (enter_sleep_in_http)
+			//if (0)
+			{
+				gsm_change_state(GSM_STATE_SLEEP);
+			}
+			else
+			{
+				if (m_timeout_to_sleep > 15)
+				{
+					m_timeout_to_sleep -= 15;
+				}
+			}
         }
     }
     break;
@@ -1056,7 +1053,7 @@ uint16_t gsm_build_http_post_msg(void)
         return 0;
     }
 
-    new_msq.pointer = umm_malloc(256);
+    new_msq.pointer = umm_malloc(256+128);
     if (new_msq.pointer == NULL)
     {
         DEBUG_PRINTF("[%s-%d] No memory\r\n", __FUNCTION__, __LINE__);
@@ -1080,7 +1077,7 @@ uint16_t gsm_build_http_post_msg(void)
 	
 	counter0_f = counter0_f / cfg->k0 + cfg->offset0;
 	counter1_f = counter1_f / cfg->k1 + cfg->offset1;
-	
+#if 0
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", app_rtc_get_counter()); //second since 1970
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", cfg->phone);
@@ -1123,12 +1120,12 @@ uint16_t gsm_build_http_post_msg(void)
 																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
 	}	
 #endif
-	
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", gsm_get_csq_in_percent());
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
 
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", measure_input->vbat_percent);
+
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u-%u,os-%u-%u,m-%u,%u,%s-%s\"}", 
                                                                             measure_input->vbat_raw,
                                                                             hardware_manager_get_reset_reason()->value,
@@ -1136,6 +1133,9 @@ uint16_t gsm_build_http_post_msg(void)
                                                                             cfg->offset0, cfg->offset1,
 																			cfg->meter_mode[0], cfg->meter_mode[1],
 																			VERSION_CONTROL_FW, VERSION_CONTROL_HW);
+#else
+	new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\"}", app_rtc_get_counter());
+#endif
     hardware_manager_get_reset_reason()->value = 0;
 
     if (app_queue_put(&m_http_msq, &new_msq) == false)
@@ -1156,7 +1156,7 @@ static char m_build_http_post_header[255];
 static char *build_http_header(uint32_t length)
 {
     sprintf(m_build_http_post_header, "POST /api/v1/%s/telemetry HTTP/1.1\r\n"
-                                      "Host: iot.wilad.vn\r\nContent-Type: application/json\r\n"
+                                      "Host: iot.wilad.vn\r\nContent-Type: text/plain\r\n"
                                       "Content-Length: %u\r\n\r\n",
             gsm_get_module_imei(),
             length);
@@ -1204,6 +1204,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg.pointer;
                 ((gsm_http_data_t *)data)->data_length = m_last_http_msg.length;
                 ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
+				DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
             }
         }
     }

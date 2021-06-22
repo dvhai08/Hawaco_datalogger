@@ -31,7 +31,7 @@ static lwrb_t m_ringbuffer_usart1_tx =
 {
     .buff = NULL,
 };
-static uint8_t m_usart1_tx_buffer[256];
+static uint8_t m_usart1_tx_buffer[512];
 static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
 static uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 /* USER CODE END 0 */
@@ -278,7 +278,7 @@ static inline void usart1_hw_transmit_dma(void)
     {
         m_tx_uart_run = false;
         m_last_transfer_size = 0;
-//		DEBUG_PRINTF("TX cplt\r\n");
+		DEBUG_PRINTF("TX cplt\r\n");
         return;
     }	
 	

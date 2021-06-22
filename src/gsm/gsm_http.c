@@ -489,12 +489,12 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 post_rx_data.action = m_http_cfg.action;
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 DEBUG_PRINTF("Send post data\r\n"); 
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,30,30\r\n", 
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,2,5\r\n", 
                                             post_rx_data.data_length + strlen((char*)post_rx_data.header)); 
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT", 
                                     "", 
-                                    30000, 
+                                    6000, 
                                     1, 
                                     gsm_http_query);
             }
@@ -567,12 +567,14 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                DEBUG_PRINTF("Input http post, len %u\r\n", strlen((char*)post_rx_data.data));
+                DEBUG_PRINTF("Input http post, len %u\r\n", 
+								strlen((char*)post_rx_data.data) + strlen((char*)post_rx_data.header));
+				DEBUG_RAW("%s", post_rx_data.header);
                 gsm_hw_uart_send_raw(post_rx_data.header, strlen((char*)post_rx_data.header));
                 gsm_hw_send_at_cmd((char*)post_rx_data.data, 
                                     "QHTTPPOST: ", 
                                     "\r\n", 
-                                    20000, 
+                                    10000, 
                                     1, 
                                     gsm_http_query); // Close a GPRS context.
             }
