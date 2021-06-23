@@ -114,14 +114,16 @@ void measure_input_task(void)
 			
         }
     }
-	
 	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
+		((sys_get_ms() - m_last_time_measure_data) >= 5000))
+		
+//	if (m_this_is_the_first_time ||
+//		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
 	{
 		if (adc_conversion_cplt(true))
 		{
 			adc_convert();
-			if (m_adc_convert_count++ > 10)
+			if (m_adc_convert_count++ > 2)
 			{
 				m_last_time_measure_data = sys_get_ms();
 				m_this_is_the_first_time = false;

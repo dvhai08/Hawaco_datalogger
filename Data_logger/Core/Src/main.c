@@ -78,6 +78,7 @@ uint8_t g_umm_heap[UMM_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
+static void info_task(void *arg);
 /* USER CODE END 0 */
 
 /**
@@ -113,7 +114,7 @@ int main(void)
   MX_IWDG_Init();
   MX_RTC_Init();
   MX_LPTIM1_Init();
-//  MX_ADC_Init();
+  MX_ADC_Init();
   MX_DAC_Init();
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
@@ -136,6 +137,7 @@ int main(void)
 	
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -246,6 +248,16 @@ static void task_feed_wdt(void *arg)
 static void gsm_mnr_task(void *arg)
 {
 	gsm_manager_tick();
+}
+
+static void info_task(void *arg)
+{	
+	adc_input_value_t *adc = adc_get_input_result();
+	DEBUG_PRINTF("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
+				adc->bat_mv, adc->bat_percent, 
+				adc->i_4_20ma_in[0],
+				adc->temp);
+	
 }
 
 /* USER CODE END 4 */

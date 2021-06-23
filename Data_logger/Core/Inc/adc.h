@@ -34,7 +34,11 @@ typedef struct
 	uint32_t bat_mv;			// battery voltage in MV
 	uint32_t bat_percent;		// battery voltage in percent
 	uint32_t vin_24;			// 24V input
+#ifdef DTG02
 	uint8_t i_4_20ma_in[4];
+#else
+	uint8_t i_4_20ma_in[1];
+#endif
 	int32_t temp;
 } adc_input_value_t;
 

@@ -43,12 +43,12 @@
 #define V_TEMP_CHANNEL_INDEX				6
 #else
 #define ADC_CHANNEL_DMA_COUNT				4
-#define ADC_VBAT_RESISTOR_DIV				7911
+#define ADC_VBAT_RESISTOR_DIV				2
 #define ADC_VIN_RESISTOR_DIV				7911
-#define ADC_VREF							3300	
-#define VIN_24V_CHANNEL_INDEX				2		
-#define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
+#define ADC_VREF							3300
 #define VBAT_CHANNEL_INDEX					0
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
+#define VIN_24V_CHANNEL_INDEX				2	
 #define V_TEMP_CHANNEL_INDEX				3	
 #endif
 
@@ -79,7 +79,7 @@ void MX_ADC_Init(void)
   hadc.Init.OversamplingMode = DISABLE;
   hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
   hadc.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
+  hadc.Init.SamplingTime = ADC_SAMPLETIME_3CYCLES_5;
   hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
   hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc.Init.ContinuousConvMode = DISABLE;
@@ -205,17 +205,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PA4     ------> ADC_IN4
     PA6     ------> ADC_IN6
     */
-//	GPIO_InitTypeDef GPIO_InitStruct = {0};
-//	
-//    GPIO_InitStruct.Pin = GPIO_PIN_1;
-//    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-//    GPIO_InitStruct.Pull = GPIO_NOPULL;
-//    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_1);
 
-//    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_6;
-//    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-//    GPIO_InitStruct.Pull = GPIO_NOPULL;
-//    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1|GPIO_PIN_4|GPIO_PIN_6);
 
     /* ADC1 DMA DeInit */
     HAL_DMA_DeInit(adcHandle->DMA_Handle);
@@ -236,7 +228,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 	/* Get the converted value of regular channel */
 	m_adc_started = false;
 	m_adc_new_data = true;
-	DEBUG_PRINTF("DMA ADC complete callback\r\n");
+	DEBUG_PRINTF("ADC cplt\r\n");
 }
 
 void adc_start(void)
@@ -251,6 +243,7 @@ void adc_start(void)
 		
 		if (!NTC_IS_POWERED())
 		{
+			DEBUG_PRINTF("Enable ntc power\r\n");
 			ENABLE_NTC_POWER(1);
 			sys_delay_ms(3);		// 3ms for NTC resistor power on
 		}
@@ -280,7 +273,7 @@ static uint8_t convert_vin_to_percent(uint32_t vin)
 }
 
 
-static adc_input_value_t m_adc_input;
+adc_input_value_t m_adc_input;
 
 adc_input_value_t *adc_get_input_result(void)
 {
@@ -294,10 +287,9 @@ void adc_convert(void)
 		if (!m_is_the_first_time_convert)
 		{
 			m_adc_filterd_data[i].estimate_value *= 100;
-			m_adc_raw_data[i] *= 100;
-			int32_t tmp = m_adc_raw_data[i];
+			int32_t tmp = m_adc_raw_data[i] * 100;
 			lpf_update_estimate(&m_adc_filterd_data[i], &tmp);
-			m_adc_filterd_data[i].estimate_value /= 100;				
+			m_adc_filterd_data[i].estimate_value /= 100;	
 		}
 		else
 		{

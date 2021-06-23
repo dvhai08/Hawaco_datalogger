@@ -1,7 +1,7 @@
 #MicroXplorer Configuration settings - do not modify
 ADC.EOCSelection=ADC_EOC_SEQ_CONV
 ADC.IPParameters=SamplingTime,EOCSelection
-ADC.SamplingTime=ADC_SAMPLETIME_160CYCLES_5
+ADC.SamplingTime=ADC_SAMPLETIME_3CYCLES_5
 Dma.ADC.2.Direction=DMA_PERIPH_TO_MEMORY
 Dma.ADC.2.Instance=DMA1_Channel1
 Dma.ADC.2.MemDataAlignment=DMA_MDATAALIGN_HALFWORD
