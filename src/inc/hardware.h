@@ -190,11 +190,17 @@
 #define GSM_UART				0
 #define RS485_UART				1
 #define LED1(x)             	{	if (x) \
-										LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
-									else	\
 										LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
 								}		
 
+#define LED2(x)             	{	if (x) \
+										LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
+									}	
+								
 #define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
 #define SENS_420mA_PWR_ON()			LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
 							

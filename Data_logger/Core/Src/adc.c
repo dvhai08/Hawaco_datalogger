@@ -42,7 +42,7 @@
 #define VBAT_CHANNEL_INDEX					5
 #define V_TEMP_CHANNEL_INDEX				6
 #else
-#define ADC_CHANNEL_DMA_COUNT				4
+#define ADC_CHANNEL_DMA_COUNT				5
 #define ADC_VBAT_RESISTOR_DIV				2
 #define ADC_VIN_RESISTOR_DIV				7911
 #define ADC_VREF							3300
@@ -50,7 +50,9 @@
 #define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
 #define VIN_24V_CHANNEL_INDEX				2	
 #define V_TEMP_CHANNEL_INDEX				3	
+#define V_REF_CHANNEL_INDEX					4
 #endif
+#define VREF_OFFSET_MV						80
 
 static volatile bool m_adc_started = false;
 volatile uint16_t m_adc_raw_data[ADC_CHANNEL_DMA_COUNT];
@@ -77,9 +79,9 @@ void MX_ADC_Init(void)
   */
   hadc.Instance = ADC1;
   hadc.Init.OversamplingMode = DISABLE;
-  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV1;
+  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc.Init.SamplingTime = ADC_SAMPLETIME_3CYCLES_5;
+  hadc.Init.SamplingTime = ADC_SAMPLETIME_160CYCLES_5;
   hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
   hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc.Init.ContinuousConvMode = DISABLE;
@@ -121,6 +123,13 @@ void MX_ADC_Init(void)
   /** Configure for the selected ADC regular channel to be converted.
   */
   sConfig.Channel = ADC_CHANNEL_11;
+  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure for the selected ADC regular channel to be converted.
+  */
+  sConfig.Channel = ADC_CHANNEL_VREFINT;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -241,6 +250,7 @@ void adc_start(void)
 			ENABLE_INOUT_4_20MA_POWER(1);
 		}
 		
+		MX_ADC_Init();
 		if (!NTC_IS_POWERED())
 		{
 			DEBUG_PRINTF("Enable ntc power\r\n");
@@ -248,7 +258,6 @@ void adc_start(void)
 			sys_delay_ms(3);		// 3ms for NTC resistor power on
 		}
 		m_adc_started = true;
-		MX_ADC_Init();
 		HAL_ADC_Start_DMA(&hadc, (uint32_t*)m_adc_raw_data, ADC_CHANNEL_DMA_COUNT);
 	}
 }
@@ -298,23 +307,24 @@ void adc_convert(void)
 		}
 	}
 	m_is_the_first_time_convert = false;
-		
+	m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
+	m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_filterd_data[V_REF_CHANNEL_INDEX].estimate_value + VREF_OFFSET_MV;
 	/* ADC Vbat */
-	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_filterd_data[VBAT_CHANNEL_INDEX].estimate_value*ADC_VREF/4095);
+	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_filterd_data[VBAT_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095);
 	m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.bat_mv);
 	
 	/* ADC Vin 24V */
-	m_adc_input.vin_24 = (ADC_VIN_RESISTOR_DIV*m_adc_filterd_data[VIN_24V_CHANNEL_INDEX].estimate_value*ADC_VREF/4095);
+	m_adc_input.vin_24 = (ADC_VIN_RESISTOR_DIV*m_adc_filterd_data[VIN_24V_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095);
 	
 	/* ADC input 4-20mA */
-	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
+	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
 #ifdef DTG02
-	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
-	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
-	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
+	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
 #endif
 	/* v_temp */
-	m_adc_input.temp = m_adc_filterd_data[V_TEMP_CHANNEL_INDEX].estimate_value*ADC_VREF/4095;
+	m_adc_input.temp = m_adc_filterd_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
 }
 
 bool adc_conversion_cplt(bool clear_on_exit)

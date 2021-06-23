@@ -120,6 +120,7 @@ void measure_input_task(void)
 //	if (m_this_is_the_first_time ||
 //		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
 	{
+		bool start_adc = true;
 		if (adc_conversion_cplt(true))
 		{
 			adc_convert();
@@ -129,12 +130,17 @@ void measure_input_task(void)
 				m_this_is_the_first_time = false;
 				m_adc_convert_count = 0;
 				adc_stop();
+				start_adc = false;
 				DEBUG_INFO("Measurement data finished\r\n");
 			}
 			else
 			{
-				adc_start();
+				start_adc = true;
 			}
+		}
+		if (start_adc)
+		{
+			adc_start();
 		}
 	}
 	

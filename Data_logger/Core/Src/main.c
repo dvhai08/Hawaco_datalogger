@@ -42,6 +42,7 @@
 #include "app_bkup.h"
 #include "control_output.h"
 #include "gsm.h"
+#include "hardware.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +53,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define UMM_HEAP_SIZE				2048
+#define GSM_ENABLE					0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,6 +81,7 @@ static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
+volatile uint32_t led_blink_delay = 0;
 /* USER CODE END 0 */
 
 /**
@@ -138,18 +141,37 @@ int main(void)
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+	
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	cfg->io_enable.name.output_4_20ma_enable = 1;
+	cfg->io_enable.name.output_4_20ma_value = 10;
+	cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+	control_output_dac_enable(1000000);
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+#if GSM_ENABLE
 	gsm_hw_layer_run();
+#endif
 	control_ouput_task();
 	measure_input_task();
 	app_cli_poll();
 	app_sync_polling_task();
-	__WFI();
+	  if (led_blink_delay)
+	  {
+		  LED1(1);
+		  LED2(1);
+	  }
+	  else
+	  {
+		LED1(0);
+		LED2(0);
+	  }
+//	__WFI();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -252,11 +274,16 @@ static void gsm_mnr_task(void *arg)
 
 static void info_task(void *arg)
 {	
-	adc_input_value_t *adc = adc_get_input_result();
-	DEBUG_PRINTF("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
-				adc->bat_mv, adc->bat_percent, 
-				adc->i_4_20ma_in[0],
-				adc->temp);
+	static uint32_t i = 0;
+	if (i++ == 5)
+	{
+		i = 0;
+		adc_input_value_t *adc = adc_get_input_result();
+		DEBUG_PRINTF("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
+					adc->bat_mv, adc->bat_percent, 
+					adc->i_4_20ma_in[0],
+					adc->temp);
+	}
 	
 }
 

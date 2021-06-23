@@ -21,6 +21,8 @@
 #endif
 #include "DataDefine.h"
 #include "gsm.h"
+#include "app_eeprom.h"
+#include "control_output.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -44,6 +46,7 @@ static int32_t cli_trigger_fault(p_shell_context_t context, int32_t argc, char *
 static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -52,6 +55,7 @@ static const shell_command_context_t cli_command_table[] =
     {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
     {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
     {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
+	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -193,5 +197,16 @@ static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **ar
     return 0;
 }
 
+static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv)
+{
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	cfg->io_enable.name.output_4_20ma_enable = 1;
+	cfg->io_enable.name.output_4_20ma_value = atoi(argv[1]);
+	cfg->io_enable.name.output_4_20ma_timeout_100ms = atoi(argv[2])/100;
+	control_output_dac_enable(atoi(argv[2]));
+	DEBUG_PRINTF("Control DAC output %uma in ms %ums\r\n", cfg->io_enable.name.output_4_20ma_value,
+															atoi(argv[2]));
+	return 0;
+}
 
 #endif /* APP_CLI_ENABLE */

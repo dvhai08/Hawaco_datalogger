@@ -23,7 +23,8 @@
 #include "app_bkup.h"
 #include "app_eeprom.h"
 #include "dac.h"
-
+#include "app_sync.h"
+#include "adc.h"
 /******************************************************************************
                                    GLOBAL VARIABLES					    			 
  ******************************************************************************/
@@ -32,9 +33,31 @@ static void dac_config(void);
 
 static uint8_t m_dac_is_enabled = 0;
 static uint32_t m_max_dac_output_ms = 0;
-void control_output_dac_enable(uint32_t max_enable_ms)
+static void stop_dac_output(void *arg)
 {
-	m_max_dac_output_ms = max_enable_ms;
+	m_max_dac_output_ms = 0;
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	cfg->io_enable.name.output_4_20ma_timeout_100ms = 0;
+	ENABLE_OUTPUT_4_20MA_POWER(0);
+}
+	
+void control_output_dac_enable(uint32_t ms)
+{
+	if (m_dac_is_enabled)
+	{
+		/* Dieu khien dau ra output 4-20mA qua DAC
+		* DAC: 0.6-3V () <=> 4-20mA output -> 1mA <=> 0.15V
+		*/
+		app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+		uint16_t dac_value = 0;
+		uint16_t voltage = 600 + 150 * (cfg->io_enable.name.output_4_20ma_value - 4); //mV
+		dac_value = voltage * 4095 / adc_get_input_result()->vdda_mv;
+
+		dac_output_value(dac_value);
+	}
+	app_sync_remove_callback(stop_dac_output);
+	m_max_dac_output_ms = ms;
+	app_sync_register_callback(stop_dac_output, ms, SYNC_DRV_SINGLE_SHOT, SYNC_DRV_SCOPE_IN_LOOP);
 }
 
 void control_ouput_task(void)
@@ -96,7 +119,7 @@ static void dac_config(void)
 		&& cfg->io_enable.name.output_4_20ma_value >= 4
 		&& cfg->io_enable.name.output_4_20ma_value <= 20)
 	{
-		MX_DAC_Init();
+		dac_start();
 		m_dac_is_enabled = 1;
 		m_max_dac_output_ms = cfg->io_enable.name.output_4_20ma_timeout_100ms * 100;
 	}

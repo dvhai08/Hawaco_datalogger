@@ -56,6 +56,7 @@
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 extern void uart1_rx_complete_callback(bool status);
+extern volatile uint32_t led_blink_delay;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -134,11 +135,14 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+	
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+	if (led_blink_delay > 0)
+	{
+		led_blink_delay--;
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -175,14 +179,16 @@ void EXTI0_1_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
-
+	LED1(1);
+	  led_blink_delay = 2;
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
-
+	LED2(1);
+	  led_blink_delay = 2;
     /* USER CODE END LL_EXTI_LINE_1 */
   }
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */

@@ -46,9 +46,15 @@ void MX_DAC_Init(void);
 void dac_stop(void);
 
 /**
+ * @brief		Start dac 
+ */
+void dac_start(void);
+
+/**
  * @brief		Start dac output value
  */
 void dac_output_value(uint32_t value);
+
 
 /* USER CODE END Prototypes */
 

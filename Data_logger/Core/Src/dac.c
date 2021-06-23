@@ -21,7 +21,9 @@
 #include "dac.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "app_debug.h"
+#include "stdbool.h"
+bool m_dac_started = false;
 /* USER CODE END 0 */
 
 DAC_HandleTypeDef hdac;
@@ -31,7 +33,7 @@ void MX_DAC_Init(void)
 {
 
   /* USER CODE BEGIN DAC_Init 0 */
-
+	DEBUG_PRINTF("Init DAC\r\n");
   /* USER CODE END DAC_Init 0 */
 
   DAC_ChannelConfTypeDef sConfig = {0};
@@ -55,7 +57,7 @@ void MX_DAC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN DAC_Init 2 */
-
+	m_dac_started = true;
   /* USER CODE END DAC_Init 2 */
 
 }
@@ -67,7 +69,7 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef* dacHandle)
   if(dacHandle->Instance==DAC)
   {
   /* USER CODE BEGIN DAC_MspInit 0 */
-
+	DEBUG_PRINTF("Init DAC\r\n");
   /* USER CODE END DAC_MspInit 0 */
     /* DAC clock enable */
     __HAL_RCC_DAC_CLK_ENABLE();
@@ -105,10 +107,10 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* dacHandle)
 
   /* USER CODE BEGIN DAC_MspDeInit 1 */
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_PIN_4;
+	GPIO_InitStruct.Pin = ADC_4_20MA_OUT_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+	HAL_GPIO_Init(ADC_4_20MA_OUT_GPIO_Port, &GPIO_InitStruct);
   /* USER CODE END DAC_MspDeInit 1 */
   }
 }
@@ -117,23 +119,37 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* dacHandle)
 
 void dac_stop(void)
 {
-	HAL_DAC_Stop(&hdac, DAC_CHANNEL_1);
+	m_dac_started = false;
+	HAL_DAC_Stop(&hdac, DAC_CHANNEL_2);
 	HAL_DAC_MspDeInit(&hdac);
+}
+
+void dac_start(void)
+{
+	HAL_DAC_MspInit(&hdac);
+	MX_DAC_Init();
 }
 
 void dac_output_value(uint32_t value)
 {
-	/*##-3- Set DAC Channel1 DHR register ######################################*/
-	if (HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value) != HAL_OK)
+	DEBUG_PRINTF("Set DAC value %u\r\n", value);
+	if (m_dac_started == false)
 	{
-		/* Setting value Error */
-		Error_Handler();
+		m_dac_started = true;
+		HAL_DAC_MspInit(&hdac);
+		MX_DAC_Init();
 	}
-
 	/*##-4- Enable DAC Channel1 ################################################*/
-	if (HAL_DAC_Start(&hdac, DAC_CHANNEL_1) != HAL_OK)
+	if (HAL_DAC_Start(&hdac, DAC_CHANNEL_2) != HAL_OK)
 	{
 		/* Start Error */
+		Error_Handler();
+	}
+	
+	/*##-3- Set DAC Channel1 DHR register ######################################*/
+	if (HAL_DAC_SetValue(&hdac, DAC_CHANNEL_2, DAC_ALIGN_12B_R, value) != HAL_OK)
+	{
+		/* Setting value Error */
 		Error_Handler();
 	}
 }

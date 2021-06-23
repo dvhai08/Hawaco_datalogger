@@ -13,4 +13,11 @@ void control_ouput_init(void);
  */
 void control_ouput_task(void);
 
+
+/**
+ * @brief		Control DAC output
+ * @param[in]	timeout_ms	Timeout in miliseconds
+ */
+void control_output_dac_enable(uint32_t timeout_ms);
+
 #endif // CONTROL_OUTPUT_H

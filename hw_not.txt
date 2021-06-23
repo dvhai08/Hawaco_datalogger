@@ -1,0 +1,2 @@
+1. ADC sửa lại trở 10k/10k
+2. bổ sung fet để đóng cắt nguồn
