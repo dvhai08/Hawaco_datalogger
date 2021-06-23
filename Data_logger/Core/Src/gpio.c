@@ -360,6 +360,10 @@ void MX_GPIO_Init(void)
   EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
   LL_EXTI_Init(&EXTI_InitStruct);
 
+  /* EXTI interrupt init*/
+  NVIC_SetPriority(EXTI0_1_IRQn, 0);
+  NVIC_EnableIRQ(EXTI0_1_IRQn);
+
 }
 
 /* USER CODE BEGIN 2 */

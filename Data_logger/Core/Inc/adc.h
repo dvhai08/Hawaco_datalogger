@@ -72,6 +72,11 @@ void MX_ADC_Init(void);
  */
 void adc_start(void);
 
+/**
+ * @brief		Stop adc task
+ */
+void adc_stop(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

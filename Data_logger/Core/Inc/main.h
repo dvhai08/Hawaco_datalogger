@@ -77,6 +77,7 @@ void Error_Handler(void);
 #define VTEMP_GPIO_Port GPIOC
 #define SW1_Pin LL_GPIO_PIN_0
 #define SW1_GPIO_Port GPIOA
+#define SW1_EXTI_IRQn EXTI0_1_IRQn
 #define ADC_VBAT_Pin LL_GPIO_PIN_1
 #define ADC_VBAT_GPIO_Port GPIOA
 #define TRANS_OUTPUT_Pin LL_GPIO_PIN_2
@@ -97,6 +98,7 @@ void Error_Handler(void);
 #define RS485_EN_GPIO_Port GPIOB
 #define PWM_Pin LL_GPIO_PIN_1
 #define PWM_GPIO_Port GPIOB
+#define PWM_EXTI_IRQn EXTI0_1_IRQn
 #define ENABLE_OUTPUT_4_20MA_Pin LL_GPIO_PIN_2
 #define ENABLE_OUTPUT_4_20MA_GPIO_Port GPIOB
 #define RS485_TX_Pin LL_GPIO_PIN_10

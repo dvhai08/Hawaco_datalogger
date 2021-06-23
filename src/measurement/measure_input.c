@@ -27,8 +27,7 @@
 
 
 #define STORE_MEASURE_INVERVAL_SEC      30
-
-extern System_t xSystem;
+#define ADC_MEASURE_INTERVAL_MS			30000
 
 /******************************************************************************
                                    GLOBAL FUNCTIONS					    			 
@@ -72,6 +71,7 @@ static uint32_t m_pulse_counter_in_backup[4];
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 volatile uint32_t Measure420mATick = 0;
+bool m_this_is_the_first_time = true;
 
 static void measure_input_pulse_counter_poll(void)
 {
@@ -87,8 +87,10 @@ static void measure_input_pulse_counter_poll(void)
     }
 }
 
-static uint32_t m_last_measure_time = 0;
+static uint32_t m_last_time_store_data = 0;
+static uint32_t m_last_time_measure_data = 0;
 static uint8_t m_measure_timeout = 0;
+uint32_t m_adc_convert_count = 0;
 void measure_input_task(void)
 {
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
@@ -113,19 +115,31 @@ void measure_input_task(void)
         }
     }
 	
-    if ((sys_get_ms() - m_last_measure_time) >= cfg->measure_interval_ms)
-    {
+	if (m_this_is_the_first_time ||
+		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
+	{
 		if (adc_conversion_cplt(true))
 		{
 			adc_convert();
-			m_last_measure_time = sys_get_ms();
-			gsm_build_http_post_msg();
-			DEBUG_INFO("Measurement data finished\r\n");
+			if (m_adc_convert_count++ > 10)
+			{
+				m_last_time_measure_data = sys_get_ms();
+				m_this_is_the_first_time = false;
+				m_adc_convert_count = 0;
+				adc_stop();
+				DEBUG_INFO("Measurement data finished\r\n");
+			}
+			else
+			{
+				adc_start();
+			}
 		}
-		else
-		{
-			adc_start();
-		}
+	}
+	
+    if ((sys_get_ms() - m_last_time_store_data) >= cfg->measure_interval_ms)
+    {
+		m_last_time_store_data = sys_get_ms();
+		gsm_build_http_post_msg();
     }	
 	#warning "Please implement save data to flash cmd"
 //    /* Save pulse counter to flash every 30s */

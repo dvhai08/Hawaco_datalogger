@@ -485,16 +485,15 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-
                 post_rx_data.action = m_http_cfg.action;
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 DEBUG_PRINTF("Send post data\r\n"); 
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,2,5\r\n", 
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,3,8\r\n", 
                                             post_rx_data.data_length + strlen((char*)post_rx_data.header)); 
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT", 
                                     "", 
-                                    6000, 
+                                    9000, 
                                     1, 
                                     gsm_http_query);
             }

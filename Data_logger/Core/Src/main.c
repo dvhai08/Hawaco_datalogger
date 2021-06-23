@@ -113,7 +113,7 @@ int main(void)
   MX_IWDG_Init();
   MX_RTC_Init();
   MX_LPTIM1_Init();
-  MX_ADC_Init();
+//  MX_ADC_Init();
   MX_DAC_Init();
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
@@ -126,7 +126,7 @@ int main(void)
     app_eeprom_init();
 	measure_input_initialize();
 	control_ouput_init();
-//	adc_start();
+	adc_start();
 	gsm_init_hw();
 	
 	app_sync_config_t config;

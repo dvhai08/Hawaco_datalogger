@@ -222,7 +222,13 @@
 										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
 								}								
 
-#define ENABLE_NTC_POWER(x)     		
+#define ENABLE_NTC_POWER(x)     {	if (x) \
+										LL_GPIO_ResetOutputPin(VNTC_GPIO_Port, VNTC_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(VNTC_GPIO_Port, VNTC_Pin);	\
+								}		
+
+#define NTC_IS_POWERED()		LL_GPIO_IsOutputPinSet(VNTC_GPIO_Port, VNTC_Pin)						
 								
 								
 #define ENABLE_INOUT_4_20MA_POWER(x)	{	if (x) \
