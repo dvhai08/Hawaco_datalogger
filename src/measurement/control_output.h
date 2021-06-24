@@ -20,4 +20,9 @@ void control_ouput_task(void);
  */
 void control_output_dac_enable(uint32_t timeout_ms);
 
+/**
+ * @brief       Start measure 4-20mA
+ */
+void control_output_start_measure(void);
+
 #endif // CONTROL_OUTPUT_H

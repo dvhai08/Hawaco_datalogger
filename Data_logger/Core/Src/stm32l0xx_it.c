@@ -26,6 +26,7 @@
 #include "gsm.h"
 #include "measure_input.h"
 #include "usart.h"
+#include "control_output.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -94,7 +95,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	DEBUG_PRINTF("Hardfault\r\n");
-//	NVIC_SystemReset();
+	NVIC_SystemReset();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -180,7 +181,7 @@ void EXTI0_1_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
 	LED1(1);
-	  led_blink_delay = 2;
+	led_blink_delay = 2;
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
@@ -188,7 +189,8 @@ void EXTI0_1_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
 	LED2(1);
-	  led_blink_delay = 2;
+	led_blink_delay = 2;
+	control_output_start_measure();
     /* USER CODE END LL_EXTI_LINE_1 */
   }
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */

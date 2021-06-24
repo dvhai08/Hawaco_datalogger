@@ -33,11 +33,21 @@ static void dac_config(void);
 
 static uint8_t m_dac_is_enabled = 0;
 static uint32_t m_max_dac_output_ms = 0;
+
+static bool is_dac_ouput_valid(void)
+{	
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	return (cfg->io_enable.name.output_4_20ma_enable 
+		&& cfg->io_enable.name.output_4_20ma_timeout_100ms
+	    && cfg->io_enable.name.output_4_20ma_value >= 4
+		&& cfg->io_enable.name.output_4_20ma_value <= 20);
+}
+
 static void stop_dac_output(void *arg)
 {
+	DEBUG_PRINTF("Stop dac\r\n");
 	m_max_dac_output_ms = 0;
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-	cfg->io_enable.name.output_4_20ma_timeout_100ms = 0;
 	ENABLE_OUTPUT_4_20MA_POWER(0);
 }
 	
@@ -70,10 +80,7 @@ void control_ouput_task(void)
 	
 	bool stop_dac = true;
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-	if (cfg->io_enable.name.output_4_20ma_enable 
-		&& cfg->io_enable.name.output_4_20ma_timeout_100ms
-	    && cfg->io_enable.name.output_4_20ma_value >= 4
-		&& cfg->io_enable.name.output_4_20ma_value <= 20)
+	if (is_dac_ouput_valid())
 	{
 		//dieu khien dau ra output DAC on/off
 		ENABLE_OUTPUT_4_20MA_POWER(1);
@@ -134,6 +141,14 @@ static void dac_config(void)
 void control_ouput_init(void)
 {
 	dac_config();
+}
+
+void control_output_start_measure(void)
+{
+	if (is_dac_ouput_valid())
+	{
+		m_max_dac_output_ms = app_eeprom_read_config_data()->io_enable.name.output_4_20ma_timeout_100ms * 100;
+	}
 }
 
 /********************************* END OF FILE *******************************/
