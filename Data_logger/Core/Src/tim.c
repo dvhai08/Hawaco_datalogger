@@ -151,7 +151,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 void tim_pwm_stop(void)
 {
-	DEBUG_PRINTF("Stop pwm\r\n");
+//	DEBUG_PRINTF("Stop pwm\r\n");
 	m_dac_started = false;
 	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_PWM_MspDeInit(&htim2);
@@ -159,14 +159,14 @@ void tim_pwm_stop(void)
 
 void tim_pwm_start(void)
 {
-	DEBUG_PRINTF("Start pwm\r\n");
+//	DEBUG_PRINTF("Start pwm\r\n");
 	HAL_TIM_PWM_MspInit(&htim2);
 	MX_TIM2_Init();
 }
 
 void tim_pwm_output_percent(uint32_t thoughsand)
 {
-	DEBUG_PRINTF("Set PWM percent %u%%o\r\n", thoughsand);
+//	DEBUG_PRINTF("Set PWM percent %u%%o\r\n", thoughsand);
 	if (m_dac_started == false)
 	{
 		m_dac_started = true;

@@ -43,6 +43,7 @@
 #include "control_output.h"
 #include "gsm.h"
 #include "hardware.h"
+#include "modbus_master.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -82,6 +83,7 @@ static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
+bool enter_test_mode = false;
 /* USER CODE END 0 */
 
 /**
@@ -125,6 +127,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
+	DEBUG_RAW(RTT_CTRL_CLEAR);
 	app_cli_start();
 	app_bkup_init();
     app_eeprom_init();
@@ -141,13 +144,7 @@ int main(void)
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
-	
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-	cfg->io_enable.name.output_4_20ma_enable = 1;
-	cfg->io_enable.name.output_4_20ma_value = 10;
-	cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
-	control_output_dac_enable(1000000);
-	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -161,16 +158,30 @@ int main(void)
 	measure_input_task();
 	app_cli_poll();
 	app_sync_polling_task();
-	  if (led_blink_delay)
-	  {
-		  LED1(1);
-		  LED2(1);
-	  }
-	  else
-	  {
+	if (led_blink_delay)
+	{
+		LED1(1);
+		LED2(1);
+	}
+	else
+	{
 		LED1(0);
 		LED2(0);
-	  }
+	}
+	if (enter_test_mode)
+	{
+		cfg->io_enable.name.output_4_20ma_enable = 1;
+		cfg->io_enable.name.output_4_20ma_value = 10;
+		cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+		control_output_dac_enable(1000000);
+		cfg->io_enable.name.rs485_en = 1;
+	}
+	
+//	if (cfg->io_enable.name.rs485_en)
+//	{
+//		RS485_EN(cfg->io_enable.name.rs485_en);
+//	}
+	
 //	__WFI();
     /* USER CODE END WHILE */
 
@@ -279,12 +290,19 @@ static void info_task(void *arg)
 	{
 		i = 0;
 		adc_input_value_t *adc = adc_get_input_result();
-		DEBUG_PRINTF("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
+		DEBUG_INFO("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
 					adc->bat_mv, adc->bat_percent, 
 					adc->i_4_20ma_in[0],
 					adc->temp);
 	}
-	
+	if (enter_test_mode)
+	{
+		char buf[48];
+		sprintf(buf, "%u\r\n", sys_get_ms());
+		
+		RS485_EN(1);
+		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
+	}
 }
 
 /* USER CODE END 4 */

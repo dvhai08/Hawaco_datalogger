@@ -24,7 +24,7 @@
 #include "lwrb.h"
 #include "app_eeprom.h"
 #include "adc.h"
-
+#include "usart.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 #define ADC_MEASURE_INTERVAL_MS			30000
@@ -83,7 +83,7 @@ static void measure_input_pulse_counter_poll(void)
 									m_pulse_counter_in_backup[2],
 									m_pulse_counter_in_backup[3]);
         m_is_pulse_trigger = 0;
-        DEBUG_PRINTF("+++++++++ in %ums\r\n", m_pull_diff);
+        DEBUG_INFO("+++++++++ in %ums\r\n", m_pull_diff);
     }
 }
 
@@ -115,7 +115,7 @@ void measure_input_task(void)
         }
     }
 	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= 5000))
+		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
 		
 //	if (m_this_is_the_first_time ||
 //		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
@@ -131,7 +131,7 @@ void measure_input_task(void)
 				m_adc_convert_count = 0;
 				adc_stop();
 				start_adc = false;
-				DEBUG_INFO("Measurement data finished\r\n");
+//				DEBUG_INFO("Measurement data finished\r\n");
 			}
 			else
 			{
@@ -161,7 +161,7 @@ void measure_input_task(void)
 //            xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
 //            InternalFlash_WriteMeasures();
 //            uint8_t res = InternalFlash_WriteConfig();
-//            DEBUG_PRINTF("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK");
+//            DEBUG_INFO("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK");
 //        }
 //    }
 }
@@ -222,7 +222,7 @@ void measure_input_initialize(void)
     */
 	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-    DEBUG_PRINTF("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
+    DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
 }
 
 uint8_t measure_input_is_rs485_power_on(void)
@@ -320,7 +320,7 @@ void EXTI2_IRQHandler(void)
             if (m_pull_diff > 200)
             {
                 m_is_pulse_trigger = 1;
-                DEBUG_PRINTF("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
+                DEBUG_INFO("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
                 if (0 == GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN))
                 {
                     xSystem.MeasureStatus.PulseCounterInBkup++;
@@ -374,7 +374,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 		if (m_pull_diff[input->port] > 200)
 		{
 			m_is_pulse_trigger = 1;
-			DEBUG_PRINTF("Dir %u\r\n", input->dir_level);
+			DEBUG_INFO("Dir %u\r\n", input->dir_level);
 			if (0 == input->dir_level)
 			{
 				m_pulse_counter_in_backup[input->port]++;
@@ -404,11 +404,17 @@ uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
 
 uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
 {
+	LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);
+#if 0
     for (uint32_t i = 0; i < length; i++)
     {
 		LL_LPUART_TransmitData8(LPUART1, buf[i]);
         while (0 == LL_LPUART_IsActiveFlag_TXE(LPUART1));
     }
+#else
+	HAL_UART_Transmit(&hlpuart1, buf, length, 10);
+#endif
+	LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);
 	return 0;
 }
 

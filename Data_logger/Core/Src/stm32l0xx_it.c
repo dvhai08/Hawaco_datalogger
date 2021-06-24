@@ -64,6 +64,7 @@ extern volatile uint32_t led_blink_delay;
 extern DMA_HandleTypeDef hdma_adc;
 extern ADC_HandleTypeDef hadc;
 extern LPTIM_HandleTypeDef hlptim1;
+extern UART_HandleTypeDef hlpuart1;
 extern RTC_HandleTypeDef hrtc;
 extern SPI_HandleTypeDef hspi2;
 /* USER CODE BEGIN EV */
@@ -363,7 +364,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	}
 	
   /* USER CODE END AES_RNG_LPUART1_IRQn 0 */
-
+  HAL_UART_IRQHandler(&hlpuart1);
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 1 */
 
   /* USER CODE END AES_RNG_LPUART1_IRQn 1 */

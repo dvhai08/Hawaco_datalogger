@@ -31,9 +31,8 @@ extern "C" {
 #include "stm32l0xx_hal.h"
 
 #include "stm32l0xx_ll_iwdg.h"
-#include "stm32l0xx_ll_lpuart.h"
-#include "stm32l0xx_ll_rcc.h"
 #include "stm32l0xx_ll_usart.h"
+#include "stm32l0xx_ll_rcc.h"
 #include "stm32l0xx_ll_system.h"
 #include "stm32l0xx_ll_gpio.h"
 #include "stm32l0xx_ll_exti.h"

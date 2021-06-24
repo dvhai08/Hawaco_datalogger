@@ -15,12 +15,6 @@ extern uint32_t sys_get_ms(void);
 
 int app_debug_rtt(const char *fmt,...)
 {
-    // Get debug data
-    //if (!(CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk))
-    //{
-    //    return 0;
-    //}
-
     int     n;
 
     char *p = &m_debug_buffer[0];

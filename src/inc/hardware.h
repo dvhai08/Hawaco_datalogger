@@ -249,6 +249,11 @@
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 										}	
 
+#define RS485_EN(x)						{	if (x) \
+												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
+											else	\
+												LL_GPIO_SetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
+										}	
 										
 #endif
 

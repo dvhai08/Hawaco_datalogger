@@ -5,7 +5,16 @@
 #include <stdio.h>
 
 #include "SEGGER_RTT.h"
-
+#if 1
+#define KNRM  "\x1B[0m"
+#define KRED  RTT_CTRL_TEXT_RED
+#define KGRN  RTT_CTRL_TEXT_GREEN
+#define KYEL  RTT_CTRL_TEXT_YELLOW
+#define KBLU  RTT_CTRL_TEXT_BLUE
+#define KMAG  RTT_CTRL_TEXT_MAGENTA
+#define KCYN  RTT_CTRL_TEXT_CYAN
+#define KWHT  RTT_CTRL_TEXT_WHITE
+#else
 #define KNRM  "\x1B[0m"
 #define KRED  "\x1B[31m"
 #define KGRN  "\x1B[32m"
@@ -14,19 +23,20 @@
 #define KMAG  "\x1B[35m"
 #define KCYN  "\x1B[36m"
 #define KWHT  "\x1B[37m"
+#endif
 
 #define DEBUG_RTT               1
 #define DEBUG_RAW               app_debug_rtt_raw
 
 
 #define DEBUG_DUMP                           app_debug_dump
-#define DEBUG_INFO(s, args...)               app_debug_rtt_raw(KGRN "[I] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
-#define DEBUG_ERROR(s, args...)              app_debug_rtt_raw(KRED "[E] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
-#define DEBUG_WARN(s, args...)               app_debug_rtt_raw(KYEL "[W] %s %u " s KNRM, __FILE__, sys_get_ms(), ##args)
+#define DEBUG_INFO(s, args...)               app_debug_rtt_raw(KGRN "<%u> [I] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
+#define DEBUG_ERROR(s, args...)              app_debug_rtt_raw(KRED "<%u> [E] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
+#define DEBUG_WARN(s, args...)               app_debug_rtt_raw(KYEL "<%u> [W] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
 #define DEBUG_COLOR(color, s, args...)       app_debug_rtt_raw(color s KNRM, ##args)
 
 
-#define DEBUG_PRINTF            app_debug_rtt
+#define DEBUG_PRINTF            DEBUG_INFO
 #ifndef DEBUG_PRINTF
 #define DEBUG_PRINTF(String...)	SEGGER_RTT_printf(0, String)
 #endif

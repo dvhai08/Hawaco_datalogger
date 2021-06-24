@@ -47,6 +47,7 @@ static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -56,6 +57,7 @@ static const shell_command_context_t cli_command_table[] =
     {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
     {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
+	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -208,5 +210,21 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
 															atoi(argv[2]));
 	return 0;
 }
+
+extern bool enter_test_mode;
+static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv)
+{
+	if (strstr(argv[1], "en"))
+	{
+		DEBUG_PRINTF("Enter test mode\r\n");
+		enter_test_mode = true;
+	}
+	else if (strstr(argv[1], "dis"))
+	{
+		DEBUG_PRINTF("Exit test mode\r\n");
+		enter_test_mode = true;
+	}
+}
+
 
 #endif /* APP_CLI_ENABLE */

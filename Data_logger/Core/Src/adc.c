@@ -237,7 +237,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 	/* Get the converted value of regular channel */
 	m_adc_started = false;
 	m_adc_new_data = true;
-	DEBUG_PRINTF("ADC cplt\r\n");
 }
 
 void adc_start(void)
@@ -249,11 +248,11 @@ void adc_start(void)
 		{
 			ENABLE_INOUT_4_20MA_POWER(1);
 		}
-		
+		HAL_ADC_MspInit(&hadc);
 		MX_ADC_Init();
 		if (!NTC_IS_POWERED())
 		{
-			DEBUG_PRINTF("Enable ntc power\r\n");
+//			DEBUG_PRINTF("Enable ntc power\r\n");
 			ENABLE_NTC_POWER(1);
 			sys_delay_ms(3);		// 3ms for NTC resistor power on
 		}

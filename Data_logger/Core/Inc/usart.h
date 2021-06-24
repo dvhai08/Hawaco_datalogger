@@ -31,6 +31,8 @@ extern "C" {
 #include <stdbool.h>
 /* USER CODE END Includes */
 
+extern UART_HandleTypeDef hlpuart1;
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
