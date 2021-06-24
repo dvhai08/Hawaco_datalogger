@@ -20,13 +20,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "dac.h"
 #include "dma.h"
 #include "iwdg.h"
 #include "lptim.h"
 #include "usart.h"
 #include "rtc.h"
 #include "spi.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -118,10 +118,10 @@ int main(void)
   MX_RTC_Init();
   MX_LPTIM1_Init();
   MX_ADC_Init();
-  MX_DAC_Init();
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC

@@ -86,8 +86,8 @@ void Error_Handler(void);
 #define DIR_GPIO_Port GPIOA
 #define ADC_4_20MA_IN_Pin LL_GPIO_PIN_4
 #define ADC_4_20MA_IN_GPIO_Port GPIOA
-#define ADC_4_20MA_OUT_Pin LL_GPIO_PIN_5
-#define ADC_4_20MA_OUT_GPIO_Port GPIOA
+#define DAC_4_20MA_OUT_Pin LL_GPIO_PIN_5
+#define DAC_4_20MA_OUT_GPIO_Port GPIOA
 #define ADC_24V_Pin LL_GPIO_PIN_6
 #define ADC_24V_GPIO_Port GPIOA
 #define EXT_FLASH_CS_Pin LL_GPIO_PIN_4

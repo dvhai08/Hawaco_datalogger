@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * @file    dac.h
+  * @file    tim.h
   * @brief   This file contains all the function prototypes for
-  *          the dac.c file
+  *          the tim.c file
   ******************************************************************************
   * @attention
   *
@@ -17,8 +17,8 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __DAC_H__
-#define __DAC_H__
+#ifndef __TIM_H__
+#define __TIM_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,34 +28,35 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-#ifdef DAC_4_20MA
+
 /* USER CODE END Includes */
 
-extern DAC_HandleTypeDef hdac;
+extern TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_DAC_Init(void);
+void MX_TIM2_Init(void);
+
+void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
-/**
- * @brief		Stop DAC
- */
-void dac_stop(void);
 
 /**
- * @brief		Start dac 
+ * @brief		Stop pwm
  */
-void dac_start(void);
+void tim_pwm_stop(void);
 
 /**
- * @brief		Start dac output value
+ * @brief		Start pwm
  */
-void dac_output_value(uint32_t value);
+void tim_pwm_start(void);
 
-#endif
+/**
+ * @brief		Set pwm percent
+ */
+void tim_pwm_output_percent(uint32_t thoughsand);
 
 /* USER CODE END Prototypes */
 
@@ -63,6 +64,6 @@ void dac_output_value(uint32_t value);
 }
 #endif
 
-#endif /* __DAC_H__ */
+#endif /* __TIM_H__ */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
