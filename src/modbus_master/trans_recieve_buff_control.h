@@ -19,9 +19,10 @@ uint8_t Modbus_Master_RB_Initialize(void);
 void Modbus_Master_Rece_Flush(void);
 uint8_t Modbus_Master_Rece_Available(void);
 __weak uint8_t Modbus_Master_GetByte(uint8_t *getbyte);
-uint8_t Modbus_Master_Rece_Handler(void);
+uint8_t Modbus_Master_Rece_Handler(uint8_t byte);
 uint8_t Modbus_Master_Read(void);
-__weak uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length);
+__weak  void Modbus_Master_Write(uint8_t *buf, uint8_t length);
 uint32_t Modbus_Master_Millis(void);
+__weak void Modbus_Master_Sleep(void);
 #endif
 /********END OF FILE****/

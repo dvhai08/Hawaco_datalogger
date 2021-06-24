@@ -57,9 +57,6 @@ void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(DIR_GPIO_Port, DIR_Pin);
-
-  /**/
   LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);
 
   /**/
@@ -70,9 +67,6 @@ void MX_GPIO_Init(void)
 
   /**/
   LL_GPIO_ResetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);
-
-  /**/
-  LL_GPIO_ResetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);
@@ -93,10 +87,13 @@ void MX_GPIO_Init(void)
   LL_GPIO_SetOutputPin(EXT_FLASH_CS_GPIO_Port, EXT_FLASH_CS_Pin);
 
   /**/
-  GPIO_InitStruct.Pin = CIRIN1_Pin;
+  LL_GPIO_SetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);
+
+  /**/
+  GPIO_InitStruct.Pin = CIRIN0_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(CIRIN1_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(CIRIN0_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_14;
@@ -135,14 +132,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(TRANS_OUTPUT_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = DIR_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(DIR_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_7;
@@ -332,16 +321,25 @@ void MX_GPIO_Init(void)
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE0);
 
   /**/
+  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTA, LL_SYSCFG_EXTI_LINE3);
+
+  /**/
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE1);
 
   /**/
   LL_GPIO_SetPinPull(SW1_GPIO_Port, SW1_Pin, LL_GPIO_PULL_NO);
 
   /**/
+  LL_GPIO_SetPinPull(DIR0_GPIO_Port, DIR0_Pin, LL_GPIO_PULL_NO);
+
+  /**/
   LL_GPIO_SetPinPull(PWM_GPIO_Port, PWM_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinMode(SW1_GPIO_Port, SW1_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(DIR0_GPIO_Port, DIR0_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
   LL_GPIO_SetPinMode(PWM_GPIO_Port, PWM_Pin, LL_GPIO_MODE_INPUT);
@@ -354,10 +352,17 @@ void MX_GPIO_Init(void)
   LL_EXTI_Init(&EXTI_InitStruct);
 
   /**/
+  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_3;
+  EXTI_InitStruct.LineCommand = ENABLE;
+  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
+  LL_EXTI_Init(&EXTI_InitStruct);
+
+  /**/
   EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_1;
   EXTI_InitStruct.LineCommand = ENABLE;
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
-  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING_FALLING;
   LL_EXTI_Init(&EXTI_InitStruct);
 
   /* EXTI interrupt init*/

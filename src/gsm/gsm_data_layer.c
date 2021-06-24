@@ -104,6 +104,13 @@ void gsm_wakeup_periodically(void)
     }
 }
 
+void gsm_set_wakeup_now(void)
+{
+	sys_ctx_t *ctx = sys_ctx();
+	ctx->status.sleep_time_s = 0;
+	gsm_change_state(GSM_STATE_WAKEUP);
+}
+
 
 uint8_t m_send_at_cmd_in_idle_mode = 0;
 static void gsm_query_sms_buffer(void)
@@ -357,7 +364,6 @@ void gsm_data_layer_initialize(void)
 
 bool gsm_data_layer_is_module_sleeping(void)
 {
-    //	return GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN);
     if (gsm_manager.state == GSM_STATE_SLEEP)
     {
         return 1;

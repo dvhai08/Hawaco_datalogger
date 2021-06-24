@@ -42,7 +42,7 @@ static const uint8_t ku8MBMaskWriteRegister = 0x16;          ///< Modbus functio
 static const uint8_t ku8MBReadWriteMultipleRegisters = 0x17; ///< Modbus function 0x17 Read Write Multiple Registers
 
 // Modbus timeout [milliseconds]
-static const uint16_t ku16MBResponseTimeout = 2000; ///< Modbus timeout [milliseconds]
+static uint16_t ku16MBResponseTimeout = 1000; ///< Modbus timeout [milliseconds]
 
 // idle callback function; gets called during idle time between TX and RX
 void (*_idle)();
@@ -51,13 +51,14 @@ void (*_preTransmission)();
 // postTransmission callback function; gets called after a Modbus message has been sent
 void (*_postTransmission)();
 
-void ModbusMaster_begin(void)
+void ModbusMaster_begin(uint16_t modbus_wait_timeout_ms)
 {
     // _u8MBSlave = slave;
     _u8TransmitBufferIndex = 0;
     u16TransmitBufferLength = 0;
     //��ʼ�����ζ���
     Modbus_Master_RB_Initialize();
+	ku16MBResponseTimeout = modbus_wait_timeout_ms;
 }
 
 void ModbusMaster_beginTransmission(uint16_t u16Address)
@@ -358,12 +359,7 @@ uint8_t ModbusMaster_ModbusMasterTransaction(uint8_t u8MBFunction)
         }
         else
         {
-            /*
-      if (_idle)
-      {
-        _idle();
-      }
-			*/
+			Modbus_Master_Sleep();
         }
 
         // evaluate slave ID, function code once enough bytes have been read

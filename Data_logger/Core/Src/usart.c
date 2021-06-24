@@ -27,16 +27,19 @@
 
 #define UART1_RX_BUFFER_SIZE    256
 
-static lwrb_t m_ringbuffer_usart1_tx = 
+static lwrb_t m_ringbuffer_usart1_tx = 		// for GSM
 {
     .buff = NULL,
 };
 static uint8_t m_usart1_tx_buffer[512];
 static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
 static uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
-/* USER CODE END 0 */
+static volatile bool m_usart1_tx_run = false;
+volatile uint32_t m_last_usart1_transfer_size = 0;
+static bool m_usart1_is_enabled = true;
+static bool m_lpusart1_is_enable = true;
 
-UART_HandleTypeDef hlpuart1;
+/* USER CODE END 0 */
 
 /* LPUART1 init function */
 
@@ -47,24 +50,54 @@ void MX_LPUART1_UART_Init(void)
 
   /* USER CODE END LPUART1_Init 0 */
 
+  LL_LPUART_InitTypeDef LPUART_InitStruct = {0};
+
+  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* Peripheral clock enable */
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPUART1);
+
+  LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+  /**LPUART1 GPIO Configuration
+  PB10   ------> LPUART1_TX
+  PB11   ------> LPUART1_RX
+  */
+  GPIO_InitStruct.Pin = RS485_TX_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
+  LL_GPIO_Init(RS485_TX_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = RS485_RX_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  GPIO_InitStruct.Alternate = LL_GPIO_AF_4;
+  LL_GPIO_Init(RS485_RX_GPIO_Port, &GPIO_InitStruct);
+
+  /* LPUART1 interrupt Init */
+  NVIC_SetPriority(AES_RNG_LPUART1_IRQn, 0);
+  NVIC_EnableIRQ(AES_RNG_LPUART1_IRQn);
+
   /* USER CODE BEGIN LPUART1_Init 1 */
 
   /* USER CODE END LPUART1_Init 1 */
-  hlpuart1.Instance = LPUART1;
-  hlpuart1.Init.BaudRate = 115200;
-  hlpuart1.Init.WordLength = UART_WORDLENGTH_8B;
-  hlpuart1.Init.StopBits = UART_STOPBITS_1;
-  hlpuart1.Init.Parity = UART_PARITY_NONE;
-  hlpuart1.Init.Mode = UART_MODE_TX_RX;
-  hlpuart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  hlpuart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  hlpuart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&hlpuart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  LPUART_InitStruct.BaudRate = 115200;
+  LPUART_InitStruct.DataWidth = LL_LPUART_DATAWIDTH_8B;
+  LPUART_InitStruct.StopBits = LL_LPUART_STOPBITS_1;
+  LPUART_InitStruct.Parity = LL_LPUART_PARITY_NONE;
+  LPUART_InitStruct.TransferDirection = LL_LPUART_DIRECTION_TX_RX;
+  LPUART_InitStruct.HardwareFlowControl = LL_LPUART_HWCONTROL_NONE;
+  LL_LPUART_Init(LPUART1, &LPUART_InitStruct);
   /* USER CODE BEGIN LPUART1_Init 2 */
-
+	LL_USART_DisableIT_TXE(LPUART1);
+	LL_USART_DisableIT_TC(LPUART1);
+	LL_USART_EnableIT_RXNE(LPUART1);
+//	LL_USART_EnableIT_ERROR(LPUART1);
+	LL_USART_Enable(LPUART1);
   /* USER CODE END LPUART1_Init 2 */
 
 }
@@ -112,7 +145,7 @@ void MX_USART1_UART_Init(void)
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_3, LL_DMA_DIRECTION_PERIPH_TO_MEMORY);
 
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PRIORITY_LOW);
+  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_3, LL_DMA_PRIORITY_HIGH);
 
   LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_3, LL_DMA_MODE_CIRCULAR);
 
@@ -129,7 +162,7 @@ void MX_USART1_UART_Init(void)
 
   LL_DMA_SetDataTransferDirection(DMA1, LL_DMA_CHANNEL_2, LL_DMA_DIRECTION_MEMORY_TO_PERIPH);
 
-  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_2, LL_DMA_PRIORITY_LOW);
+  LL_DMA_SetChannelPriorityLevel(DMA1, LL_DMA_CHANNEL_2, LL_DMA_PRIORITY_HIGH);
 
   LL_DMA_SetMode(DMA1, LL_DMA_CHANNEL_2, LL_DMA_MODE_NORMAL);
 
@@ -171,64 +204,6 @@ void MX_USART1_UART_Init(void)
 
 }
 
-void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
-{
-
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(uartHandle->Instance==LPUART1)
-  {
-  /* USER CODE BEGIN LPUART1_MspInit 0 */
-
-  /* USER CODE END LPUART1_MspInit 0 */
-    /* LPUART1 clock enable */
-    __HAL_RCC_LPUART1_CLK_ENABLE();
-
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**LPUART1 GPIO Configuration
-    PB10     ------> LPUART1_TX
-    PB11     ------> LPUART1_RX
-    */
-    GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_LPUART1;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    /* LPUART1 interrupt Init */
-    HAL_NVIC_SetPriority(AES_RNG_LPUART1_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(AES_RNG_LPUART1_IRQn);
-  /* USER CODE BEGIN LPUART1_MspInit 1 */
-
-  /* USER CODE END LPUART1_MspInit 1 */
-  }
-}
-
-void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
-{
-
-  if(uartHandle->Instance==LPUART1)
-  {
-  /* USER CODE BEGIN LPUART1_MspDeInit 0 */
-
-  /* USER CODE END LPUART1_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_LPUART1_CLK_DISABLE();
-
-    /**LPUART1 GPIO Configuration
-    PB10     ------> LPUART1_TX
-    PB11     ------> LPUART1_RX
-    */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10|GPIO_PIN_11);
-
-    /* LPUART1 interrupt Deinit */
-    HAL_NVIC_DisableIRQ(AES_RNG_LPUART1_IRQn);
-  /* USER CODE BEGIN LPUART1_MspDeInit 1 */
-
-  /* USER CODE END LPUART1_MspDeInit 1 */
-  }
-}
-
 /* USER CODE BEGIN 1 */
 static inline void config_dma_tx(uint8_t *data, uint32_t len)
 {
@@ -247,12 +222,6 @@ static inline void config_dma_tx(uint8_t *data, uint32_t len)
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
 }
 
-
-
-
-static volatile bool m_tx_uart_run = false;
-volatile uint32_t m_last_transfer_size = 0;
-static bool m_usart1_is_enabled = true;
 void usart1_control(bool enable)
 {	
 	if (m_usart1_is_enabled == enable)
@@ -265,7 +234,7 @@ void usart1_control(bool enable)
 	
 	if (!m_usart1_is_enabled)
 	{
-		while (m_tx_uart_run)
+		while (m_usart1_tx_run)
 		{
 			__WFI();
 		}
@@ -312,27 +281,27 @@ static inline void usart1_hw_transmit_dma(void)
 {
     if (lwrb_get_full(&m_ringbuffer_usart1_tx) == 0)	// No more data
     {
-        m_tx_uart_run = false;
-        m_last_transfer_size = 0;
+        m_usart1_tx_run = false;
+        m_last_usart1_transfer_size = 0;
 		DEBUG_PRINTF("TX cplt\r\n");
         return;
     }	
 	
     uint8_t *addr = lwrb_get_linear_block_read_address(&m_ringbuffer_usart1_tx);
-    m_last_transfer_size = lwrb_get_linear_block_read_length(&m_ringbuffer_usart1_tx);
+    m_last_usart1_transfer_size = lwrb_get_linear_block_read_length(&m_ringbuffer_usart1_tx);
     uint32_t bytes_need_to_transfer = lwrb_get_full(&m_ringbuffer_usart1_tx);
     
-    if (bytes_need_to_transfer < m_last_transfer_size)
+    if (bytes_need_to_transfer < m_last_usart1_transfer_size)
     {
-        m_last_transfer_size = bytes_need_to_transfer;
+        m_last_usart1_transfer_size = bytes_need_to_transfer;
     }
     
     NVIC_DisableIRQ(DMA1_Channel2_3_IRQn);
-    if (m_tx_uart_run == false)
+    if (m_usart1_tx_run == false)
     {
-        m_tx_uart_run = true;
+        m_usart1_tx_run = true;
         NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
-        config_dma_tx(addr, m_last_transfer_size);
+        config_dma_tx(addr, m_last_usart1_transfer_size);
     }
     else
     {
@@ -342,8 +311,8 @@ static inline void usart1_hw_transmit_dma(void)
 
 void usart1_tx_complete_callback(bool status)
 {
-    m_tx_uart_run = false;
-    lwrb_skip(&m_ringbuffer_usart1_tx, m_last_transfer_size);
+    m_usart1_tx_run = false;
+    lwrb_skip(&m_ringbuffer_usart1_tx, m_last_usart1_transfer_size);
     usart1_hw_transmit_dma();
 }
 

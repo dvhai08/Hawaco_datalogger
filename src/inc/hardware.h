@@ -254,7 +254,14 @@
 											else	\
 												LL_GPIO_SetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 										}	
-										
+#define RS485_DIR_TX()                  {   \
+                                            LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);     \
+                                        }
+   
+#define RS485_DIR_RX()                  {   \
+                                            LL_GPIO_ResetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);     \
+                                        }                                        
+#define RS485_DIR_IS_TX()               LL_GPIO_IsOutputPinSet(RS485_DIR_GPIO_Port, RS485_DIR_Pin)
 #endif
 
 

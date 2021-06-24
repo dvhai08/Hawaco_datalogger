@@ -44,6 +44,8 @@
 #include "gsm.h"
 #include "hardware.h"
 #include "modbus_master.h"
+#include "string.h" 
+#include "sys_ctx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,7 +56,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define UMM_HEAP_SIZE				2048
-#define GSM_ENABLE					0
+#define GSM_ENABLE					1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -83,7 +85,6 @@ static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
-bool enter_test_mode = false;
 /* USER CODE END 0 */
 
 /**
@@ -145,6 +146,7 @@ int main(void)
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+    sys_ctx_t *system = sys_ctx();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -167,14 +169,16 @@ int main(void)
 	{
 		LED1(0);
 		LED2(0);
-	}
-	if (enter_test_mode)
+	}	
+	if (system->status.is_enter_test_mode)
 	{
 		cfg->io_enable.name.output_4_20ma_enable = 1;
-		cfg->io_enable.name.output_4_20ma_value = 10;
+		if (cfg->io_enable.name.output_4_20ma_value == 0)
+			cfg->io_enable.name.output_4_20ma_value = 10;
 		cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 		control_output_dac_enable(1000000);
 		cfg->io_enable.name.rs485_en = 1;
+		ENABLE_INOUT_4_20MA_POWER(1);
 	}
 	
 //	if (cfg->io_enable.name.rs485_en)
@@ -286,22 +290,26 @@ static void gsm_mnr_task(void *arg)
 static void info_task(void *arg)
 {	
 	static uint32_t i = 0;
-	if (i++ == 5)
-	{
-		i = 0;
-		adc_input_value_t *adc = adc_get_input_result();
-		DEBUG_INFO("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u, temp %u\r\n",
-					adc->bat_mv, adc->bat_percent, 
-					adc->i_4_20ma_in[0],
-					adc->temp);
-	}
-	if (enter_test_mode)
+    sys_ctx_t *system = sys_ctx();
+    
+	if (system->status.is_enter_test_mode)
 	{
 		char buf[48];
 		sprintf(buf, "%u\r\n", sys_get_ms());
-		
 		RS485_EN(1);
-		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
+        RS485_DIR_RX();
+        i = 5;
+//		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
+	}
+    if (i++ >= 5)
+	{
+		i = 0;
+		adc_input_value_t *adc = adc_get_input_result();
+		DEBUG_INFO("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
+					adc->bat_mv, adc->bat_percent, 
+					adc->vin_24,
+					adc->i_4_20ma_in[0]/10, adc->i_4_20ma_in[0]%10,
+					adc->temp);
 	}
 }
 
@@ -314,7 +322,7 @@ static void info_task(void *arg)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
+  DEBUG_ERROR("Error handle\r\n");
   __disable_irq();
   while (1)
   {
@@ -335,6 +343,8 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+	DEBUG_ERROR("Assert failed %s, line %u\r\n", file, line);
+	while (1);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

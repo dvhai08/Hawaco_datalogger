@@ -11,18 +11,19 @@
 #define ADCMEM_VINTREF          3
 
 #define MEASURE_INPUT_PORT_0		0
-#define MEASURE_INPUT_PORT_1		1
-
 
 #ifdef DTG02
 #define NUMBER_OF_INPUT_4_20MA						4
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
 #define	NUMBER_OF_INPUT_ON_OFF						4
 #define NUMBER_OF_OUT_ON_OFF						4
+#define MEASURE_INPUT_PORT_1		                1
 #else
 #define NUMBER_OF_INPUT_4_20MA						1
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			1				
+#define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
 #endif
+#define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
+#define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
 
 typedef struct
 {
@@ -30,6 +31,7 @@ typedef struct
 	uint32_t dir_level;
 	uint32_t pwm_level;
 	uint32_t line_break_detect;
+    uint32_t new_data_type;
 } measure_input_water_meter_input_t;
 
 typedef struct
@@ -83,10 +85,11 @@ void MeasureTick1000ms(void);
  */
 measure_input_perpheral_data_t *measure_input_current_data(void);
 
+
 /**
- * @brief       Set Vin voltage
- * @param[in]	New Vin data
+ * @brief       Measure input callback
+ * @param[in]	input New input data
  */
-void measure_intput_set_vin_mv(uint32_t mv);
+void measure_input_pulse_irq(measure_input_water_meter_input_t *input);
 
 #endif // __MEASUREMENT_H__

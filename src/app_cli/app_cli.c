@@ -23,6 +23,7 @@
 #include "gsm.h"
 #include "app_eeprom.h"
 #include "control_output.h"
+#include "sys_ctx.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -211,19 +212,20 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
 	return 0;
 }
 
-extern bool enter_test_mode;
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv)
 {
+    sys_ctx_t *system = sys_ctx();
 	if (strstr(argv[1], "en"))
 	{
 		DEBUG_PRINTF("Enter test mode\r\n");
-		enter_test_mode = true;
+		system->status.is_enter_test_mode = true;
 	}
 	else if (strstr(argv[1], "dis"))
 	{
 		DEBUG_PRINTF("Exit test mode\r\n");
-		enter_test_mode = true;
+		system->status.is_enter_test_mode = false;
 	}
+    return 0;
 }
 
 

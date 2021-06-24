@@ -25,33 +25,19 @@
 #include "app_eeprom.h"
 #include "adc.h"
 #include "usart.h"
+#include "modbus_master.h"
+#include "sys_ctx.h"
+#include "trans_recieve_buff_control.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 #define ADC_MEASURE_INTERVAL_MS			30000
 
-/******************************************************************************
-                                   GLOBAL FUNCTIONS					    			 
- ******************************************************************************/
+typedef struct
+{
+    uint32_t forward;
+    uint32_t reserve;
+} backup_pulse_data_t;
 
-/******************************************************************************
-                                   DATA TYPE DEFINE					    			 
- ******************************************************************************/
-/* constant for adc resolution is 12 bit = 4096 */
-#define ADC_12BIT_FACTOR 4096
-
-#define RS485_DIR_OUT() GPIO_SetBits(RS485_DR_PORT, RS485_DR_PIN)
-#define RS485_DIR_IN() GPIO_ResetBits(RS485_DR_PORT, RS485_DR_PIN)
-
-/******************************************************************************
-                                   PRIVATE VARIABLES					    			 
- ******************************************************************************/
-__IO uint16_t ADC_RegularConvertedValueTab[MEASURE_INPUT_ADC_DMA_UNIT];
-
-static SmallBuffer_t m_sensor_uart_buffer;
-
-//static uint8_t m_last_pulse_state = 0;
-//static uint8_t m_cur_pulse_state = 0;
-//static uint32_t m_pulse_length_in_ms = 0;
 uint8_t m_is_pulse_trigger = 0;
 #ifdef GD32E10X
 uint32_t m_begin_pulse_timestamp, m_end_pulse_timestamp;
@@ -62,26 +48,30 @@ uint32_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pul
 int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 #endif
-/******************************************************************************
-                                   LOCAL FUNCTIONS					    			 
- ******************************************************************************/
-static void process_rs485_uart(void);
+
 static measure_input_water_meter_input_t m_water_meter_input[2];
-static uint32_t m_pulse_counter_in_backup[4];
+static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
-volatile uint32_t Measure420mATick = 0;
 bool m_this_is_the_first_time = true;
 
 static void measure_input_pulse_counter_poll(void)
 {
     if (m_is_pulse_trigger)
     {
+#ifdef DTG01
         //Store to BKP register
-        app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0],
-									m_pulse_counter_in_backup[1],
-									m_pulse_counter_in_backup[2],
-									m_pulse_counter_in_backup[3]);
+        app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
+									m_pulse_counter_in_backup[0].reserve,
+									0,
+									0);
+#else
+        //Store to BKP register
+        app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
+									m_pulse_counter_in_backup[0].reserve,
+									m_pulse_counter_in_backup[1].forward,
+									m_pulse_counter_in_backup[1].forward);
+#endif
         m_is_pulse_trigger = 0;
         DEBUG_INFO("+++++++++ in %ums\r\n", m_pull_diff);
     }
@@ -89,11 +79,11 @@ static void measure_input_pulse_counter_poll(void)
 
 static uint32_t m_last_time_store_data = 0;
 static uint32_t m_last_time_measure_data = 0;
-static uint8_t m_measure_timeout = 0;
 uint32_t m_adc_convert_count = 0;
+app_eeprom_config_data_t *eeprom_cfg;
 void measure_input_task(void)
 {
-	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	eeprom_cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
 #ifdef DTG02
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
@@ -101,19 +91,12 @@ void measure_input_task(void)
 	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 	
-	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
-	m_measure_data.water_pulse_counter[1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin) ? 0 : 1;
+	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
+	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
 #else	// DTG01	
-	m_measure_data.water_pulse_counter[0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
+	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
 #endif	
-    if (m_sensor_uart_buffer.State)
-    {
-        m_sensor_uart_buffer.State--;
-        if (m_sensor_uart_buffer.State == 0)
-        {
-			
-        }
-    }
+
 	if (m_this_is_the_first_time ||
 		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
 		
@@ -144,7 +127,7 @@ void measure_input_task(void)
 		}
 	}
 	
-    if ((sys_get_ms() - m_last_time_store_data) >= cfg->measure_interval_ms)
+    if ((sys_get_ms() - m_last_time_store_data) >= eeprom_cfg->measure_interval_ms)
     {
 		m_last_time_store_data = sys_get_ms();
 		gsm_build_http_post_msg();
@@ -166,53 +149,8 @@ void measure_input_task(void)
 //    }
 }
 
-
-/*****************************************************************************/
-/**
- * @brief	:  	InitMeasurement
- * @param	:  
- * @retval	:
- * @author	:	
- * @created	:	15/01/2014
- * @version	:
- * @reviewer:	
- */
 void measure_input_initialize(void)
-{
-#ifdef GD32E10X
-    //Magnet switch
-    gpio_init(SWITCH_IN_PORT, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_10MHZ, SWITCH_IN_PIN);
-	    //Pulse input
-    gpio_init(SENS_PULSE_PORT, GPIO_MODE_IPU, GPIO_OSPEED_10MHZ, SENS_PULSE_PIN);
-
-    //Direction
-    gpio_init(SENS_DIR_PORT, GPIO_MODE_IPD, GPIO_OSPEED_10MHZ, SENS_DIR_PIN);
-
-    /* enable and set key user EXTI interrupt to the lowest priority */
-    nvic_irq_enable(EXTI0_IRQn, 2U, 1U);
-
-    /* connect key user EXTI line to key GPIO pin */
-    gpio_exti_source_select(SWITCH_PORT_SOURCE, SWITCH_PIN_SOURCE);
-
-    /* configure key user EXTI line */
-    exti_init(SWITCH_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_FALLING);
-    exti_interrupt_flag_clear(SWITCH_EXTI_LINE);
-    exti_interrupt_enable(SWITCH_EXTI_LINE);
-
-    /* enable and set key user EXTI interrupt to the lowest priority */
-    nvic_irq_enable(EXTI2_IRQn, 2U, 1U);
-
-    /* connect key user EXTI line to key GPIO pin */
-    gpio_exti_source_select(SENS_PULSE_PORT_SOURCE, SENS_PULSE_PIN_SOURCE);
-
-    /* configure key user EXTI line */
-    exti_init(SENS_PULSE_EXTI_LINE, EXTI_INTERRUPT, EXTI_TRIG_BOTH);
-    exti_interrupt_flag_clear(SENS_PULSE_EXTI_LINE);
-    exti_interrupt_enable(SWITCH_EXTI_LINE);
-#else
-	#warning "Please implement DTG1 magnet"
-#endif
-	
+{	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		m_pull_state[i] = -1;
@@ -225,65 +163,24 @@ void measure_input_initialize(void)
     DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
 }
 
-uint8_t measure_input_is_rs485_power_on(void)
-{
-#ifdef GD32E10X
-    return GPIO_ReadOutputDataBit(RS485_PWR_EN_PORT, RS485_PWR_EN_PIN);
-#else
-	return (LL_GPIO_IsOutputPinSet(RS485_EN_GPIO_Port, RS485_EN_Pin) ? 0 : 1);
-#endif
-}
 
-
-///*****************************************************************************/
-///**
-// * @brief	:  	Do dien ap nguon Solar va Battery. Tick every 1s
-// * @param	:  
-// * @retval	:
-// * @author	:	
-// * @created	:	15/03/2016
-// * @version	:
-// * @reviewer:	
-// */
-//static void measure_adc_input(void)
-//{
-//    //Dau vao 4-20mA: chi tinh toan khi thuc hien do
-//    if (m_measure_timeout > 0)
-//    {
-//        float V20mA = ADC_RegularConvertedValueTab[ADCMEM_V20mV] * ADC_VREF / ADC_12BIT_FACTOR;
-//        xSystem.MeasureStatus.Input420mA = V20mA / 124; //R = 124
-//    }
-//}
-//uint16_t measure_input_get_Vin(void)
-//{
-//    return xSystem.MeasureStatus.Vin;
-//}
-
-/*******************************************************************************
- * Function Name  	: USART1_IRQHandler 
- * Return         	: None
- * Parameters 		: None
- * Created by		: Phinht
- * Date created	: 28/02/2016
- * Description		: This function handles USART1 global interrupt request. 
- * Notes			: 
- *******************************************************************************/
+extern uint8_t Modbus_Master_Rece_Handler(uint8_t byte);
 void measure_input_rs485_uart_handler(uint8_t data)
 {
-    m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex++] = data;
-    if (m_sensor_uart_buffer.BufferIndex >= SMALL_BUFFER_SIZE)
-        m_sensor_uart_buffer.BufferIndex = 0;
-    m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex] = 0;
-
-    m_sensor_uart_buffer.State = 7;
+    sys_ctx_t *system = sys_ctx();
+    if (!system->status.is_enter_test_mode)
+    {
+     	Modbus_Master_Rece_Handler(data);   
+    }
+    else
+    {
+        Modbus_Master_Write(&data, 1);
+    }
 }
 
 void measure_input_rs485_idle_detect(void)
 {
-	if (m_sensor_uart_buffer.State > 2)
-	{
-		m_sensor_uart_buffer.State = 2;
-	}
+    
 }
 
 /*!
@@ -358,7 +255,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 		m_begin_pulse_timestamp[input->port] = sys_get_ms();
 		m_pull_state[input->port] = 0;
 	}
-	else if (m_pull_state[input->port] == 0)
+	else
 	{
 		m_pull_state[input->port] = -1;
 		m_end_pulse_timestamp[input->port] = sys_get_ms();
@@ -371,42 +268,66 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 			m_pull_diff[input->port] = 0xFFFFFFFF - m_begin_pulse_timestamp[input->port] + m_end_pulse_timestamp[input->port];
 		}
 
-		if (m_pull_diff[input->port] > 200)
+//		if (m_pull_diff[input->port] > 200)
+        if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
 		{
 			m_is_pulse_trigger = 1;
 			DEBUG_INFO("Dir %u\r\n", input->dir_level);
 			if (0 == input->dir_level)
 			{
-				m_pulse_counter_in_backup[input->port]++;
+				m_pulse_counter_in_backup[input->port].forward++;
 			}
 			else
 			{
-				if (m_pulse_counter_in_backup[input->port])
+				if (m_pulse_counter_in_backup[input->port].forward > 0)
 				{
-					m_pulse_counter_in_backup[input->port]--;
+					m_pulse_counter_in_backup[input->port].forward--;
 				}
 			}
+            m_pulse_counter_in_backup[input->port].reserve = 0;
 		}
+        else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
+        {
+            m_pulse_counter_in_backup[input->port].forward++;
+            m_pulse_counter_in_backup[input->port].reserve = 0;
+        }
+        else
+        {
+            if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
+            {
+                m_pulse_counter_in_backup[input->port].forward++;
+            }
+            else
+            {
+                m_pulse_counter_in_backup[input->port].reserve++;
+            }
+        }
 		sys_set_delay_time_before_deep_sleep(2000);
 	}
 }
 #endif
 
-uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
-{
-	if (m_sensor_uart_buffer.BufferIndex)
-	{
-		*getbyte = m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex];
-		return 0;
-	}
-	return 1;
-}
+//uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
+//{
+//	if (m_sensor_uart_buffer.BufferIndex)
+//	{
+//		*getbyte = m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex];
+//		return 0;
+//	}
+//	return 1;
+//}
 
-uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
+void Modbus_Master_Write(uint8_t *buf, uint8_t length)
 {
-	LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);
-#if 0
-    for (uint32_t i = 0; i < length; i++)
+    volatile uint32_t i;
+    if (!RS485_DIR_IS_TX())
+    {
+        RS485_DIR_TX();
+        i = 32;     // clock = 16Mhz =>> 1us = 16, delay at least 1.3us
+        while (i--);        
+    }
+#if 1
+    for (i = 0; i < length; i++)
     {
 		LL_LPUART_TransmitData8(LPUART1, buf[i]);
         while (0 == LL_LPUART_IsActiveFlag_TXE(LPUART1));
@@ -414,8 +335,11 @@ uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
 #else
 	HAL_UART_Transmit(&hlpuart1, buf, length, 10);
 #endif
-	LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);
-	return 0;
+    while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1))
+    {
+        
+    }
+	RS485_DIR_RX();
 }
 
 uint32_t Modbus_Master_Millis(void)
@@ -428,4 +352,9 @@ measure_input_perpheral_data_t *measure_input_current_data(void)
 {
 	#warning "Please implement measurement data"
 	return &m_measure_data;
+}
+
+void Modbus_Master_Sleep(void)
+{
+	__WFI();
 }

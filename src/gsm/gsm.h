@@ -286,4 +286,9 @@ uint8_t gsm_get_csq(void);
  */
 uint8_t gsm_get_csq_in_percent(void);
 
+/**
+ * @brief		Wakeup gsm module
+ */
+void gsm_set_wakeup_now(void);
+
 #endif // __GSM_H__

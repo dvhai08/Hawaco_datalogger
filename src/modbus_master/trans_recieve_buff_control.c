@@ -67,16 +67,10 @@ __weak uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
   * @retval void
   * @author xiaodaqi
   */
-uint8_t Modbus_Master_Rece_Handler(void)
+uint8_t Modbus_Master_Rece_Handler(uint8_t byte)
 {
-    uint8_t byte;
-    //��ȡ�Ĵ�����������ݣ����ҽ�����ѹ�뻷�ζ���
-    if (Modbus_Master_GetByte(&byte) == HAL_OK)
-    {
-        rbPush(&m_Modbus_Master_RX_RingBuff, (uint8_t)(byte & (uint8_t)0xFFU));
-        return HAL_OK;
-    }
-    return HAL_ERROR;
+	rbPush(&m_Modbus_Master_RX_RingBuff, (uint8_t)(byte & (uint8_t)0xFFU));
+	return HAL_OK;
 }
 
 /**
@@ -103,9 +97,9 @@ uint8_t Modbus_Master_Read(void)
   * @retval void
   * @author xiaodaqi
   */
-__weak uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
+__weak void Modbus_Master_Write(uint8_t *buf, uint8_t length)
 {
-    return HAL_ERROR;
+    #warning "Please implement modbus write"
 }
 
 /**
@@ -118,4 +112,10 @@ __weak uint8_t Modbus_Master_Write(uint8_t *buf, uint8_t length)
 __weak uint32_t Modbus_Master_Millis(void)
 {
     return 0;
+}
+
+
+__weak void Modbus_Master_Sleep(void)
+{
+	
 }

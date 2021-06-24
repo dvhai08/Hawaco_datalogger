@@ -27,6 +27,7 @@
 #include "measure_input.h"
 #include "usart.h"
 #include "control_output.h"
+#include "gsm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +65,6 @@ extern volatile uint32_t led_blink_delay;
 extern DMA_HandleTypeDef hdma_adc;
 extern ADC_HandleTypeDef hadc;
 extern LPTIM_HandleTypeDef hlptim1;
-extern UART_HandleTypeDef hlpuart1;
 extern RTC_HandleTypeDef hrtc;
 extern SPI_HandleTypeDef hspi2;
 /* USER CODE BEGIN EV */
@@ -96,7 +96,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	DEBUG_PRINTF("Hardfault\r\n");
-	NVIC_SystemReset();
+//	NVIC_SystemReset();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -144,6 +144,16 @@ void SysTick_Handler(void)
 	if (led_blink_delay > 0)
 	{
 		led_blink_delay--;
+		if (led_blink_delay == 0)
+		{
+			if (!LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin))
+			{
+				if (gsm_data_layer_is_module_sleeping())
+				{
+					gsm_set_wakeup_now();
+				}
+			}
+		}
 	}
   /* USER CODE END SysTick_IRQn 1 */
 }
@@ -182,16 +192,22 @@ void EXTI0_1_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
 	LED1(1);
-	led_blink_delay = 2;
+	led_blink_delay = 5;
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
-	LED2(1);
-	led_blink_delay = 2;
-	control_output_start_measure();
+#ifdef DTG01
+    measure_input_water_meter_input_t input;
+    input.port = MEASURE_INPUT_PORT_0;
+    input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
+    input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
+    input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+    input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+    measure_input_pulse_irq(&input);
+#endif
     /* USER CODE END LL_EXTI_LINE_1 */
   }
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */
@@ -341,7 +357,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
         LL_USART_ClearFlag_ORE(USART1);
     }
     
-    if (LL_USART_IsActiveFlag_ORE(LPUART1))
+    if (LL_USART_IsActiveFlag_FE(LPUART1))
     {
         DEBUG_PRINTF("Frame error\r\n");
         LL_USART_ClearFlag_FE(LPUART1);
@@ -358,19 +374,35 @@ void AES_RNG_LPUART1_IRQHandler(void)
 		measure_input_rs485_uart_handler(LPUART1->RDR);
 	}
 	
-	if (LL_USART_IsActiveFlag_IDLE(LPUART1))
-	{
+	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 
+    {
+        LL_USART_ClearFlag_IDLE(LPUART1);        /* Clear IDLE line flag */
 		measure_input_rs485_idle_detect();
-	}
+    }
 	
   /* USER CODE END AES_RNG_LPUART1_IRQn 0 */
-  HAL_UART_IRQHandler(&hlpuart1);
+
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 1 */
 
   /* USER CODE END AES_RNG_LPUART1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
-
+void EXTI2_3_IRQHandler(void)
+{
+    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
+    {
+        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_3);
+#ifdef DTG01
+        measure_input_water_meter_input_t input;
+        input.port = MEASURE_INPUT_PORT_0;
+        input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
+        input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
+        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+        measure_input_pulse_irq(&input);
+#endif
+    }
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

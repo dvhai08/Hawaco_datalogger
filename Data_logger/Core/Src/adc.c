@@ -52,6 +52,7 @@
 #define V_TEMP_CHANNEL_INDEX				3	
 #define V_REF_CHANNEL_INDEX					4
 #endif
+#define GAIN_INPUT_4_20MA_IN				143
 #define VREF_OFFSET_MV						80
 
 static volatile bool m_adc_started = false;
@@ -264,7 +265,7 @@ void adc_start(void)
 void adc_stop(void)
 {
 	ENABLE_NTC_POWER(0);
-	ENABLE_INOUT_4_20MA_POWER(0);
+//	ENABLE_INOUT_4_20MA_POWER(0);
 	HAL_ADC_MspDeInit(&hadc);
 }
 
@@ -313,14 +314,14 @@ void adc_convert(void)
 	m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.bat_mv);
 	
 	/* ADC Vin 24V */
-	m_adc_input.vin_24 = (ADC_VIN_RESISTOR_DIV*m_adc_filterd_data[VIN_24V_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095);
+	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_filterd_data[VIN_24V_CHANNEL_INDEX].estimate_value/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
 	
 	/* ADC input 4-20mA */
-	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #ifdef DTG02
-	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
-	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
-	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
 	/* v_temp */
 	m_adc_input.temp = m_adc_filterd_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;

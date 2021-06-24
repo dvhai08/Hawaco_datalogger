@@ -31,8 +31,9 @@ extern "C" {
 #include "stm32l0xx_hal.h"
 
 #include "stm32l0xx_ll_iwdg.h"
-#include "stm32l0xx_ll_usart.h"
+#include "stm32l0xx_ll_lpuart.h"
 #include "stm32l0xx_ll_rcc.h"
+#include "stm32l0xx_ll_usart.h"
 #include "stm32l0xx_ll_system.h"
 #include "stm32l0xx_ll_gpio.h"
 #include "stm32l0xx_ll_exti.h"
@@ -70,8 +71,8 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CIRIN1_Pin LL_GPIO_PIN_13
-#define CIRIN1_GPIO_Port GPIOC
+#define CIRIN0_Pin LL_GPIO_PIN_13
+#define CIRIN0_GPIO_Port GPIOC
 #define VTEMP_Pin LL_GPIO_PIN_1
 #define VTEMP_GPIO_Port GPIOC
 #define SW1_Pin LL_GPIO_PIN_0
@@ -81,8 +82,8 @@ void Error_Handler(void);
 #define ADC_VBAT_GPIO_Port GPIOA
 #define TRANS_OUTPUT_Pin LL_GPIO_PIN_2
 #define TRANS_OUTPUT_GPIO_Port GPIOA
-#define DIR_Pin LL_GPIO_PIN_3
-#define DIR_GPIO_Port GPIOA
+#define DIR0_Pin LL_GPIO_PIN_3
+#define DIR0_GPIO_Port GPIOA
 #define ADC_4_20MA_IN_Pin LL_GPIO_PIN_4
 #define ADC_4_20MA_IN_GPIO_Port GPIOA
 #define DAC_4_20MA_OUT_Pin LL_GPIO_PIN_5

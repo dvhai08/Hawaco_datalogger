@@ -16,7 +16,7 @@
 
 /* USER CODE END Private defines */
 
-void ModbusMaster_begin(void);
+void ModbusMaster_begin(uint16_t timeout_ms);
 void ModbusMaster_beginTransmission(uint16_t u16Address);
 uint8_t ModbusMaster_requestFrom(uint16_t address, uint16_t quantity);
 void ModbusMaster_sendBit(uint8_t data);

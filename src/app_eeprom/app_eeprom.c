@@ -49,7 +49,7 @@ void app_eeprom_save_data(void)
 
 	for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
 	{
-		err = HAL_FLASHEx_DATAEEPROM_Program(EEPROM_STORE_DATA_ADDR + i, FLASH_TYPEPROGRAMDATA_BYTE, tmp[i]);
+		err = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, EEPROM_STORE_DATA_ADDR + i, tmp[i]);
 		if (HAL_OK != err)
 		{
 			DEBUG_PRINTF("Write eeprom failed  at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
