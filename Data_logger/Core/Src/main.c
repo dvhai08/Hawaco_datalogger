@@ -47,6 +47,7 @@
 #include "string.h" 
 #include "sys_ctx.h"
 #include "app_rtc.h"
+#include "app_debug.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

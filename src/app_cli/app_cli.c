@@ -19,7 +19,6 @@
 #if PRINTF_OVER_RTT
 #include "SEGGER_RTT.h"
 #endif
-#include "DataDefine.h"
 #include "gsm.h"
 #include "app_eeprom.h"
 #include "control_output.h"

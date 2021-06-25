@@ -7,7 +7,7 @@
 #include "stm32l0xx_ll_pwr.h"
 #endif
 #include "app_bkup.h"
-#include "DataDefine.h"
+
 
 #define	BACKUP_FLAG_ADDR	        BKP_DATA_0
 #define BACKUP_PULSE_COUNTER_ADDR1	BKP_DATA_1
@@ -18,15 +18,7 @@
 
 void app_bkup_init(void)
 {
-#ifdef GD32E10X
-    /* PMU clock enable */
-    rcu_periph_clock_enable(RCU_PMU);
-    /* BKP clock enable */
-    rcu_periph_clock_enable(RCU_BKPI);
-	
-    /* Enable write access to the registers in backup domain */
-    pmu_backup_write_enable();
-#endif
+    
 }
 
 #ifdef GD32E10X

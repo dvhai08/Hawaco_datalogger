@@ -1,7 +1,6 @@
-#ifndef __GSM_H__
-#define __GSM_H__
+#ifndef GSM_H
+#define GSM_H
 
-#include "DataDefine.h"
 #include <stdbool.h>
 #include "sys_ctx.h"
 
@@ -293,4 +292,4 @@ uint8_t gsm_get_csq_in_percent(void);
  */
 void gsm_set_wakeup_now(void);
 
-#endif // __GSM_H__
+#endif // GSM_H

@@ -13,11 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "measure_input.h"
-#include "DataDefine.h"
 #include "hardware.h"
 #include "gsm_utilities.h"
 #include "hardware_manager.h"
-#include "InternalFlash.h"
 #include "main.h"
 #include "app_bkup.h"
 #include "gsm.h"
@@ -28,10 +26,12 @@
 #include "modbus_master.h"
 #include "sys_ctx.h"
 #include "trans_recieve_buff_control.h"
+#include "app_debug.h"
 
 #define STORE_MEASURE_INVERVAL_SEC      30
 #define ADC_MEASURE_INTERVAL_MS			30000
-
+#define PULSE_STATE_INVALID             -1
+//#define DELAY_TIMEOUT_ENTER_SLEEP       2000
 typedef struct
 {
     uint32_t forward;
@@ -73,7 +73,6 @@ static void measure_input_pulse_counter_poll(void)
 									m_pulse_counter_in_backup[1].forward);
 #endif
         m_is_pulse_trigger = 0;
-        DEBUG_INFO("+++++++++ in %ums\r\n", m_pull_diff);
     }
 }
 
@@ -98,7 +97,7 @@ void measure_input_task(void)
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
 #endif	
     m_measure_data.vbat_percent = input_adc->bat_percent;
-    m_measure_data.vbat_raw = input_adc->bat_percent;
+    m_measure_data.vbat_raw = input_adc->bat_mv;
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
         m_measure_data.input_4_20mA[i] = input_adc->i_4_20ma_in[i];
@@ -160,7 +159,7 @@ void measure_input_initialize(void)
 {	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-		m_pull_state[i] = -1;
+		m_pull_state[i] = PULSE_STATE_INVALID;
 	}
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
@@ -190,65 +189,6 @@ void measure_input_rs485_idle_detect(void)
     
 }
 
-/*!
-    \brief      this function handles external lines 2 interrupt request
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
-#ifdef GD32E10X
-void EXTI2_IRQHandler(void)
-{
-    /* check the Pulse input pin */
-    if (RESET != exti_interrupt_flag_get(EXTI_2))
-    {
-#if 1
-        if (getPulseState())
-        {
-            m_begin_pulse_timestamp = sys_get_ms();
-            m_pull_state = 0;
-        }
-        else if (m_pull_state == 0)
-        {
-            m_pull_state = -1;
-            m_end_pulse_timestamp = sys_get_ms();
-            if (m_end_pulse_timestamp > m_begin_pulse_timestamp)
-            {
-                m_pull_diff = m_end_pulse_timestamp - m_begin_pulse_timestamp;
-            }
-            else
-            {
-                m_pull_diff = 0xFFFFFFFF - m_begin_pulse_timestamp + m_end_pulse_timestamp;
-            }
-
-            if (m_pull_diff > 200)
-            {
-                m_is_pulse_trigger = 1;
-                DEBUG_INFO("Dir %u\r\n", GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN));
-                if (0 == GPIO_ReadInputDataBit(SENS_DIR_PORT, SENS_DIR_PIN))
-                {
-                    xSystem.MeasureStatus.PulseCounterInBkup++;
-                }
-                else
-                {
-                    if (xSystem.MeasureStatus.PulseCounterInBkup)
-                    {
-                        xSystem.MeasureStatus.PulseCounterInBkup--;
-                    }
-                }
-            }
-            delay_sleeping_for_exit_wakeup = 2;
-        }
-#else
-        m_is_pulse_trigger = 1;
-#endif
-        exti_interrupt_flag_clear(EXTI_2);
-    }
-}
-#else
-
-
-
 measure_input_water_meter_input_t *measure_input_get_backup_counter(void)
 {
 	return &m_water_meter_input[0];
@@ -256,15 +196,15 @@ measure_input_water_meter_input_t *measure_input_get_backup_counter(void)
 
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
-	#warning "Please call the measure input in isr context"
+	  __disable_irq();
 	if (input->pwm_level)
 	{
 		m_begin_pulse_timestamp[input->port] = sys_get_ms();
 		m_pull_state[input->port] = 0;
 	}
-	else
+	else if (m_pull_state[input->port] != PULSE_STATE_INVALID)
 	{
-		m_pull_state[input->port] = -1;
+		m_pull_state[input->port] = PULSE_STATE_INVALID;
 		m_end_pulse_timestamp[input->port] = sys_get_ms();
 		if (m_end_pulse_timestamp[input->port] > m_begin_pulse_timestamp[input->port])
 		{
@@ -275,23 +215,29 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 			m_pull_diff[input->port] = 0xFFFFFFFF - m_begin_pulse_timestamp[input->port] + m_end_pulse_timestamp[input->port];
 		}
 
-//		if (m_pull_diff[input->port] > 200)
         if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
 		{
-			m_is_pulse_trigger = 1;
-			DEBUG_INFO("Dir %u\r\n", input->dir_level);
-			if (0 == input->dir_level)
-			{
-				m_pulse_counter_in_backup[input->port].forward++;
-			}
-			else
-			{
-				if (m_pulse_counter_in_backup[input->port].forward > 0)
-				{
-					m_pulse_counter_in_backup[input->port].forward--;
-				}
-			}
-            m_pulse_counter_in_backup[input->port].reserve = 0;
+            if (m_pull_diff[input->port] > 50)
+            {
+                DEBUG_PRINTF("+++++++++ in %ums\r\n", m_pull_diff[input->port]);
+                m_is_pulse_trigger = 1;
+                if (input->dir_level == 0)
+                {
+                    DEBUG_INFO("Reserve\r\n");
+                }
+                if (0 == input->dir_level)
+                {
+                    m_pulse_counter_in_backup[input->port].forward++;
+                }
+                else
+                {
+                    if (m_pulse_counter_in_backup[input->port].forward > 0)
+                    {
+                        m_pulse_counter_in_backup[input->port].forward--;
+                    }
+                }
+                m_pulse_counter_in_backup[input->port].reserve = 0;
+            }
 		}
         else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
         {
@@ -311,18 +257,9 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
         }
 		sys_set_delay_time_before_deep_sleep(2000);
 	}
+    __enable_irq();
 }
-#endif
 
-//uint8_t Modbus_Master_GetByte(uint8_t *getbyte)
-//{
-//	if (m_sensor_uart_buffer.BufferIndex)
-//	{
-//		*getbyte = m_sensor_uart_buffer.Buffer[m_sensor_uart_buffer.BufferIndex];
-//		return 0;
-//	}
-//	return 1;
-//}
 
 void Modbus_Master_Write(uint8_t *buf, uint8_t length)
 {

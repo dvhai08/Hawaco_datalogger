@@ -12,11 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "main.h"
-#include "DataDefine.h"
 #include "hardware.h"
 #include "hardware_manager.h"
 #include "app_wdt.h"
-
+#include "app_debug.h"
 
 static hardware_manager_reset_reason_t m_reset_reason = 
 {

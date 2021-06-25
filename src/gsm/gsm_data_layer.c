@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "gsm.h"
-#include "DataDefine.h"
+#include "app_debug.h"
 #include "gsm_utilities.h"
 #include "main.h"
 //#include "Parameters.h"
@@ -29,6 +29,7 @@
 #include "sys_ctx.h"
 #include "ota_update.h"
 #include "app_rtc.h"
+#include "app_flash.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -935,7 +936,7 @@ uint16_t gsm_build_http_post_msg(void)
         p += sprintf(p, "%u,", 0);
     }
     
-    //4glost,sensor_err,sensor_overflow
+    //4glost,sensor_err,sensor_overflow,sensor_break,flash_err
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
@@ -949,8 +950,8 @@ uint16_t gsm_build_http_post_msg(void)
 		}
 	}
 	
-	p += sprintf(p, "%u", found_break_pulse_input ? 1 : 0);
-
+	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
+    p += sprintf(p, "%u", app_flash_is_error() ? 1 : 0);
 
     if (app_queue_is_full(&m_http_msq))
     {
@@ -982,7 +983,7 @@ uint16_t gsm_build_http_post_msg(void)
 	
 	counter0_f = counter0_f / cfg->k0 + cfg->offset0;
 	counter1_f = counter1_f / cfg->k1 + cfg->offset1;
-#if 1
+
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", app_rtc_get_counter()); //second since 1970
 #ifdef DTG02
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
@@ -1029,22 +1030,19 @@ uint16_t gsm_build_http_post_msg(void)
 																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
 	}	
 #endif
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", gsm_get_csq_in_percent());
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
 
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", measure_input->vbat_percent);
 
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Db\":\"%umV,rst-%u,k-%u-%u,os-%u-%u,m-%u,%u,%s-%s\"}", 
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Info\":\"%umV, Reset reason-%u, k-%u-%u, offset-%u-%u, mode-%u,%u, version %s-%s\"}", 
                                                                             measure_input->vbat_raw,
                                                                             hardware_manager_get_reset_reason()->value,
                                                                             cfg->k0, cfg->k1,
                                                                             cfg->offset0, cfg->offset1,
 																			cfg->meter_mode[0], cfg->meter_mode[1],
 																			VERSION_CONTROL_FW, VERSION_CONTROL_HW);
-#else
-	new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\"}", app_rtc_get_counter());
-#endif
     hardware_manager_get_reset_reason()->value = 0;
 
     if (app_queue_put(&m_http_msq, &new_msq) == false)
@@ -1118,7 +1116,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
                 DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
 #else
-            ((gsm_http_data_t *)data)->header = (uint8_t *)"";
+                ((gsm_http_data_t *)data)->header = (uint8_t *)"";
 #endif
             }
         }

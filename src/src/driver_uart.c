@@ -18,7 +18,6 @@
 #endif
 
 #include "hardware.h"
-#include "DataDefine.h"
 #include <stdarg.h>
 #include "driver_uart.h"
 #include "lwrb.h"

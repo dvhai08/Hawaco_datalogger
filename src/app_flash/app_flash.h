@@ -55,4 +55,11 @@ void app_flash_erase(void);
  */
 app_flash_data_t *app_flash_lastest_data(void);
 
+/**
+ * @brief       Check flash is error or not
+ * @retval      TRUE Flash error
+ *              FLASE Flash ok
+ */
+bool app_flash_is_error(void);
+
 #endif /* APP_FLASH_H */

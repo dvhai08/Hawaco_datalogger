@@ -90,6 +90,7 @@ void InitFlash(void)
     if (flash_self_test())
     {
         DEBUG_PRINTF("Flashs selftest[OK]\r\nFlash type: ");
+        m_flash_inited = true;
         switch (m_flash_version)
         {
         case FL164K: //8MB
@@ -112,9 +113,9 @@ void InitFlash(void)
 			break;
         default:
             DEBUG_PRINTF("UNKNOWN: %u", m_flash_version);
+            m_flash_inited = false;
             break;
         }
-        m_flash_inited = true;
     }
     else
     {
@@ -716,4 +717,9 @@ static uint8_t flash_check_first_run(void)
     }
 
     return 1;
+}
+
+bool app_flash_is_error(void)
+{
+    return (m_flash_inited ? false : true);
 }

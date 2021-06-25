@@ -1,14 +1,13 @@
 #include "server_msg.h"
 #include "string.h"
-#include "DataDefine.h"
 #include "gsm_utilities.h"
 #include "app_bkup.h"
 #include "gsm.h"
-#include "InternalFlash.h"
 #include "utilities.h"
 #include "app_eeprom.h"
 #include "hardware.h"
 #include "version_control.h"
+#include "app_debug.h"
 
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {

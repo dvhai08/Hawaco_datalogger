@@ -14,7 +14,7 @@
 #include "gsm.h"
 #include "hardware.h"
 #include "hardware_manager.h"
-#include "DataDefine.h"
+#include "app_debug.h"
 #include "lwrb.h"
 
 gsm_hardware_t m_gsm_hardware;
@@ -261,7 +261,6 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     m_gsm_hardware.atc.cmd = cmd;
     m_gsm_hardware.atc.expect_resp_from_atc = expect_resp;
     m_gsm_hardware.atc.expected_response_at_the_end = expected_response_at_the_end_of_response;
-    m_gsm_hardware.atc.recv_buff.state = BUFFER_STATE_IDLE;
     m_gsm_hardware.atc.retry_count_atc = retry_count;
     m_gsm_hardware.atc.send_at_callback = callback;
     m_gsm_hardware.atc.timeout_atc_ms = timeout;
@@ -269,7 +268,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 
     memset(m_gsm_hardware.atc.recv_buff.buffer, 0, sizeof(((sys_ctx_small_buffer_t*)0)->buffer));
     m_gsm_hardware.atc.recv_buff.index = 0;
-    m_gsm_hardware.atc.recv_buff.state = BUFFER_STATE_IDLE;
+    m_gsm_hardware.atc.recv_buff.state = SYS_CTX_BUFFER_STATE_IDLE;
 
     gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
 }

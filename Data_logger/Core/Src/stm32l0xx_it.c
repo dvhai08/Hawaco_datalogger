@@ -28,6 +28,7 @@
 #include "usart.h"
 #include "control_output.h"
 #include "gsm.h"
+#include "app_debug.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

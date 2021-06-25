@@ -13,11 +13,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "measure_input.h"
-#include "DataDefine.h"
+#include "app_debug.h"
 #include "hardware.h"
 #include "gsm_utilities.h"
 #include "hardware_manager.h"
-#include "InternalFlash.h"
 #include "main.h"
 #include "control_output.h"
 #include "app_bkup.h"
