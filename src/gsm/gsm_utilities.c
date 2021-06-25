@@ -79,7 +79,7 @@ void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_
 }
 
 
-void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology)
+bool gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology)
 {
     /**
 	* +CGREG: 2,1,"3279","487BD01",7
@@ -88,7 +88,7 @@ void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technol
 	*/
     char *tmp_buff = strstr(buffer, "+CGREG:");
     if (tmp_buff == NULL)
-        return;
+        return false;
 
     uint8_t comma_idx[12] = {0};
     uint8_t index = 0;
@@ -106,7 +106,10 @@ void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technol
 
         if (*access_technology > 9)
             *access_technology  = 9;
+        return true;
     }
+
+    return false;
 }
 
 /*****************************************************************************/
@@ -364,8 +367,8 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time
 
     memset(tmp, 0, sizeof(tmp));
     memcpy(tmp, response_buffer, 2);
-    ((rct_date_time_t*)date_time)->year = atoi((char*)tmp);
-    if (((rct_date_time_t*)date_time)->year < 20) // 2020
+    ((rtc_date_time_t*)date_time)->year = atoi((char*)tmp);
+    if (((rtc_date_time_t*)date_time)->year < 20) // 2020
     {
         // Invalid timestamp
         val = false;
@@ -375,27 +378,27 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time
         // MM
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 3, 2);
-        ((rct_date_time_t*)date_time)->month = atoi((char*)tmp);
+        ((rtc_date_time_t*)date_time)->month = atoi((char*)tmp);
 
         // dd
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 6, 2);
-        ((rct_date_time_t*)date_time)->day = atoi((char*)tmp);
+        ((rtc_date_time_t*)date_time)->day = atoi((char*)tmp);
 
         // hh
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 9, 2);
-        ((rct_date_time_t*)date_time)->hour = atoi((char*)tmp);
+        ((rtc_date_time_t*)date_time)->hour = atoi((char*)tmp);
 
         // mm
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 12, 2);
-        ((rct_date_time_t*)date_time)->minute = atoi((char*)tmp);
+        ((rtc_date_time_t*)date_time)->minute = atoi((char*)tmp);
 
         // ss
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, response_buffer + 15, 2);
-        ((rct_date_time_t*)date_time)->second = atoi((char*)tmp);
+        ((rtc_date_time_t*)date_time)->second = atoi((char*)tmp);
 
         val = true;
     }

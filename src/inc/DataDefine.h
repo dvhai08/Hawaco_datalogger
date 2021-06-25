@@ -54,26 +54,26 @@ typedef enum
     FT_TRANSFER_DONE
 } FileTransferState_t;
 
-typedef struct
-{
-    uint8_t Buffer[LARGE_BUFFER_SIZE];
-    uint16_t BufferIndex;
-    uint8_t State;
-} LargeBuffer_t;
+// typedef struct
+// {
+//     uint8_t Buffer[LARGE_BUFFER_SIZE];
+//     uint16_t BufferIndex;
+//     uint8_t State;
+// } LargeBuffer_t;
 
-typedef struct
-{
-    uint8_t Buffer[MEDIUM_BUFFER_SIZE];
-    uint16_t BufferIndex;
-    uint8_t State;
-} MediumBuffer_t;
+// typedef struct
+// {
+//     uint8_t Buffer[MEDIUM_BUFFER_SIZE];
+//     uint16_t BufferIndex;
+//     uint8_t State;
+// } MediumBuffer_t;
 
-typedef struct
-{
-    uint8_t Buffer[SMALL_BUFFER_SIZE];
-    uint16_t BufferIndex;
-    uint8_t State;
-} SmallBuffer_t;
+// typedef struct
+// {
+//     uint8_t Buffer[SMALL_BUFFER_SIZE];
+//     uint16_t BufferIndex;
+//     uint8_t State;
+// } SmallBuffer_t;
 
 typedef struct
 {

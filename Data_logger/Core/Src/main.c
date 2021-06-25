@@ -46,6 +46,7 @@
 #include "modbus_master.h"
 #include "string.h" 
 #include "sys_ctx.h"
+#include "app_rtc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -305,7 +306,15 @@ static void info_task(void *arg)
 	{
 		i = 0;
 		adc_input_value_t *adc = adc_get_input_result();
-		DEBUG_INFO("bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
+        rtc_date_time_t time;
+        app_rtc_get_time(&time);
+		DEBUG_RAW("20%02u/%02u/%02u %02u:%02u:%02u : bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
+                    time.year,
+                    time.month,
+                    time.day,
+                    time.hour,
+                    time.minute,
+                    time.second,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
 					adc->i_4_20ma_in[0]/10, adc->i_4_20ma_in[0]%10,

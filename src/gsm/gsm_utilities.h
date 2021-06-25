@@ -155,7 +155,7 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  nw_operator : Network operator
  * @param[in]   max_len : Max network operator name length
- * @note : Format message "+COPS: 0,0,"Viettel Viettel",7\r\n"
+ * @note        Format message "+COPS: 0,0,"Viettel Viettel",7\r\n"
  */ 
 void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t max_len);
 
@@ -163,9 +163,11 @@ void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t
  * @brief       Get GSM access technology
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  access_technology : Access technology result
- * @note : Format message     +CGREG: 2,1,"3279","487BD01",7
+ * @note        Format message     +CGREG: 2,1,"3279","487BD01",7
+ * @retval      TRUE : Operation success
+ *              FALSE : Operation failed
  */ 
-void gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology);
+bool gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology);
 
 /**
  * @brief       Get GSM cusd money

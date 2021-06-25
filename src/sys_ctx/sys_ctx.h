@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SYS_CTX_SMALL_BUFFER_SIZE 384
+typedef struct
+{
+    uint8_t buffer[SYS_CTX_SMALL_BUFFER_SIZE];
+    uint16_t index;
+    uint8_t state;
+} sys_ctx_small_buffer_t;
 typedef struct
 {
 	uint32_t sleep_time_s;

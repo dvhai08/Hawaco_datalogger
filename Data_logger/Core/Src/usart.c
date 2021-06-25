@@ -25,20 +25,20 @@
 #include "lwrb.h"
 #include "app_debug.h"
 
-#define UART1_RX_BUFFER_SIZE    256
+#define DEBUG_USART1_DMA        1
+#define UART1_RX_BUFFER_SIZE    512
 
 static lwrb_t m_ringbuffer_usart1_tx = 		// for GSM
 {
     .buff = NULL,
 };
-static uint8_t m_usart1_tx_buffer[512];
+static uint8_t m_usart1_tx_buffer[512-128];
 static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
-static uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
+uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 static volatile bool m_usart1_tx_run = false;
 volatile uint32_t m_last_usart1_transfer_size = 0;
 static bool m_usart1_is_enabled = true;
-static bool m_lpusart1_is_enable = true;
-
+static volatile size_t m_old_usart1_dma_rx_pos;
 /* USER CODE END 0 */
 
 /* LPUART1 init function */
@@ -193,7 +193,7 @@ void MX_USART1_UART_Init(void)
   LL_USART_Enable(USART1);
   /* USER CODE BEGIN USART1_Init 2 */
   /* Enable DMA transfer complete/error interrupts  */
-  
+    LL_DMA_EnableIT_HT(DMA1, LL_DMA_CHANNEL_3);
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_3);
     LL_DMA_EnableIT_TE(DMA1, LL_DMA_CHANNEL_3);
     LL_DMA_EnableIT_TC(DMA1, LL_DMA_CHANNEL_2);
@@ -226,7 +226,7 @@ void usart1_control(bool enable)
 {	
 	if (m_usart1_is_enabled == enable)
 	{
-		DEBUG_PRINTF("UART state : no changed\r\n");
+		// DEBUG_PRINTF("UART state : no changed\r\n");
 		return;
 	}
 	
@@ -257,10 +257,13 @@ void usart1_control(bool enable)
 		LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_2);
         
         // RX
+        LL_DMA_DisableIT_HT(DMA1, LL_DMA_CHANNEL_3);
 		LL_DMA_DisableIT_TC(DMA1, LL_DMA_CHANNEL_3);
 		LL_DMA_DisableIT_TE(DMA1, LL_DMA_CHANNEL_3);
 		
 		LL_DMA_ClearFlag_TC2(DMA1);
+        LL_DMA_ClearFlag_TC3(DMA1);
+        LL_DMA_ClearFlag_HT3(DMA1);
 		LL_DMA_ClearFlag_GI3(DMA1);
 		LL_DMA_ClearFlag_TE3(DMA1);
 		
@@ -268,7 +271,9 @@ void usart1_control(bool enable)
 		NVIC_DisableIRQ(USART1_IRQn);
 		LL_USART_Disable(USART1);
 		/* Peripheral clock enable */
-		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+		LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_USART1);
+        m_old_usart1_dma_rx_pos = 0;
+        memset(m_usart1_rx_buffer, 0, sizeof(m_usart1_rx_buffer));
 	}
 	else
 	{
@@ -381,31 +386,32 @@ void usart1_rx_complete_callback(bool status)
 {
     if (status)
     {
-        static volatile size_t old_pos;
         size_t pos;
 
         /* Calculate current position in buffer */
         pos = UART1_RX_BUFFER_SIZE - LL_DMA_GetDataLength(DMA1, LL_DMA_CHANNEL_3);
-        if (pos != old_pos) 
+        if (pos != m_old_usart1_dma_rx_pos) 
         {                       /* Check change in received data */
-            if (pos > old_pos) 
+            if (pos > m_old_usart1_dma_rx_pos) 
             {   /* Current position is over previous one */
                 /* We are in "linear" mode */
                 /* Process data directly by subtracting "pointers" */
-//                DEBUG_RAW("%.*s", pos - old_pos, &m_usart1_rx_buffer[old_pos]);
-				gsm_hw_layer_uart_fill_rx(&m_usart1_rx_buffer[old_pos], pos-old_pos);
+//                DEBUG_RAW("%.*s", pos - m_old_usart1_dma_rx_pos, &m_usart1_rx_buffer[m_old_usart1_dma_rx_pos]);
+				gsm_hw_layer_uart_fill_rx(&m_usart1_rx_buffer[m_old_usart1_dma_rx_pos], pos-m_old_usart1_dma_rx_pos);
             } 
             else 
             {
                 /* We are in "overflow" mode */
                 /* First process data to the end of buffer */
                 /* Check and continue with beginning of buffer */
+                gsm_hw_layer_uart_fill_rx(&m_usart1_rx_buffer[m_old_usart1_dma_rx_pos], UART1_RX_BUFFER_SIZE - m_old_usart1_dma_rx_pos);
+
                 if (pos > 0) 
                 {
                     gsm_hw_layer_uart_fill_rx(&m_usart1_rx_buffer[0], pos);
                 }
             }
-            old_pos = pos;                          /* Save current position as old */
+            m_old_usart1_dma_rx_pos = pos;                          /* Save current position as old */
         }
 //        m_uart_rx_ongoing = false;
     }

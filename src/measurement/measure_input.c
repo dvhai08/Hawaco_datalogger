@@ -85,6 +85,7 @@ void measure_input_task(void)
 {
 	eeprom_cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
+    adc_input_value_t *input_adc = adc_get_input_result();
 #ifdef DTG02
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
@@ -96,7 +97,13 @@ void measure_input_task(void)
 #else	// DTG01	
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
 #endif	
-
+    m_measure_data.vbat_percent = input_adc->bat_percent;
+    m_measure_data.vbat_raw = input_adc->bat_percent;
+    for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+    {
+        m_measure_data.input_4_20mA[i] = input_adc->i_4_20ma_in[i];
+    }
+    
 	if (m_this_is_the_first_time ||
 		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
 		

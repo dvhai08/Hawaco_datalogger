@@ -5,7 +5,7 @@
 #include "main.h"
 extern RTC_HandleTypeDef hrtc;
 
-static uint32_t rtc_struct_to_counter(rct_date_time_t *t)
+static uint32_t rtc_struct_to_counter(rtc_date_time_t *t)
 {
     static const uint8_t days_in_month[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     uint16_t i;
@@ -88,7 +88,7 @@ static void get_weekday(int year, int month, int day, int *weekday)
 //}
 
 
-void app_rtc_set_counter(rct_date_time_t *time)
+void app_rtc_set_counter(rtc_date_time_t *time)
 {
 	RTC_TimeTypeDef sTime = {0};
 	RTC_DateTypeDef sDate = {0};
@@ -143,17 +143,42 @@ void app_rtc_set_counter(rct_date_time_t *time)
 
 uint32_t app_rtc_get_counter(void)
 {
+    uint32_t counter;
 	uint32_t time = LL_RTC_TIME_Get(RTC); 	// (Format: 0x00HHMMSS)
 	uint32_t date = LL_RTC_DATE_Get(RTC);	// (Format: 0xWWDDMMYY)
-	rct_date_time_t time_str;
+	rtc_date_time_t time_str;
 	
-	time_str.hour = __LL_RTC_CONVERT_BCD2BIN((time & 0x00FF0000) >> 24);
-	time_str.minute = __LL_RTC_CONVERT_BCD2BIN((time & 0x0000FF00) >> 16);
+	time_str.hour = __LL_RTC_CONVERT_BCD2BIN((time & 0x00FF0000) >> 16);
+	time_str.minute = __LL_RTC_CONVERT_BCD2BIN((time & 0x0000FF00) >> 8);
 	time_str.second = __LL_RTC_CONVERT_BCD2BIN((time & 0x000000FF));
 	
-	time_str.day = __LL_RTC_CONVERT_BCD2BIN((date & 0x00FF0000) >> 24);
-	time_str.month = __LL_RTC_CONVERT_BCD2BIN((date & 0x0000FF00) >> 16);
+	time_str.day = __LL_RTC_CONVERT_BCD2BIN((date & 0x00FF0000) >> 16);
+	time_str.month = __LL_RTC_CONVERT_BCD2BIN((date & 0x0000FF00) >> 8);
 	time_str.year = __LL_RTC_CONVERT_BCD2BIN((date & 0x000000FF));
+    
+    counter = (rtc_struct_to_counter(&time_str));
 	
-	return (rtc_struct_to_counter(&time_str) + 946681200 + 25200 + 3600);
+    counter += (946681200 + 3600);
+	return counter;
 }
+
+bool app_rtc_get_time(rtc_date_time_t *time)
+{
+    uint32_t rtc_time = LL_RTC_TIME_Get(RTC); 	// (Format: 0x00HHMMSS)
+	uint32_t date = LL_RTC_DATE_Get(RTC);	// (Format: 0xWWDDMMYY)
+	time->hour = __LL_RTC_CONVERT_BCD2BIN((rtc_time & 0x00FF0000) >> 16);
+	time->minute = __LL_RTC_CONVERT_BCD2BIN((rtc_time & 0x0000FF00) >> 8);
+	time->second = __LL_RTC_CONVERT_BCD2BIN((rtc_time & 0x000000FF));
+	
+	time->day = __LL_RTC_CONVERT_BCD2BIN((date & 0x00FF0000) >> 16);
+	time->month = __LL_RTC_CONVERT_BCD2BIN((date & 0x0000FF00) >> 8);
+	time->year = __LL_RTC_CONVERT_BCD2BIN((date & 0x000000FF));
+    if (time->year > 20 && time->year < 39
+        && time->month < 13
+        && time->day < 32)
+    {
+        return true;
+    }
+    return false;
+}
+

@@ -3,6 +3,7 @@
 
 #include "DataDefine.h"
 #include <stdbool.h>
+#include "sys_ctx.h"
 
 #define GSM_ON 1
 #define GSM_OFF 2
@@ -11,6 +12,17 @@
 #define SIMIMEI 1
 
 #define MAX_GSMRESETSYSTEMCOUNT 600 //10 phut
+
+#define MODEM_BUFFER_SIZE 2048
+
+#define MODEM_IDLE 0
+#define MODEM_ERROR 1
+#define MODEM_READY 2
+#define MODEM_LISTEN 3
+#define MODEM_ONLINE 4
+#define MODEM_DIAL 5
+#define MODEM_HANGUP 6
+
 
 #define __HOPQUY_GSM__ 0
 #define __GSM_SLEEP_MODE__ 1
@@ -58,19 +70,12 @@ typedef struct
 {
     gsm_state_t state;
     uint8_t step;
-    uint8_t RISignal;
-    uint8_t Dial;
-    uint8_t GetBTSInfor;
+    uint8_t ri_signal;
     uint8_t gsm_ready;
-    uint8_t FirstTimePower;
-    uint8_t SendSMSAfterRead;
-    uint8_t ppp_cmd_state;
-    uint16_t TimeOutConnection;
-    uint16_t TimeOutCSQ;
     uint8_t timeout_after_reset;
     uint8_t is_gsm_power_off;
     uint8_t access_tech;
-} GSM_Manager_t;
+} gsm_manager_t;
 
 typedef struct
 {
@@ -101,55 +106,52 @@ void gsm_query_sms(void);
 void gsm_process_cmd_from_sms(char *Buffer);
 
 /**
- * @brief Send sms to phone number
- * @param[in] phone_number : Des phone number
- * @param[in] message : A message send to phone number
+ * @brief           Send sms to phone number
+ * @param[in]       phone_number : Des phone number
+ * @param[in]       message : A message send to phone number
  */
 bool gsm_send_sms(char *phone_number, char *message);
 
 
 /**
- * @brief Get SMS buffer size
- * @retval Pointer to sms buffer size
+ * @brief           Get SMS buffer size
+ * @retval          Pointer to sms buffer size
  */
 uint32_t gsm_get_max_sms_memory_buffer(void);
 
 /**
- * @brief Get SMS context
- * @retval Pointer to sms memory buffer
+ * @brief       Get SMS context
+ * @retval      Pointer to sms memory buffer
  */
 gsm_sms_msg_t *gsm_get_sms_memory_buffer(void);
 
 
 /**
- * @brief Process new sms message
- * @param[in] buffer : Received buffer from serial port
+ * @brief       Process new sms message
+ * @param[in]   buffer : Received buffer from serial port
  */
 void gsm_sms_layer_process_cmd(char * buffer);
 
-void gsm_change_state(gsm_state_t NewState);
-void gsm_pwr_control(uint8_t State);
-void gsm_send_status_to_mobilephone(char *SDT);
-//void gsm_send_sms(char *Buffer, uint8_t CallFrom);
-void gsm_change_state_sleep(void);
-void gsm_test_read_sms(void);
+/**
+ * @brief           Change GSM state 
+ * @param[in]       new_state New gsm state
+ */
+void gsm_change_state(gsm_state_t new_state);
+
+/**
+ * @brief       Check gsm is sleeping or not
+ * @retval      TRUE : GSM is sleeping
+ *              FALSE : GSM is not sleeping
+ */
 bool gsm_data_layer_is_module_sleeping(void);
-void gsm_query_sms_tick(void);
-void gsm_check_sms_tick(void);
+
+// void gsm_query_sms_tick(void);
+// void gsm_check_sms_tick(void);
+
 void gsm_set_timeout_to_sleep(uint32_t second);
 
 
-//======================== FOR MODEM ========================//
 
-#define MODEM_BUFFER_SIZE 2048
-
-#define MODEM_IDLE 0
-#define MODEM_ERROR 1
-#define MODEM_READY 2
-#define MODEM_LISTEN 3
-#define MODEM_ONLINE 4
-#define MODEM_DIAL 5
-#define MODEM_HANGUP 6
 
 typedef struct
 {
@@ -159,7 +161,7 @@ typedef struct
     uint32_t timeout_atc_ms;
     uint32_t current_timeout_atc_ms;
     uint8_t retry_count_atc;
-    SmallBuffer_t recv_buff;
+    sys_ctx_small_buffer_t recv_buff;
     gsm_send_at_cb_t send_at_callback;
 } gsm_at_cmd_t;
 

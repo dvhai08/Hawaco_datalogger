@@ -185,7 +185,7 @@ void RTC_IRQHandler(void)
 void EXTI0_1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_1_IRQn 0 */
-
+    DEBUG_PRINTF("EXT0 irq\r\n");
   /* USER CODE END EXTI0_1_IRQn 0 */
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0) != RESET)
   {
@@ -213,6 +213,34 @@ void EXTI0_1_IRQHandler(void)
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */
 
   /* USER CODE END EXTI0_1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line 2 and line 3 interrupts.
+  */
+void EXTI2_3_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI2_3_IRQn 0 */
+    DEBUG_PRINTF("EXT2-3 irq\r\n");
+  /* USER CODE END EXTI2_3_IRQn 0 */
+  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
+  {
+    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_3);
+    /* USER CODE BEGIN LL_EXTI_LINE_3 */
+#ifdef DTG01
+        measure_input_water_meter_input_t input;
+        input.port = MEASURE_INPUT_PORT_0;
+        input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
+        input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
+        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+        measure_input_pulse_irq(&input);
+#endif
+    /* USER CODE END LL_EXTI_LINE_3 */
+  }
+  /* USER CODE BEGIN EXTI2_3_IRQn 1 */
+
+  /* USER CODE END EXTI2_3_IRQn 1 */
 }
 
 /**
@@ -244,13 +272,19 @@ void DMA1_Channel2_3_IRQHandler(void)
 	}
 	else if(LL_DMA_IsActiveFlag_TE2(DMA1))
 	{
-		DEBUG_PRINTF("USART2 TE2 error\r\n");
+		DEBUG_PRINTF("USART1 TE2 error\r\n");
 		/* Call Error function */
 		usart1_tx_complete_callback(false);
 	}
   /* USER CODE END DMA1_Channel2_3_IRQn 0 */
 
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
+    if (LL_DMA_IsActiveFlag_HT3(DMA1))
+    {
+        DEBUG_PRINTF("USART1 HT\r\n");
+        LL_DMA_ClearFlag_HT3(DMA1);
+		usart1_rx_complete_callback(true);
+    }
 	if(LL_DMA_IsActiveFlag_TC3(DMA1))
 	{
 		LL_DMA_ClearFlag_GI3(DMA1);
@@ -260,6 +294,7 @@ void DMA1_Channel2_3_IRQHandler(void)
 	else if(LL_DMA_IsActiveFlag_TE3(DMA1))
 	{
 		/* Call Error function */
+        DEBUG_PRINTF("USART1 Error\r\n");
 		usart1_rx_complete_callback(false);
 		// USART_TransferError_Callback();
 	}
@@ -388,21 +423,5 @@ void AES_RNG_LPUART1_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void EXTI2_3_IRQHandler(void)
-{
-    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
-    {
-        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_3);
-#ifdef DTG01
-        measure_input_water_meter_input_t input;
-        input.port = MEASURE_INPUT_PORT_0;
-        input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
-        input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
-        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
-        measure_input_pulse_irq(&input);
-#endif
-    }
-}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

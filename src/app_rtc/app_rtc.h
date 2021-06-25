@@ -16,13 +16,13 @@ typedef struct
     uint8_t hour;
     uint8_t minute;
     uint8_t second;
-} rct_date_time_t;
+} rtc_date_time_t;
 
 /**
  * @brief          Set counter to RTC
  * @param[in]      counter RTC counter value
  */
-void app_rtc_set_counter(rct_date_time_t *date_time);
+void app_rtc_set_counter(rtc_date_time_t *date_time);
 
 
 /**
@@ -31,5 +31,11 @@ void app_rtc_set_counter(rct_date_time_t *date_time);
  */
 uint32_t app_rtc_get_counter(void);
 
+/**
+ * @brief          Get time from RTC
+ * @retval         TRUE : Valid time
+*                 FALSE : Invalid time
+ */
+bool app_rtc_get_time(rtc_date_time_t *time);
 
 #endif /* APP_RTC_H */

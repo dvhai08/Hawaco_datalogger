@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #define GSM_HTTP_MAX_URL_SIZE 255
-
+#define GSM_HTTP_CUSTOM_HEADER  0
 
 typedef enum
 {

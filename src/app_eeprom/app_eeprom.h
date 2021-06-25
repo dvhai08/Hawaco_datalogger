@@ -49,6 +49,7 @@ typedef struct
 	uint32_t offset1;
     uint8_t meter_mode[2];	
 	uint32_t valid_flag;
+    uint32_t send_to_server_delay_s;
 } app_eeprom_config_data_t;
 
 

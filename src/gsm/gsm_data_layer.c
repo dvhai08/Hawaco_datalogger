@@ -43,7 +43,7 @@
 #define GSM_DONT_NEED_HTTP_POST() (m_enter_http_post = false)
 
 
-extern GSM_Manager_t gsm_manager;
+extern gsm_manager_t gsm_manager;
 
 
 #define GET_BTS_INFOR_TIMEOUT 300
@@ -353,9 +353,7 @@ static void init_http_msq(void)
 
 void gsm_data_layer_initialize(void)
 {
-    gsm_manager.RISignal = 0;
-    gsm_manager.Dial = 0;
-    gsm_manager.TimeOutConnection = 0;
+    gsm_manager.ri_signal = 0;
 
     gsm_http_cleanup();
     m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
@@ -376,56 +374,53 @@ void gsm_change_state(gsm_state_t new_state)
     if (new_state == GSM_STATE_OK) //Command state -> Data state trong PPP mode
     {
         gsm_manager.gsm_ready = 2;
-        gsm_manager.ppp_cmd_state = 0;
-
         m_timeout_to_sleep = 0;
     }
-    else
-    {
-        if (new_state == GSM_STATE_RESET)
-        {
-            gsm_manager.FirstTimePower = 1;
-        }
-    }
 
-    DEBUG_PRINTF("Change GSM state to:\r\n");
+    DEBUG_PRINTF("Change GSM state to: ");
     switch ((uint8_t)new_state)
     {
-    case 0:
-        DEBUG_PRINTF("OK\r\n");
+    case GSM_STATE_OK:
+        DEBUG_RAW("OK\r\n");
         break;
-    case 1:
-        DEBUG_PRINTF("RESET\r\n");
+    case GSM_STATE_RESET:
+        DEBUG_RAW("RESET\r\n");
         break;
-    case 2:
-        DEBUG_PRINTF("SENSMS\r\n");
+    case GSM_STATE_SEND_SMS:
+        DEBUG_RAW("SEND SMS\r\n");
         break;
-    case 3:
-        DEBUG_PRINTF("READSMS\r\n");
+    case GSM_STATE_READ_SMS:
+        DEBUG_RAW("READ SMS\r\n");
         break;
-    case 4:
-        DEBUG_PRINTF("POWERON\r\n");
+    case GSM_STATE_POWER_ON:
+        DEBUG_RAW("POWERON\r\n");
         break;
-    case 5:
-        DEBUG_PRINTF("REOPENPPP\r\n");
+    case GSM_STATE_REOPEN_PPP:
+        DEBUG_RAW("REOPENPPP\r\n");
         break;
-    case 6:
-        DEBUG_PRINTF("GETSIGNAL\r\n");
+    case GSM_STATE_GET_BTS_INFO:
+        DEBUG_RAW("GETSIGNAL\r\n");
         break;
-    case 7:
-        DEBUG_PRINTF("SENDATC\r\n");
+    case GSM_STATE_SEND_ATC:
+        DEBUG_RAW("Quit PPP and send AT command\r\n");
         break;
-    case 8:
-        DEBUG_PRINTF("GOTOSLEEP\r\n");
+    case GSM_STATE_GOTO_SLEEP:
+        DEBUG_RAW("Prepare sleep\r\n");
         break;
-    case 9:
-        DEBUG_PRINTF("WAKEUP\r\n");
+    case GSM_STATE_WAKEUP:
+        DEBUG_RAW("WAKEUP\r\n");
         break;
-    case 10:
-        DEBUG_PRINTF("IDLE\r\n");
+    case GSM_STATE_AT_MODE_IDLE:
+        DEBUG_RAW("IDLE\r\n");
         break;
-    case 11:
-        DEBUG_PRINTF("SLEEP\r\n");
+    case GSM_STATE_SLEEP:
+        DEBUG_RAW("SLEEP\r\n");
+        break;
+    case GSM_STATE_HTTP_GET:
+        DEBUG_RAW("HTTP GET\r\n");
+        break;
+    case GSM_STATE_HTTP_POST:
+        DEBUG_RAW("HTTP POST\r\n");
         break;
     default:
         break;
@@ -473,22 +468,22 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 6:
         DEBUG_PRINTF("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
     case 7:
         DEBUG_PRINTF("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 8:
         DEBUG_PRINTF("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         //gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
-        gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 9:
         DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CGSN\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 10:
@@ -517,7 +512,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             gsm_change_state(GSM_STATE_RESET); //Neu ko nhan SIM -> reset module GSM!
             return;
         }
-        gsm_hw_send_at_cmd("AT+QCCID\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm);
 	}
         break;
 
@@ -540,7 +535,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 15:
         DEBUG_PRINTF("Network search mode AUTO: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CGDCONT=1,\"IP\",\"v-internet\"\r\n", "OK\r\n", "", 1000, 2, gsm_at_cb_power_on_gsm); /** <cid> = 1-24 */
+        gsm_hw_send_at_cmd("AT+CGDCONT=1,\"IP\",\"v-internet\"\r\n", "", "OK\r\n", 1000, 2, gsm_at_cb_power_on_gsm); /** <cid> = 1-24 */
         break;
 
     case 16:
@@ -563,7 +558,14 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("Query network status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +CGREG: 2,1,"3279","487BD01",7 */
         if (event == GSM_EVENT_OK)
         {
-            gsm_utilities_get_network_access_tech(resp_buffer, &gsm_manager.access_tech);
+            bool retval;
+            retval = gsm_utilities_get_network_access_tech(resp_buffer, &gsm_manager.access_tech);
+            if (retval == false)
+            {
+                gsm_hw_send_at_cmd("AT+CGREG?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+                gsm_change_hw_polling_interval(1000);
+                return;
+            }
         }
         gsm_hw_send_at_cmd("AT+COPS?\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
@@ -590,7 +592,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 21:
     {
         DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CCLK?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CCLK?\r\n", "+CCLK:", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
 
@@ -599,10 +601,14 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("Query CCLK: %s,%s\r\n",
                      (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                      (char *)resp_buffer);
-        rct_date_time_t time;
+        rtc_date_time_t time;
         gsm_utilities_parse_timestamp_buffer((char *)resp_buffer, &time);
-		app_rtc_set_counter(&time);
-        gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        time.hour += 7;     // GMT + 7
+        if (time.year > 20 && time.year < 40)
+        {
+            app_rtc_set_counter(&time);
+        }
+        gsm_hw_send_at_cmd("AT+CSQ\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
 
@@ -666,103 +672,8 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     }
    
-
     gsm_manager.step++;
 }
-
-
-/**
-* Check RI pin every 10ms
-*/
-#if __GSM_SMS_ENABLE__
-static uint8_t isNewSMSComing = 0;
-static uint8_t isRetryReadSMS = 0;
-static uint8_t RISignalTimeCount = 0;
-static uint8_t RILowLogicTime = 0;
-#endif
-void gsm_query_sms_tick(void)
-{
-#if __GSM_SMS_ENABLE__
-    if (gsm_manager.RISignal == 1)
-    {
-        uint8_t RIState = GPIO_ReadInputDataBit(GSM_RI_PORT, GSM_RI_PIN);
-        if (RIState == 0)
-            RILowLogicTime++;
-
-        RISignalTimeCount++;
-        if (RISignalTimeCount >= 100) //50 - 500ms, 100 - 1000ms
-        {
-            if (RIState == 0)
-            {
-                DEBUG_PRINTF("New SMS coming!");
-
-#if (__GSM_SLEEP_MODE__)
-                /* Neu dang sleep thi wake truoc */
-//				if(GPIO_ReadOutputDataBit(GSM_DTR_PORT, GSM_DTR_PIN)) {
-//					DEBUG ("GSM is sleeping, wake up...");
-//					ChangeGSMState(GSM_WAKEUP);
-//				}
-#endif //__GSM_SLEEP_MODE__
-
-                gsm_manager.RISignal = 0;
-                RISignalTimeCount = 0;
-                isNewSMSComing = 1;
-            }
-            else
-            {
-                DEBUG_PRINTF("RI by other URC: %ums", RILowLogicTime * 10);
-                gsm_manager.RISignal = 0;
-                RISignalTimeCount = 0;
-                isNewSMSComing = 0;
-            }
-            RILowLogicTime = 0;
-        }
-    }
-#endif
-}
-
-#if __RI_WITHOUT_INTERRUPT__
-/*****************************************************************************/
-/**
- * @brief	:  	Check RI pin to get new SMS, call every 10ms
- * @param	:  
- * @retval	:
- * @author	:	phinht
- * @created	:	15/01/2014
- * @version	:
- * @reviewer:	
- */
-void gsm_check_sms_tick(void)
-{
-    static uint16_t RILowCount = 0xFFFF;
-
-    if (gsm_manager.gsm_ready == 0 || isNewSMSComing)
-        return;
-
-    if (GPIO_ReadInputDataBit(GSM_RI_PORT, GSM_RI_PIN) == 0)
-    {
-        if (RILowCount == 0xFFFF)
-            RILowCount = 0;
-        else
-            RILowCount++;
-    }
-    else
-    {
-        if (RILowCount >= 50 && RILowCount < 250) // 500ms - 2500ms
-        {
-            DEBUG_PRINTF("New SMS coming...");
-            isNewSMSComing = 1;
-        }
-        else
-        {
-            //DEBUG ("RI caused by other URCs: %ums", RILowCount*10);
-        }
-        RILowCount = 0xFFFF;
-    }
-}
-#endif //__RI_WITHOUT_INTERRUPT__
-
-
 
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 {
@@ -792,18 +703,6 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
         break;
     }
     gsm_manager.step++;
-}
-
-void gsm_test_read_sms()
-{
-#if __GSM_SMS_ENABLE__
-    if (gsm_manager.state == GSM_SLEEP)
-    {
-        DEBUG_PRINTF("Wakeup GSM to read SMS...");
-        ChangeGSMState(GSM_WAKEUP);
-    }
-    isNewSMSComing = 1;
-#endif
 }
 
 /*
@@ -1039,7 +938,7 @@ uint16_t gsm_build_http_post_msg(void)
     //4glost,sensor_err,sensor_overflow
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
-    p += sprintf(p, "%u", 0);
+    p += sprintf(p, "%u,", 0);
 	bool found_break_pulse_input = false;
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
@@ -1050,7 +949,7 @@ uint16_t gsm_build_http_post_msg(void)
 		}
 	}
 	
-	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
+	p += sprintf(p, "%u", found_break_pulse_input ? 1 : 0);
 
 
     if (app_queue_is_full(&m_http_msq))
@@ -1083,9 +982,13 @@ uint16_t gsm_build_http_post_msg(void)
 	
 	counter0_f = counter0_f / cfg->k0 + cfg->offset0;
 	counter1_f = counter1_f / cfg->k1 + cfg->offset1;
-#if 0
+#if 1
     new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", app_rtc_get_counter()); //second since 1970
+#ifdef DTG02
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
+#else
+    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG1-%s\",", gsm_get_module_imei());
+#endif
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", cfg->phone);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
     new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J1\":\"%u\",\"Input1_J2\":\"%u\",",
@@ -1158,6 +1061,7 @@ uint16_t gsm_build_http_post_msg(void)
     }
 }
 
+#if GSM_HTTP_CUSTOM_HEADER
 static char m_build_http_post_header[255];
 static char *build_http_header(uint32_t length)
 {
@@ -1168,6 +1072,7 @@ static char *build_http_header(uint32_t length)
             length);
     return m_build_http_post_header;
 }
+#endif
 
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 {
@@ -1209,8 +1114,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             {
                 ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg.pointer;
                 ((gsm_http_data_t *)data)->data_length = m_last_http_msg.length;
+#if GSM_HTTP_CUSTOM_HEADER
                 ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
-				DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
+                DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
+#else
+            ((gsm_http_data_t *)data)->header = (uint8_t *)"";
+#endif
             }
         }
     }

@@ -18,6 +18,7 @@ static uint32_t m_debug_http_post_count = 0;
 
 #define OTA_RAM_FILE        "RAM:ota.bin"
 
+
 static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
 static uint32_t m_total_bytes_recv = 0;
@@ -308,35 +309,87 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             {
                 DEBUG_HTTP_POST_INC();
                 DEBUG_PRINTF("Post total %u msg\r\n", DEBUG_HTTP_POST_GET_COUNT());
+#if GSM_HTTP_CUSTOM_HEADER
                 gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",1\r\n", 
                                     "OK\r\n", 
                                     "", 
                                     5000, 
                                     2, 
                                     gsm_http_query);
+#else
+                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    5000, 
+                                    2, 
+                                    gsm_http_query);
+#endif
             }
         }
         break;
         
         case 2:
         {
-            if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+            DEBUG_PRINTF("request/response header : %s, response %s\r\n",
+                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
+                         (char*)response_buffer);
+//            if (event != GSM_EVENT_OK)
+//            {
+//                if (strstr(response_buffer, "+CME ERROR: HTTP(S) busy"))
+//                {
+//                    sys_delay_ms(1000);
+//                    if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+//                    {
+//                        gsm_hw_send_at_cmd("AT+QHTTPCFG=\"responseheader\",0\r\n", 
+//                                            "OK\r\n", 
+//                                            "", 
+//                                            5000, 
+//                                            1, 
+//                                            gsm_http_query);
+//                    }
+//                    else
+//                    {
+//                        DEBUG_HTTP_POST_INC();
+//                        DEBUG_PRINTF("Post total %u msg\r\n", DEBUG_HTTP_POST_GET_COUNT());
+//        #if GSM_HTTP_CUSTOM_HEADER
+//                        gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",1\r\n", 
+//                                            "OK\r\n", 
+//                                            "", 
+//                                            5000, 
+//                                            2, 
+//                                            gsm_http_query);
+//        #else
+//                        gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+//                                            "OK\r\n", 
+//                                            "", 
+//                                            5000, 
+//                                            2, 
+//                                            gsm_http_query);
+//        #endif
+//                    }
+//                    m_http_step--;
+//                }
+//            }
+//            else
             {
-                gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
-                                    "OK\r\n", 
-                                    "", 
-                                    5000, 
-                                    1, 
-                                    gsm_http_query);
-            }
-            else
-            {
-                gsm_hw_send_at_cmd("AT\r\n", 
-                                    "OK\r\n", 
-                                    "", 
-                                    5000, 
-                                    2, 
-                                    gsm_http_query);
+                if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+                {
+                    gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",0\r\n", 
+                                        "OK\r\n", 
+                                        "", 
+                                        5000, 
+                                        1, 
+                                        gsm_http_query);
+                }
+                else
+                {
+                    gsm_hw_send_at_cmd("AT+QHTTPCFG=\"contenttype\",1\r\n", 
+                                        "OK\r\n", 
+                                        "", 
+                                        2000, 
+                                        1, 
+                                        gsm_http_query);
+                }
             }
         }
             break;
@@ -488,12 +541,12 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 post_rx_data.action = m_http_cfg.action;
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 DEBUG_PRINTF("Send post data\r\n"); 
-                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,3,8\r\n", 
-                                            post_rx_data.data_length + strlen((char*)post_rx_data.header)); 
+                sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,3,7\r\n", 
+                                            post_rx_data.data_length); 
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                     "CONNECT", 
                                     "", 
-                                    9000, 
+                                    11000, 
                                     1, 
                                     gsm_http_query);
             }
@@ -525,11 +578,11 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         DEBUG_PRINTF("Content length %u\r\n", m_content_length);
                         if (!m_http_cfg.big_file_for_ota)
                         {
-                            sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=12\r\n");
+                            sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=11\r\n");
                             //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREADFILE=\"RAM:1.txt\",80\r\n");
                             gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                                 "QHTTPREAD: 0", 
-                                                "", 
+                                                "\r\n", 
                                                 12000, 
                                                 1, 
                                                 gsm_http_query); // Close a GPRS context.
@@ -566,14 +619,16 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                DEBUG_PRINTF("Input http post, len %u\r\n", 
-								strlen((char*)post_rx_data.data) + strlen((char*)post_rx_data.header));
+                DEBUG_PRINTF("Input http post, header size %u, data size %u\r\n", 
+								strlen((char*)post_rx_data.header), strlen((char*)post_rx_data.data));
+#if GSM_HTTP_CUSTOM_HEADER
 				DEBUG_RAW("%s", post_rx_data.header);
                 gsm_hw_uart_send_raw(post_rx_data.header, strlen((char*)post_rx_data.header));
+#endif
                 gsm_hw_send_at_cmd((char*)post_rx_data.data, 
                                     "QHTTPPOST: ", 
                                     "\r\n", 
-                                    10000, 
+                                    11000, 
                                     1, 
                                     gsm_http_query); // Close a GPRS context.
             }
@@ -626,10 +681,16 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         success = true;
                     }
                 }
-
+                
                 if (success)
                 {
-                    m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+                    sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=12\r\n");
+                    gsm_hw_send_at_cmd(m_http_cmd_buffer, 
+                                        "QHTTPREAD: 0", 
+                                        "", 
+                                        12000, 
+                                        1, 
+                                        gsm_http_query); // Close a GPRS context.
                 }
                 else
                 {
@@ -637,6 +698,15 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 }
             }
         }
+            break;
+        
+        case 12:
+            DEBUG_PRINTF("HTTP post response : %s, data %s\r\n", 
+                            (event == GSM_EVENT_OK) ? "OK" : "FAIL",
+                             (char*)response_buffer);
+            m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+            m_http_step = 0;
+            return;
             break;
         
         default:

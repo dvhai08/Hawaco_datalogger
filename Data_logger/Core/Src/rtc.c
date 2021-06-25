@@ -21,7 +21,7 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "app_rtc.h"
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -31,7 +31,11 @@ void MX_RTC_Init(void)
 {
 
   /* USER CODE BEGIN RTC_Init 0 */
-
+    rtc_date_time_t time;
+    if (app_rtc_get_time(&time))
+    {
+        return;
+    }
   /* USER CODE END RTC_Init 0 */
 
   RTC_TimeTypeDef sTime = {0};

@@ -84,6 +84,7 @@ void Error_Handler(void);
 #define TRANS_OUTPUT_GPIO_Port GPIOA
 #define DIR0_Pin LL_GPIO_PIN_3
 #define DIR0_GPIO_Port GPIOA
+#define DIR0_EXTI_IRQn EXTI2_3_IRQn
 #define ADC_4_20MA_IN_Pin LL_GPIO_PIN_4
 #define ADC_4_20MA_IN_GPIO_Port GPIOA
 #define DAC_4_20MA_OUT_Pin LL_GPIO_PIN_5

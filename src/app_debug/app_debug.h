@@ -36,7 +36,7 @@
 #define DEBUG_COLOR(color, s, args...)       app_debug_rtt_raw(color s KNRM, ##args)
 
 
-#define DEBUG_PRINTF            DEBUG_INFO
+#define DEBUG_PRINTF            app_debug_rtt
 #ifndef DEBUG_PRINTF
 #define DEBUG_PRINTF(String...)	SEGGER_RTT_printf(0, String)
 #endif
