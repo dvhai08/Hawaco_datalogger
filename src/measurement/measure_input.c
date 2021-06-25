@@ -28,9 +28,10 @@
 #include "trans_recieve_buff_control.h"
 #include "app_debug.h"
 
-#define STORE_MEASURE_INVERVAL_SEC      30
-#define ADC_MEASURE_INTERVAL_MS			30000
-#define PULSE_STATE_INVALID             -1
+#define STORE_MEASURE_INVERVAL_SEC              30
+#define ADC_MEASURE_INTERVAL_MS			        30000
+#define PULSE_STATE_INVALID                     -1
+#define PULSE_DIR_FORWARD_LOGICAL_LEVEL          1
 //#define DELAY_TIMEOUT_ENTER_SLEEP       2000
 typedef struct
 {
@@ -225,7 +226,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 {
                     DEBUG_INFO("Reserve\r\n");
                 }
-                if (0 == input->dir_level)
+                if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
                 {
                     m_pulse_counter_in_backup[input->port].forward++;
                 }

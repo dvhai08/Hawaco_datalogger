@@ -1,8 +1,9 @@
 #include "app_rtc.h"
 #include "main.h"
 #include "stm32l0xx_ll_rtc.h"
-#warning "Please implent rtc"
 #include "main.h"
+#include "app_debug.h"
+
 extern RTC_HandleTypeDef hrtc;
 
 static uint32_t rtc_struct_to_counter(rtc_date_time_t *t)
@@ -93,27 +94,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 	RTC_TimeTypeDef sTime = {0};
 	RTC_DateTypeDef sDate = {0};
 
-	/* USER CODE BEGIN RTC_Init 1 */
-
-	/* USER CODE END RTC_Init 1 */
-	/** Initialize RTC Only
-	*/
-	hrtc.Instance = RTC;
-	hrtc.Init.HourFormat = RTC_HOURFORMAT_24;
-	hrtc.Init.AsynchPrediv = 127;
-	hrtc.Init.SynchPrediv = 255;
-	hrtc.Init.OutPut = RTC_OUTPUT_DISABLE;
-	hrtc.Init.OutPutRemap = RTC_OUTPUT_REMAP_NONE;
-	hrtc.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-	hrtc.Init.OutPutType = RTC_OUTPUT_TYPE_OPENDRAIN;
-	if (HAL_RTC_Init(&hrtc) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	/* USER CODE BEGIN Check_RTC_BKUP */
-
-	/* USER CODE END Check_RTC_BKUP */
+    LL_PWR_EnableBkUpAccess();
 
 	/** Initialize RTC and set the Time and Date
 	*/
@@ -124,6 +105,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 	sTime.StoreOperation = RTC_STOREOPERATION_SET;
 	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
 	{
+        DEBUG_ERROR("Set RTC time failed\r\n");
 		Error_Handler();
 	}
 	int week_day;
@@ -136,8 +118,10 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 
 	if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
 	{
+        DEBUG_ERROR("Set RTC date failed\r\n");
 		Error_Handler();
 	}
+    LL_PWR_DisableBkUpAccess();
 }
 
 

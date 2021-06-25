@@ -180,13 +180,13 @@ void RTC_IRQHandler(void)
   /* USER CODE END RTC_IRQn 1 */
 }
 
+static uint32_t m_last_exti0_timestamp = 0;
 /**
   * @brief This function handles EXTI line 0 and line 1 interrupts.
   */
 void EXTI0_1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_1_IRQn 0 */
-    DEBUG_PRINTF("EXT0 irq\r\n");
   /* USER CODE END EXTI0_1_IRQn 0 */
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0) != RESET)
   {
@@ -198,17 +198,22 @@ void EXTI0_1_IRQHandler(void)
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
+      uint32_t current_tick = sys_get_ms();
+      if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
+      {
+            m_last_exti0_timestamp = current_tick;
 #ifdef DTG01
-    measure_input_water_meter_input_t input;
-    input.port = MEASURE_INPUT_PORT_0;
-    input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
-    input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
-    input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-    input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
-    measure_input_pulse_irq(&input);
+            measure_input_water_meter_input_t input;
+            input.port = MEASURE_INPUT_PORT_0;
+            input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
+            input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
+            input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+            input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+            measure_input_pulse_irq(&input);
 #endif
+      }
+      LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE END LL_EXTI_LINE_1 */
   }
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */
