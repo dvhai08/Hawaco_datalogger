@@ -94,7 +94,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 	RTC_TimeTypeDef sTime = {0};
 	RTC_DateTypeDef sDate = {0};
 
-    LL_PWR_EnableBkUpAccess();
+//    LL_PWR_EnableBkUpAccess();
 
 	/** Initialize RTC and set the Time and Date
 	*/
@@ -121,7 +121,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
         DEBUG_ERROR("Set RTC date failed\r\n");
 		Error_Handler();
 	}
-    LL_PWR_DisableBkUpAccess();
+//    LL_PWR_DisableBkUpAccess();
 }
 
 

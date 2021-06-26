@@ -7,21 +7,22 @@
 #define OTA_FLAG_UPDATE_NEW_FW		0x12345678
 #define OTA_FLAG_NO_NEW_FIRMWARE	0x19785384
 
-#define BOOTLOADER_SIZE				(22*1024)
-#define APPLICATION_SIZE			(80*1024)
+#define BOOTLOADER_SIZE				(20*1024)
+#define APPLICATION_SIZE			(82*1024)
+#define OTA_INFO_SIZE               (128)
 #define DOWNLOAD_SIZE				APPLICATION_SIZE
 
-#define BOOTLOADER_START_ADDR		0
-#define BOOTLOADER_END_ADDR			(BOOTLOADER_SIZE-1)
+#define BOOTLOADER_START_ADDR		0x08000000
+#define BOOTLOADER_END_ADDR			(BOOTLOADER_START_ADDR + BOOTLOADER_SIZE-1)
 
-#define OTA_INFO_START_ADDR			(BOOTLOADER_SIZE)
-#define OTA_INFO_END_ADDR			(BOOTLOADER_SIZE+DOWNLOAD_SIZE-1)
+#define OTA_INFO_START_ADDR			(BOOTLOADER_END_ADDR+1)
+#define OTA_INFO_END_ADDR			(OTA_INFO_START_ADDR + OTA_INFO_SIZE-1)
 
-#define APPLICATION_START_ADDR		(OTA_INFO_END_ADDR + 1 +APPLICATION_SIZE)
-#define APPLICATION_END_ADDR		(APPLICATION_START_ADDR+APPLICATION_SIZE-1)
+#define APPLICATION_START_ADDR		(OTA_INFO_END_ADDR + 1)
+#define APPLICATION_END_ADDR		(APPLICATION_START_ADDR + APPLICATION_SIZE-1)
 
 #define DONWLOAD_START_ADDR			(APPLICATION_END_ADDR+1)
-#define DONWLOAD_END_ADDR			(DONWLOAD_START_ADDR+APPLICATION_SIZE-1)
+#define DONWLOAD_END_ADDR			(DONWLOAD_START_ADDR + APPLICATION_SIZE-1)
 
 #define WORDS_IN_HALF_PAGE            ((uint32_t)16)
 #define FLASH_HALF_PAGE_SIZE          ((uint32_t)WORDS_IN_HALF_PAGE*4)
@@ -60,12 +61,12 @@ bool ota_update_start(uint32_t expected_size);
 /**
  * @brief		Write data to flash
  * @param[in]	data : Data write to flash
- * @param[in]	length : Number of word
- * @note 		Flash write address will automatic increase inside function, size of date must multiply by 128
+ * @param[in]	length : Size of data in bytes
+ * @note 		Flash write address will automatic increase inside function
  * @retval		TRUE : Operation success
  *				FALSE : Operation failed
  */
-bool ota_update_write_next(uint32_t *data, uint32_t length);
+bool ota_update_write_next(uint8_t *data, uint32_t length);
 
 /**
  * @brief Finish ota process

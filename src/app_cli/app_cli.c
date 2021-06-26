@@ -6,8 +6,7 @@
 #if 1
 
 #include "app_debug.h"
-//#include "board_hw.h"
-//#include "app_flash.h"
+#include "ota_update.h"
 #include "app_eeprom.h"
 
 #define PRINTF_OVER_RTT             DEBUG_RTT
@@ -193,9 +192,12 @@ static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv
 //extern System_t xSystem;
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)
 {
-//    xSystem.file_transfer.ota_is_running = 1;
-//    sprintf(xSystem.file_transfer.url, "%s", 
-//            "https://iot.wilad.vn/api/v1/860262050129720/attributes");
+    DEBUG_PRINTF("Begin ota update\r\n");
+    sys_ctx()->status.enter_ota_update = true;
+    //sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
+    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/test_ota_hawaco.bin");
+    
+    
     return 0;
 }
 

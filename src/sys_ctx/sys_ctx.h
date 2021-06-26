@@ -19,8 +19,9 @@ typedef struct
 {
 	uint32_t sleep_time_s;
 	uint32_t disconnect_timeout_s;
-	uint8_t ota_url[128+48];
     bool is_enter_test_mode;
+    bool enter_ota_update;
+    uint8_t ota_url[128+48];
 } sys_ctx_status_t;
 
 typedef struct

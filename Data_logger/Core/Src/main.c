@@ -99,6 +99,8 @@ static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
+void FLASH_If_Init(void);
+uint32_t FLASH_If_Erase(uint32_t start);
 /* USER CODE END 0 */
 
 /**
@@ -162,6 +164,8 @@ int main(void)
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     sys_ctx_t *system = sys_ctx();
     app_flash_initialize();
+//    FLASH_If_Init();
+//    FLASH_If_Erase(DONWLOAD_START_ADDR);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -365,6 +369,7 @@ void FLASH_If_Init(void)
   */
 uint32_t FLASH_If_Erase(uint32_t start)
 {
+    DEBUG_PRINTF("Flash erase at addr 0x%08X\r\n", start);
 	FLASH_EraseInitTypeDef desc;
 	uint32_t result = FLASHIF_OK;
 	uint32_t pageerror;
@@ -388,7 +393,7 @@ uint32_t FLASH_If_Erase(uint32_t start)
 	if (result == FLASHIF_OK )
 	{
 		desc.PageAddress = ABS_RETURN(start, FLASH_START_BANK2);
-		desc.NbPages = (OTA_INFO_END_ADDR - ABS_RETURN(start, FLASH_START_BANK2)) / FLASH_PAGE_SIZE;
+		desc.NbPages = (DONWLOAD_END_ADDR - desc.PageAddress) / FLASH_PAGE_SIZE;
 		if (HAL_FLASHEx_Erase(&desc, &pageerror) != HAL_OK)
 		{
 			result = FLASHIF_ERASEKO;
@@ -396,7 +401,7 @@ uint32_t FLASH_If_Erase(uint32_t start)
 	}
 
 	HAL_FLASH_Lock();
-
+    DEBUG_PRINTF("Erase flash error code %u\r\n", result);
 	return result;
 }
 

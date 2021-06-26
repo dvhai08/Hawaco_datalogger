@@ -488,36 +488,20 @@ uint8_t flash_self_test(void)
     for (loop_count = 0; loop_count < 3; loop_count++)
     {
         enable_ext_flash(1);
-        while (1)
-        {
-            /* Lenh */
-            cmd = READ_ID_CMD;
-            HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        cmd = READ_ID_CMD;
+        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
 
-            /* 3 byte address */
-            cmd = 0;
-            HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
-            HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
-            HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
-            
-            cmd = 0xFF;
-            HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &manufacture_id, 1, 100);
-            HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &device_id, 1, 100);
+        /* 3 byte address */
+        cmd = 0;
+        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        
+        cmd = 0xFF;
+        HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &manufacture_id, 1, 100);
+        HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &device_id, 1, 100);
 
-            enable_ext_flash(1);
-            if (manufacture_id == 0 && device_id == 0)
-            {
-                DEBUG_PRINTF("device id: %X, manufacture id: %X\r\n", device_id, manufacture_id);
-                sys_delay_ms(100);
-            }
-        }
-
-        //    if (device_id == 0x16)			/* FL164K - 64Mb */
-        //        m_flash_version = FL164K;
-        //    else if (device_id == 0x17)	/* FL127S - 1 chan CS 128Mb */
-        //        m_flash_version= FL127S;
-        //    else if (device_id == 0x18)	/* FL256S - 1 chan CS 256Mb */
-        //        m_flash_version = FL256S;
+        enable_ext_flash(0);
 
         DEBUG_PRINTF("device id: %X, manufacture id: %X\r\n", device_id, manufacture_id);
         if (manufacture_id == 0x01 && device_id == 0x16) /* FL164K - 64Mb */

@@ -7,7 +7,7 @@
 #include "app_debug.h"
 #include "main.h"
 
-static gsm_sms_msg_t m_sms_memory[3];
+static gsm_sms_msg_t m_sms_memory[1];
 
 gsm_sms_msg_t *gsm_get_sms_memory_buffer(void)
 {

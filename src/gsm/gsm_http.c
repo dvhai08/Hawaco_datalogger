@@ -207,7 +207,13 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
 		uint32_t size;
 		gsm_utilities_get_qfile_content(response_buffer, &content, &size);
 			
-		DEBUG_PRINTF("Data size %d, %.*s\r\n", size, size, content);
+		DEBUG_PRINTF("Data size %u bytes\r\n", size);
+        post_rx_data.action = m_http_cfg.action;
+        post_rx_data.data_length = size;
+        post_rx_data.data = (uint8_t*)content;
+
+        m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_DATA, &post_rx_data);
+        
         m_total_bytes_recv += size;
         if (m_total_bytes_recv >= m_content_length)
         {
@@ -473,12 +479,24 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
             m_ssl_step = 0;
-            gsm_hw_send_at_cmd("AT\r\n", 
-                                "OK\r\n", 
-                                "", 
-                                1000, 
-                                1, 
-                                setup_http_ssl);
+            if (strstr(m_http_cfg.url, "https://"))
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    200, 
+                                    2, 
+                                    setup_http_ssl);
+            }
+            else
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    200, 
+                                    2, 
+                                    gsm_http_query);
+            }
         }
             break;
 
@@ -529,12 +547,24 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         (char*)response_buffer);
             if (m_http_cfg.action == GSM_HTTP_ACTION_GET)       // GET
             {
-                gsm_hw_send_at_cmd("AT+QHTTPGET=12\r\n", 
-                                "+QHTTPGET: 0,", 
-                                "\r\n", 
-                                20000, 
-                                1, 
-                                gsm_http_query);
+                if (!m_http_cfg.big_file_for_ota)
+                {
+                    gsm_hw_send_at_cmd("AT+QHTTPGET=12\r\n", 
+                                    "+QHTTPGET: 0,", 
+                                    "\r\n", 
+                                    20000, 
+                                    1, 
+                                    gsm_http_query);
+                }
+                else
+                {
+                    gsm_hw_send_at_cmd("AT+QHTTPGET=80\r\n", 
+                                    "+QHTTPGET: 0,", 
+                                    "\r\n", 
+                                    80000, 
+                                    1, 
+                                    gsm_http_query);
+                }
             }
             else        // POST
             {
@@ -591,11 +621,11 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         else
                         {
                             //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=75\r\n");
-                            sprintf(m_http_cmd_buffer, "AT+QHTTPREADFILE=\"%s\",80\r\n", OTA_RAM_FILE);
+                            sprintf(m_http_cmd_buffer, "AT+QHTTPREADFILE=\"%s\",79\r\n", OTA_RAM_FILE);
                             gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                                 "OK\r\n", 
                                                 "+QHTTPREADFILE: 0\r\n", 
-                                                80000, 
+                                                81000, 
                                                 1, 
                                                 gsm_http_download_big_file); // Close a GPRS context.
                             m_http_read_big_file_step = 0;

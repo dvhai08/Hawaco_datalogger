@@ -31,11 +31,7 @@ void MX_RTC_Init(void)
 {
 
   /* USER CODE BEGIN RTC_Init 0 */
-    rtc_date_time_t time;
-    if (app_rtc_get_time(&time))
-    {
-        return;
-    }
+    
   /* USER CODE END RTC_Init 0 */
 
   RTC_TimeTypeDef sTime = {0};
@@ -60,7 +56,11 @@ void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
-
+    rtc_date_time_t time;
+    if (app_rtc_get_time(&time))
+    {
+        return;
+    }
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date

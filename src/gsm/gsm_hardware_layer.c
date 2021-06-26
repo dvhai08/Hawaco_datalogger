@@ -298,13 +298,6 @@ void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
 			}
 		}
 	}
-    else
-    {
-        DEBUG_ERROR("Invalid length\r\n");
-#ifdef DEBUG_MODE
-                while(1);
-#endif
-    }
 }
 
 char* gsm_get_sim_imei(void)
@@ -367,8 +360,6 @@ void gsm_set_csq(uint8_t csq)
 
     m_csq_percent = ((m_csq - 10) * 100) / (31 - 10);
 }
-
-
 
 uint8_t gsm_get_csq_in_percent()
 {

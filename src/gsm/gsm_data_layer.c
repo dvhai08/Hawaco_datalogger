@@ -42,7 +42,8 @@
 #define GSM_DONT_NEED_HTTP_GET() (m_enter_http_get = false)
 #define GSM_NEED_ENTER_HTTP_POST() (m_enter_http_post)
 #define GSM_DONT_NEED_HTTP_POST() (m_enter_http_post = false)
-
+#define POST_URL        "https://iot.wilad.vn/api/v1/%s/telemetry"
+#define GET_URL         "https://iot.wilad.vn/api/v1/%s/attributes"
 
 extern gsm_manager_t gsm_manager;
 
@@ -212,7 +213,6 @@ void gsm_manager_tick(void)
         
 			//#warning "Sleep in http mode is not enabled"
 			if (enter_sleep_in_http)
-			//if (0)
 			{
 				gsm_change_state(GSM_STATE_SLEEP);
 			}
@@ -258,7 +258,7 @@ void gsm_manager_tick(void)
         {
             GSM_DONT_NEED_HTTP_POST();
             static gsm_http_config_t cfg;
-            sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/telemetry",
+            sprintf(cfg.url, POST_URL,
                     gsm_get_module_imei());
             //sprintf(cfg.url, "%s", "https://iot.wilad.vn");
             cfg.on_event_cb = gsm_http_event_cb;
@@ -275,10 +275,9 @@ void gsm_manager_tick(void)
         if (GSM_NEED_ENTER_HTTP_GET())
         {
             static gsm_http_config_t cfg;
-            if (!ota_update_is_running())
-            if (0)
+            if (!sys_ctx()->status.enter_ota_update)
             {
-                sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/attributes",
+                sprintf(cfg.url, GET_URL,
                         gsm_get_module_imei());
                 cfg.on_event_cb = gsm_http_event_cb;
                 cfg.action = GSM_HTTP_ACTION_GET;
@@ -1084,17 +1083,28 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_EVENT_CONNTECTED:
         DEBUG_PRINTF("HTTP connected, data size %u\r\n", *((uint32_t *)data));
+        if (ctx->status.enter_ota_update)
+        {
+            ota_update_start(*((uint32_t*)data));
+        }
         break;
-
+    
     case GSM_HTTP_GET_EVENT_DATA:
     {
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
-        DEBUG_PRINTF("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
-        uint8_t new_cfg = 0;
-        server_msg_process_cmd((char *)get_data->data, &new_cfg);
-        if (new_cfg)
+        if (!ctx->status.enter_ota_update)
         {
-            gsm_build_http_post_msg();
+            DEBUG_PRINTF("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
+            uint8_t new_cfg = 0;
+            server_msg_process_cmd((char *)get_data->data, &new_cfg);
+            if (new_cfg)
+            {
+                gsm_build_http_post_msg();
+            }
+        }
+        else
+        {
+            ota_update_write_next((uint8_t*)get_data->data, get_data->data_length);
         }
     }
     break;
