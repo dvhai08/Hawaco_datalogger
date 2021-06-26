@@ -48,11 +48,22 @@
 #include "sys_ctx.h"
 #include "app_rtc.h"
 #include "app_debug.h"
+#include "app_flash.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+enum 
+{
+	FLASHIF_OK = 0,
+	FLASHIF_ERASEKO,
+	FLASHIF_WRITINGCTRL_ERROR,
+	FLASHIF_WRITING_ERROR,
+	FLASHIF_PROTECTION_ERRROR
+};
+#define WORDS_IN_HALF_PAGE              16
+#define FLASH_HALF_PAGE_SIZE            (128)
+#define ABS_RETURN(x,y)               (((x) < (y)) ? (y) : (x))
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -149,6 +160,7 @@ int main(void)
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     sys_ctx_t *system = sys_ctx();
+    app_flash_initialize();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -269,8 +281,11 @@ void sys_delay_ms(uint32_t ms)
 	
 	while (1)
 	{
-		__WFI();
-		if (HAL_GetTick() - current_tick >= ms)
+#ifdef WDT_ENABLE
+        LL_IWDG_ReloadCounter(IWDG);
+#endif
+//		__WFI();
+		if (HAL_GetTick() - current_tick >= (uint32_t)ms)
 		{
 			break;
 		}
@@ -322,6 +337,147 @@ static void info_task(void *arg)
 					adc->temp);
 	}
 }
+
+/**
+  * @brief  Unlocks Flash for write access
+  * @param  None
+  * @retval None
+  */
+void FLASH_If_Init(void)
+{
+  /* Unlock the Program memory */
+  HAL_FLASH_Unlock();
+
+  /* Clear all FLASH flags */
+  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
+                         FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
+                         FLASH_FLAG_NOTZEROERR);
+  /* Unlock the Program memory */
+  HAL_FLASH_Lock();
+}
+
+/**
+  * @brief  				This function does an erase of all user flash area
+  * @param  				start: start of user flash area
+  * @retval 				FLASHIF_OK : user flash area successfully erased
+  *         				FLASHIF_ERASEKO : error occurred
+  */
+uint32_t FLASH_If_Erase(uint32_t start)
+{
+	FLASH_EraseInitTypeDef desc;
+	uint32_t result = FLASHIF_OK;
+	uint32_t pageerror;
+
+
+	HAL_FLASH_Unlock();
+
+	desc.PageAddress = start;
+	desc.TypeErase = FLASH_TYPEERASE_PAGES;
+
+	/* NOTE: Following implementation expects the IAP code address to be < Application address */  
+	if (start < FLASH_START_BANK2 )
+	{
+		desc.NbPages = (FLASH_START_BANK2 - start) / FLASH_PAGE_SIZE;
+		if (HAL_FLASHEx_Erase(&desc, &pageerror) != HAL_OK)
+		{
+			result = FLASHIF_ERASEKO;
+		}
+	}
+
+	if (result == FLASHIF_OK )
+	{
+		desc.PageAddress = ABS_RETURN(start, FLASH_START_BANK2);
+		desc.NbPages = (OTA_INFO_END_ADDR - ABS_RETURN(start, FLASH_START_BANK2)) / FLASH_PAGE_SIZE;
+		if (HAL_FLASHEx_Erase(&desc, &pageerror) != HAL_OK)
+		{
+			result = FLASHIF_ERASEKO;
+		}
+	}
+
+	HAL_FLASH_Lock();
+
+	return result;
+}
+
+uint32_t FLASH_If_EraseOtaInfo()
+{
+	FLASH_EraseInitTypeDef desc;
+	uint32_t result = FLASHIF_OK;
+	uint32_t pageerror;
+
+
+	HAL_FLASH_Unlock();
+
+	desc.PageAddress = OTA_INFO_START_ADDR;
+	desc.TypeErase = FLASH_TYPEERASE_PAGES;
+
+	desc.NbPages = 1;
+	if (HAL_FLASHEx_Erase(&desc, &pageerror) != HAL_OK)
+	{
+		result = FLASHIF_ERASEKO;
+	}
+	
+	HAL_FLASH_Lock();
+
+	return result;
+}
+
+/* Public functions ---------------------------------------------------------*/
+/**
+  * @brief  This function writes a data buffer in flash (data are 32-bit aligned).
+  * @note   After writing data buffer, the flash content is checked.
+  * @param  destination: start address for target location
+  * @param  p_source: pointer on buffer with data to write
+  * @param  length: length of data buffer (unit is 32-bit word)
+  * @retval uint32_t 0: Data successfully written to Flash memory
+  *         1: Error occurred while writing data in Flash memory
+  *         2: Written Data in flash memory is different from expected one
+  */
+uint32_t FLASH_If_Write(uint32_t destination, uint32_t *p_source, uint32_t length)
+{
+	uint32_t status = FLASHIF_OK;
+	uint32_t *p_actual = p_source; /* Temporary pointer to data that will be written in a half-page space */
+	uint32_t i = 0;
+
+	HAL_FLASH_Unlock();
+
+	while (p_actual < (uint32_t*)(p_source + length))
+	{    
+		LL_IWDG_ReloadCounter(IWDG);
+		/* Write the buffer to the memory */
+		if (HAL_FLASHEx_HalfPageProgram(destination, p_actual ) == HAL_OK) /* No error occurred while writing data in Flash memory */
+		{
+			/* Check if flash content matches memBuffer */
+			for (i = 0; i < WORDS_IN_HALF_PAGE; i++)
+			{
+				if ((*(uint32_t*)(destination + 4 * i)) != p_actual[i])
+				{
+					/* flash content doesn't match memBuffer */
+					status = FLASHIF_WRITINGCTRL_ERROR;
+					break;
+				}
+			}
+
+			/* Increment the memory pointers */
+			destination += FLASH_HALF_PAGE_SIZE;
+			p_actual += WORDS_IN_HALF_PAGE;
+		}
+		else
+		{
+			status = FLASHIF_WRITING_ERROR;
+		}
+
+		if (status != FLASHIF_OK)
+		{
+			break;
+		}
+	}
+
+	HAL_FLASH_Lock();
+
+	return status;
+}
+
 
 /* USER CODE END 4 */
 

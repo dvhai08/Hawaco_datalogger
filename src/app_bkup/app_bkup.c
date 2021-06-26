@@ -7,7 +7,7 @@
 #include "stm32l0xx_ll_pwr.h"
 #endif
 #include "app_bkup.h"
-
+#include "main.h"
 
 #define	BACKUP_FLAG_ADDR	        BKP_DATA_0
 #define BACKUP_PULSE_COUNTER_ADDR1	BKP_DATA_1
@@ -44,13 +44,13 @@ void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint
 	bkp_data_write(BACKUP_PULSE_COUNTER_ADDR1, (counter>>16) & 0xFFFF);
 	bkp_data_write(BACKUP_PULSE_COUNTER_ADDR2, counter & 0xFFFF);
 #else
-    LL_PWR_EnableBkUpAccess();
+//    LL_PWR_EnableBkUpAccess();
     LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR0, RTC_BACKUP_VALID_DATA);
     LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR1, counter0_f);
 	LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR2, counter1_f);
 	LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR2, counter0_r);
 	LL_RTC_BAK_SetRegister(RTC, LL_RTC_BKP_DR3, counter1_r);
-	LL_PWR_DisableBkUpAccess();
+//	LL_PWR_DisableBkUpAccess();
 #endif
 }
 

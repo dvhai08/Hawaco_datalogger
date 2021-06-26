@@ -276,6 +276,7 @@ void gsm_manager_tick(void)
         {
             static gsm_http_config_t cfg;
             if (!ota_update_is_running())
+            if (0)
             {
                 sprintf(cfg.url, "https://iot.wilad.vn/api/v1/%s/attributes",
                         gsm_get_module_imei());

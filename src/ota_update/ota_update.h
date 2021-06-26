@@ -4,8 +4,50 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define OTA_FLAG_UPDATE_NEW_FW		0x12345678
+#define OTA_FLAG_NO_NEW_FIRMWARE	0x19785384
+
+#define BOOTLOADER_SIZE				(22*1024)
+#define APPLICATION_SIZE			(80*1024)
+#define DOWNLOAD_SIZE				APPLICATION_SIZE
+
+#define BOOTLOADER_START_ADDR		0
+#define BOOTLOADER_END_ADDR			(BOOTLOADER_SIZE-1)
+
+#define OTA_INFO_START_ADDR			(BOOTLOADER_SIZE)
+#define OTA_INFO_END_ADDR			(BOOTLOADER_SIZE+DOWNLOAD_SIZE-1)
+
+#define APPLICATION_START_ADDR		(OTA_INFO_END_ADDR + 1 +APPLICATION_SIZE)
+#define APPLICATION_END_ADDR		(APPLICATION_START_ADDR+APPLICATION_SIZE-1)
+
+#define DONWLOAD_START_ADDR			(APPLICATION_END_ADDR+1)
+#define DONWLOAD_END_ADDR			(DONWLOAD_START_ADDR+APPLICATION_SIZE-1)
+
+#define WORDS_IN_HALF_PAGE            ((uint32_t)16)
+#define FLASH_HALF_PAGE_SIZE          ((uint32_t)WORDS_IN_HALF_PAGE*4)
+#ifdef DTG01
+#define OTA_UPDATE_DEFAULT_HEADER_DATA  "DTG01"
+#else
 #define OTA_UPDATE_DEFAULT_HEADER_DATA  "DTG02"
+#endif
 #define OTA_UPDATE_DEFAULT_HEADER_SIZE  16
+
+#define FLASH_END_BANK1               ((uint32_t)0x08017FFF)
+#define FLASH_START_BANK2             ((uint32_t)0x08018000)
+
+/**
+ *	Bootloader		16KB
+ *  Application		80KB
+ *  Download		80KB
+ *  OTA info		128 bytes
+ */
+
+typedef struct
+{
+	uint32_t flag;
+	uint32_t firmware_size;
+	uint32_t reserve[60];
+} ota_flash_cfg_t;
 
 /**
  * @brief		Start ota update process
@@ -18,12 +60,12 @@ bool ota_update_start(uint32_t expected_size);
 /**
  * @brief		Write data to flash
  * @param[in]	data : Data write to flash
- * @param[in]	length : Size of data
+ * @param[in]	length : Number of word
  * @note 		Flash write address will automatic increase inside function, size of date must multiply by 128
  * @retval		TRUE : Operation success
  *				FALSE : Operation failed
  */
-bool ota_update_write_next(uint8_t *data, uint32_t length);
+bool ota_update_write_next(uint32_t *data, uint32_t length);
 
 /**
  * @brief Finish ota process

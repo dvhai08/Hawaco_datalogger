@@ -1,10 +1,11 @@
 #ifndef APP_FLASH_H
 #define APP_FLASH_H
 
-#define APP_FLASH_VALID_DATA_KEY            0x123456781                
+#define APP_FLASH_VALID_DATA_KEY            0x12345678                
 #define APP_FLASH_NB_OF_METER_INPUT         2
 #define APP_FLASH_NB_OFF_4_20MA_INPUT       4
 #define APP_FLASH_RS485_MAX_SIZE            32
+#define APP_FLASH_SIZE						(1024*1024)
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -29,11 +30,16 @@ typedef struct
     uint32_t valid_flag;
 } app_flash_data_t;
 
+
+/**
+ * @brief       Initialize flash
+ */
+void app_flash_initialize(void);
+
 /**
  * @brief       Get read data address from flash
  */
 uint32_t app_flash_estimate_current_read_addr(void);
-
 
 /**
  * @brief       Get data from 
@@ -56,9 +62,24 @@ void app_flash_erase(void);
 app_flash_data_t *app_flash_lastest_data(void);
 
 /**
- * @brief       Check flash is error or not
- * @retval      TRUE Flash error
- *              FLASE Flash ok
+ * @brief       Check flash ok status
+ */
+bool app_flash_is_ok(void);
+
+/**
+ * @brief       Wakeup the flash
+ */
+void app_flash_wakeup(void);
+
+/**
+ * @brief       Power down then flash
+ */
+void app_flash_shutdown(void);
+
+/**
+ * @brief       Get spi flash error status
+ * @retval      TRUE SPI flash error
+ *              FALSE SPI ok
  */
 bool app_flash_is_error(void);
 

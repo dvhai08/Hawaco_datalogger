@@ -60,6 +60,7 @@
 /* USER CODE BEGIN 0 */
 extern void uart1_rx_complete_callback(bool status);
 extern volatile uint32_t led_blink_delay;
+volatile uint32_t m_last_exti0_timestamp;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -180,7 +181,6 @@ void RTC_IRQHandler(void)
   /* USER CODE END RTC_IRQn 1 */
 }
 
-static uint32_t m_last_exti0_timestamp = 0;
 /**
   * @brief This function handles EXTI line 0 and line 1 interrupts.
   */
@@ -198,6 +198,7 @@ void EXTI0_1_IRQHandler(void)
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
+    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
       uint32_t current_tick = sys_get_ms();
       if (current_tick - m_last_exti0_timestamp > (uint32_t)10)

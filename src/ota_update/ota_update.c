@@ -6,7 +6,6 @@
 #include "string.h"
 #include "stm32l0xx_hal.h"
 
-#define OTA_START_ADDR (4096 * 70)
 #define OTA_MAX_SIZE (80*1024)
 #define MD5_LEN 16
 
@@ -16,6 +15,10 @@ static uint32_t m_current_write_size = 0;
 static bool verify_checksum(uint32_t begin_addr, uint32_t length);
 static bool m_ota_is_running = false;
 
+extern uint32_t FLASH_If_Erase(uint32_t start);
+extern uint32_t FLASH_If_Write(uint32_t destination, uint32_t *p_source, uint32_t length);
+extern void FLASH_If_Init(void);
+
 bool ota_update_is_running(void)
 {
 	return m_ota_is_running;
@@ -23,7 +26,6 @@ bool ota_update_is_running(void)
 
 bool ota_update_start(uint32_t expected_size)
 {
-	#warning "Please implemet ota erase page, write bytes"
     m_expected_size = expected_size - OTA_UPDATE_DEFAULT_HEADER_SIZE;
     m_current_write_size = 0;
 
@@ -32,22 +34,18 @@ bool ota_update_start(uint32_t expected_size)
         DEBUG_PRINTF("Firmware size too large %ubytes, max allowed %ubytes", expected_size, OTA_MAX_SIZE);
         return false;
     }
-    uint32_t nb_of_page = (expected_size + 4095) / 4096;
-    uint32_t addr = OTA_START_ADDR;
+    uint32_t nb_of_page = (expected_size + FLASH_PAGE_SIZE-1) / FLASH_PAGE_SIZE;
 
-    DEBUG_PRINTF("Erase %d pages, from addr 0x%08X\r\n", nb_of_page, OTA_START_ADDR);
-    for (uint32_t i = 0; i < nb_of_page; i++)
-    {
-//        nrf_nvmc_page_erase(addr);
-        addr += 4096;
-    }
+    DEBUG_PRINTF("Erase %d pages, from addr 0x%08X\r\n", nb_of_page, DONWLOAD_START_ADDR);
+	FLASH_If_Erase(DONWLOAD_START_ADDR);
 
     m_found_header = false;
 	m_ota_is_running = true;
+    FLASH_If_Init();
     return true;
 }
 
-bool ota_update_write_next(uint8_t *data, uint32_t length)
+bool ota_update_write_next(uint32_t *data, uint32_t nb_of_word)
 {
     // TODO write data to flash
     // ASSERT(length > 16)
@@ -61,15 +59,15 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
             return false;
         }
         m_found_header = true;
-        length -= OTA_UPDATE_DEFAULT_HEADER_SIZE;
-        data += OTA_UPDATE_DEFAULT_HEADER_SIZE;
+        nb_of_word -= OTA_UPDATE_DEFAULT_HEADER_SIZE/sizeof(uint32_t);
+        data += OTA_UPDATE_DEFAULT_HEADER_SIZE/sizeof(uint32_t);
         DEBUG_PRINTF("Found header\r\n");
     }
 
-    if (m_found_header && ((m_current_write_size + length) <= m_expected_size))
+    if (m_found_header && ((m_current_write_size + nb_of_word*sizeof(uint32_t)) <= m_expected_size))
     {
-//        nrf_nvmc_write_bytes(OTA_START_ADDR + m_current_write_size, data, length);
-        m_current_write_size += length;
+		FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, data, nb_of_word);
+        m_current_write_size += nb_of_word*sizeof(uint32_t);
     }
     else
     {
@@ -87,7 +85,7 @@ void ota_update_finish(bool status)
     if (status)
     {
         // TODO write boot information
-        if (verify_checksum(OTA_START_ADDR, m_expected_size))
+        if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
         {
             DEBUG_PRINTF("Valid checksum\r\n");
         }
