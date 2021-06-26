@@ -49,6 +49,7 @@
 #include "app_rtc.h"
 #include "app_debug.h"
 #include "app_flash.h"
+#include "ota_update.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,9 +62,9 @@ enum
 	FLASHIF_WRITING_ERROR,
 	FLASHIF_PROTECTION_ERRROR
 };
-#define WORDS_IN_HALF_PAGE              16
-#define FLASH_HALF_PAGE_SIZE            (128)
+
 #define ABS_RETURN(x,y)               (((x) < (y)) ? (y) : (x))
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
