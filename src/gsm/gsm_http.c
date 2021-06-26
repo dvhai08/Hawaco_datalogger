@@ -16,8 +16,7 @@ static uint32_t m_debug_http_post_count = 0;
 #define DEBUG_HTTP_POST_GET_COUNT()     (0)
 #endif 
 
-#define OTA_RAM_FILE        "RAM:ota.bin"
-
+#define OTA_FILE_NAME        "UFS:ota.bin"
 
 static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
@@ -33,7 +32,6 @@ static void gsm_http_query(gsm_response_event_t event, void *response_buffer);
 static int32_t m_http_read_big_file_step = 0;
 static int32_t m_ssl_step = -1;
 static int32_t m_file_handle = -1;
-
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
 {
     if (!m_renew_config_ssl)
@@ -117,13 +115,20 @@ static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
             DEBUG_PRINTF("SSL level: %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
-            gsm_hw_send_at_cmd("AT\r\n", 
-                                "OK\r\n", 
-                                "", 
-                                1000, 
-                                1, 
-                                gsm_http_query);
-            m_renew_config_ssl = false;
+            if (1)
+            {
+                gsm_hw_send_at_cmd("AT\r\n", 
+                                    "OK\r\n", 
+                                    "", 
+                                    1000, 
+                                    1, 
+                                    gsm_http_query);
+                m_renew_config_ssl = false;
+            }
+            else
+            {
+
+            }
             m_ssl_step = -1;
         }   
             break;
@@ -157,10 +162,11 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
 
     if (m_http_read_big_file_step == 0)
     {
-        DEBUG_PRINTF("Speed %ukb/s\r\n", (m_content_length*1000/1024)/(gsm_get_current_tick() - m_start_download_timestamp));
-        sprintf(m_http_cmd_buffer, "AT+QFOPEN=\"%s\",2\r\n", OTA_RAM_FILE);
+        uint32_t download_time = gsm_get_current_tick() - m_start_download_timestamp;
+        DEBUG_PRINTF("Speed %ukb/s, download time %ums\r\n", (m_content_length*1000/1024)/download_time, download_time);
+        sprintf(m_http_cmd_buffer, "AT+QFOPEN=\"%s\",2\r\n", OTA_FILE_NAME);
         gsm_hw_send_at_cmd(m_http_cmd_buffer, 
-                            "+QFOPEN: ", 
+                            "+QFOPEN:", 
                             "OK\r\n", 
                             2000, 
                             1, 
@@ -490,6 +496,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else
             {
+                m_renew_config_ssl = true;
                 gsm_hw_send_at_cmd("AT\r\n", 
                                     "OK\r\n", 
                                     "", 
@@ -621,7 +628,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                         else
                         {
                             //sprintf(m_http_cmd_buffer, "%s", "AT+QHTTPREAD=75\r\n");
-                            sprintf(m_http_cmd_buffer, "AT+QHTTPREADFILE=\"%s\",79\r\n", OTA_RAM_FILE);
+                            sprintf(m_http_cmd_buffer, "AT+QHTTPREADFILE=\"%s\",79\r\n", OTA_FILE_NAME);
                             gsm_hw_send_at_cmd(m_http_cmd_buffer, 
                                                 "OK\r\n", 
                                                 "+QHTTPREADFILE: 0\r\n", 

@@ -25,7 +25,7 @@
 #include "lwrb.h"
 #include "app_debug.h"
 
-#define DEBUG_USART1_DMA        1
+#define DEBUG_USART1_DMA        0
 #define UART1_RX_BUFFER_SIZE    512
 
 static lwrb_t m_ringbuffer_usart1_tx = 		// for GSM
@@ -288,7 +288,9 @@ static inline void usart1_hw_transmit_dma(void)
     {
         m_usart1_tx_run = false;
         m_last_usart1_transfer_size = 0;
+#if DEBUG_USART1_DMA
 		DEBUG_PRINTF("TX cplt\r\n");
+#endif
         return;
     }	
 	

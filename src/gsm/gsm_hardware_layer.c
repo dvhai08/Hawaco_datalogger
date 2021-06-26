@@ -114,8 +114,8 @@ void gsm_hw_layer_run(void)
     {
         return;
     }
-
-    uint32_t diff = (uint32_t)(now - m_gsm_hardware.atc.current_timeout_atc_ms);
+    
+    m_last_poll = now;
     bool ret_now = true;
 
     if (m_gsm_hardware.atc.retry_count_atc)
@@ -176,10 +176,10 @@ void gsm_hw_layer_run(void)
         }
         else if (ret_now == false)
         {
-            char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.buffer), "CME");
+            char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.buffer), "CME ERROR: ");
             if (p && strstr(p, "\r\n"))
             {
-                DEBUG_PRINTF("CME error %s", p);
+                DEBUG_PRINTF("%s", p);
                 if (m_gsm_hardware.atc.send_at_callback)
                 {
                     m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.buffer);
@@ -189,6 +189,7 @@ void gsm_hw_layer_run(void)
         }
     }
 
+    uint32_t diff = sys_get_ms() - m_gsm_hardware.atc.current_timeout_atc_ms;
     if (m_gsm_hardware.atc.timeout_atc_ms && 
         diff >= m_gsm_hardware.atc.timeout_atc_ms)
     {
@@ -225,7 +226,7 @@ void gsm_hw_layer_run(void)
 
     if (m_gsm_hardware.atc.retry_count_atc == 0)
     {
-        if (m_gsm_hardware.atc.recv_buff.index > 10 
+        if (m_gsm_hardware.atc.recv_buff.index > 2 
             && strstr((char*)m_gsm_hardware.atc.recv_buff.buffer+10, "\r\n"))
         {
             DEBUG_PRINTF("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);

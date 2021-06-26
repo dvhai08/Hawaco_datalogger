@@ -195,7 +195,7 @@ static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **ar
     DEBUG_PRINTF("Begin ota update\r\n");
     sys_ctx()->status.enter_ota_update = true;
     //sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
-    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/test_ota_hawaco.bin");
+    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
     
     
     return 0;

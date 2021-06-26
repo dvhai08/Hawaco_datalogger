@@ -79,26 +79,33 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
         return false;
     }
     
-    while (1)
+    while (length)
     {
         uint32_t bytes_need_copy = OTA_REMAIN_MAX_LENGTH - m_ota_remain.size;
 
         if (bytes_need_copy > length)
         {
-            memcpy(&m_ota_remain.data[m_ota_remain.size], data, length);
-            m_ota_remain.size += length;
-            break;
+            bytes_need_copy = length;
+        }
+        
+        memcpy(&m_ota_remain.data[m_ota_remain.size], data, bytes_need_copy);
+        length -= bytes_need_copy;
+        data += bytes_need_copy;
+        m_ota_remain.size += bytes_need_copy;
+        
+        if (m_ota_remain.size == OTA_REMAIN_MAX_LENGTH)
+        {
+            DEBUG_PRINTF("Write %u bytes, at 0x%08X\r\n", m_ota_remain.size, DONWLOAD_START_ADDR + m_current_write_size);
+            FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));      
+            m_current_write_size += m_ota_remain.size;
+            m_ota_remain.size = 0;
         }
         else
         {
-            memcpy(&m_ota_remain.data[m_ota_remain.size], data, bytes_need_copy);
+            break;
         }
-        
-        DEBUG_PRINTF("Write  bytes %u, at 0x%08X\r\n", m_ota_remain.size, DONWLOAD_START_ADDR + m_current_write_size);
-        FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));      
-        m_current_write_size += m_ota_remain.size;
-        m_ota_remain.size = 0;
     }
+    DEBUG_PRINTF("Total write size %u\r\n", m_current_write_size);
     if (m_current_write_size >= m_expected_size)
     {
         DEBUG_INFO("All data received\r\n");
@@ -109,18 +116,18 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
 
 void ota_update_finish(bool status)
 {
-    m_current_write_size = 0;
     m_found_header = false;
-    if (m_ota_remain.size)
-    {
-        DEBUG_PRINTF("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
-        FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
-        m_current_write_size = 0;
-        m_ota_remain.size = 0;
-    }
     if (status)
     {
         // TODO write boot information
+        #warning "Please write bootloader information"
+        if (m_ota_remain.size)
+        {
+            DEBUG_PRINTF("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
+            FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
+            m_ota_remain.size = 0;
+        }
+    
         if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
         {
             DEBUG_PRINTF("Valid checksum\r\n");
@@ -135,6 +142,8 @@ void ota_update_finish(bool status)
         DEBUG_PRINTF("OTA update failed\r\n");
     }
 	
+    m_current_write_size = 0;
+    m_ota_remain.size = 0;
 	m_ota_is_running = false;
     NVIC_SystemReset();
 }

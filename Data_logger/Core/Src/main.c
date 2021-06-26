@@ -370,6 +370,9 @@ void FLASH_If_Init(void)
 uint32_t FLASH_If_Erase(uint32_t start)
 {
     DEBUG_PRINTF("Flash erase at addr 0x%08X\r\n", start);
+    
+    FLASH_If_Init();
+    
 	FLASH_EraseInitTypeDef desc;
 	uint32_t result = FLASHIF_OK;
 	uint32_t pageerror;
@@ -444,7 +447,9 @@ uint32_t FLASH_If_Write(uint32_t destination, uint32_t *p_source, uint32_t lengt
 	uint32_t status = FLASHIF_OK;
 	uint32_t *p_actual = p_source; /* Temporary pointer to data that will be written in a half-page space */
 	uint32_t i = 0;
-
+    
+    FLASH_If_Init();
+    
 	HAL_FLASH_Unlock();
 
 	while (p_actual < (uint32_t*)(p_source + length))
@@ -480,7 +485,12 @@ uint32_t FLASH_If_Write(uint32_t destination, uint32_t *p_source, uint32_t lengt
 	}
 
 	HAL_FLASH_Lock();
-
+    
+    if (status != FLASHIF_OK)
+    {
+        DEBUG_PRINTF("Flash write error %d\r\n", status);
+    }
+    
 	return status;
 }
 

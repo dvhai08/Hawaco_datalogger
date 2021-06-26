@@ -288,7 +288,7 @@ void DMA1_Channel2_3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Channel2_3_IRQn 1 */
     if (LL_DMA_IsActiveFlag_HT3(DMA1))
     {
-        DEBUG_PRINTF("USART1 HT\r\n");
+//        DEBUG_PRINTF("USART1 HT\r\n");
         LL_DMA_ClearFlag_HT3(DMA1);
 		usart1_rx_complete_callback(true);
     }
