@@ -387,6 +387,7 @@ void gsm_change_state(gsm_state_t new_state)
         break;
     case GSM_STATE_RESET:
         DEBUG_RAW("RESET\r\n");
+        gsm_hw_layer_reset_rx_buffer();
         break;
     case GSM_STATE_SEND_SMS:
         DEBUG_RAW("SEND SMS\r\n");

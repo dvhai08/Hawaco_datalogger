@@ -15,14 +15,14 @@
 #define BOOTLOADER_START_ADDR		0x08000000
 #define BOOTLOADER_END_ADDR			(BOOTLOADER_START_ADDR + BOOTLOADER_SIZE-1)
 
-#define OTA_INFO_START_ADDR			(BOOTLOADER_END_ADDR+1)
-#define OTA_INFO_END_ADDR			(OTA_INFO_START_ADDR + OTA_INFO_SIZE-1)
-
-#define APPLICATION_START_ADDR		(OTA_INFO_END_ADDR + 1)
+#define APPLICATION_START_ADDR		(BOOTLOADER_END_ADDR + 1)
 #define APPLICATION_END_ADDR		(APPLICATION_START_ADDR + APPLICATION_SIZE-1)
 
 #define DONWLOAD_START_ADDR			(APPLICATION_END_ADDR+1)
 #define DONWLOAD_END_ADDR			(DONWLOAD_START_ADDR + APPLICATION_SIZE-1)
+
+#define OTA_INFO_START_ADDR			(DONWLOAD_END_ADDR+1)
+#define OTA_INFO_END_ADDR			(OTA_INFO_START_ADDR + OTA_INFO_SIZE-1)
 
 #define WORDS_IN_HALF_PAGE            ((uint32_t)16)
 #define FLASH_HALF_PAGE_SIZE          ((uint32_t)WORDS_IN_HALF_PAGE*4)
@@ -47,7 +47,7 @@ typedef struct
 {
 	uint32_t flag;
 	uint32_t firmware_size;
-	uint32_t reserve[60];
+	uint32_t reserve[30];
 } ota_flash_cfg_t;
 
 /**
@@ -81,5 +81,11 @@ void ota_update_finish(bool status);
  * 				FALSE : OTA is not running
  */
 bool ota_update_is_running(void);
+
+/**
+ * @brief		Get current ota update
+ * @retval		OTA config in flash
+ */
+ota_flash_cfg_t *ota_update_get_config(void);
 
 #endif /* OTA_UPDATE_H */

@@ -281,7 +281,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (has_new_cfg)
     {
         gsm_set_timeout_to_sleep(10);        // Wait more 5 second
-		app_eeprom_save_data();
+		app_eeprom_save_config();
     }
     else
     {

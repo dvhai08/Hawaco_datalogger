@@ -88,7 +88,7 @@ static void reset_flash(void)
 	HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
 }
 
-static inline void enable_ext_flash(bool enable)
+static void enable_ext_flash(bool enable)
 {
     if (enable)
     {
@@ -107,7 +107,7 @@ void app_flash_initialize(void)
     if (flash_self_test())
     {
         m_flash_inited = true;
-        DEBUG_PRINTF("Flashs selftest[OK]\r\nFlash type: ");
+        DEBUG_PRINTF("Flash self test[OK]\r\nFlash type: ");
         switch (m_flash_version)
         {
         case FL164K: //8MB
@@ -386,6 +386,7 @@ void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 
 void flash_erase_sector_4k(uint16_t sector_count)
 {
+    DEBUG_PRINTF("Erase sector[%u] 4k\r\n", sector_count);
     uint32_t addr = 0;
     uint32_t old_addr = 0;
 	uint8_t cmd;
@@ -483,7 +484,7 @@ uint8_t flash_self_test(void)
     uint8_t reg_status = 0;
     uint8_t loop_count;
 	uint8_t cmd;
-	
+	uint32_t retcode;
     //Retry init 3 times
     for (loop_count = 0; loop_count < 3; loop_count++)
     {
@@ -493,13 +494,13 @@ uint8_t flash_self_test(void)
 
         /* 3 byte address */
         cmd = 0;
-        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
-        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
-        HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        retcode = HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        retcode = HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
+        retcode = HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
         
         cmd = 0xFF;
-        HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &manufacture_id, 1, 100);
-        HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &device_id, 1, 100);
+        retcode = HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &manufacture_id, 1, 100);
+        retcode = HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &device_id, 1, 100);
 
         enable_ext_flash(0);
 
@@ -656,8 +657,8 @@ uint8_t flash_test(void)
 
 void app_flash_erase(void)
 {
-    uint8_t status = 0xFF;
-    uint8_t cmd;
+    __align(4) uint8_t status = 0xFF;
+    __align(4) uint8_t cmd;
 	DEBUG_PRINTF("Erase all flash\r\n");
 	
     flash_write_control(1, 0);
@@ -677,10 +678,13 @@ void app_flash_erase(void)
     while (1)
     {
 		cmd = SPI_DUMMY;
-        HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &status, 1, 100);
+        if (HAL_OK != HAL_SPI_TransmitReceive(&EXT_FLASH_HSPI, &cmd, &status, 1, 100))
+        {
+            DEBUG_ERROR("SPI error\r\n");
+        }
         if ((status & 1) == 0)
             break;
-        sys_delay_ms(100);
+        sys_delay_ms(1000);
     }
     enable_ext_flash(0);
 
@@ -691,7 +695,7 @@ void app_flash_erase(void)
 static uint8_t flash_check_first_run(void)
 {
     uint8_t tmp = 0;
-    uint8_t tmp_buff[2];
+    uint8_t tmp_buff[1];
 
     flash_read_bytes(FLASH_CHECK_FIRST_RUN, &tmp, 1);
 
@@ -712,9 +716,9 @@ static uint8_t flash_check_first_run(void)
     return 1;
 }
 
-uint32_t app_flash_estimate_next_write_addr(void)
+uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
 {
-	bool flash_full = false;
+	*flash_full = false;
 	
 	while (1)
 	{
@@ -726,7 +730,7 @@ uint32_t app_flash_estimate_next_write_addr(void)
 			m_wr_addr += sizeof(tmp);
 			if (m_wr_addr >= (APP_FLASH_SIZE - 2*sizeof(app_flash_data_t)))
 			{
-				flash_full = true;
+				*flash_full = true;
 				break;
 			}
 		}
@@ -736,7 +740,7 @@ uint32_t app_flash_estimate_next_write_addr(void)
 		}
 	}
 	
-	if (flash_full)
+	if (*flash_full)
 	{
 		m_wr_addr = PAGE_SIZE;
 		DEBUG_PRINTF("Flash full, erase first block\r\n");
@@ -767,6 +771,7 @@ uint32_t app_flash_dump_all_data(void)
 
 void app_flash_wakeup(void)
 {
+    DEBUG_PRINTF("Wakeup flash\r\n");
     enable_ext_flash(1);
 	uint8_t cmd = WB_WAKEUP_CMD;
 	HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
@@ -779,6 +784,7 @@ void app_flash_wakeup(void)
 
 void app_flash_shutdown(void)
 {
+    DEBUG_PRINTF("Shutdown flash\r\n");
 	enable_ext_flash(1);
 	uint8_t cmd = WB_POWER_DOWN_CMD;
 	HAL_SPI_Transmit(&EXT_FLASH_HSPI, &cmd, 1, 100);
@@ -788,4 +794,26 @@ void app_flash_shutdown(void)
 bool app_flash_is_error(void)
 {
     return m_flash_inited ? false : true;
+}
+
+
+void app_flash_write_test(void)
+{
+    app_flash_data_t data;
+    memset(&data, 0, sizeof(data));
+    while (1)
+    {
+        bool flash_full;
+        uint32_t addr = app_flash_estimate_next_write_addr(&flash_full);
+        if (!flash_full)
+        {
+            data.write_index++;
+            flash_write_bytes(addr, (uint8_t*)&data, sizeof(app_flash_data_t));
+        }
+        else
+        {
+            DEBUG_PRINTF("Exit flash test, nb of packet written %u\r\n", data.write_index);
+            break;
+        }
+    }
 }

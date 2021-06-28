@@ -1472,6 +1472,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>flash_if</GroupName>
+          <Files>
+            <File>
+              <FileName>flash_if.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\ota_update\flash_if.c</FilePath>
+            </File>
+            <File>
+              <FileName>flash_if.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\ota_update\flash_if.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>

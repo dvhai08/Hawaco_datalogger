@@ -26,7 +26,7 @@ void app_eeprom_init(void)
         memcpy(m_cfg.phone, "0", 3);
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
-        app_eeprom_save_data();
+        app_eeprom_save_config();
 	}
     else
     {
@@ -34,25 +34,28 @@ void app_eeprom_init(void)
     }
 }
 
-void app_eeprom_save_data(void)
+void app_eeprom_save_config(void)
 {	
 	uint32_t err;
 	uint8_t *tmp = (uint8_t*)&m_cfg;
 	HAL_FLASHEx_DATAEEPROM_Unlock();
 	
-	err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR);
-	if (HAL_OK != err)
-	{
-		DEBUG_PRINTF("Erase eeprom failed code %08X\r\n", err);
-		goto end;
-	}
+    for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
+    {
+        err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i);
+        if (HAL_OK != err)
+        {
+            DEBUG_PRINTF("Erase eeprom failed code %08X\r\n", err);
+        }
+        i += 4;
+    }
 
 	for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
 	{
 		err = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, EEPROM_STORE_DATA_ADDR + i, tmp[i]);
 		if (HAL_OK != err)
 		{
-			DEBUG_PRINTF("Write eeprom failed  at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
+			DEBUG_PRINTF("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
 			break;
 		}
 	}

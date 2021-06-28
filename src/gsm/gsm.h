@@ -292,4 +292,9 @@ uint8_t gsm_get_csq_in_percent(void);
  */
 void gsm_set_wakeup_now(void);
 
+/**
+ * @brief		Reset gsm rx buffer
+ */
+void gsm_hw_layer_reset_rx_buffer(void);
+
 #endif // GSM_H

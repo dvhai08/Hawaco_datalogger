@@ -61,7 +61,7 @@ void app_eeprom_init(void);
 /**
  * @brief		Save data to eeprom
  */
-void app_eeprom_save_data(void);
+void app_eeprom_save_config(void);
 
 /**
  * @brief		Read data from eeprom

@@ -22,6 +22,7 @@
 #include "app_eeprom.h"
 #include "control_output.h"
 #include "sys_ctx.h"
+#include "app_flash.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -47,6 +48,7 @@ static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -57,6 +59,7 @@ static const shell_command_context_t cli_command_table[] =
     {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
+    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -196,8 +199,7 @@ static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **ar
     sys_ctx()->status.enter_ota_update = true;
     //sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
     sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
-    
-    
+    gsm_set_wakeup_now();
     return 0;
 }
 
@@ -225,6 +227,24 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 	{
 		DEBUG_PRINTF("Exit test mode\r\n");
 		system->status.is_enter_test_mode = false;
+	}
+    return 0;
+}
+
+static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv)
+{
+    if (strstr(argv[1], "erase"))
+	{
+		DEBUG_PRINTF("Erase flash\r\n");
+        app_flash_erase();
+	}
+	else if (strstr(argv[1], "write"))
+	{
+		DEBUG_PRINTF("Write flash\r\n");
+	}
+    else if (strstr(argv[1], "read"))
+	{
+		DEBUG_PRINTF("Read flash\r\n");
 	}
     return 0;
 }

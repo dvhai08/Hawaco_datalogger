@@ -43,8 +43,9 @@ uint32_t app_flash_estimate_current_read_addr(void);
 
 /**
  * @brief       Get data from 
+* @param[in]   flash_full : Flash full or not
  */
-uint32_t app_flash_estimate_next_write_addr(void);
+uint32_t app_flash_estimate_next_write_addr(bool *flash_full);
 
 /**
  * @brief       Dump all valid data
@@ -82,5 +83,10 @@ void app_flash_shutdown(void);
  *              FALSE SPI ok
  */
 bool app_flash_is_error(void);
+
+/**
+ * @brief       Flash write test
+ */
+void app_flash_write_test(void);
 
 #endif /* APP_FLASH_H */

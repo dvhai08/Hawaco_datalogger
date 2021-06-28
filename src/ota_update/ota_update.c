@@ -1,10 +1,9 @@
 #include "ota_update.h"
-//#include "nrf.h"
-//#include "nrf_nvmc.h"
 #include "app_debug.h"
 #include "app_md5.h"
 #include "string.h"
 #include "stm32l0xx_hal.h"
+#include "flash_if.h"
 
 #define OTA_MAX_SIZE (80*1024)
 #define MD5_LEN 16
@@ -22,9 +21,8 @@ static uint32_t m_current_write_size = 0;
 static bool verify_checksum(uint32_t begin_addr, uint32_t length);
 static bool m_ota_is_running = false;
 ota_bytes_remain_t m_ota_remain;
-extern uint32_t FLASH_If_Erase(uint32_t start);
-extern uint32_t FLASH_If_Write(uint32_t destination, uint32_t *p_source, uint32_t length);
-extern void FLASH_If_Init(void);
+extern uint32_t flash_if_erase(uint32_t start);
+extern uint32_t flash_if_write(uint32_t destination, uint32_t *p_source, uint32_t length);
 
 bool ota_update_is_running(void)
 {
@@ -45,13 +43,12 @@ bool ota_update_start(uint32_t expected_size)
     uint32_t nb_of_page = (expected_size + FLASH_PAGE_SIZE-1) / FLASH_PAGE_SIZE;
 
     DEBUG_PRINTF("Erase %d pages, from addr 0x%08X\r\n", nb_of_page, DONWLOAD_START_ADDR);
-	FLASH_If_Init();
+	flash_if_init();
     
-    FLASH_If_Erase(DONWLOAD_START_ADDR);
+    flash_if_erase(DONWLOAD_START_ADDR);
 
     m_found_header = false;
 	m_ota_is_running = true;
-    FLASH_If_Init();
     return true;
 }
 
@@ -96,7 +93,7 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
         if (m_ota_remain.size == OTA_REMAIN_MAX_LENGTH)
         {
             DEBUG_PRINTF("Write %u bytes, at 0x%08X\r\n", m_ota_remain.size, DONWLOAD_START_ADDR + m_current_write_size);
-            FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));      
+            flash_if_write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));      
             m_current_write_size += m_ota_remain.size;
             m_ota_remain.size = 0;
         }
@@ -120,17 +117,21 @@ void ota_update_finish(bool status)
     if (status)
     {
         // TODO write boot information
-        #warning "Please write bootloader information"
         if (m_ota_remain.size)
         {
             DEBUG_PRINTF("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
-            FLASH_If_Write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
+            flash_if_write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
             m_ota_remain.size = 0;
         }
     
         if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
         {
             DEBUG_PRINTF("Valid checksum\r\n");
+            ota_flash_cfg_t new_cfg;
+            new_cfg.flag = OTA_FLAG_UPDATE_NEW_FW;
+            new_cfg.firmware_size = m_expected_size;
+            new_cfg.reserve[0] = 0;
+            flash_if_write_ota_info_page((uint32_t*)&new_cfg, sizeof(ota_flash_cfg_t)/sizeof(uint32_t));
         }
         else
         {
@@ -171,3 +172,9 @@ static bool verify_checksum(uint32_t begin_addr, uint32_t length)
         return false;
     }
 }
+
+ota_flash_cfg_t *ota_update_get_config(void)
+{
+    return (ota_flash_cfg_t*)OTA_INFO_START_ADDR;
+}
+
