@@ -31,15 +31,31 @@ extern "C" {
 
 /* USER CODE END Includes */
 
-extern SPI_HandleTypeDef hspi2;
-
 /* USER CODE BEGIN Private defines */
+
+#define SPI_EXT_FLASH_CS(x)         {   \
+                                        if (x)  LL_GPIO_SetOutputPin(EXT_FLASH_CS_GPIO_Port, EXT_FLASH_CS_Pin); \
+                                        else    LL_GPIO_ResetOutputPin(EXT_FLASH_CS_GPIO_Port, EXT_FLASH_CS_Pin); \
+                                    }
 
 /* USER CODE END Private defines */
 
 void MX_SPI2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+
+/**
+ * @brief       Send data to spi port
+ * @retval      RX data
+ */
+uint8_t spi_flash_transmit(uint8_t ch);
+
+/**
+ * @brief       Send data and received data from spi port
+ */
+void spi_flash_transmit_receive(uint8_t *tx_ptr, uint8_t *rx_ptr, uint32_t size);
+
+void spi_flash_receive(uint8_t *rx_ptr, uint32_t size);
 
 /* USER CODE END Prototypes */
 

@@ -131,13 +131,13 @@ int main(void)
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
-//  HAL_TIM_MspPostInit(&htim2);
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
 	DEBUG_RAW(RTT_CTRL_CLEAR);
 	app_cli_start();
+    app_flash_initialize();
 	app_bkup_init();
     app_eeprom_init();
 	measure_input_initialize();
@@ -155,7 +155,6 @@ int main(void)
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     sys_ctx_t *system = sys_ctx();
-    app_flash_initialize();
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
     DEBUG_PRINTF("Build %s %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
   /* USER CODE END 2 */
@@ -333,6 +332,11 @@ static void info_task(void *arg)
 					adc->i_4_20ma_in[0]/10, adc->i_4_20ma_in[0]%10,
 					adc->temp);
 	}
+}
+
+void sys_turn_on_led(uint32_t delay_ms)
+{
+    led_blink_delay = delay_ms;
 }
 
 /* USER CODE END 4 */

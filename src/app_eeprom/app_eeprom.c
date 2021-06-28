@@ -40,15 +40,15 @@ void app_eeprom_save_config(void)
 	uint8_t *tmp = (uint8_t*)&m_cfg;
 	HAL_FLASHEx_DATAEEPROM_Unlock();
 	
-    for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
-    {
-        err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i);
-        if (HAL_OK != err)
-        {
-            DEBUG_PRINTF("Erase eeprom failed code %08X\r\n", err);
-        }
-        i += 4;
-    }
+    for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t)/sizeof(uint32_t); i++)
+//    {
+//        err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i);
+//        if (HAL_OK != err)
+//        {
+//            DEBUG_PRINTF("Erase eeprom failed code %08X\r\n", err);
+//        }
+//        i += 4;
+//    }
 
 	for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
 	{
@@ -59,7 +59,7 @@ void app_eeprom_save_config(void)
 			break;
 		}
 	}
-end:	
+	
 	HAL_FLASHEx_DATAEEPROM_Lock();
 }
 

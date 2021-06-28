@@ -33,6 +33,7 @@ extern "C" {
 #include "stm32l0xx_ll_iwdg.h"
 #include "stm32l0xx_ll_lpuart.h"
 #include "stm32l0xx_ll_rcc.h"
+#include "stm32l0xx_ll_spi.h"
 #include "stm32l0xx_ll_usart.h"
 #include "stm32l0xx_ll_system.h"
 #include "stm32l0xx_ll_gpio.h"
@@ -152,6 +153,12 @@ void sys_delay_ms(uint32_t ms);
  * @param[in] 	ms Delay in ms
  */
 void sys_set_delay_time_before_deep_sleep(uint32_t ms);
+
+/**
+ * @brief		Turn on led with in ms
+ * @param[in] 	Led on in ms
+ */
+void sys_turn_on_led(uint32_t delay_ms);
 
 /* USER CODE END Private defines */
 

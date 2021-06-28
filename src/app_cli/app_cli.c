@@ -59,7 +59,7 @@ static const shell_command_context_t cli_command_table[] =
     {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
-    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             1},
+    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -238,13 +238,15 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 		DEBUG_PRINTF("Erase flash\r\n");
         app_flash_erase();
 	}
-	else if (strstr(argv[1], "write"))
+	else if (strstr(argv[1], "stress"))
 	{
 		DEBUG_PRINTF("Write flash\r\n");
+        app_flash_stress_test(atoi(argv[2]));
 	}
-    else if (strstr(argv[1], "read"))
+    else if (strstr(argv[1], "rdall"))
 	{
 		DEBUG_PRINTF("Read flash\r\n");
+        app_flash_read_test();
 	}
     return 0;
 }

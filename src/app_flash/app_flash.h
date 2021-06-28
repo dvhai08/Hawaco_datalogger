@@ -1,12 +1,12 @@
 #ifndef APP_FLASH_H
 #define APP_FLASH_H
 
-#define APP_FLASH_VALID_DATA_KEY            0x12345678                
-#define APP_FLASH_NB_OF_METER_INPUT         2
-#define APP_FLASH_NB_OFF_4_20MA_INPUT       4
-#define APP_FLASH_RS485_MAX_SIZE            32
-#define APP_FLASH_SIZE						(1024*1024)
-
+#define APP_FLASH_VALID_DATA_KEY                    0x12345678                
+#define APP_FLASH_NB_OF_METER_INPUT                 2
+#define APP_FLASH_NB_OFF_4_20MA_INPUT               4
+#define APP_FLASH_RS485_MAX_SIZE                    32
+#define APP_FLASH_SIZE						        (1024*1024)
+#define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xFFFFFFFF
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -26,8 +26,8 @@ typedef struct
     uint32_t timestamp;
     uint32_t system_code;
     uint32_t write_index;
-    uint32_t read_index;
     uint32_t valid_flag;
+    uint32_t resend_to_server_flag;
 } app_flash_data_t;
 
 
@@ -36,10 +36,6 @@ typedef struct
  */
 void app_flash_initialize(void);
 
-/**
- * @brief       Get read data address from flash
- */
-uint32_t app_flash_estimate_current_read_addr(void);
 
 /**
  * @brief       Get data from 
@@ -85,8 +81,21 @@ void app_flash_shutdown(void);
 bool app_flash_is_error(void);
 
 /**
- * @brief       Flash write test
+ * @brief       Estimate current read address
+ * @param[out]  found_error : Found error status
  */
-void app_flash_write_test(void);
+uint32_t app_flash_estimate_current_read_addr(bool *found_error);
+
+/**
+ * @brief       Flash stress write test
+ * @param[in]   nb_of_write_times Number of write times
+ */
+void app_flash_stress_test(uint32_t nb_of_write_times);
+
+/**
+ * @brief       Flash read all test data
+ * @param[in]   nb_of_write_times Number of write times
+ */
+void app_flash_read_test(void);
 
 #endif /* APP_FLASH_H */

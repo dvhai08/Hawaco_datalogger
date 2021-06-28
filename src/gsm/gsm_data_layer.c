@@ -1077,6 +1077,7 @@ static char *build_http_header(uint32_t length)
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 {
 	sys_ctx_t *ctx = sys_ctx();
+    sys_turn_on_led(3);
     switch (event)
     {
     case GSM_HTTP_EVENT_START:
