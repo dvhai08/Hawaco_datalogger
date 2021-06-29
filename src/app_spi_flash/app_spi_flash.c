@@ -1,21 +1,21 @@
-#include "app_flash.h"
+#include "app_spi_flash.h"
 #include "app_debug.h"
 #include <string.h>
 #include "spi.h"
 #include "main.h"
 #include "umm_malloc.h"
 
-#define VERIFY_FLASH          1
-#define DEBUG_FLASH           1
+#define VERIFY_FLASH 1
+#define DEBUG_FLASH 0
 
-#define FL164K 1        // 8 MB
-#define FL127S 2        // 16 MB
-#define FL256S 3        // 32 MB
-#define GD256C 4        // 32MB
-#define W25Q256JV 5     // 32MB
-#define W25Q80DLZPIG 6  // 8Mbit
-#define W25Q128 	7  // 8Mbit
-#define W25Q32 	        8  // 32Mbit
+#define FL164K 1       // 8 MB
+#define FL127S 2       // 16 MB
+#define FL256S 3       // 32 MB
+#define GD256C 4       // 32MB
+#define W25Q256JV 5    // 32MB
+#define W25Q80DLZPIG 6 // 8Mbit
+#define W25Q128 7      // 8Mbit
+#define W25Q32 8       // 32Mbit
 
 #define READ_DATA_CMD 0x03
 #define FAST_READ_DATA_CMD 0x0B
@@ -38,9 +38,9 @@
 /* Dinh nghia cac lenh cho dia chi do rong 4-byte */
 #define READ_DATA_CMD4 0x13      //Read
 #define FAST_READ_DATA_CMD4 0x0C //FastRead
-#define PP_CMD4 0x12        //Page Program
-#define SE_CMD4 0x21        //Sector Erase - 4KB - 32bit addrress
-#define BE_CMD4 0xDC        //Block Erase - 64KB - 32bits address
+#define PP_CMD4 0x12             //Page Program
+#define SE_CMD4 0x21             //Sector Erase - 4KB - 32bit addrress
+#define BE_CMD4 0xDC             //Block Erase - 64KB - 32bits address
 
 /* Mot so lenh danh rieng cho Flash GigaDevice */
 #define EN4B_MODE_CMD 0xB7 //Vao che do 32bits dia chi
@@ -53,22 +53,19 @@
 #define WRSR2_CMD 0x31 //Write status register 2
 #define WRSR3_CMD 0x11 //Write status register 3
 
-
 /* Winbond */
-#define WB_RESET_STEP0_CMD      0x66
-#define WB_RESET_STEP1_CMD      0x99
-#define WB_POWER_DOWN_CMD		0xB9
-#define WB_WAKEUP_CMD			0xAB
-
+#define WB_RESET_STEP0_CMD 0x66
+#define WB_RESET_STEP1_CMD 0x99
+#define WB_POWER_DOWN_CMD 0xB9
+#define WB_WAKEUP_CMD 0xAB
 
 #define FLASH_CHECK_FIRST_RUN (uint32_t)0x0000
 
-#define SPI_FLASH_PAGE_SIZE				    256
-#define SPI_FLASH_SECTOR_SIZE				4096
-#define SPI_FLASH_MAX_SECTOR                (APP_FLASH_SIZE/SPI_FLASH_SECTOR_SIZE)
+#define SPI_FLASH_PAGE_SIZE 256
+#define SPI_FLASH_SECTOR_SIZE 4096
+#define SPI_FLASH_MAX_SECTOR (APP_FLASH_SIZE / SPI_FLASH_SECTOR_SIZE)
 
-#define HAL_SPI_Initialize()        while(0)
-
+#define HAL_SPI_Initialize() while (0)
 
 static uint8_t flash_self_test(void);
 static uint8_t flash_check_first_run(void);
@@ -76,21 +73,21 @@ uint8_t flash_test(void);
 void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length);
 static uint8_t m_flash_version;
 static bool m_flash_inited = false;
-uint32_t m_resend_data_in_flash_addr = SPI_FLASH_PAGE_SIZE;		// sector 0
-static uint32_t m_wr_addr = SPI_FLASH_PAGE_SIZE;					// sector 0
+uint32_t m_resend_data_in_flash_addr = SPI_FLASH_PAGE_SIZE; // sector 0
+static uint32_t m_wr_addr = SPI_FLASH_PAGE_SIZE;            // sector 0
 void flash_erase_sector_4k(uint32_t sector_count);
 void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint32_t length);
 
-static void reset_flash(void)
-{
-	spi_flash_transmit(WB_RESET_STEP0_CMD);    
-    spi_flash_transmit(WB_RESET_STEP1_CMD);  
-}
+//static void reset_flash(void)
+//{
+//    spi_flash_transmit(WB_RESET_STEP0_CMD);
+//    spi_flash_transmit(WB_RESET_STEP1_CMD);
+//}
 
-void app_flash_initialize(void)
+void app_spi_flash_initialize(void)
 {
     uint16_t flash_test_status = 0;
-//	HAL_SPI_Initialize();
+    //	HAL_SPI_Initialize();
     if (flash_self_test())
     {
         m_flash_inited = true;
@@ -112,12 +109,12 @@ void app_flash_initialize(void)
         case W25Q256JV: //32MB
             DEBUG_RAW("W25Q256JV. ");
             break;
-		case W25Q80DLZPIG:
-			DEBUG_RAW("W25Q80DLZPIG. ");
-			break;
-		case W25Q128:
-			DEBUG_RAW("W25Q128. ");
-			break;
+        case W25Q80DLZPIG:
+            DEBUG_RAW("W25Q80DLZPIG. ");
+            break;
+        case W25Q128:
+            DEBUG_RAW("W25Q128. ");
+            break;
         case W25Q32:
             DEBUG_RAW("W25Q32FV");
             break;
@@ -126,12 +123,12 @@ void app_flash_initialize(void)
             m_flash_inited = false;
             break;
         }
-		DEBUG_RAW("\r\n");
+        DEBUG_RAW("\r\n");
     }
     else
     {
         m_flash_inited = false;
-        DEBUG_PRINTF("Khoi tao Flash: [FAIL]\r\n");
+        DEBUG_ERROR("Flash init failed\r\n");
         return;
     }
 
@@ -151,31 +148,28 @@ void app_flash_initialize(void)
             m_flash_inited = true;
         }
     }
-	else
-	{
-		DEBUG_PRINTF("Check first run ok\r\n");
-	}
-    
+    else
+    {
+        DEBUG_PRINTF("Check first run ok\r\n");
+    }
+
     if (m_flash_inited)
     {
-        bool flash_status;
-        uint32_t addr = app_flash_estimate_next_write_addr(&flash_status);
+        bool flash_full;
+        uint32_t addr = app_flash_estimate_next_write_addr(&flash_full);
         DEBUG_PRINTF("Estimate write addr 0x%08X\r\n", addr);
-        app_flash_estimate_current_read_addr(&flash_status);
-        if (flash_status == false)
+        app_spi_flash_estimate_current_read_addr(&flash_full);
+        if (flash_full)
         {
-            DEBUG_PRINTF("Every message in flash was sent to server\r\n");
+            DEBUG_PRINTF("Flash full\r\n");
         }
-        else
-        {
-            DEBUG_PRINTF("Read flash at addr 0x%08X\r\n", m_resend_data_in_flash_addr);
-        }
+        DEBUG_PRINTF("Retransmission data in flash at addr 0x%08X\r\n", m_resend_data_in_flash_addr);
     }
 }
 
-bool app_flash_is_ok(void)
+bool app_spi_flash_is_ok(void)
 {
-	return m_flash_inited;
+    return m_flash_inited;
 }
 
 static void flash_write_control(uint8_t enable, uint32_t addr)
@@ -187,7 +181,7 @@ static void flash_write_control(uint8_t enable, uint32_t addr)
     }
     else
     {
-		spi_flash_transmit(WRDI_CMD);
+        spi_flash_transmit(WRDI_CMD);
     }
     SPI_EXT_FLASH_CS(1);
 }
@@ -198,8 +192,8 @@ static void wait_write_in_process(uint32_t addr)
     uint8_t status = 0;
     uint8_t cmd;
 
-    /* Doc thanh ghi */
-    SPI_EXT_FLASH_CS(0);	
+    /* Read status register */
+    SPI_EXT_FLASH_CS(0);
     spi_flash_transmit(RDSR_CMD);
 
     while (timeout)
@@ -207,11 +201,11 @@ static void wait_write_in_process(uint32_t addr)
         timeout--;
         cmd = SPI_DUMMY;
         spi_flash_transmit_receive(&cmd, &status, 1);
-		
+
         if ((status & 1) == 0)
             break;
     }
-    
+
     if (timeout == 0)
     {
         DEBUG_ERROR("[%s-%d] error\r\n", __FUNCTION__, __LINE__);
@@ -228,50 +222,49 @@ static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
     flash_write_control(1, addr);
     SPI_EXT_FLASH_CS(0);
 
-	uint8_t cmd;
+    uint8_t cmd;
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
-		/* Gui lenh ghi */
-		cmd = PP_CMD4;
+        /* Send write cmd */
+        cmd = PP_CMD4;
         spi_flash_transmit(cmd);
 
-//        /* Gui 4 byte dia chi */
-		cmd = (addr >> 24) & 0xFF;
+        //        /* Gui 4 byte dia chi */
+        cmd = (addr >> 24) & 0xFF;
         spi_flash_transmit(cmd);
     }
     else
     {
-        /* Gui lenh ghi */
-		cmd = PP_CMD;
+        /* Send write cmd */
+        cmd = PP_CMD;
         spi_flash_transmit(cmd);
     }
 
     /* Send 3 bytes address */
-	cmd = (addr >> 16) & 0xFF;
-    spi_flash_transmit(cmd);
-	
-	cmd = (addr >> 8) & 0xFF;
-    spi_flash_transmit(cmd);
-	
-	cmd = addr & 0xFF;
+    cmd = (addr >> 16) & 0xFF;
     spi_flash_transmit(cmd);
 
-    /* Gui du lieu */
+    cmd = (addr >> 8) & 0xFF;
+    spi_flash_transmit(cmd);
+
+    cmd = addr & 0xFF;
+    spi_flash_transmit(cmd);
+
+    /* Send data to flash */
     for (i = 0; i < length; i++)
     {
         spi_flash_transmit(buffer[i]);
     }
-    sys_delay_ms(1);
     SPI_EXT_FLASH_CS(1);
     sys_delay_ms(1);
     wait_write_in_process(old_addr);
-	
+
 #if VERIFY_FLASH
     bool found_error = false;
-    for (i = 0; i < length; i++)      // Debug only
+    for (i = 0; i < length; i++) // Debug only
     {
         uint8_t tmp;
-        flash_read_bytes(old_addr + i, (uint8_t*)&tmp, 1);
+        flash_read_bytes(old_addr + i, (uint8_t *)&tmp, 1);
         if (memcmp(&tmp, buffer + i, 1))
         {
             found_error = true;
@@ -280,7 +273,7 @@ static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
         }
         else
         {
-//            DEBUG_ERROR("Flash write success at addr 0x%08X, readback 0x%02X, expect 0x%02X\r\n", old_addr + i, tmp, *(buffer + i));
+            //            DEBUG_ERROR("Flash write success at addr 0x%08X, readback 0x%02X, expect 0x%02X\r\n", old_addr + i, tmp, *(buffer + i));
         }
     }
     if (found_error == false)
@@ -309,7 +302,7 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint32_t length)
 #if DEBUG_FLASH
     DEBUG_PRINTF("Flash write %u bytes, from addr 0x%08X\r\n", length, addr);
 #endif
-    
+
     while (length)
     {
         offset_addr = addr % SPI_FLASH_PAGE_SIZE;
@@ -346,20 +339,18 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint32_t length)
 
         addr += length_need_to_write;
 
-//        ResetWatchdog();
+        //        ResetWatchdog();
     }
 }
-
-
 
 void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 {
     SPI_EXT_FLASH_CS(0);
-	uint8_t cmd;
-	uint32_t next_sector_offset = 0;
+    uint8_t cmd;
+    uint32_t next_sector_offset = 0;
     if (addr + length > APP_FLASH_SIZE)
     {
-        next_sector_offset = (addr + length) - APP_FLASH_SIZE + SPI_FLASH_PAGE_SIZE;        // first page size is reserve for initialization process
+        next_sector_offset = (addr + length) - APP_FLASH_SIZE + SPI_FLASH_PAGE_SIZE; // first page size is reserve for initialization process
         length = APP_FLASH_SIZE - addr;
     }
     while (1)
@@ -382,16 +373,15 @@ void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
         /* Send 3 bytes address */
         cmd = (addr >> 16) & 0xFF;
         spi_flash_transmit(cmd);
-        
+
         cmd = (addr >> 8) & 0xFF;
         spi_flash_transmit(cmd);
-        
+
         cmd = addr & 0xFF;
         spi_flash_transmit(cmd);
-        
+
         spi_flash_receive(buffer, length);
-        
-        
+
         if (next_sector_offset == 0)
         {
             break;
@@ -407,7 +397,6 @@ void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
     SPI_EXT_FLASH_CS(1);
 }
 
-
 void flash_erase_sector_4k(uint32_t sector_count)
 {
 #if DEBUG_FLASH
@@ -415,7 +404,7 @@ void flash_erase_sector_4k(uint32_t sector_count)
 #endif
     uint32_t addr = 0;
     uint32_t old_addr = 0;
-	uint8_t cmd;
+    uint8_t cmd;
     addr = sector_count * SPI_FLASH_SECTOR_SIZE; //Sector 4KB
     old_addr = addr;
 
@@ -424,34 +413,34 @@ void flash_erase_sector_4k(uint32_t sector_count)
 
     SPI_EXT_FLASH_CS(0);
     sys_delay_ms(1);
-    
+
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
         /* Gui lenh */
-		cmd = SE_CMD4;
-//        FLASH_SPI_SendByte(SE_CMD4);
-		spi_flash_transmit(cmd);
+        cmd = SE_CMD4;
+        //        FLASH_SPI_SendByte(SE_CMD4);
+        spi_flash_transmit(cmd);
 
         /* Send 4 bytes address */
-		cmd = (addr >> 24) & 0xFF;
+        cmd = (addr >> 24) & 0xFF;
         spi_flash_transmit(cmd);
     }
     else
     {
         /* Gui lenh */
-		cmd = SE_CMD;
-//        FLASH_SPI_SendByte(SE_CMD);
-		spi_flash_transmit(cmd);
+        cmd = SE_CMD;
+        //        FLASH_SPI_SendByte(SE_CMD);
+        spi_flash_transmit(cmd);
     }
 
     /* Gui 3 bytes dia chi */
-	cmd = (addr >> 16) & 0xFF;
+    cmd = (addr >> 16) & 0xFF;
     spi_flash_transmit(cmd);
-	
-	cmd = (addr >> 8) & 0xFF;
+
+    cmd = (addr >> 8) & 0xFF;
     spi_flash_transmit(cmd);
-	
-	cmd = addr & 0xFF;
+
+    cmd = addr & 0xFF;
     spi_flash_transmit(cmd);
 
     SPI_EXT_FLASH_CS(1);
@@ -459,10 +448,10 @@ void flash_erase_sector_4k(uint32_t sector_count)
     wait_write_in_process(old_addr);
     bool found_err = false;
 #if VERIFY_FLASH
-    for (uint32_t i = 0; i < SPI_FLASH_PAGE_SIZE; )      // Debug only
+    for (uint32_t i = 0; i < SPI_FLASH_PAGE_SIZE;) // Debug only
     {
         uint32_t tmp;
-        flash_read_bytes(old_addr + i, (uint8_t*)&tmp, 4);
+        flash_read_bytes(old_addr + i, (uint8_t *)&tmp, 4);
         if (tmp != 0xFFFFFFFF)
         {
             found_err = true;
@@ -478,13 +467,12 @@ void flash_erase_sector_4k(uint32_t sector_count)
 #endif
 }
 
-
 void flash_erase_block_64K(uint16_t sector_count)
 {
     uint32_t addr = 0;
     uint32_t old_addr = 0;
-	uint8_t cmd;
-	
+    uint8_t cmd;
+
     addr = sector_count * 65536; //Sector 64KB
     old_addr = addr;
 
@@ -492,36 +480,34 @@ void flash_erase_block_64K(uint16_t sector_count)
 
     SPI_EXT_FLASH_CS(0);
 
-
     if (m_flash_version == FL256S || m_flash_version == GD256C || m_flash_version == W25Q256JV)
     {
-		cmd = BE_CMD4;
-		spi_flash_transmit(cmd);
+        cmd = BE_CMD4;
+        spi_flash_transmit(cmd);
 
         /* Send 4 bytes address */
-		cmd = (addr >> 24) & 0xFF;
+        cmd = (addr >> 24) & 0xFF;
         spi_flash_transmit(cmd);
     }
     else
     {
-		cmd = BE_CMD;
+        cmd = BE_CMD;
         spi_flash_transmit(cmd);
     }
 
     /* Send 3 bytes address */
-	cmd = (addr >> 16) & 0xFF;
+    cmd = (addr >> 16) & 0xFF;
     spi_flash_transmit(cmd);
-	
-	cmd = (addr >> 8) & 0xFF;
+
+    cmd = (addr >> 8) & 0xFF;
     spi_flash_transmit(cmd);
-	
-	cmd = addr & 0xFF;
+
+    cmd = addr & 0xFF;
     spi_flash_transmit(cmd);
 
     SPI_EXT_FLASH_CS(1);
     wait_write_in_process(old_addr);
 }
-
 
 uint8_t flash_self_test(void)
 {
@@ -529,7 +515,7 @@ uint8_t flash_self_test(void)
     uint8_t device_id = 0xFF;
     uint8_t reg_status = 0;
     uint8_t loop_count;
-	uint8_t cmd;
+    uint8_t cmd;
     //Retry init 3 times
     for (loop_count = 0; loop_count < 3; loop_count++)
     {
@@ -542,67 +528,29 @@ uint8_t flash_self_test(void)
         spi_flash_transmit(0x00);
         spi_flash_transmit(0x00);
         spi_flash_transmit(0x00);
-        
+
         cmd = 0xFF;
         spi_flash_transmit_receive(&cmd, &manufacture_id, 1);
         spi_flash_transmit_receive(&cmd, &device_id, 1);
 
         SPI_EXT_FLASH_CS(1);
 
-        DEBUG_PRINTF("device id: %X, manufacture id: %X\r\n", device_id, manufacture_id);
+        DEBUG_PRINTF("device id: 0x%02X, manufacture id: 0x%02X\r\n", device_id, manufacture_id);
         if (manufacture_id == 0x01 && device_id == 0x16) /* FL164K - 64Mb */
             m_flash_version = FL164K;
         else if (manufacture_id == 0x01 && device_id == 0x17) /* FL127S - 1 chan CS 128Mb */
             m_flash_version = FL127S;
         else if (manufacture_id == 0x01 && device_id == 0x18) /* FL256S - 1 chan CS 256Mb */
             m_flash_version = FL256S;
-		else if (manufacture_id == 0xEF && device_id == 0x17) /* FL256S - 1 chan CS 256Mb */
-		{
-			DEBUG_PRINTF("W25Q128\r\n");
+        else if (manufacture_id == 0xEF && device_id == 0x17) /* FL256S - 1 chan CS 256Mb */
+        {
+            DEBUG_PRINTF("W25Q128\r\n");
             m_flash_version = W25Q128;
-
-			//Vao che do 4-Byte addr
-			SPI_EXT_FLASH_CS(0);
-			// FLASH_SPI_SendByte(EN4B_MODE_CMD); //0xB7
-			// SPI_EXT_FLASH_CS(1);
-
-			// Delayms(10);
-			// //Doc thanh ghi status 3, bit ADS  (S16) - bit 0
-			// SPI_EXT_FLASH_CS(0);
-			// FLASH_SPI_SendByte(RDSR3_CMD);
-
-			// reg_status = FLASH_SPI_SendByte(SPI_DUMMY);
-			// DEBUG_PRINTF("status register: %02X", reg_status);
-			// if (reg_status & 0x01)
-			// {
-			//     DEBUG_PRINTF("Da vao che do 32 bits dia chi");
-			// }
-//			reset_flash();
-			SPI_EXT_FLASH_CS(1);
-		}
+        }
         else if (manufacture_id == 0xEF && device_id == 0x15)
         {
             DEBUG_PRINTF("W25Q32FV\r\n");
             m_flash_version = W25Q32;
-
-			//Vao che do 4-Byte addr
-			SPI_EXT_FLASH_CS(0);
-			// FLASH_SPI_SendByte(EN4B_MODE_CMD); //0xB7
-			// SPI_EXT_FLASH_CS(1);
-
-			// Delayms(10);
-			// //Doc thanh ghi status 3, bit ADS  (S16) - bit 0
-			// SPI_EXT_FLASH_CS(0);
-			// FLASH_SPI_SendByte(RDSR3_CMD);
-
-			// reg_status = FLASH_SPI_SendByte(SPI_DUMMY);
-			// DEBUG_PRINTF("status register: %02X", reg_status);
-			// if (reg_status & 0x01)
-			// {
-			//     DEBUG_PRINTF("Da vao che do 32 bits dia chi");
-			// }
-//			reset_flash();
-			SPI_EXT_FLASH_CS(1);
         }
         else if (manufacture_id == 0xC8 && device_id == 0x18) /* GD256C - GigaDevice 256Mb */
         {
@@ -610,24 +558,24 @@ uint8_t flash_self_test(void)
 
             //Vao che do 4-Byte addr
             SPI_EXT_FLASH_CS(0);
-			cmd = EN4B_MODE_CMD;
+            cmd = EN4B_MODE_CMD;
             spi_flash_transmit(cmd);
             SPI_EXT_FLASH_CS(1);
 
             sys_delay_ms(10);
             //Doc thanh ghi status 2, bit ADS - 5
             SPI_EXT_FLASH_CS(0);
-			cmd = RDSR2_CMD;
+            cmd = RDSR2_CMD;
             spi_flash_transmit(cmd);
-			
-			cmd = SPI_DUMMY;
+
+            cmd = SPI_DUMMY;
             spi_flash_transmit_receive(&cmd, &reg_status, 1);
             SPI_EXT_FLASH_CS(1);
 
             DEBUG_PRINTF("status register: %02X\r\n", reg_status);
             if (reg_status & 0x20)
             {
-                DEBUG_PRINTF("Da vao che do 32 bits dia chi\r\n");
+                DEBUG_PRINTF("Address mode : 32 bit\r\n");
             }
             else
             {
@@ -643,24 +591,23 @@ uint8_t flash_self_test(void)
                 m_flash_version = W25Q256JV;
                 //Vao che do 4-Byte addr
                 SPI_EXT_FLASH_CS(0);
-				cmd = EN4B_MODE_CMD;
+                cmd = EN4B_MODE_CMD;
                 spi_flash_transmit(cmd);
                 SPI_EXT_FLASH_CS(1);
 
                 sys_delay_ms(10);
                 //Doc thanh ghi status 3, bit ADS  (S16) - bit 0
                 SPI_EXT_FLASH_CS(0);
-				cmd = RDSR3_CMD;
+                cmd = RDSR3_CMD;
                 spi_flash_transmit(cmd);
-				
-				cmd = SPI_DUMMY;
+
+                cmd = SPI_DUMMY;
                 spi_flash_transmit_receive(&cmd, &reg_status, 1);
-                
-				
+
                 DEBUG_PRINTF("status register: %02X\r\n", reg_status);
                 if (reg_status & 0x01)
                 {
-                    DEBUG_PRINTF("Da vao che do 32 bits dia chi\r\n");
+                    DEBUG_PRINTF("Address mode : 32 bit\r\n");
                 }
                 SPI_EXT_FLASH_CS(1);
             }
@@ -668,25 +615,11 @@ uint8_t flash_self_test(void)
             {
                 DEBUG_PRINTF("Winbond W25Q80DLZPIG\r\n");
                 m_flash_version = W25Q80DLZPIG;
-                //Vao che do 4-Byte addr
-                SPI_EXT_FLASH_CS(0);
-                // FLASH_SPI_SendByte(EN4B_MODE_CMD); //0xB7
-                // SPI_EXT_FLASH_CS(1);
-
-                // Delayms(10);
-                // //Doc thanh ghi status 3, bit ADS  (S16) - bit 0
-                // SPI_EXT_FLASH_CS(0);
-                // FLASH_SPI_SendByte(RDSR3_CMD);
-
-                // reg_status = FLASH_SPI_SendByte(SPI_DUMMY);
-                // DEBUG_PRINTF("status register: %02X", reg_status);
-                // if (reg_status & 0x01)
-                // {
-                //     DEBUG_PRINTF("Da vao che do 32 bits dia chi");
-                // }
-                reset_flash();
-                SPI_EXT_FLASH_CS(1);
             }
+        }
+        else
+        {
+            DEBUG_ERROR("Unknown device\r\n");
         }
 
         if (m_flash_version == 0xFF || manufacture_id == 0xFF)
@@ -725,29 +658,29 @@ uint8_t flash_test(void)
     return flash_read_status;
 }
 
-void app_flash_erase(void)
+void app_spi_flash_erase_all(void)
 {
     uint8_t status = 0xFF;
     uint8_t cmd;
-	DEBUG_PRINTF("Erase all flash\r\n");
-	
+    DEBUG_PRINTF("Erase all flash\r\n");
+
     flash_write_control(1, 0);
     SPI_EXT_FLASH_CS(0);
-	
-	cmd = CE_CMD;
+
+    cmd = CE_CMD;
     spi_flash_transmit(cmd);
     SPI_EXT_FLASH_CS(1);
 
     /* Doc thanh ghi status */
     sys_delay_ms(100);
     SPI_EXT_FLASH_CS(0);
-	cmd = RDSR_CMD;
-	spi_flash_transmit(cmd);
-	
-	uint32_t begin_tick = sys_get_ms();
+    cmd = RDSR_CMD;
+    spi_flash_transmit(cmd);
+
+    uint32_t begin_tick = sys_get_ms();
     while (1)
     {
-		cmd = SPI_DUMMY;
+        cmd = SPI_DUMMY;
         spi_flash_transmit_receive(&cmd, &status, 1);
         if ((status & 1) == 0)
             break;
@@ -776,10 +709,9 @@ void app_flash_erase(void)
         DEBUG_PRINTF("Erase success\r\n");
     }
 #endif
-    
+
     DEBUG_PRINTF("Erase [DONE] in %ums\r\n", sys_get_ms() - begin_tick);
 }
-
 
 static uint8_t flash_check_first_run(void)
 {
@@ -791,7 +723,7 @@ static uint8_t flash_check_first_run(void)
     if (tmp != 0xA5)
     {
         DEBUG_PRINTF("Erase flash\r\n");
-        app_flash_erase();
+        app_spi_flash_erase_all();
 
         tmp_buff[0] = 0xA5;
         flash_write_bytes(FLASH_CHECK_FIRST_RUN, tmp_buff, 1);
@@ -807,50 +739,50 @@ static uint8_t flash_check_first_run(void)
 
 uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
 {
-	*flash_full = false;
-	
-	while (1)
-	{
-		app_flash_data_t tmp;
-		memset(&tmp, 0, sizeof(tmp));
-		flash_read_bytes(m_wr_addr, (uint8_t*)&tmp, sizeof(tmp));
-		if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
-		{
-			m_wr_addr += sizeof(tmp);
-			if (m_wr_addr >= (APP_FLASH_SIZE - 2*sizeof(app_flash_data_t)))
-			{
-				*flash_full = true;
-				break;
-			}
-		}
-		else
-		{
-			break;
-		}
-	}
-	
-	if (*flash_full)
-	{
-		m_wr_addr = SPI_FLASH_PAGE_SIZE;
-		DEBUG_PRINTF("Flash full, erase first block\r\n");
-		flash_erase_sector_4k(0);
-		uint8_t tmp_buff[1] = {0xA5};
+    *flash_full = false;
+
+    while (1)
+    {
+        app_flash_data_t tmp;
+        memset(&tmp, 0, sizeof(tmp));
+        flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, sizeof(tmp));
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
+        {
+            m_wr_addr += sizeof(tmp);
+            if (m_wr_addr >= (APP_FLASH_SIZE - 2 * sizeof(app_flash_data_t)))
+            {
+                *flash_full = true;
+                break;
+            }
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (*flash_full)
+    {
+        m_wr_addr = SPI_FLASH_PAGE_SIZE;
+        DEBUG_PRINTF("Flash full, erase first block\r\n");
+        flash_erase_sector_4k(0);
+        uint8_t tmp_buff[1] = {0xA5};
         flash_write_bytes(FLASH_CHECK_FIRST_RUN, tmp_buff, 1);
-	}
-	
-	// Erase next page
-	DEBUG_PRINTF("Write addr 0x%08X\r\n", m_wr_addr);
-	return m_wr_addr;
+    }
+
+    // Erase next page
+    DEBUG_PRINTF("Write addr 0x%08X\r\n", m_wr_addr);
+    return m_wr_addr;
 }
 
 uint32_t found_message_error_in_range(uint32_t begin_addr, uint32_t end_addr)
 {
     app_flash_data_t tmp;
     memset(&tmp, 0, sizeof(tmp));
-    
+
     while (1)
     {
-        flash_read_bytes(begin_addr, (uint8_t*)&tmp, sizeof(tmp));
+        flash_read_bytes(begin_addr, (uint8_t *)&tmp, sizeof(tmp));
         if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
         {
             if (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
@@ -867,31 +799,31 @@ uint32_t found_message_error_in_range(uint32_t begin_addr, uint32_t end_addr)
             begin_addr += sizeof(app_flash_data_t);
         }
 
-        if (begin_addr >= end_addr)      // No more error found
+        if (begin_addr >= end_addr) // No more error found
         {
             return 0;
         }
     }
 }
 
-uint32_t app_flash_estimate_current_read_addr(bool *found_error)
+uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
 {
-    
+
     uint32_t tmp_addr;
     app_flash_data_t tmp;
     *found_error = false;
-    
-    if (m_resend_data_in_flash_addr == m_wr_addr)       // Neu read = write =>> check current page status
+
+    if (m_resend_data_in_flash_addr == m_wr_addr) // Neu read = write =>> check current page status
     {
-        flash_read_bytes(m_wr_addr, (uint8_t*)&tmp, sizeof(tmp));
-        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY          // Neu packet error
+        flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, sizeof(tmp));
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY // Neu packet error
             && (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG))
         {
             m_resend_data_in_flash_addr = m_wr_addr;
             *found_error = true;
         }
     }
-    else if (m_wr_addr > m_resend_data_in_flash_addr)   // Neu write address > read address =>> Scan from read_addr to write_addr
+    else if (m_wr_addr > m_resend_data_in_flash_addr) // Neu write address > read address =>> Scan from read_addr to write_addr
     {
         tmp_addr = found_message_error_in_range(m_resend_data_in_flash_addr, m_wr_addr);
         if (tmp_addr != 0)
@@ -900,9 +832,9 @@ uint32_t app_flash_estimate_current_read_addr(bool *found_error)
             *found_error = true;
         }
     }
-    else        // Write addr < read addr =>> buffer full =>> Scan 2 step 
-                // Step 1 : scan from read addr to max addr
-                // Step 2 : scan from SPI_FLASH_PAGE_SIZE to write addr
+    else // Write addr < read addr =>> buffer full =>> Scan 2 step
+         // Step 1 : scan from read addr to max addr
+         // Step 2 : scan from SPI_FLASH_PAGE_SIZE to write addr
     {
         tmp_addr = found_message_error_in_range(m_resend_data_in_flash_addr, m_wr_addr);
         if (tmp_addr != 0)
@@ -924,112 +856,110 @@ uint32_t app_flash_estimate_current_read_addr(bool *found_error)
             }
         }
     }
-    
+
     return m_resend_data_in_flash_addr;
 }
 
-uint32_t app_flash_dump_all_data(void)
+uint32_t app_spi_flash_dump_all_data(void)
 {
-	uint8_t read[5];
-	flash_read_bytes(0, read, 4);
-	read[4] = 0;
-	DEBUG_PRINTF("Read data %s\r\n", (char*)read);
-	return 0;
+    uint8_t read[5];
+    flash_read_bytes(0, read, 4);
+    read[4] = 0;
+    DEBUG_PRINTF("Read data %s\r\n", (char *)read);
+    return 0;
 }
 
-void app_flash_wakeup(void)
+void app_spi_flash_wakeup(void)
 {
     DEBUG_PRINTF("Wakeup flash\r\n");
     SPI_EXT_FLASH_CS(0);
-	uint8_t cmd = WB_WAKEUP_CMD;
-	spi_flash_transmit(cmd);
-	SPI_EXT_FLASH_CS(1);
-	for (uint32_t i = 0; i < 16*3; i++)		// 3us
-	{
-		__nop();		
-	}
+    uint8_t cmd = WB_WAKEUP_CMD;
+    spi_flash_transmit(cmd);
+    SPI_EXT_FLASH_CS(1);
+    for (uint32_t i = 0; i < 16 * 3; i++) // 3us
+    {
+        __nop();
+    }
 }
 
-void app_flash_shutdown(void)
+void app_spi_flash_shutdown(void)
 {
     DEBUG_PRINTF("Shutdown flash\r\n");
-	SPI_EXT_FLASH_CS(0);
-	uint8_t cmd = WB_POWER_DOWN_CMD;
-	spi_flash_transmit(cmd);
-	SPI_EXT_FLASH_CS(1);
+    SPI_EXT_FLASH_CS(0);
+    uint8_t cmd = WB_POWER_DOWN_CMD;
+    spi_flash_transmit(cmd);
+    SPI_EXT_FLASH_CS(1);
 }
 
-bool app_flash_is_error(void)
-{
-    return m_flash_inited ? false : true;
-}
 #if DEBUG_FLASH
 app_flash_data_t *dbg_ptr;
 #endif
 void app_flash_mask_retransmiton_is_valid(uint32_t read_addr)
 {
     app_flash_data_t rd_data;
-    flash_read_bytes(read_addr, (uint8_t*)&rd_data, sizeof(app_flash_data_t));
-    if (rd_data.valid_flag == APP_FLASH_VALID_DATA_KEY)
+    flash_read_bytes(read_addr, (uint8_t *)&rd_data, sizeof(app_flash_data_t));
+    if (rd_data.valid_flag == APP_FLASH_VALID_DATA_KEY && rd_data.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
     {
-        rd_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;      // mark no need to retransmission
-        
-        
-        uint8_t *page_data = umm_malloc(SPI_FLASH_SECTOR_SIZE);;       // Readback page data, maybe stack overflow
+        rd_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG; // mark no need to retransmission
+
+        uint8_t *page_data = umm_malloc(SPI_FLASH_SECTOR_SIZE);
+        ; // Readback page data, maybe stack overflow
         if (page_data == NULL)
         {
             DEBUG_ERROR("Malloc flash page size, no memory\r\n");
             NVIC_SystemReset();
         }
-        
+
         uint32_t current_sector_addr = read_addr - read_addr % 4096;
-        uint32_t current_sector = current_sector_addr/SPI_FLASH_SECTOR_SIZE;
-        
+        uint32_t current_sector = current_sector_addr / SPI_FLASH_SECTOR_SIZE;
+
         uint32_t next_addr = read_addr + sizeof(app_flash_data_t);
-        uint32_t next_sector = next_addr/SPI_FLASH_SECTOR_SIZE;
-        
+        uint32_t next_sector = next_addr / SPI_FLASH_SECTOR_SIZE;
+
         uint32_t size_remain_write_to_next_sector = 0;
-        
-        if (next_sector != current_sector)      // Data overlap to the next sector
+
+        if (next_sector != current_sector) // Data overlap to the next sector
         {
-            size_remain_write_to_next_sector = next_addr - next_sector*SPI_FLASH_SECTOR_SIZE;
+            size_remain_write_to_next_sector = next_addr - next_sector * SPI_FLASH_SECTOR_SIZE;
         }
 
         flash_read_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE);
-        
+
         if (size_remain_write_to_next_sector == 0)
-        {            
-            dbg_ptr = (app_flash_data_t*)(page_data + (read_addr - current_sector_addr));
-            memcpy(page_data + (read_addr - current_sector_addr), (uint8_t*)&rd_data, sizeof(app_flash_data_t));       // Copy new rd_data to page_data
-            flash_erase_sector_4k(current_sector_addr/SPI_FLASH_SECTOR_SIZE);                                     // Rewrite page data
+        {
+#if DEBUG_FLASH
+            dbg_ptr = (app_flash_data_t *)(page_data + (read_addr - current_sector_addr));
+#endif
+            memcpy(page_data + (read_addr - current_sector_addr), (uint8_t *)&rd_data, sizeof(app_flash_data_t)); // Copy new rd_data to page_data
+            flash_erase_sector_4k(current_sector_addr / SPI_FLASH_SECTOR_SIZE);                                   // Rewrite page data
             flash_write_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE);
         }
         else
         {
             uint32_t sector_offset = 0;
             // Write current sector
-            memcpy(page_data + (read_addr - current_sector_addr), 
-                    (uint8_t*)&rd_data, 
-                    sizeof(app_flash_data_t) - size_remain_write_to_next_sector);       
-            
-            flash_erase_sector_4k(current_sector);                                     // Rewrite page data
+            memcpy(page_data + (read_addr - current_sector_addr),
+                   (uint8_t *)&rd_data,
+                   sizeof(app_flash_data_t) - size_remain_write_to_next_sector);
+
+            flash_erase_sector_4k(current_sector); // Rewrite page data
             flash_write_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE);
-            
+
             // Read next sector and write remain data to new page
             if (next_sector >= SPI_FLASH_MAX_SECTOR)
             {
                 DEBUG_PRINTF("We running to the end of flash\r\n");
                 next_sector = 0;
-                sector_offset = SPI_FLASH_PAGE_SIZE;  // data from addr 0x0000->PAGESIZE is reserve for init process
+                sector_offset = SPI_FLASH_PAGE_SIZE; // data from addr 0x0000->PAGESIZE is reserve for init process
             }
-            flash_read_bytes(next_sector*SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
-            memcpy(page_data+sector_offset, (uint8_t*)&rd_data + size_remain_write_to_next_sector, size_remain_write_to_next_sector);
-            flash_write_bytes(next_sector*SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
+            flash_read_bytes(next_sector * SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
+            memcpy(page_data + sector_offset, (uint8_t *)&rd_data + size_remain_write_to_next_sector, size_remain_write_to_next_sector);
+            flash_write_bytes(next_sector * SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
         }
 #if DEBUG_FLASH
-        flash_read_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE);      // Debug only
+        flash_read_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE); // Debug only
 #endif
-        flash_read_bytes(read_addr, (uint8_t*)&rd_data, sizeof(app_flash_data_t));                       // Readback and compare
+        flash_read_bytes(read_addr, (uint8_t *)&rd_data, sizeof(app_flash_data_t)); // Readback and compare
         if (rd_data.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
         {
             DEBUG_ERROR("Remark flash error\r\n");
@@ -1044,7 +974,7 @@ void app_flash_mask_retransmiton_is_valid(uint32_t read_addr)
 
 app_flash_data_t m_last_retransmission_to_server;
 
-void app_flash_stress_test(uint32_t nb_of_write_times)
+void app_spi_flash_stress_test(uint32_t nb_of_write_times)
 {
     DEBUG_PRINTF("Flash write %u times\r\n", nb_of_write_times);
     app_flash_data_t wr_data;
@@ -1062,7 +992,7 @@ void app_flash_stress_test(uint32_t nb_of_write_times)
             wr_data.meter_input[1].dir_r = 6;
             wr_data.write_index++;
             wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-            if (nb_of_write_times%2  == 0)
+            if (nb_of_write_times % 2 == 0)
             {
                 wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
             }
@@ -1070,8 +1000,8 @@ void app_flash_stress_test(uint32_t nb_of_write_times)
             {
                 wr_data.resend_to_server_flag = 0;
             }
-            flash_write_bytes(addr, (uint8_t*)&wr_data, sizeof(app_flash_data_t));
-            flash_read_bytes(addr, (uint8_t*)&rd_data, sizeof(app_flash_data_t));
+            flash_write_bytes(addr, (uint8_t *)&wr_data, sizeof(app_flash_data_t));
+            flash_read_bytes(addr, (uint8_t *)&rd_data, sizeof(app_flash_data_t));
             if (memcmp(&wr_data, &rd_data, sizeof(app_flash_data_t)))
             {
                 DEBUG_ERROR("Write flash error at addr 0x%08X\r\n", addr);
@@ -1092,19 +1022,23 @@ void app_flash_stress_test(uint32_t nb_of_write_times)
 
 void app_flash_mark_addr_need_retransmission(uint32_t addr)
 {
-    
+    app_flash_mask_retransmiton_is_valid(addr);
 }
 
-void app_flash_read_test(void)
+void app_spi_flash_retransmission_data_test(void)
 {
     bool retransmition = true;
     while (retransmition)
     {
-        uint32_t addr = app_flash_estimate_current_read_addr(&retransmition);
+        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition);
         if (retransmition)
         {
             DEBUG_PRINTF("Retransmition addr 0x%08X\r\n", addr);
             app_flash_mask_retransmiton_is_valid(addr);
+        }
+        else
+        {
+            DEBUG_PRINTF("No retransmission data found\r\n");
         }
     }
 }

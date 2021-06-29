@@ -22,7 +22,7 @@
 #include "app_eeprom.h"
 #include "control_output.h"
 #include "sys_ctx.h"
-#include "app_flash.h"
+#include "app_spi_flash.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -236,22 +236,22 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
     if (strstr(argv[1], "erase"))
 	{
 		DEBUG_PRINTF("Erase flash\r\n");
-        app_flash_erase();
+        app_spi_flash_erase_all();
 	}
 	else if (strstr(argv[1], "stress"))
 	{
 		DEBUG_PRINTF("Write flash\r\n");
-        app_flash_stress_test(atoi(argv[2]));
+        app_spi_flash_stress_test(atoi(argv[2]));
 	}
     else if (strstr(argv[1], "rdall"))
 	{
 		DEBUG_PRINTF("Read flash\r\n");
-        app_flash_read_test();
+        app_spi_flash_retransmission_data_test();
 	}
     else if (strstr(argv[1], "pageerase"))
 	{
 		DEBUG_PRINTF("Erase page flash\r\n");
-//        app_flash_erase_page(atoi(argv[2]);
+//        app_spi_flash_erase_all_page(atoi(argv[2]);
 	}
     return 0;
 }

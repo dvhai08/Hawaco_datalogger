@@ -29,7 +29,7 @@
 #include "sys_ctx.h"
 #include "ota_update.h"
 #include "app_rtc.h"
-#include "app_flash.h"
+#include "app_spi_flash.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -953,7 +953,7 @@ uint16_t gsm_build_http_post_msg(void)
 	}
 	
 	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
-    p += sprintf(p, "%u", app_flash_is_error() ? 1 : 0);
+    p += sprintf(p, "%u", app_spi_flash_is_ok() ? 0 : 1);
 
     if (app_queue_is_full(&m_http_msq))
     {

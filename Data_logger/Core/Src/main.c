@@ -48,7 +48,7 @@
 #include "sys_ctx.h"
 #include "app_rtc.h"
 #include "app_debug.h"
-#include "app_flash.h"
+#include "app_spi_flash.h"
 #include "ota_update.h"
 #include "flash_if.h"
 /* USER CODE END Includes */
@@ -136,7 +136,7 @@ int main(void)
 //	HAL_ADC
 	DEBUG_RAW(RTT_CTRL_CLEAR);
 	app_cli_start();
-    app_flash_initialize();
+    app_spi_flash_initialize();
 	app_bkup_init();
     app_eeprom_init();
 	measure_input_initialize();
