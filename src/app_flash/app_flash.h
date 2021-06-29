@@ -1,12 +1,12 @@
 #ifndef APP_FLASH_H
 #define APP_FLASH_H
 
-#define APP_FLASH_VALID_DATA_KEY                    0x12345678                
+#define APP_FLASH_VALID_DATA_KEY                    0x12345678               
 #define APP_FLASH_NB_OF_METER_INPUT                 2
 #define APP_FLASH_NB_OFF_4_20MA_INPUT               4
 #define APP_FLASH_RS485_MAX_SIZE                    32
 #define APP_FLASH_SIZE						        (1024*1024)
-#define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xFFFFFFFF
+#define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
 #include <stdint.h>
 #include <stdbool.h>
 

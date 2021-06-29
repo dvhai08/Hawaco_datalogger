@@ -61,7 +61,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define UMM_HEAP_SIZE				2048
 #define GSM_ENABLE					1
 /* USER CODE END PD */
 
@@ -85,7 +84,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /* memory for ummalloc */
-uint8_t g_umm_heap[UMM_HEAP_SIZE];
+uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);

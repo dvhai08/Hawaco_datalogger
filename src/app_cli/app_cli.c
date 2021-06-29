@@ -248,6 +248,11 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 		DEBUG_PRINTF("Read flash\r\n");
         app_flash_read_test();
 	}
+    else if (strstr(argv[1], "pageerase"))
+	{
+		DEBUG_PRINTF("Erase page flash\r\n");
+//        app_flash_erase_page(atoi(argv[2]);
+	}
     return 0;
 }
 

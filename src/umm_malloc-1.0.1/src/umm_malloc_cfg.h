@@ -43,7 +43,9 @@ extern char g_umm_heap[];
 
 /* Start addresses and the size of the heap */
 #define UMM_MALLOC_CFG_HEAP_ADDR (g_umm_heap)
+#ifndef UMM_MALLOC_CFG_HEAP_SIZE
 #define UMM_MALLOC_CFG_HEAP_SIZE (2048)
+#endif
 
 /* A couple of macros to make packing structures less compiler dependent */
 
