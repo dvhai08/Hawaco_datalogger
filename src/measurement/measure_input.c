@@ -117,7 +117,7 @@ void measure_input_task(void)
 //		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
 //    #warning "Test measurement interval 5000ms"
 	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
+		((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms))
 	{
 		bool start_adc = true;
 		if (adc_conversion_cplt(true))
@@ -136,6 +136,50 @@ void measure_input_task(void)
 				m_number_of_adc_conversion = 0;
 				adc_stop();
 				start_adc = false;
+                
+                // Put data to msq
+                adc_input_value_t *adc_retval = adc_get_input_result();
+                measurement_msg_queue_t queue;
+                m_force_sensor_build_msq = false;
+
+                queue.measure_timestamp = app_rtc_get_counter();
+                queue.vbat_mv = adc_retval->bat_mv;
+                queue.vbat_percent = adc_retval->bat_percent;     
+
+                app_bkup_read_pulse_counter(&queue.counter0_f, 
+                       &queue.counter1_f,
+                       &queue.counter0_r,
+                       &queue.counter1_r);
+
+                queue.csq_percent = gsm_get_csq_in_percent();
+                for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                {
+                    queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
+                }
+
+                queue.temperature = adc_retval->temp;
+
+                queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
+
+                // Scan for empty buffer
+                bool queue_full = true;
+                for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+                {
+                    if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+                    {
+                    memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                    queue_full = false;
+                    DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
+                    break;
+                }
+                }        
+
+                if (queue_full)
+                {
+                    DEBUG_ERROR("Message queue full\r\n");
+                }
+
+                m_last_time_measure_data = sys_get_ms();
 			}
 			else
 			{
@@ -147,53 +191,6 @@ void measure_input_task(void)
 			adc_start();
 		}
 	}
-	
-    if ((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms
-        || m_force_sensor_build_msq)
-    {
-        adc_input_value_t *adc_retval = adc_get_input_result();
-        measurement_msg_queue_t queue;
-        m_force_sensor_build_msq = false;
-        
-        queue.measure_timestamp = app_rtc_get_counter();
-        queue.vbat_mv = adc_retval->bat_mv;
-        queue.vbat_percent = adc_retval->bat_percent;     
-        
-        app_bkup_read_pulse_counter(&queue.counter0_f, 
-                                   &queue.counter1_f,
-                                   &queue.counter0_r,
-                                   &queue.counter1_r);
-        
-        queue.csq_percent = gsm_get_csq_in_percent();
-        for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
-        {
-            queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
-        }
-        
-        queue.temperature = adc_retval->temp;
-        
-        queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
-        
-        // Scan for empty buffer
-        bool queue_full = true;
-        for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
-        {
-            if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
-            {
-                memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
-                queue_full = false;
-                DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
-                break;
-            }
-        }        
-        
-        if (queue_full)
-        {
-            DEBUG_ERROR("Message queue full\r\n");
-        }
-
-        m_last_time_measure_data = sys_get_ms();
-    }	
 	#warning "Please implement save data to flash"
 }
 
