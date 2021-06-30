@@ -99,9 +99,8 @@ void MX_SPI2_Init(void)
 /* USER CODE BEGIN 1 */
 uint8_t spi_flash_transmit(uint8_t ch)
 {
-    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0);
     LL_SPI_TransmitData8(EXT_FLASH_HSPI, ch);
-    while (LL_SPI_IsActiveFlag_BSY(EXT_FLASH_HSPI) == 0);
+    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0);
     
     
     while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_HSPI) == 0);

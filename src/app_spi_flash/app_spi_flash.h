@@ -5,8 +5,9 @@
 #define APP_FLASH_NB_OF_METER_INPUT                 2
 #define APP_FLASH_NB_OFF_4_20MA_INPUT               4
 #define APP_FLASH_RS485_MAX_SIZE                    32
-#define APP_FLASH_SIZE						        (1024*1024)
+#define APP_SPI_FLASH_SIZE						    (1024*1024)
 #define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
+#define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -18,6 +19,7 @@ typedef struct
 
 typedef struct
 {
+    uint32_t header_overlap_detect;
     app_spi_flash_measurement_water_input_data_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
     uint8_t rs485[APP_FLASH_RS485_MAX_SIZE];
     uint8_t temp;
@@ -25,7 +27,6 @@ typedef struct
     uint8_t input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 1.3mA =>> 13
     uint32_t timestamp;
     uint32_t system_code;
-    uint32_t write_index;
     uint32_t valid_flag;
     uint32_t resend_to_server_flag;
 } app_flash_data_t;
@@ -80,6 +81,18 @@ void app_spi_flash_shutdown(void);
 uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error);
 
 /**
+ * @brief       Write data to flash
+ * @param[in]   wr_data New data
+ */
+void app_spi_flash_write_data(app_flash_data_t *wr_data);
+
+/**
+ * @brief       Check sector is empty or not
+ * @param[in]   sector Sector count
+ */
+bool app_spi_flash_check_empty_sector(uint32_t sector_count);
+    
+/**
  * @brief       Flash stress write test
  * @param[in]   nb_of_write_times Number of write times
  */
@@ -90,5 +103,10 @@ void app_spi_flash_stress_test(uint32_t nb_of_write_times);
  * @param[in]   nb_of_write_times Number of write times
  */
 void app_spi_flash_retransmission_data_test(void);
+
+/**
+ * @brief       Test write behavior if flash full
+ */
+void app_spi_flash_skip_to_end_flash_test(void);
 
 #endif /* APP_SPI_FLASH_H */
