@@ -16,21 +16,13 @@
 #include "hardware_manager.h"
 #include "app_debug.h"
 #include "lwrb.h"
+#include "usart.h"
+
+#define Delayms     sys_delay_ms
 
 gsm_hardware_t m_gsm_hardware;
 gsm_manager_t gsm_manager;
 
-#ifdef GD32E10X
-static lwrb_t m_ringbuffer_uart_tx = 
-{
-    .buff = NULL,
-};
-static uint8_t m_uart_tx_buffer[256];
-static volatile uint32_t m_tx_uart_run = 0;
-#else
-    #define Delayms     sys_delay_ms
-#include "usart.h"
-#endif
 static volatile bool m_new_uart_data = false;
 static char m_gsm_imei[16];
 static char m_sim_imei[16];
@@ -84,13 +76,13 @@ void gsm_uart_rx_dma_update_rx_index(bool rx_status)
     if (rx_status)
     {
         m_gsm_hardware.atc.recv_buff.index += m_dma_rx_expected_size;
-        // TODO retried received
     }
     else
     {
         m_dma_rx_expected_size = 0;
         m_gsm_hardware.atc.recv_buff.buffer[0] = 0;
-        DEBUG_PRINTF("UART RX error, retry received\r\n");
+        DEBUG_ERROR("UART RX error, retry received\r\n");
+        NVIC_SystemReset();
     }
 }
 
@@ -248,6 +240,7 @@ void gsm_hw_layer_reset_rx_buffer(void)
     memset(m_gsm_hardware.atc.recv_buff.buffer, 0, sizeof(((sys_ctx_small_buffer_t*)0)->buffer));
     m_gsm_hardware.atc.recv_buff.index = 0;
     m_gsm_hardware.atc.recv_buff.state = SYS_CTX_BUFFER_STATE_IDLE;
+    m_gsm_hardware.atc.retry_count_atc = 0;
 }
 
 void gsm_hw_send_at_cmd(char *cmd, char *expect_resp, 
@@ -299,11 +292,9 @@ void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
 			m_gsm_hardware.atc.recv_buff.buffer[m_gsm_hardware.atc.recv_buff.index++] = data[i];
 			if (m_gsm_hardware.atc.recv_buff.index >= sizeof(((sys_ctx_small_buffer_t*)0)->buffer))
 			{
-				DEBUG_PRINTF("[%s] Overflow, previous index %u, bytes written %u\r\n", __FUNCTION__, prev_index, i);
+				DEBUG_ERROR("[%s] Overflow, previous index %u, bytes written %u\r\n", __FUNCTION__, prev_index, i);
 				m_gsm_hardware.atc.recv_buff.index = 0;
-#ifdef DEBUG_MODE
-                while(1);
-#endif
+                m_gsm_hardware.atc.recv_buff.buffer[0] = 0;
 				return;
 			}
 		}

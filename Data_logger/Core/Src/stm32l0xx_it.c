@@ -69,7 +69,7 @@ extern ADC_HandleTypeDef hadc;
 extern LPTIM_HandleTypeDef hlptim1;
 extern RTC_HandleTypeDef hrtc;
 /* USER CODE BEGIN EV */
-
+volatile uint32_t m_anti_noise_wakeup_measure_data = 0;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -156,6 +156,12 @@ void SysTick_Handler(void)
 			}
 		}
 	}
+    
+    if (m_anti_noise_wakeup_measure_data > 0)
+    {
+        if (m_anti_noise_wakeup_measure_data-- == 0)
+            measure_input_measure_wakeup_to_get_data();
+    }
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -191,8 +197,9 @@ void EXTI0_1_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
-	LED1(1);
-	led_blink_delay = 5;
+        LED1(1);
+        led_blink_delay = 5;
+        m_anti_noise_wakeup_measure_data = 2000;     // ms
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)

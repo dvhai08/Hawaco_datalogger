@@ -7,7 +7,9 @@
 #include "app_debug.h"
 #include "main.h"
 
-static gsm_sms_msg_t m_sms_memory[1];
+#define GSM_SMS_MAX_MEMORY_BUFFER       1
+
+static gsm_sms_msg_t m_sms_memory[GSM_SMS_MAX_MEMORY_BUFFER];
 
 gsm_sms_msg_t *gsm_get_sms_memory_buffer(void)
 {
@@ -16,25 +18,10 @@ gsm_sms_msg_t *gsm_get_sms_memory_buffer(void)
 
 uint32_t gsm_get_max_sms_memory_buffer(void)
 {
-    return sizeof(m_sms_memory)/sizeof(gsm_sms_msg_t);
+    return GSM_SMS_MAX_MEMORY_BUFFER;
 }
 
-
-//static void upcase_data(char *buffer_data)
-//{
-//    uint16_t i;
-//    i = 0;
-
-//    while (buffer_data[i] && i < 1024)
-//    {
-//        if (buffer_data[i] >= 97 && buffer_data[i] <= 122)
-//        {
-//            buffer_data[i] = buffer_data[i] - 32;
-//        }
-//        i++;
-//    }
-//}
-
+#if GSM_READ_SMS_ENABLE
 static bool split_phone_number_from_incomming_message(char *buffer, char *phone_number)
 {
     uint16_t i = 0;
@@ -60,7 +47,7 @@ static bool split_phone_number_from_incomming_message(char *buffer, char *phone_
     j = 0;
     if (idx > -1)
     {
-        for (i = 0; i < 20; i++)
+        for (i = 0; i < GSM_MAX_SMS_PHONE_LENGTH; i++)
         {
             if (buffer[idx + i] != '"')
             {
@@ -114,20 +101,20 @@ static void copy_sms_content(char *buffer, char *content, uint32_t max_size)
     memcpy(content, p_begin, ((p_end-p_begin) <= max_size) ? (p_end-p_begin) : max_size);
     return;
 }
-
+#endif
 
 bool gsm_send_sms(char *phone_number, char *message)
 {
     uint8_t cnt = 0;
 
     /* Check message length */
-    if (strlen(message) >= 160)
+    if (strlen(message) >= GSM_MAX_SMS_CONTENT_LENGTH)
     {
         DEBUG_PRINTF("SMS message too long %d\r\n", strlen(message));
         return false;
     }
 
-    if ((strlen(phone_number) >= 15) || (strlen(phone_number) == 0))
+    if ((strlen(phone_number) >= GSM_MAX_SMS_PHONE_LENGTH) || (strlen(phone_number) == 0))
     {
         DEBUG_PRINTF("SMS phone number [%s] is invalid\r\n", phone_number);
         return false;
@@ -139,8 +126,8 @@ bool gsm_send_sms(char *phone_number, char *message)
         if (m_sms_memory[cnt].need_to_send != 0)
             continue;
 
-        memset(m_sms_memory[cnt].phone_number, 0, sizeof(((gsm_sms_msg_t*)0)->phone_number));
-        memset(m_sms_memory[cnt].message, 0, sizeof(((gsm_sms_msg_t*)0)->message));
+        memset(m_sms_memory[cnt].phone_number, 0, GSM_MAX_SMS_PHONE_LENGTH);
+        memset(m_sms_memory[cnt].message, 0, GSM_MAX_SMS_CONTENT_LENGTH);
 
         strcpy(m_sms_memory[cnt].phone_number, phone_number);
         strcpy(m_sms_memory[cnt].message, message);
@@ -158,11 +145,12 @@ bool gsm_send_sms(char *phone_number, char *message)
     return false;
 }
 
+#if GSM_READ_SMS_ENABLE
 void gsm_sms_layer_process_cmd(char *buffer)
 {
     DEBUG_PRINTF("SMS cmd %s\r\n", buffer);
-    char sms_content[160];
-    char phone_number[20];
+    char sms_content[GSM_MAX_SMS_CONTENT_LENGTH];
+    char phone_number[GSM_MAX_SMS_PHONE_LENGTH];
 
     memset(sms_content, 0, sizeof(sms_content));
     memset(phone_number, 0, sizeof(phone_number));
@@ -185,46 +173,6 @@ void gsm_sms_layer_process_cmd(char *buffer)
     DEBUG_PRINTF("New sms from %s, content : %s\r\n", phone_number, sms_content);
 }
 
-
-//static bool send_sms(char *phone_number, char *message)
-//{
-//    uint8_t count = 0;
-
-//    /* Kiem tra dieu kien ve do dai */
-//    if (strlen(message) >= sizeof(((gsm_sms_msg_t*)0)->message))
-//    {
-//        DEBUG_PRINTF("Message content is too long\r\n");
-//        return false;
-//    }
-
-//    if ((strlen(phone_number) >= 15) || (strlen(phone_number) == 0))
-//    {
-//        DEBUG_PRINTF("Phone number invalid\r\n");
-//        return false;
-//    }
-
-//    /* Find empty buffer */
-//    for (count = 0; count < sizeof(m_sms_memory)/sizeof(gsm_sms_msg_t); count++)
-//    {
-//        if (m_sms_memory[count].need_to_send == 0)
-//        {
-//            memset(m_sms_memory[count].phone_number, 0, sizeof(((gsm_sms_msg_t*)0)->phone_number));
-//            memset(m_sms_memory[count].message, 0, sizeof(((gsm_sms_msg_t*)0)->message));
-
-//            strcpy(m_sms_memory[count].phone_number, phone_number);
-//            strcpy(m_sms_memory[count].message, message);
-
-//            m_sms_memory[count].need_to_send = 1;
-//            m_sms_memory[count].retry_count = 0;
-
-//            DEBUG_PRINTF("Add new sms into buffer %u : %s, phone : %s\r\n", count, message, phone_number);
-
-//            return true;
-//        }
-//    }
-
-//    return false;
-//}
 
 static uint8_t gsm_read_sms_step = 0;
 static uint8_t m_sms_read_at_cmd_buffer[64];
@@ -315,3 +263,4 @@ void gsm_enter_read_sms(void)
 {
     gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_read_sms);
 }
+#endif

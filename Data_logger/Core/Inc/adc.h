@@ -37,9 +37,9 @@ typedef struct
 	uint32_t vdda_mv;			// VDDA in mv
 	uint32_t vref_int;
 #ifdef DTG02
-	uint32_t i_4_20ma_in[4];		// 4.5mA =>> convert to 45
+	uint32_t in_4_20ma_in[4];		// 4.5mA =>> convert to 45
 #else
-	uint32_t i_4_20ma_in[1];		// 4.5mA =>> convert to 45
+	uint32_t in_4_20ma_in[1];		// 4.5mA =>> convert to 45
 #endif
 	int32_t temp;
 } adc_input_value_t;

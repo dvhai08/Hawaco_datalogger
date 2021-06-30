@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include "app_rtc.h"
+#include "app_debug.h"
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -60,6 +61,10 @@ void MX_RTC_Init(void)
     if (app_rtc_get_time(&time))
     {
         return;
+    }
+    else
+    {
+        DEBUG_WARN("Reinit RTC\r\n");
     }
   /* USER CODE END Check_RTC_BKUP */
 

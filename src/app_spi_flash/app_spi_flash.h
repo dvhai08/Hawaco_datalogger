@@ -2,9 +2,14 @@
 #define APP_SPI_FLASH_H
 
 #define APP_FLASH_VALID_DATA_KEY                    0x12345678               
-#define APP_FLASH_NB_OF_METER_INPUT                 2
+#ifdef DTG01
+#define APP_FLASH_NB_OFF_4_20MA_INPUT               2
+#define APP_FLASH_NB_OF_METER_INPUT                 1
+#else
 #define APP_FLASH_NB_OFF_4_20MA_INPUT               4
-#define APP_FLASH_RS485_MAX_SIZE                    32
+#define APP_FLASH_NB_OF_METER_INPUT                 2
+#endif
+#define APP_FLASH_RS485_MAX_SIZE                    16
 #define APP_SPI_FLASH_SIZE						    (1024*1024)
 #define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
 #define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
@@ -15,7 +20,7 @@ typedef struct
 {
     uint32_t pwm_f;     // forward
     uint32_t dir_r;     // reserve
-} app_spi_flash_measurement_water_input_data_t;
+} __attribute__((packed)) app_spi_flash_measurement_water_input_data_t;
 
 typedef struct
 {
@@ -23,13 +28,13 @@ typedef struct
     app_spi_flash_measurement_water_input_data_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
     uint8_t rs485[APP_FLASH_RS485_MAX_SIZE];
     uint8_t temp;
-    uint16_t vbat;
+    uint16_t vbat_mv;
+    uint8_t vbat_precent;
     uint8_t input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 1.3mA =>> 13
     uint32_t timestamp;
-    uint32_t system_code;
     uint32_t valid_flag;
     uint32_t resend_to_server_flag;
-} app_flash_data_t;
+} __attribute__((packed)) app_flash_data_t;
 
 
 /**
@@ -108,5 +113,12 @@ void app_spi_flash_retransmission_data_test(void);
  * @brief       Test write behavior if flash full
  */
 void app_spi_flash_skip_to_end_flash_test(void);
+
+/**
+ * @brief       Flash read retransmission pending data
+ * @param[in]   addr Address of data
+ * @param[in]   rd_data Output data
+ */
+bool app_spi_flash_get_retransmission_data(uint32_t addr, app_flash_data_t *rd_data);
 
 #endif /* APP_SPI_FLASH_H */

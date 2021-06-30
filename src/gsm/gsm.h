@@ -22,11 +22,12 @@
 #define MODEM_DIAL 5
 #define MODEM_HANGUP 6
 
-
-#define __HOPQUY_GSM__ 0
 #define __GSM_SLEEP_MODE__ 1
 #define __USED_HTTP__ 0
-#define __GSM_SMS_ENABLE__ 0
+
+#define GSM_READ_SMS_ENABLE     0
+#define GSM_MAX_SMS_CONTENT_LENGTH   160
+#define GSM_MAX_SMS_PHONE_LENGTH     16
 
 typedef enum
 {
@@ -44,7 +45,7 @@ typedef enum
     GSM_STATE_POWER_ON = 4,
     GSM_STATE_REOPEN_PPP = 5,
     GSM_STATE_GET_BTS_INFO = 6,
-    GSM_STATE_SEND_ATC = 7,
+//    GSM_STATE_SEND_ATC = 7,
     GSM_STATE_GOTO_SLEEP = 8,
     GSM_STATE_WAKEUP = 9,
     GSM_STATE_AT_MODE_IDLE,
@@ -72,14 +73,13 @@ typedef struct
     uint8_t ri_signal;
     uint8_t gsm_ready;
     uint8_t timeout_after_reset;
-    uint8_t is_gsm_power_off;
     uint8_t access_tech;
 } gsm_manager_t;
 
 typedef struct
 {
-    char phone_number[15];
-    char message[160];
+    char phone_number[GSM_MAX_SMS_PHONE_LENGTH];
+    char message[GSM_MAX_SMS_CONTENT_LENGTH];
     uint8_t need_to_send;
     uint8_t retry_count;
 } gsm_sms_msg_t;
@@ -169,11 +169,6 @@ typedef struct
     gsm_at_cmd_t atc;
 } gsm_hardware_t;
 
-
-/**
- * @brief       Build sensor msg 
- */
-uint16_t gsm_build_http_post_msg(void);
 
 /**
  * @brief       Send data directly to serial port

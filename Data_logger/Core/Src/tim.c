@@ -155,6 +155,7 @@ void tim_pwm_stop(void)
 	m_dac_started = false;
 	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
 	HAL_TIM_PWM_MspDeInit(&htim2);
+    HAL_TIM_Base_MspDeInit(&htim2);
 }
 
 void tim_pwm_start(void)

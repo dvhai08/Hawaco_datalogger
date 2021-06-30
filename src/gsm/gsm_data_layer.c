@@ -36,30 +36,25 @@
 #include "app_rtc.h"
 #endif
 
+
 #define CUSD_ENABLE     0
 #define MAX_TIMEOUT_TO_SLEEP_S 60
 #define GSM_NEED_ENTER_HTTP_GET() (m_enter_http_get)
 #define GSM_DONT_NEED_HTTP_GET() (m_enter_http_get = false)
 #define GSM_NEED_ENTER_HTTP_POST() (m_enter_http_post)
 #define GSM_DONT_NEED_HTTP_POST() (m_enter_http_post = false)
+#define GSM_ENTER_HTTP_POST()       (m_enter_http_post = true)
+
 #define POST_URL        "https://iot.wilad.vn/api/v1/%s/telemetry"
 #define GET_URL         "https://iot.wilad.vn/api/v1/%s/attributes"
+      
 
 extern gsm_manager_t gsm_manager;
 
 
-#define GET_BTS_INFOR_TIMEOUT 300
-/******************************************************************************
-                                   PRIVATE VARIABLES					    			 
- ******************************************************************************/
-#if __GSM_SMS_ENABLE__
-static char tmpBuffer[50] = {0};
-#endif
-
 static char m_at_cmd_buffer[128];
 uint8_t in_sleep_mode_tick = 0;
 uint8_t m_timeout_to_sleep = 0;
-static app_queue_t m_http_msq;
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer);
@@ -67,26 +62,26 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer);
 void gsm_data_layer_switch_mode_at_cmd(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer);
 void gsm_hard_reset(void);
+
 uint8_t convert_csq_to_percent(uint8_t csq);
 uint8_t gsm_check_ready_status(void);
 static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 
 static bool m_enter_http_get = false;
 static bool m_enter_http_post = false;
-static gsm_internet_mode_t m_internet_mode;
 static uint32_t m_malloc_count = 0;
 
-static app_queue_data_t m_last_http_msg =
-{
-    .pointer = NULL,
-};
+static char *m_last_http_msg = NULL;
+static app_flash_data_t *m_retransmision_data_in_flash;
 
+#if GSM_READ_SMS_ENABLE
 bool m_do_read_sms = false;
 
 void gsm_set_flag_prepare_enter_read_sms_mode(void)
 {
     m_do_read_sms = true;
 }
+#endif
 
 void gsm_wakeup_periodically(void)
 {
@@ -101,7 +96,6 @@ void gsm_wakeup_periodically(void)
     if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
     {
         ctx->status.sleep_time_s = 0;
-        DEBUG_PRINTF("GSM: wakeup to send msg\r\n");
         gsm_change_state(GSM_STATE_WAKEUP);
     }
 }
@@ -113,8 +107,7 @@ void gsm_set_wakeup_now(void)
 	gsm_change_state(GSM_STATE_WAKEUP);
 }
 
-
-uint8_t m_send_at_cmd_in_idle_mode = 0;
+#if GSM_READ_SMS_ENABLE
 static void gsm_query_sms_buffer(void)
 {
     uint8_t cnt = 0;
@@ -129,7 +122,7 @@ static void gsm_query_sms_buffer(void)
             sms[cnt].retry_count++;
             DEBUG_PRINTF("Send sms in buffer index %d\r\n", cnt);
 
-            /* Neu gui 3 lan khong thanh cong thi xoa khoi queue */
+            /* If retry > 3 =>> delete from queue */
             if (sms[cnt].retry_count < 3)
             {
                 sms[cnt].need_to_send = 2;
@@ -147,54 +140,59 @@ static void gsm_query_sms_buffer(void)
         }
     }
 }
+#endif
 
+volatile uint32_t m_delay_wait_for_measurement_again_s = 0;
 void gsm_manager_tick(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
-    if (gsm_manager.is_gsm_power_off == 1)
-        return;
 
-    /* Cac trang thai lam viec module GSM */
+    /* GSM state machine */
     switch (gsm_manager.state)
     {
     case GSM_STATE_POWER_ON:
         if (gsm_manager.step == 0)
         {
-            DEBUG_PRINTF("GSM power on, query ATV1\r\n");
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 30, gsm_at_cb_power_on_gsm);
         }
-        //m_do_read_sms = true;
         break;
 
-    case GSM_STATE_OK: /* PPP data mode */
+    case GSM_STATE_OK:
     {
+#if GSM_READ_SMS_ENABLE
         if (m_do_read_sms)
         {
             m_do_read_sms = false;
             gsm_change_state(GSM_STATE_READ_SMS);
         }
-        
+#endif
         if (m_timeout_to_sleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
         {
             DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");
         }
 
         gsm_wakeup_periodically();
-
+#if GSM_READ_SMS_ENABLE
         if (gsm_manager.state == GSM_STATE_OK)
         {
             gsm_query_sms_buffer();
         }
-        
-        if (gsm_manager.state == GSM_STATE_OK
-            && m_internet_mode == GSM_INTERNET_MODE_AT_STACK)      // gsm state maybe changed in gsm_query_sms_buffer task
+#endif
+        if (gsm_manager.state == GSM_STATE_OK)      // gsm state maybe changed in gsm_query_sms_buffer task
         {
             bool enter_sleep_in_http = true;
-            if (!app_queue_is_empty(&m_http_msq) && !ctx->status.enter_ota_update)
+            bool enter_post = false;
+            if ((measure_input_sensor_data_availble()
+                || m_retransmision_data_in_flash)
+                && !ctx->status.enter_ota_update)
+            {
+                enter_post = true;
+            }
+            if (enter_post)
             {
                 DEBUG_PRINTF("Post http data\r\n");
-                m_enter_http_post = true;
+                GSM_ENTER_HTTP_POST();
                 enter_sleep_in_http = false;
                 gsm_change_state(GSM_STATE_HTTP_POST);
             }
@@ -211,10 +209,20 @@ void gsm_manager_tick(void)
                     }
                 }
             }
-        
+            if (m_delay_wait_for_measurement_again_s > 0)
+            {
+                m_delay_wait_for_measurement_again_s--;
+                if (m_delay_wait_for_measurement_again_s == 1)
+                {
+                    if (measure_input_sensor_data_availble())
+                        m_delay_wait_for_measurement_again_s = 0;       
+                }
+                enter_sleep_in_http = false;
+            }
 			//#warning "Sleep in http mode is not enabled"
 			if (enter_sleep_in_http)
 			{
+                gsm_hw_layer_reset_rx_buffer();
 				gsm_change_state(GSM_STATE_SLEEP);
 			}
 			else
@@ -232,16 +240,18 @@ void gsm_manager_tick(void)
         gsm_manager.gsm_ready = 0;
         gsm_hard_reset();
         break;
-
+    
+#if GSM_READ_SMS_ENABLE
     case GSM_STATE_READ_SMS: /* Read SMS */
         if (gsm_manager.step == 0)
         {
             gsm_enter_read_sms();
         }
         break;
-
+#endif
+    
     case GSM_STATE_SEND_SMS: /* Send SMS */
-
+    {
         if (!gsm_manager.gsm_ready)
             break;
 
@@ -251,6 +261,7 @@ void gsm_manager_tick(void)
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_at_cb_send_sms);
         }
+    }
         break;
 
     case GSM_STATE_HTTP_POST:
@@ -259,7 +270,7 @@ void gsm_manager_tick(void)
         {
             GSM_DONT_NEED_HTTP_POST();
             static gsm_http_config_t cfg;
-            sprintf(cfg.url, POST_URL,
+            snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, POST_URL,
                     gsm_get_module_imei());
             //sprintf(cfg.url, "%s", "https://iot.wilad.vn");
             cfg.on_event_cb = gsm_http_event_cb;
@@ -278,8 +289,7 @@ void gsm_manager_tick(void)
             static gsm_http_config_t cfg;
             if (!sys_ctx()->status.enter_ota_update)
             {
-                sprintf(cfg.url, GET_URL,
-                        gsm_get_module_imei());
+                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, GET_URL, gsm_get_module_imei());
                 cfg.on_event_cb = gsm_http_event_cb;
                 cfg.action = GSM_HTTP_ACTION_GET;
 //                cfg.port = 443;
@@ -289,7 +299,7 @@ void gsm_manager_tick(void)
             }
             else
             {
-                sprintf(cfg.url, "%s", ctx->status.ota_url);
+                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, "%s", ctx->status.ota_url);
                 cfg.on_event_cb = gsm_http_event_cb;
                 cfg.action = GSM_HTTP_ACTION_GET;
 //                cfg.port = 443;
@@ -315,19 +325,11 @@ void gsm_manager_tick(void)
         }
         in_sleep_mode_tick++;
         m_timeout_to_sleep = 0;
-#ifdef GD32E10X
-        driver_uart_deinitialize(GSM_UART);
-        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_RBNE);
-        usart_interrupt_flag_clear(GSM_UART, USART_INT_FLAG_TBE);
-#else
         usart1_control(false);
-#endif
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
         GSM_PWR_KEY(0);
-        /* Thuc day gui tin dinh ky */
         gsm_wakeup_periodically();
-
         break;
 
     default:
@@ -340,16 +342,11 @@ void gsm_manager_tick(void)
 static bool m_is_the_first_time = true;
 static void init_http_msq(void)
 {
-
-    if (m_internet_mode == GSM_INTERNET_MODE_AT_STACK)
+    if (m_is_the_first_time)
     {
-        if (m_is_the_first_time)
-        {
-            m_is_the_first_time = false;
-            umm_init();
-            DEBUG_PRINTF("HTTP: init buffer\r\n");
-            app_queue_reset(&m_http_msq);
-        }
+        m_is_the_first_time = false;
+        umm_init();
+        DEBUG_PRINTF("HTTP: init buffer\r\n");
     }
 }
 
@@ -358,7 +355,6 @@ void gsm_data_layer_initialize(void)
     gsm_manager.ri_signal = 0;
 
     gsm_http_cleanup();
-    m_internet_mode = GSM_INTERNET_MODE_AT_STACK;
     init_http_msq();
 }
 
@@ -397,6 +393,7 @@ void gsm_change_state(gsm_state_t new_state)
         break;
     case GSM_STATE_POWER_ON:
         DEBUG_RAW("POWERON\r\n");
+        gsm_hw_layer_reset_rx_buffer();
         break;
     case GSM_STATE_REOPEN_PPP:
         DEBUG_RAW("REOPENPPP\r\n");
@@ -404,9 +401,9 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_GET_BTS_INFO:
         DEBUG_RAW("GETSIGNAL\r\n");
         break;
-    case GSM_STATE_SEND_ATC:
-        DEBUG_RAW("Quit PPP and send AT command\r\n");
-        break;
+//    case GSM_STATE_SEND_ATC:
+//        DEBUG_RAW("Quit PPP and send AT command\r\n");
+//        break;
     case GSM_STATE_GOTO_SLEEP:
         DEBUG_RAW("Prepare sleep\r\n");
         break;
@@ -438,11 +435,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     switch (gsm_manager.step)
     {
     case 1:
-        if (event == GSM_EVENT_OK)
-        {
-            DEBUG_PRINTF("Connect modem OK\r\n");
-        }
-        else
+        if (event != GSM_EVENT_OK)
         {
             DEBUG_PRINTF("Connect modem ERR!\r\n");
         }
@@ -473,6 +466,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
+    
     case 7:
         DEBUG_PRINTF("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
@@ -631,7 +625,6 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
         if (csq == 99)
         {
-            DEBUG_PRINTF("Invalid csq\r\n");
             gsm_manager.step = 21;
             gsm_hw_send_at_cmd("AT+CSQ\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
             gsm_change_hw_polling_interval(500);
@@ -665,7 +658,6 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
             gsm_change_hw_polling_interval(5);
             gsm_manager.gsm_ready = 1;
             gsm_manager.step = 0;
-            gsm_build_http_post_msg();
             gsm_change_state(GSM_STATE_OK);
         break;
 
@@ -680,7 +672,6 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
 void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 {
-    DEBUG_PRINTF("%s\r\n", __FUNCTION__);
     switch (gsm_manager.step)
     {
     case 1:
@@ -735,9 +726,6 @@ void gsm_hard_reset(void)
     case 2:
         GSM_PWR_RESET(0);
         DEBUG_PRINTF("Gsm power on\r\n");
-#ifdef GD32E10X
-        nvic_irq_disable(GSM_UART_IRQ);
-#endif
         GSM_PWR_EN(1);
         step++;
         break;
@@ -802,7 +790,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
                 DEBUG_PRINTF("Sms to %s. Content : %s\r\n",
                            sms[count].phone_number, sms[count].message);
 
-                sprintf(m_at_cmd_buffer, "AT+CMGS=\"%s\"\r", sms[count].phone_number);
+                sprintf(m_at_cmd_buffer, "AT+CMGS=\"%s\"\r\n", sms[count].phone_number);
 
                 gsm_hw_send_at_cmd(m_at_cmd_buffer, 
                                     ">", NULL, 
@@ -918,18 +906,17 @@ void gsm_set_timeout_to_sleep(uint32_t sec)
 	"Input2":"0.0","Output1":"0","Output2":"0","SignalStrength":"100","WarningLevel":"0",
 	"BatteryLevel":"77","BatteryDebug":"4086","K":"1","Offset":"5480"}
  */
-static uint32_t m_malloc_failed_count = 0;
-uint16_t gsm_build_http_post_msg(void)
+static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 {
-    app_queue_data_t new_msq;
     app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
 	
 	char alarm_str[32];
     char *p = alarm_str;
+    uint16_t total_length = 0;
 
     // bat,temp,4glost,sensor_err,sensor_overflow, sensor break
-    if (measure_input->vbat_percent < 10)
+    if (msg->vbat_percent < 10)
     {
         p += sprintf(p, "%u,", 1);
     }
@@ -955,110 +942,103 @@ uint16_t gsm_build_http_post_msg(void)
 	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
     p += sprintf(p, "%u", app_spi_flash_is_ok() ? 0 : 1);
 
-    if (app_queue_is_full(&m_http_msq))
-    {
-        DEBUG_PRINTF("HTTP msq full\r\n");
-        return 0;
-    }
-
-    new_msq.pointer = umm_malloc(256+128);
-    if (new_msq.pointer == NULL)
-    {
-        DEBUG_PRINTF("[%s-%d] No memory\r\n", __FUNCTION__, __LINE__);
-		m_malloc_failed_count = 0;
-		if (m_malloc_failed_count == 0)
-		{
-			NVIC_SystemReset();
-		}
-        return 0;
-    }
-    else
-    {
-        m_malloc_count++;
-		m_malloc_failed_count = 0;
-        DEBUG_PRINTF("[%s-%d] Malloc success, nb of times malloc %u\r\n", __FUNCTION__, __LINE__, m_malloc_count);
-    }
 	
 	#warning "Please store default input 2 offset"
-	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
-	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-	
-	counter0_f = counter0_f / cfg->k0 + cfg->offset0;
-	counter1_f = counter1_f / cfg->k1 + cfg->offset1;
 
-    new_msq.length = sprintf((char *)new_msq.pointer, "{\"Timestamp\":\"%u\",", app_rtc_get_counter()); //second since 1970
+    total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
+    
+	msg->counter0_f = msg->counter0_f / cfg->k0 + cfg->offset0;
+
 #ifdef DTG02
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
+	msg->counter1_f = msg->counter1_f / cfg->k1 + cfg->offset1;
+    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
 #else
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"ID\":\"DTG1-%s\",", gsm_get_module_imei());
+    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG1-%s\",", gsm_get_module_imei());
 #endif
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"PhoneNum\":\"%s\",", cfg->phone);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Money\":\"%d\",", 0);
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J1\":\"%u\",\"Input1_J2\":\"%u\",",
-                              counter0_f, counter1_f); //so xung
+    total_length += sprintf((char *)(ptr + total_length), "\"PhoneNum\":\"%s\",", cfg->phone);
+    total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
+#ifdef DTG02
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1\":\"%u\",\"Input1_J2\":\"%u\",",
+                              msg->counter0_f, msg->counter1_f); //so xung
 	
 	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J1_R\":\"%u\",",
-									counter0_r);
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":\"%u\",",
+									msg->counter0_r);
 	}
 	
 	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J2_R\":\"%u\",",
-									counter1_r);
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_DIR\":\"%u\",",
+									msg->counter1_r);
 	}
 
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
-		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J3_%u\":\"%u.%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":\"%u\",", 
 																			i,
-																			measure_input->input_4_20mA[i]/10, 
-																			measure_input->input_4_20mA[i]%10); // dau vao 4-20mA 0
+																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
 	}
-
-#ifdef DTG02
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
-		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Input1_J9_%u\":\"%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":\"%u\",", 
 																			i,
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
 
 	for (uint32_t i = 0; i < NUMBER_OF_OUT_ON_OFF; i++)
 	{
-		new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output%u\":\"%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
 																			i,
 																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
-	}	
+	}
+    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
+#else	
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1\":\"%u\",",
+                              msg->counter0_f); //so xung
+	
+	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":\"%u\",",
+									msg->counter0_r);
+	}
+	
+
+    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":\"%u\",", 
+                                                                        msg->input_4_20ma[0]); // dau vao 4-20mA 0
+
+    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":\"%u\",", 
+                                                                        measure_input->output_4_20mA); // dau ra 4-20mA 0
 #endif
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"SignalStrength\":\"%d\",", gsm_get_csq_in_percent());
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"WarningLevel\":\"%s\",", alarm_str);
+    if (msg->csq_percent)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"SignalStrength\":\"%d\",", msg->csq_percent);
+    }
+    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
 
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"BatteryLevel\":\"%d\",", measure_input->vbat_percent);
+    total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":\"%d\",", msg->vbat_percent);
 
-    new_msq.length += sprintf((char *)(new_msq.pointer + new_msq.length), "\"Info\":\"%umV, Reset reason-%u, k-%u-%u, offset-%u-%u, mode-%u,%u, version %s-%s\"}", 
-                                                                            measure_input->vbat_raw,
-                                                                            hardware_manager_get_reset_reason()->value,
-                                                                            cfg->k0, cfg->k1,
-                                                                            cfg->offset0, cfg->offset1,
-																			cfg->meter_mode[0], cfg->meter_mode[1],
-																			VERSION_CONTROL_FW, VERSION_CONTROL_HW);
+#ifdef DTG02
+    total_length += sprintf((char *)(ptr + total_length), "\"Info\":\"%umV, RST-%u, k-%u-%u, offset-%u-%u, mode-%u,%u, vs %s-%s\"}", 
+                                                            msg->vbat_mv,
+                                                            hardware_manager_get_reset_reason()->value,
+                                                            cfg->k0, cfg->k1,
+                                                            cfg->offset0, cfg->offset1,
+                                                            cfg->meter_mode[0], cfg->meter_mode[1],
+                                                            VERSION_CONTROL_FW, VERSION_CONTROL_HW);
+#else
+    total_length += sprintf((char *)(ptr + total_length), "\"Info\":\"bat %umv, RST-%u, k-%u, offset-%u, mode-%u, vs %s-%s\"}", 
+                                                        msg->vbat_mv,
+                                                        hardware_manager_get_reset_reason()->value,
+                                                        cfg->k0,
+                                                        cfg->offset0,
+                                                        cfg->meter_mode[0],
+                                                        VERSION_CONTROL_FW, VERSION_CONTROL_HW);
+#endif
     hardware_manager_get_reset_reason()->value = 0;
 
-    if (app_queue_put(&m_http_msq, &new_msq) == false)
-    {
-        DEBUG_PRINTF("Put to http msg failed\r\n");
-        m_malloc_count--;
-        umm_free(new_msq.pointer);
-        return 0;
-    }
-    else
-    {
-        DEBUG_RAW("%s\r\n", (char*)new_msq.pointer);
-        return new_msq.length;
-    }
+    DEBUG_RAW("%s\r\n", (char*)ptr);
+    return total_length;
 }
 
 #if GSM_HTTP_CUSTOM_HEADER
@@ -1073,6 +1053,7 @@ static char *build_http_header(uint32_t length)
     return m_build_http_post_header;
 }
 #endif
+static measurement_msg_queue_t *m_sensor_msq;
 
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 {
@@ -1102,7 +1083,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             server_msg_process_cmd((char *)get_data->data, &new_cfg);
             if (new_cfg)
             {
-                gsm_build_http_post_msg();
+                measure_input_measure_wakeup_to_get_data();
+                m_delay_wait_for_measurement_again_s = 10;
             }
         }
         else
@@ -1114,25 +1096,73 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_POST_EVENT_DATA:
     {
-        if (m_last_http_msg.pointer == NULL)
+        bool build_msg = false;
+        DEBUG_PRINTF("Get http post data from queue\r\n");
+        m_sensor_msq = measure_input_get_data_in_queue();
+        if (!m_sensor_msq)
         {
-            DEBUG_PRINTF("Get http post data from queue\r\n");
-            if (!app_queue_get(&m_http_msq, &m_last_http_msg))
+            DEBUG_PRINTF("No more sensor data\r\n");
+            if (!m_retransmision_data_in_flash)
             {
-                DEBUG_PRINTF("Get msg queue failed\r\n");
-                hardware_manager_sys_reset(2);
+                gsm_change_state(GSM_STATE_OK);
             }
             else
             {
-                ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg.pointer;
-                ((gsm_http_data_t *)data)->data_length = m_last_http_msg.length;
+                static measurement_msg_queue_t tmp;
+                tmp.counter0_f = m_retransmision_data_in_flash->meter_input[0].pwm_f;
+                tmp.counter0_r = m_retransmision_data_in_flash->meter_input[0].dir_r;
+                
+#ifdef DTG02
+                tmp.counter0_f = m_retransmision_data_in_flash->meter_input[1].pwm_f;
+                tmp.counter0_r = m_retransmision_data_in_flash->meter_input[1].dir_r;  
+#endif
+                for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                {
+                    tmp.input_4_20ma[i] = m_retransmision_data_in_flash->input_4_20mA[i];
+                }
+                tmp.csq_percent = 0;
+                tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
+                tmp.temperature = m_retransmision_data_in_flash->temp;
+                tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
+                tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
+                m_sensor_msq = &tmp;
+                build_msg = true;
+                DEBUG_PRINTF("Build retransmision data\r\n");
+            }
+        }
+        else
+        {
+            build_msg = true;
+        }
+        
+        if (build_msg)
+        {
+            #warning "Please build sensor msg and send to cloud"
+            if (m_last_http_msg)
+            {
+                umm_free(m_last_http_msg);
+                m_malloc_count--;
+            }
+            m_last_http_msg = (char*)umm_malloc(384);
+            if (m_last_http_msg == NULL)
+            {
+                DEBUG_ERROR("Malloc error\r\n");
+                NVIC_SystemReset();
+            }
+            else
+            {
+                ++m_malloc_count;
+                m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_PROCESSING;
+                gsm_build_sensor_msq(m_last_http_msg, m_sensor_msq);
+                ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg;
+                ((gsm_http_data_t *)data)->data_length = strlen(m_last_http_msg);
 #if GSM_HTTP_CUSTOM_HEADER
                 ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
                 DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
 #else
                 ((gsm_http_data_t *)data)->header = (uint8_t *)"";
 #endif
-            }
+                }
         }
     }
     break;
@@ -1155,19 +1185,97 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     {
         DEBUG_PRINTF("HTTP post : event success\r\n");
         ctx->status.disconnect_timeout_s = 0;
-        if (m_last_http_msg.pointer)
+        if (m_last_http_msg)
         {
             m_malloc_count--;
-            umm_free(m_last_http_msg.pointer);
+            umm_free(m_last_http_msg);
             DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
-            m_last_http_msg.pointer = NULL;
+            m_last_http_msg = NULL;
         }
         LED1(0);
-        gsm_change_state(GSM_STATE_OK);
+        app_flash_data_t wr_data;
+        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+        wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
+        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
+        {
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
+        }
+        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
+        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
+        
+#ifdef DTG02
+        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
+        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
+#endif        
+        wr_data.timestamp = m_sensor_msq->measure_timestamp;
+        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data.temp = m_sensor_msq->temperature;
+        
+        app_spi_flash_write_data(&wr_data);
+        
+        #warning "Please save RS485 to flash\r\n";
+//        data.rs485;
+        
+        m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
+        m_sensor_msq = NULL;
+        
+        bool retransmition;
+        static app_flash_data_t rd_data;
+        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition);
+        if (retransmition)
+        {
+            if (!app_spi_flash_get_retransmission_data(addr, &rd_data))
+            {
+                gsm_change_state(GSM_STATE_OK);
+                m_retransmision_data_in_flash = NULL;
+            }
+            else
+            {
+                m_retransmision_data_in_flash = &rd_data;
+                GSM_ENTER_HTTP_POST();
+            }
+        }
+        else
+        {
+            gsm_change_state(GSM_STATE_OK);
+            DEBUG_PRINTF("No more data need to re-send to server\r\n");
+            m_retransmision_data_in_flash = NULL;
+        }
     }
     break;
 
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
+    {
+        app_flash_data_t wr_data;
+        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+        wr_data.resend_to_server_flag = 0;
+        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
+        {
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
+        }
+        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
+        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
+        
+#ifdef DTG02
+        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
+        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
+#endif        
+        wr_data.timestamp = m_sensor_msq->measure_timestamp;
+        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data.temp = m_sensor_msq->temperature;
+        
+        app_spi_flash_write_data(&wr_data);
+        
+        #warning "Please save RS485 to flash\r\n";
+//        data.rs485;
+        
+        m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
+        m_sensor_msq = NULL;
+    }
     case GSM_HTTP_EVENT_FINISH_FAILED:
     {
         DEBUG_PRINTF("HTTP event failed\r\n");
@@ -1175,12 +1283,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             ota_update_finish(false);
         }
-        if (m_last_http_msg.pointer)
+        if (m_last_http_msg)
         {
             m_malloc_count--;
-            umm_free(m_last_http_msg.pointer);
+            umm_free(m_last_http_msg);
             DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
-            m_last_http_msg.pointer = NULL;
+            m_last_http_msg = NULL;
         }
         gsm_change_state(GSM_STATE_OK);
     }
@@ -1191,11 +1299,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         gsm_change_state(GSM_STATE_OK);
         break;
     }
-}
-
-gsm_internet_mode_t *gsm_get_internet_mode(void)
-{
-    return &m_internet_mode;
 }
 
 uint32_t gsm_get_current_tick(void)

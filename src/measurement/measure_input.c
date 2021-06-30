@@ -27,12 +27,13 @@
 #include "sys_ctx.h"
 #include "trans_recieve_buff_control.h"
 #include "app_debug.h"
+#include "app_rtc.h"
 
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
 #define PULSE_STATE_INVALID                     -1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL          1
-//#define DELAY_TIMEOUT_ENTER_SLEEP       2000
+
 typedef struct
 {
     uint32_t forward;
@@ -55,6 +56,7 @@ static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_MET
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 bool m_this_is_the_first_time = true;
+measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 
 static void measure_input_pulse_counter_poll(void)
 {
@@ -77,10 +79,17 @@ static void measure_input_pulse_counter_poll(void)
     }
 }
 
-static uint32_t m_last_time_store_data = 0;
 static uint32_t m_last_time_measure_data = 0;
-uint32_t m_adc_convert_count = 0;
+uint32_t m_number_of_adc_conversion = 0;
 app_eeprom_config_data_t *eeprom_cfg;
+static bool m_force_sensor_build_msq = false;
+
+void measure_input_measure_wakeup_to_get_data()
+{
+    m_this_is_the_first_time = true;
+    adc_start();
+}
+
 void measure_input_task(void)
 {
 	eeprom_cfg = app_eeprom_read_config_data();
@@ -93,7 +102,7 @@ void measure_input_task(void)
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 	
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
-	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;
+	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) ? 0 : 1;    
 #else	// DTG01	
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) ? 0 : 1;
 #endif	
@@ -101,27 +110,32 @@ void measure_input_task(void)
     m_measure_data.vbat_raw = input_adc->bat_mv;
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
-        m_measure_data.input_4_20mA[i] = input_adc->i_4_20ma_in[i];
+        m_measure_data.input_4_20mA[i] = input_adc->in_4_20ma_in[i];
     }
     
-	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
-		
 //	if (m_this_is_the_first_time ||
-//		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
+//		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
+//    #warning "Test measurement interval 5000ms"
+	if (m_this_is_the_first_time ||
+		((sys_get_ms() - m_last_time_measure_data) >= ADC_MEASURE_INTERVAL_MS))
 	{
 		bool start_adc = true;
 		if (adc_conversion_cplt(true))
 		{
 			adc_convert();
-			if (m_adc_convert_count++ > 2)
+			if (m_number_of_adc_conversion++ > 3)
 			{
 				m_last_time_measure_data = sys_get_ms();
+                if (m_this_is_the_first_time)
+                {
+                    m_this_is_the_first_time = false;
+                    #warning "Please check rs485 then force build msg"
+                    m_force_sensor_build_msq = true;
+                }
 				m_this_is_the_first_time = false;
-				m_adc_convert_count = 0;
+				m_number_of_adc_conversion = 0;
 				adc_stop();
 				start_adc = false;
-//				DEBUG_INFO("Measurement data finished\r\n");
 			}
 			else
 			{
@@ -134,26 +148,53 @@ void measure_input_task(void)
 		}
 	}
 	
-    if ((sys_get_ms() - m_last_time_store_data) >= eeprom_cfg->measure_interval_ms)
+    if ((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms
+        || m_force_sensor_build_msq)
     {
-		m_last_time_store_data = sys_get_ms();
-		gsm_build_http_post_msg();
-    }	
-	#warning "Please implement save data to flash cmd"
-//    /* Save pulse counter to flash every 30s */
-//    if (store_measure_result_timeout >= STORE_MEASURE_INVERVAL_SEC)
-//    {
-//        store_measure_result_timeout = 0;
+        adc_input_value_t *adc_retval = adc_get_input_result();
+        measurement_msg_queue_t queue;
+        m_force_sensor_build_msq = false;
+        
+        queue.measure_timestamp = app_rtc_get_counter();
+        queue.vbat_mv = adc_retval->bat_mv;
+        queue.vbat_percent = adc_retval->bat_percent;     
+        
+        app_bkup_read_pulse_counter(&queue.counter0_f, 
+                                   &queue.counter1_f,
+                                   &queue.counter0_r,
+                                   &queue.counter1_r);
+        
+        queue.csq_percent = gsm_get_csq_in_percent();
+        for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+        {
+            queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
+        }
+        
+        queue.temperature = adc_retval->temp;
+        
+        queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
+        
+        // Scan for empty buffer
+        bool queue_full = true;
+        for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+        {
+            if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+            {
+                memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                queue_full = false;
+                DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
+                break;
+            }
+        }        
+        
+        if (queue_full)
+        {
+            DEBUG_ERROR("Message queue full\r\n");
+        }
 
-//        // Neu counter in BKP != in flash -> luu flash
-//        if (xSystem.MeasureStatus.PulseCounterInBkup != xSystem.MeasureStatus.PulseCounterInFlash)
-//        {
-//            xSystem.MeasureStatus.PulseCounterInFlash = xSystem.MeasureStatus.PulseCounterInBkup;
-//            InternalFlash_WriteMeasures();
-//            uint8_t res = InternalFlash_WriteConfig();
-//            DEBUG_INFO("Save pulse counter %u to flash: %s\r\n", xSystem.MeasureStatus.PulseCounterInFlash, res ? "FAIL" : "OK");
-//        }
-//    }
+        m_last_time_measure_data = sys_get_ms();
+    }	
+	#warning "Please implement save data to flash"
 }
 
 void measure_input_initialize(void)
@@ -168,6 +209,11 @@ void measure_input_initialize(void)
 	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
     DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
+    
+    for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+    {
+        m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_IDLE;
+    }
 }
 
 
@@ -295,11 +341,40 @@ uint32_t Modbus_Master_Millis(void)
 
 measure_input_perpheral_data_t *measure_input_current_data(void)
 {
-	#warning "Please implement measurement data"
 	return &m_measure_data;
 }
 
 void Modbus_Master_Sleep(void)
 {
 	__WFI();
+}
+
+bool measure_input_sensor_data_availble(void)
+{
+    bool retval = false;
+    
+    for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+    {
+        if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_PENDING)
+        {
+            return true;
+        }
+    }
+    return retval;
+}
+
+measurement_msg_queue_t *measure_input_get_data_in_queue(void)
+{
+    measurement_msg_queue_t *ptr = NULL;
+    
+    for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+    {
+        if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_PENDING)
+        {
+            m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_PROCESSING;
+            return &m_sensor_msq[i];
+        }
+    }
+    
+    return ptr;
 }

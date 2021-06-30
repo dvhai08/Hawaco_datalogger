@@ -1,7 +1,10 @@
-#ifndef __MEASUREMENT_H__
-#define __MEASUREMENT_H__
+#ifndef MEASURE_INTPUT_H
+#define MEASURE_INTPUT_H
 
 #include "hardware.h"
+
+#include <stdint.h>
+#include <stdbool.h>
 
 #define	MEASURE_INPUT_ADC_DMA_UNIT		4
 
@@ -20,10 +23,16 @@
 #define MEASURE_INPUT_PORT_1		                1
 #else
 #define NUMBER_OF_INPUT_4_20MA						1
+#define NUMBER_OF_OUTPUT_4_20MA                     1
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
 #endif
 #define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
 #define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
+#define MEASUREMENT_MAX_MSQ_IN_RAM                  24
+
+#define MEASUREMENT_QUEUE_STATE_IDLE                0
+#define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
+#define MEASUREMENT_QUEUE_STATE_PROCESSING          2       // Da doc nhung dang xu li, chua release thanh free
 
 typedef struct
 {
@@ -46,6 +55,21 @@ typedef struct
 	uint8_t output_4_20mA;
 	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 } measure_input_perpheral_data_t;
+
+typedef struct
+{
+    uint32_t measure_timestamp;
+    uint8_t vbat_percent;
+    uint16_t vbat_mv;
+    uint32_t counter0_f;
+    uint32_t counter0_r;
+    uint32_t counter1_f;
+    uint32_t counter1_r;
+    uint8_t input_4_20ma[NUMBER_OF_INPUT_4_20MA];
+    uint8_t csq_percent;
+    uint8_t state;
+    uint8_t temperature;
+} measurement_msg_queue_t;
 
 /**
  * @brief       Init measurement module 
@@ -73,11 +97,6 @@ void measure_input_rs485_uart_handler(uint8_t data);
  */
 void measure_input_rs485_idle_detect(void);
 
-/**
- * @brief       Poll measure input
- */
-
-void MeasureTick1000ms(void);
 
 /**
  * @brief       Read current measurement input data
@@ -92,4 +111,22 @@ measure_input_perpheral_data_t *measure_input_current_data(void);
  */
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input);
 
-#endif // __MEASUREMENT_H__
+/**
+ *  @brief      Wakeup to start measure data
+ */
+void measure_input_measure_wakeup_to_get_data(void);
+
+/**
+ * @brief       Check device has new sensor data
+ * @retval      TRUE : New sensor data availble
+ *              FALSE : No new sensor data
+ */
+bool measure_input_sensor_data_availble(void);
+
+/**
+ * @brief       Get data in sensor message queue
+ * @retval      Pointer to queue, NULL on no data availble
+ */
+measurement_msg_queue_t *measure_input_get_data_in_queue(void);
+
+#endif /* MEASURE_INTPUT_H */

@@ -328,7 +328,7 @@ static void info_task(void *arg)
                     time.second,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
-					adc->i_4_20ma_in[0]/10, adc->i_4_20ma_in[0]%10,
+					adc->in_4_20ma_in[0]/10, adc->in_4_20ma_in[0]%10,
 					adc->temp);
 	}
 }

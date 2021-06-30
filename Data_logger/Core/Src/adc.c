@@ -295,10 +295,18 @@ void adc_convert(void)
 	{
 		if (!m_is_the_first_time_convert)
 		{
-			m_adc_filterd_data[i].estimate_value *= 100;
-			int32_t tmp = m_adc_raw_data[i] * 100;
-			lpf_update_estimate(&m_adc_filterd_data[i], &tmp);
-			m_adc_filterd_data[i].estimate_value /= 100;	
+            if (i != V_INPUT_0_4_20MA_CHANNEL_INDEX)
+            {
+                m_adc_filterd_data[i].estimate_value *= 100;
+                int32_t tmp = m_adc_raw_data[i] * 100;
+                lpf_update_estimate(&m_adc_filterd_data[i], &tmp);
+                m_adc_filterd_data[i].estimate_value /= 100;	
+            }
+            else
+            {
+                m_adc_filterd_data[i].estimate_value += m_adc_raw_data[i];
+                m_adc_filterd_data[i].estimate_value /= 2;
+            }
 		}
 		else
 		{
@@ -317,7 +325,7 @@ void adc_convert(void)
 	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_filterd_data[VIN_24V_CHANNEL_INDEX].estimate_value/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
 	
 	/* ADC input 4-20mA */
-	m_adc_input.i_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #ifdef DTG02
 	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);

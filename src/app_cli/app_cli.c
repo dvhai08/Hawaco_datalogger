@@ -184,11 +184,13 @@ static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv
             DEBUG_PRINTF("Send sms failed\r\n");
         }
     }
+#if GSM_READ_SMS_ENABLE
     else if (strstr(argv[1], "read"))
     {
         DEBUG_PRINTF("Enter read sms mode\r\n");
         gsm_set_flag_prepare_enter_read_sms_mode();
     }
+#endif
     return  0;
 }
 
@@ -197,7 +199,6 @@ static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **ar
 {
     DEBUG_PRINTF("Begin ota update\r\n");
     sys_ctx()->status.enter_ota_update = true;
-    //sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
     sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
     gsm_set_wakeup_now();
     return 0;

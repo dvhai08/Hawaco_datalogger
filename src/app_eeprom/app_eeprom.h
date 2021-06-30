@@ -9,6 +9,8 @@
 #define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		0 // Meter mode 0 : PWM++, DIR--
 #define APP_EEPROM_METER_MODE_ONLY_PWM				1 // Meter mode 1 : PWM++
 #define APP_EEPROM_METER_MODE_PWM_F_PWM_R			2 // Meter mode 2 : PWM_F & PWM_R
+#define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
+#define APP_EEPROM_MAX_PHONE_LENGTH                 16
 
 typedef union
 {
@@ -41,13 +43,13 @@ typedef struct
 {
 	uint32_t measure_interval_ms;
 	uint32_t send_to_server_interval_ms;
-	uint8_t phone[16];
+	uint8_t phone[APP_EEPROM_MAX_PHONE_LENGTH];
 	app_eeprom_io_enable_t io_enable;
 	uint32_t k0;
 	uint32_t offset0;
 	uint32_t k1;
 	uint32_t offset1;
-    uint8_t meter_mode[2];	
+    uint8_t meter_mode[APP_EEPROM_METER_MODE_MAX_ELEMENT];	
 	uint32_t valid_flag;
     uint32_t send_to_server_delay_s;
 } app_eeprom_config_data_t;

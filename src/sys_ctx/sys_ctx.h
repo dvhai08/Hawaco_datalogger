@@ -15,6 +15,7 @@ typedef struct
     uint16_t index;
     uint8_t state;
 } sys_ctx_small_buffer_t;
+
 typedef struct
 {
 	uint32_t sleep_time_s;
@@ -24,11 +25,24 @@ typedef struct
     uint8_t ota_url[128+48];
 } sys_ctx_status_t;
 
+typedef union
+{
+    struct
+    {
+        uint8_t flash : 1;
+        uint8_t sensor : 1;
+        uint8_t low_bat : 1;
+        uint8_t circuit_break : 1;
+        uint8_t reserve : 1;
+    } detail;
+    uint8_t value;
+} sys_ctx_error_t;
+
 typedef struct
 {
 	sys_ctx_status_t status;
+    sys_ctx_error_t error;
 } sys_ctx_t;
-
 
 /**
  * @brief		Get system context
