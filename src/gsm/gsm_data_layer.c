@@ -87,15 +87,20 @@ void gsm_wakeup_periodically(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-	
-    DEBUG_PRINTF("Sleep time %usecond, periodic send msg %u, remaining %us\r\n",
+    if (in_sleep_mode_tick % 10 == 0)
+    {
+        DEBUG_PRINTF("GSM is sleeping...\r\n");
+    }
+    in_sleep_mode_tick++;
+    DEBUG_PRINTF("Sleep time %usecond, periodic send msg %us, remaining %us\r\n",
                  ctx->status.sleep_time_s,
-                 cfg->send_to_server_interval_ms,
-                 cfg->send_to_server_interval_ms - ctx->status.sleep_time_s * 1000);
+                 cfg->send_to_server_interval_ms/1000,
+                 cfg->send_to_server_interval_ms/1000 - ctx->status.sleep_time_s);
 
     if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
     {
         ctx->status.sleep_time_s = 0;
+        in_sleep_mode_tick = 0;
         gsm_change_state(GSM_STATE_WAKEUP);
     }
 }
@@ -169,7 +174,7 @@ void gsm_manager_tick(void)
 #endif
         if (m_timeout_to_sleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
         {
-            DEBUG_PRINTF("GSM in at mode : need to sleep\r\n");
+            DEBUG_WARN("GSM in at mode : need to sleep\r\n");
         }
 
         gsm_wakeup_periodically();
@@ -319,11 +324,6 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_SLEEP: /* Dang trong che do Sleep */
-        if (in_sleep_mode_tick % 10 == 0)
-        {
-            DEBUG_PRINTF("GSM is sleeping...\r\n");
-        }
-        in_sleep_mode_tick++;
         m_timeout_to_sleep = 0;
         usart1_control(false);
         GSM_PWR_EN(0);

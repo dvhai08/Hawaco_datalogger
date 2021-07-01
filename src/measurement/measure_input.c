@@ -120,7 +120,7 @@ void measure_input_task(void)
 		((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms))
 	{
         adc_start();
-        if (m_number_of_adc_conversion++ > 3)
+//        if (m_number_of_adc_conversion++ > 1)
         {
             m_last_time_measure_data = sys_get_ms();
             if (m_this_is_the_first_time)

@@ -64,8 +64,7 @@ volatile uint32_t m_last_exti0_timestamp;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern LPTIM_HandleTypeDef hlptim1;
-extern RTC_HandleTypeDef hrtc;
+
 /* USER CODE BEGIN EV */
 volatile uint32_t m_anti_noise_wakeup_measure_data = 0;
 /* USER CODE END EV */
@@ -178,7 +177,7 @@ void RTC_IRQHandler(void)
   /* USER CODE BEGIN RTC_IRQn 0 */
 
   /* USER CODE END RTC_IRQn 0 */
-  HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
+
   /* USER CODE BEGIN RTC_IRQn 1 */
 
   /* USER CODE END RTC_IRQn 1 */
@@ -298,32 +297,18 @@ void DMA1_Channel2_3_IRQHandler(void)
   /* USER CODE END DMA1_Channel2_3_IRQn 1 */
 }
 
-///**
-//  * @brief This function handles ADC, COMP1 and COMP2 interrupts (COMP interrupts through EXTI lines 21 and 22).
-//  */
-//void ADC1_COMP_IRQHandler(void)
-//{
-//  /* USER CODE BEGIN ADC1_COMP_IRQn 0 */
-
-//  /* USER CODE END ADC1_COMP_IRQn 0 */
-
-//  /* USER CODE BEGIN ADC1_COMP_IRQn 1 */
-
-//  /* USER CODE END ADC1_COMP_IRQn 1 */
-//}
-
 /**
-  * @brief This function handles LPTIM1 global interrupt / LPTIM1 wake-up interrupt through EXTI line 29.
+  * @brief This function handles ADC, COMP1 and COMP2 interrupts (COMP interrupts through EXTI lines 21 and 22).
   */
-void LPTIM1_IRQHandler(void)
+void ADC1_COMP_IRQHandler(void)
 {
-  /* USER CODE BEGIN LPTIM1_IRQn 0 */
+  /* USER CODE BEGIN ADC1_COMP_IRQn 0 */
+    adc_isr_cb();
+  /* USER CODE END ADC1_COMP_IRQn 0 */
 
-  /* USER CODE END LPTIM1_IRQn 0 */
-  HAL_LPTIM_IRQHandler(&hlptim1);
-  /* USER CODE BEGIN LPTIM1_IRQn 1 */
+  /* USER CODE BEGIN ADC1_COMP_IRQn 1 */
 
-  /* USER CODE END LPTIM1_IRQn 1 */
+  /* USER CODE END ADC1_COMP_IRQn 1 */
 }
 
 /**

@@ -81,6 +81,11 @@ void adc_start(void);
  */
 void adc_stop(void);
 
+/**
+ * @brief		ADC ISR callback
+ */
+void adc_isr_cb(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

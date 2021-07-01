@@ -22,7 +22,6 @@
 #include "adc.h"
 #include "dma.h"
 #include "iwdg.h"
-#include "lptim.h"
 #include "usart.h"
 #include "rtc.h"
 #include "spi.h"
@@ -90,7 +89,7 @@ static void task_feed_wdt(void *arg);
 static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
-
+void sys_config_low_power_mode(void);
 /* USER CODE END 0 */
 
 /**
@@ -125,7 +124,6 @@ int main(void)
   MX_DMA_Init();
   MX_IWDG_Init();
   MX_RTC_Init();
-  MX_LPTIM1_Init();
   MX_ADC_Init();
   MX_USART1_UART_Init();
   MX_LPUART1_UART_Init();
@@ -134,11 +132,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
+    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+    
 	DEBUG_RAW(RTT_CTRL_CLEAR);
 	app_cli_start();
-    app_spi_flash_initialize();
 	app_bkup_init();
     app_eeprom_init();
+    app_spi_flash_initialize();
 	measure_input_initialize();
 	control_ouput_init();
 	adc_start();
@@ -155,6 +155,7 @@ int main(void)
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     sys_ctx_t *system = sys_ctx();
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
+    
     DEBUG_PRINTF("Build %s %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
   /* USER CODE END 2 */
 
@@ -189,6 +190,11 @@ int main(void)
 		cfg->io_enable.name.rs485_en = 1;
 		ENABLE_INOUT_4_20MA_POWER(1);
 	}
+    
+    if (gsm_data_layer_is_module_sleeping())
+    {
+        sys_config_low_power_mode();
+    }
 	
 //	if (cfg->io_enable.name.rs485_en)
 //	{
@@ -245,12 +251,10 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_LPUART1
-                              |RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_LPTIM1;
+                              |RCC_PERIPHCLK_RTC;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
-  PeriphClkInit.LptimClockSelection = RCC_LPTIM1CLKSOURCE_PCLK;
-
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -297,6 +301,11 @@ static void task_feed_wdt(void *arg)
 static void gsm_mnr_task(void *arg)
 {
 	gsm_manager_tick();
+    sys_ctx_t *ctx = sys_ctx();
+    if (gsm_data_layer_is_module_sleeping())
+    {
+        ctx->status.sleep_time_s++;
+    }
 }
 
 static void info_task(void *arg)
@@ -319,13 +328,9 @@ static void info_task(void *arg)
 		adc_input_value_t *adc = adc_get_input_result();
         rtc_date_time_t time;
         app_rtc_get_time(&time);
-		DEBUG_RAW("20%02u/%02u/%02u %02u:%02u:%02u : bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
-                    time.year,
-                    time.month,
-                    time.day,
-                    time.hour,
-                    time.minute,
-                    time.second,
+        uint32_t clk = HAL_RCC_GetSysClockFreq() / 1000000;
+		DEBUG_PRINTF("CLK %uMhz, bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
+                    clk,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
 					adc->in_4_20ma_in[0]/10, adc->in_4_20ma_in[0]%10,
@@ -337,6 +342,12 @@ void sys_turn_on_led(uint32_t delay_ms)
 {
     led_blink_delay = delay_ms;
 }
+
+void sys_config_low_power_mode(void)
+{
+    // estimate RTC wakeup time
+}
+
 
 /* USER CODE END 4 */
 
