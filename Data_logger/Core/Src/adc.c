@@ -29,7 +29,7 @@
 
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
 #ifdef DTG02
-#define ADC_CHANNEL_DMA_COUNT				7
+#define ADC_CHANNEL_DMA_COUNT				8
 #define ADC_VBAT_RESISTOR_DIV				7911
 #define ADC_VIN_RESISTOR_DIV				7911
 #define ADC_VREF							3300
@@ -40,17 +40,20 @@
 #define V_INPUT_1_4_20MA_CHANNEL_INDEX		3
 #define V_INPUT_0_4_20MA_CHANNEL_INDEX		4
 #define VBAT_CHANNEL_INDEX					5
-#define V_TEMP_CHANNEL_INDEX				6
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  6
+#define V_TEMP_CHANNEL_INDEX				7
 #else
-#define ADC_CHANNEL_DMA_COUNT				5
+#define ADC_CHANNEL_DMA_COUNT				6
 #define ADC_VBAT_RESISTOR_DIV				2
 #define ADC_VIN_RESISTOR_DIV				7911
 #define ADC_VREF							3300
+
 #define VBAT_CHANNEL_INDEX					0
 #define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
 #define VIN_24V_CHANNEL_INDEX				2	
-#define V_TEMP_CHANNEL_INDEX				3	
-#define V_REF_CHANNEL_INDEX					4
+#define V_TEMP_CHANNEL_INDEX				3
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  4
+#define V_REF_CHANNEL_INDEX					5
 #endif
 #define GAIN_INPUT_4_20MA_IN				143
 #define VREF_OFFSET_MV						80
@@ -109,7 +112,14 @@ void MX_ADC_Init(void)
   NVIC_EnableIRQ(ADC1_COMP_IRQn);
 
   /* USER CODE BEGIN ADC_Init 1 */
-
+  if (SystemCoreClock > 8000000)
+  {
+        LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV12);
+  }
+  else
+  {
+      LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV1);
+  }
   /* USER CODE END ADC_Init 1 */
   /** Configure Regular Channel
   */
@@ -125,6 +135,10 @@ void MX_ADC_Init(void)
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_11);
   /** Configure Regular Channel
   */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);
+  LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+  /** Configure Regular Channel
+  */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_VREFINT);
   LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT);
   /** Common config
@@ -138,14 +152,14 @@ void MX_ADC_Init(void)
   LL_ADC_SetSamplingTimeCommonChannels(ADC1, LL_ADC_SAMPLINGTIME_160CYCLES_5);
   LL_ADC_SetOverSamplingScope(ADC1, LL_ADC_OVS_DISABLE);
   LL_ADC_REG_SetSequencerScanDirection(ADC1, LL_ADC_REG_SEQ_SCAN_DIR_FORWARD);
-  LL_ADC_SetCommonFrequencyMode(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_FREQ_MODE_HIGH);
+  LL_ADC_SetCommonFrequencyMode(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_FREQ_MODE_LOW);
   LL_ADC_DisableIT_EOC(ADC1);
   LL_ADC_DisableIT_EOS(ADC1);
-  ADC_InitStruct.Clock = LL_ADC_CLOCK_SYNC_PCLK_DIV2;
   ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
   ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC1, &ADC_InitStruct);
+  LL_ADC_SetClock(ADC1, LL_ADC_CLOCK_ASYNC);
 
   /* Enable ADC internal voltage regulator */
   LL_ADC_EnableInternalRegulator(ADC1);
@@ -192,6 +206,8 @@ void MX_ADC_Init(void)
     }
     
     LL_ADC_EnableIT_EOC(ADC1);
+    // Clear the ADRDY bit in ADC_ISR register by programming this bit to 1.
+	SET_BIT(ADC1->ISR, LL_ADC_FLAG_ADRDY);
     LL_ADC_Enable(ADC1);
     DEBUG_PRINTF("Wait for adc ready\r\n");
     while (LL_ADC_IsActiveFlag_ADRDY(ADC1) == 0);
@@ -201,7 +217,7 @@ void MX_ADC_Init(void)
 
 /* USER CODE BEGIN 1 */
 
-void ADC1_COMP_IRQHandler(void)
+void adc_isr_cb(void)
 {
     /* Check whether ADC group regular end of unitary conversion caused         */
     /* the ADC interruption.                                                    */
@@ -246,39 +262,58 @@ void adc_start(void)
     {
         MX_ADC_Init();
     }
+    for (uint32_t j = 0; j < 3; j++)
+    {
+        for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
+        {
+    #ifdef DTG01
+            if (i == 0)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
+            }
+            else if (i == 1)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_4);
+            }
+            else if (i == 2)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6);
+            }
+            else if (i == 3)
+            {
+               LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
+            }
+            else if (i == 4)
+            {
+                  LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);
+                  volatile uint32_t wait_loop_index;
+                  wait_loop_index = ((LL_ADC_DELAY_TEMPSENSOR_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+                  while (wait_loop_index != 0)
+                  {
+                    wait_loop_index--;
+                  }                
+            }
+            else if (i == 5)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
+            }
+    #else
+            #warning "Please implemte adc channel seq"
+    #endif
+            if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
+            {
+                LL_ADC_REG_StartConversion(ADC1);
+            }
+            while (LL_ADC_REG_IsConversionOngoing(ADC1))
+            {
+                __WFI();
+            }
+            m_adc_raw_data[i] += LL_ADC_REG_ReadConversionData12(ADC1);
+        }
+    }
     for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
     {
-#ifdef DTG01
-        if (i == 0)
-        {
-            LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
-        }
-        else if (i == 1)
-        {
-            LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_4);
-        }
-        else if (i == 2)
-        {
-            LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6);
-        }
-        else if (i == 3)
-        {
-           LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
-        }
-        else if (i == 4)
-        {
-            LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
-        }
-#else
-        #warning "Please implemte adc channel seq"
-#endif
-        if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
-        {
-            LL_ADC_REG_StartConversion(ADC1);
-        }
-//        __WFI();
-        while (LL_ADC_REG_IsConversionOngoing(ADC1));
-        m_adc_raw_data[i] = LL_ADC_REG_ReadConversionData12(ADC1);
+        m_adc_raw_data[i] /= 3;
     }
     DEBUG_PRINTF("Convert complete\r\n");
     adc_convert();
@@ -316,6 +351,7 @@ adc_input_value_t *adc_get_input_result(void)
 
 void adc_convert(void)
 {
+#if 0
 	for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
 	{
 		if (!m_is_the_first_time_convert)
@@ -339,6 +375,7 @@ void adc_convert(void)
 			m_adc_filterd_data[i].gain = 1;		/* 1% */
 		}
 	}
+
 	m_is_the_first_time_convert = false;
 	m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_filterd_data[V_REF_CHANNEL_INDEX].estimate_value + VREF_OFFSET_MV;
@@ -351,13 +388,35 @@ void adc_convert(void)
 	
 	/* ADC input 4-20mA */
 	m_adc_input.in_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-#ifdef DTG02
-	m_adc_input.i_4_20ma_in[1] = m_adc_filterd_data[V_INPUT_1_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[2] = m_adc_filterd_data[V_INPUT_2_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[3] = m_adc_filterd_data[V_INPUT_3_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+#else
+	m_is_the_first_time_convert = false;
+	
+    // VREF and VDDA
+    m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
+	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
+    m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+	/* ADC Vbat */
+	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
+	m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.bat_mv);
+	
+	/* ADC Vin 24V */
+	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
+	
+	/* ADC input 4-20mA */
+	m_adc_input.in_4_20ma_in[0] = m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
+
+#ifdef DTG02
+    #warning "Get vtemp"
+	m_adc_input.i_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.i_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.i_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+#endif
+
 	/* v_temp */
-	m_adc_input.temp = m_adc_filterd_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+//	m_adc_input.temp = m_adc_raw_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
+//    m_adc_input.temp = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
+    m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
 }
 
 //bool adc_conversion_cplt(bool clear_on_exit)
