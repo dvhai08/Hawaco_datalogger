@@ -63,8 +63,6 @@ bool adc_conversion_cplt(bool clear_on_exit);
 
 /* USER CODE END Includes */
 
-extern ADC_HandleTypeDef hadc;
-
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
