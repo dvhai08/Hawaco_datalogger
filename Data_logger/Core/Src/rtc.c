@@ -60,6 +60,8 @@ void MX_RTC_Init(void)
     rtc_date_time_t time;
     if (app_rtc_get_time(&time))
     {
+//        HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+//        HAL_NVIC_EnableIRQ(RTC_IRQn);
         return;
     }
     else
@@ -90,12 +92,13 @@ void MX_RTC_Init(void)
   }
   /** Enable the WakeUp
   */
-  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 0, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
-  {
-    Error_Handler();
-  }
+//  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 18, RTC_WAKEUPCLOCK_CK_SPRE_16BITS) != HAL_OK)
+//  {
+//    Error_Handler();
+//  }
   /* USER CODE BEGIN RTC_Init 2 */
-
+//    HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+//    HAL_NVIC_EnableIRQ(RTC_IRQn);
   /* USER CODE END RTC_Init 2 */
 
 }

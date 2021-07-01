@@ -54,8 +54,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE_S            5
+#define DEBUG_LOW_POWER                                 1
+#define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -343,12 +344,99 @@ void sys_turn_on_led(uint32_t delay_ms)
     led_blink_delay = delay_ms;
 }
 
+static bool m_wakeup_timer_run = false;
 void sys_config_low_power_mode(void)
 {
     // estimate RTC wakeup time
+    if (m_wakeup_timer_run == false)
+    {
+#if DEBUG_LOW_POWER
+        LED1(1);
+        HAL_Delay(10);
+        LED1(0);
+        __DBGMCU_CLK_ENABLE() ; // (RCC->APB2ENR |= (RCC_APB2ENR_DBGMCUEN))
+        HAL_EnableDBGStopMode();  //  SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP);
+#endif
+        
+#ifdef WDT_ENABLE
+	LL_IWDG_ReloadCounter(IWDG);
+#endif
+        DEBUG_PRINTF("Sleep\r\n");
+        HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE_S, RTC_WAKEUPCLOCK_CK_SPRE_16BITS) != HAL_OK)
+        {
+            Error_Handler();
+        }
+          GPIO_InitTypeDef GPIO_InitStructure;
+        __HAL_RCC_PWR_CLK_ENABLE();
+        
+        /* Enable Ultra low power mode */
+        HAL_PWREx_EnableUltraLowPower();
+
+        /* Enable the fast wake up from Ultra low power mode */
+        HAL_PWREx_EnableFastWakeUp();
+        
+        HAL_SuspendTick();
+        
+        /* Select MSI as system clock source after Wake Up from Stop mode */
+        __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+#if DISABLE_GPIO_ENTER_LOW_POWER_MODE      
+        /* Enable GPIOs clock */
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+        __HAL_RCC_GPIOD_CLK_ENABLE();
+        __HAL_RCC_GPIOH_CLK_ENABLE();
+        __HAL_RCC_GPIOE_CLK_ENABLE();
+
+        /* Configure all GPIO port pins in Analog Input mode (floating input trigger OFF) */
+        /* Note: Debug using ST-Link is not possible during the execution of this   */
+        /*       example because communication between ST-link and the device       */
+        /*       under test is done through UART. All GPIO pins are disabled (set   */
+        /*       to analog input mode) including  UART I/O pins.           */
+        GPIO_InitStructure.Pin = GPIO_PIN_All;
+        GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
+        GPIO_InitStructure.Pull = GPIO_NOPULL;
+
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStructure); 
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
+        HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
+        HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
+        HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
+        HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
+
+        /* Disable GPIOs clock */
+        __HAL_RCC_GPIOA_CLK_DISABLE();
+        __HAL_RCC_GPIOB_CLK_DISABLE();
+        __HAL_RCC_GPIOC_CLK_DISABLE();
+        __HAL_RCC_GPIOD_CLK_DISABLE();
+        __HAL_RCC_GPIOH_CLK_DISABLE();
+        __HAL_RCC_GPIOE_CLK_DISABLE();
+#endif  
+
+          /* Enter Stop Mode */
+        HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+        DEBUG_PRINTF("Wake\r\n");
+#if DEBUG_LOW_POWER
+        LED1(1);
+#endif
+        HAL_ResumeTick();
+        #warning "Please set voltage scale and disable vref, temp"
+        SystemClock_Config();
+        m_wakeup_timer_run = true;
+        
+#ifdef WDT_ENABLE
+        LL_IWDG_ReloadCounter(IWDG);
+#endif
+    }
 }
 
-
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    DEBUG_PRINTF("Wakeup timer event callback\r\n");
+    m_wakeup_timer_run = false;
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+}
 /* USER CODE END 4 */
 
 /**
