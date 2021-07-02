@@ -75,6 +75,13 @@ void usart1_rx_complete_callback(bool status);
  */
 void usart1_start_dma_rx(void);
 
+/**
+ * @brief       Enable/Disable lpuart1 for rs485
+ * @param[in]   enable TRUE - Enable RS485
+                       DISABLE RS485
+ */
+void usart_lpusart_485_control(bool enable);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

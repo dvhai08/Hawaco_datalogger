@@ -46,7 +46,8 @@ typedef union
         uint8_t measure_input_pwm_running : 1;
         uint8_t gsm_running : 1;
         uint8_t flash_running : 1;
-        uint8_t reserve : 5;
+        uint8_t rs485_running : 1;
+        uint8_t reserve : 4;
     } name;
     uint8_t value;
 } sys_ctx_sleep_peripheral_t;

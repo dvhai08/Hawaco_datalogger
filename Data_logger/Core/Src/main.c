@@ -138,6 +138,7 @@ int main(void)
 	DEBUG_RAW(RTT_CTRL_CLEAR);
     sys_ctx_t *system = sys_ctx();
     system->peripheral_running.name.flash_running = 1;
+    system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
 	app_bkup_init();
     app_eeprom_init();
@@ -158,6 +159,7 @@ int main(void)
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
+
     
     DEBUG_PRINTF("Build %s %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
   /* USER CODE END 2 */
@@ -169,6 +171,10 @@ int main(void)
 #if GSM_ENABLE
 	gsm_hw_layer_run();
 #endif
+    if (!gsm_data_layer_is_module_sleeping())
+    {
+        gsm_change_state(GSM_STATE_SLEEP);
+    }
 	control_ouput_task();
 	measure_input_task();
 	app_cli_poll();
@@ -194,13 +200,33 @@ int main(void)
 		ENABLE_INOUT_4_20MA_POWER(1);
 	}
     
+    if (!cfg->io_enable.name.rs485_en)
+    {
+        system->peripheral_running.name.rs485_running = 0;
+        usart_lpusart_485_control(0);
+    }
+    
+    if (!cfg->io_enable.name.input_4_20ma_enable)
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);
+    }
+    
     if (gsm_data_layer_is_module_sleeping())
     {
         system->peripheral_running.name.gsm_running = 0;
     }
+    else
+    {
+        system->peripheral_running.name.gsm_running = 1;
+    }
     
     if (system->peripheral_running.value == 0)
     {
+        usart1_control(false);
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(0);
+        GSM_PWR_KEY(0);
+        
         sys_config_low_power_mode();
     }
     else
@@ -407,31 +433,7 @@ void sys_config_low_power_mode(void)
         }
         __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
         
-        #if DISABLE_GPIO_ENTER_LOW_POWER_MODE      
-        /* Enable GPIOs clock */
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-        __HAL_RCC_GPIOC_CLK_ENABLE();
-        __HAL_RCC_GPIOD_CLK_ENABLE();
-        __HAL_RCC_GPIOH_CLK_ENABLE();
-        __HAL_RCC_GPIOE_CLK_ENABLE();
-
-        /* Configure all GPIO port pins in Analog Input mode (floating input trigger OFF) */
-        /* Note: Debug using ST-Link is not possible during the execution of this   */
-        /*       example because communication between ST-link and the device       */
-        /*       under test is done through UART. All GPIO pins are disabled (set   */
-        /*       to analog input mode) including  UART I/O pins.           */
-        GPIO_InitStructure.Pin = GPIO_PIN_All;
-        GPIO_InitStructure.Mode = GPIO_MODE_ANALOG;
-        GPIO_InitStructure.Pull = GPIO_NOPULL;
-
-        HAL_GPIO_Init(GPIOA, &GPIO_InitStructure); 
-        HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);
-        HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
-        HAL_GPIO_Init(GPIOD, &GPIO_InitStructure);
-        HAL_GPIO_Init(GPIOH, &GPIO_InitStructure);
-        HAL_GPIO_Init(GPIOE, &GPIO_InitStructure);
-
+#if 1
         /* Disable GPIOs clock */
         __HAL_RCC_GPIOA_CLK_DISABLE();
         __HAL_RCC_GPIOB_CLK_DISABLE();
@@ -459,7 +461,15 @@ void sys_config_low_power_mode(void)
 
           /* Enter Stop Mode */
         HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-        
+#if 1   
+        /* Enable GPIOs clock */
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+        __HAL_RCC_GPIOD_CLK_ENABLE();
+        __HAL_RCC_GPIOH_CLK_ENABLE();
+        __HAL_RCC_GPIOE_CLK_ENABLE();
+#endif        
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;

@@ -252,6 +252,10 @@ void adc_start(void)
     {
         ENABLE_INOUT_4_20MA_POWER(1);
     }
+    else
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);
+    }
     
     if (!NTC_IS_POWERED())
     {
@@ -315,6 +319,7 @@ void adc_start(void)
     {
         m_adc_raw_data[i] /= 3;
     }
+    ENABLE_INOUT_4_20MA_POWER(0);
     DEBUG_PRINTF("Convert complete\r\n");
     adc_convert();
 }

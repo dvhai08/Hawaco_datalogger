@@ -1193,6 +1193,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
         if (!ctx->peripheral_running.name.flash_running)
         {
+            DEBUG_PRINTF("Wakup flash\r\n");
             spi_init();
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;

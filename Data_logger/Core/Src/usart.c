@@ -24,6 +24,7 @@
 #include <stdbool.h>
 #include "lwrb.h"
 #include "app_debug.h"
+#include "hardware.h"
 
 #define DEBUG_USART1_DMA        0
 #define UART1_RX_BUFFER_SIZE    512
@@ -38,6 +39,7 @@ uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 static volatile bool m_usart1_tx_run = false;
 volatile uint32_t m_last_usart1_transfer_size = 0;
 static bool m_usart1_is_enabled = true;
+static bool m_lpusart_rs485_is_enabled = true;
 static volatile size_t m_old_usart1_dma_rx_pos;
 /* USER CODE END 0 */
 
@@ -428,6 +430,44 @@ void usart1_start_dma_rx(void)
 	usart1_hw_uart_rx_raw(m_usart1_rx_buffer, UART1_RX_BUFFER_SIZE);
 }
 
+void usart_lpusart_485_control(bool enable)
+{
+    if (m_lpusart_rs485_is_enabled == enable)
+    {
+        return;
+    }
+    
+    if (!enable)
+    {
+        LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+		GPIO_InitStruct.Pin = RS485_TX_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+		LL_GPIO_Init(RS485_TX_GPIO_Port, &GPIO_InitStruct);
+
+		GPIO_InitStruct.Pin = RS485_RX_Pin;
+		GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+		LL_GPIO_Init(RS485_RX_GPIO_Port, &GPIO_InitStruct);
+        
+		NVIC_DisableIRQ(LPUART1_IRQn);
+		LL_USART_Disable(LPUART1);
+		/* Peripheral clock enable */
+		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_LPUART1);
+        
+        RS485_EN(0);
+    }
+    else
+    {
+		MX_LPUART1_UART_Init();
+        RS485_EN(1);
+    }
+        
+    m_lpusart_rs485_is_enabled = enable;
+}
 
 /* USER CODE END 1 */
 

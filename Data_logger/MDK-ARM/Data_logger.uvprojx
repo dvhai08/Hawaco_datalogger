@@ -565,6 +565,11 @@
               <FileType>5</FileType>
               <FilePath>..\Core\Inc\spi.h</FilePath>
             </File>
+            <File>
+              <FileName>usart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Core\Inc\usart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
