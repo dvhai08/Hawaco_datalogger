@@ -54,7 +54,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE_S            5
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            36864     // ( ~18s)
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 /* USER CODE END PTD */
@@ -223,10 +223,16 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_LSI
+                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
@@ -255,7 +261,7 @@ void SystemClock_Config(void)
                               |RCC_PERIPHCLK_RTC;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
@@ -350,6 +356,8 @@ void sys_config_low_power_mode(void)
     // estimate RTC wakeup time
     if (m_wakeup_timer_run == false)
     {
+        sys_ctx_t *ctx = sys_ctx();
+        
 #if DEBUG_LOW_POWER
         LED1(1);
         HAL_Delay(10);
@@ -361,26 +369,17 @@ void sys_config_low_power_mode(void)
 #ifdef WDT_ENABLE
 	LL_IWDG_ReloadCounter(IWDG);
 #endif
-        DEBUG_PRINTF("Sleep\r\n");
+        
+        uint32_t counter_before_sleep = app_rtc_get_counter();
+        DEBUG_PRINTF("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE_S, RTC_WAKEUPCLOCK_CK_SPRE_16BITS) != HAL_OK)
+        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
             Error_Handler();
         }
-          GPIO_InitTypeDef GPIO_InitStructure;
-        __HAL_RCC_PWR_CLK_ENABLE();
+        __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
         
-        /* Enable Ultra low power mode */
-        HAL_PWREx_EnableUltraLowPower();
-
-        /* Enable the fast wake up from Ultra low power mode */
-        HAL_PWREx_EnableFastWakeUp();
-        
-        HAL_SuspendTick();
-        
-        /* Select MSI as system clock source after Wake Up from Stop mode */
-        __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
-#if DISABLE_GPIO_ENTER_LOW_POWER_MODE      
+        #if DISABLE_GPIO_ENTER_LOW_POWER_MODE      
         /* Enable GPIOs clock */
         __HAL_RCC_GPIOA_CLK_ENABLE();
         __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -414,27 +413,51 @@ void sys_config_low_power_mode(void)
         __HAL_RCC_GPIOE_CLK_DISABLE();
 #endif  
 
+        HAL_SuspendTick();
+        
+          GPIO_InitTypeDef GPIO_InitStructure;
+        __HAL_RCC_PWR_CLK_ENABLE();
+        
+        /* Enable Ultra low power mode */
+        HAL_PWREx_EnableUltraLowPower();
+
+        /* Enable the fast wake up from Ultra low power mode */
+        HAL_PWREx_EnableFastWakeUp();
+        
+
+        
+        /* Select MSI as system clock source after Wake Up from Stop mode */
+        __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+
           /* Enter Stop Mode */
         HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
-        DEBUG_PRINTF("Wake\r\n");
+        
+        uint32_t counter_after_sleep = app_rtc_get_counter();
+        DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, counter_after_sleep-counter_before_sleep);
+                
+        ctx->status.sleep_time_s += (counter_after_sleep - counter_before_sleep);
+        
+        DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
 #if DEBUG_LOW_POWER
         LED1(1);
 #endif
         HAL_ResumeTick();
         #warning "Please set voltage scale and disable vref, temp"
         SystemClock_Config();
-        m_wakeup_timer_run = true;
-        
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);
 #endif
+    }
+    else
+    {
+        DEBUG_PRINTF("RTC timer still running\r\n");
     }
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
-    DEBUG_PRINTF("Wakeup timer event callback\r\n");
     m_wakeup_timer_run = false;
+    DEBUG_PRINTF("Wakeup timer event callback\r\n");
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 /* USER CODE END 4 */
