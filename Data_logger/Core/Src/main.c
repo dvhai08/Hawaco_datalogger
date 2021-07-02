@@ -136,6 +136,8 @@ int main(void)
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     
 	DEBUG_RAW(RTT_CTRL_CLEAR);
+    sys_ctx_t *system = sys_ctx();
+    system->peripheral_running.name.flash_running = 1;
 	app_cli_start();
 	app_bkup_init();
     app_eeprom_init();
@@ -154,7 +156,7 @@ int main(void)
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-    sys_ctx_t *system = sys_ctx();
+
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
     
     DEBUG_PRINTF("Build %s %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
@@ -194,8 +196,23 @@ int main(void)
     
     if (gsm_data_layer_is_module_sleeping())
     {
+        system->peripheral_running.name.gsm_running = 0;
+    }
+    
+    if (system->peripheral_running.value == 0)
+    {
         sys_config_low_power_mode();
     }
+    else
+    {
+        if (system->peripheral_running.name.flash_running)
+        {
+            app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+        }
+    }
+    
 	
 //	if (cfg->io_enable.name.rs485_en)
 //	{
@@ -433,9 +450,11 @@ void sys_config_low_power_mode(void)
         HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
         
         uint32_t counter_after_sleep = app_rtc_get_counter();
-        DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, counter_after_sleep-counter_before_sleep);
+        uint32_t diff = counter_after_sleep-counter_before_sleep;
+        uwTick += diff*1000;
+        DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
-        ctx->status.sleep_time_s += (counter_after_sleep - counter_before_sleep);
+        ctx->status.sleep_time_s += diff;
         
         DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
 #if DEBUG_LOW_POWER

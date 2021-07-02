@@ -30,6 +30,7 @@
 #include "ota_update.h"
 #include "app_rtc.h"
 #include "app_spi_flash.h"
+#include "spi.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -374,7 +375,6 @@ void gsm_change_state(gsm_state_t new_state)
         gsm_manager.gsm_ready = 2;
         m_timeout_to_sleep = 0;
     }
-
     DEBUG_PRINTF("Change GSM state to: ");
     switch ((uint8_t)new_state)
     {
@@ -414,7 +414,17 @@ void gsm_change_state(gsm_state_t new_state)
         DEBUG_RAW("IDLE\r\n");
         break;
     case GSM_STATE_SLEEP:
+    {
         DEBUG_RAW("SLEEP\r\n");
+        sys_ctx_t *ctx = sys_ctx();
+        ctx->peripheral_running.name.gsm_running = 0;
+        if (ctx->peripheral_running.name.flash_running)
+        {
+            app_spi_flash_shutdown();
+            spi_deinit();
+            ctx->peripheral_running.name.flash_running = 0;
+        }
+    }
         break;
     case GSM_STATE_HTTP_GET:
         DEBUG_RAW("HTTP GET\r\n");
@@ -1213,6 +1223,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
         
+        if (!ctx->peripheral_running.name.flash_running)
+        {
+            spi_init();
+            app_spi_flash_wakeup();
+            ctx->peripheral_running.name.flash_running = 1;
+        }
         app_spi_flash_write_data(&wr_data);
         
         #warning "Please save RS485 to flash\r\n";
@@ -1223,6 +1239,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
         bool retransmition;
         static app_flash_data_t rd_data;
+        if (!ctx->peripheral_running.name.flash_running)
+        {
+            spi_init();
+            app_spi_flash_wakeup();
+            ctx->peripheral_running.name.flash_running = 1;
+        }
         uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition);
         if (retransmition)
         {
@@ -1268,6 +1290,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
         
+        if (!ctx->peripheral_running.name.flash_running)
+        {
+            spi_init();
+            app_spi_flash_wakeup();
+            ctx->peripheral_running.name.flash_running = 1;
+        }
         app_spi_flash_write_data(&wr_data);
         
         #warning "Please save RS485 to flash\r\n";

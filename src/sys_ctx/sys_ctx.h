@@ -38,10 +38,24 @@ typedef union
     uint8_t value;
 } sys_ctx_error_t;
 
+typedef union
+{
+    struct
+    {
+        uint8_t adc : 1;
+        uint8_t measure_input_pwm_running : 1;
+        uint8_t gsm_running : 1;
+        uint8_t flash_running : 1;
+        uint8_t reserve : 5;
+    } name;
+    uint8_t value;
+} sys_ctx_sleep_peripheral_t;
+
 typedef struct
 {
 	sys_ctx_status_t status;
     sys_ctx_error_t error;
+    sys_ctx_sleep_peripheral_t peripheral_running;
 } sys_ctx_t;
 
 /**

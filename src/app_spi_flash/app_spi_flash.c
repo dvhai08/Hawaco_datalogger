@@ -4,6 +4,7 @@
 #include "spi.h"
 #include "main.h"
 #include "umm_malloc.h"
+#include "sys_ctx.h"
 
 #define VERIFY_FLASH 0
 #define DEBUG_FLASH 0
@@ -86,6 +87,9 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint32_t length);
 
 void app_spi_flash_initialize(void)
 {
+    sys_ctx_t *ctx = sys_ctx();
+    ctx->peripheral_running.name.flash_running = 1;
+    
     uint16_t flash_test_status = 0;
     //	HAL_SPI_Initialize();
     if (flash_self_test())
@@ -892,23 +896,31 @@ uint32_t app_spi_flash_dump_all_data(void)
 void app_spi_flash_wakeup(void)
 {
     DEBUG_PRINTF("Wakeup flash\r\n");
-    SPI_EXT_FLASH_CS(0);
-    uint8_t cmd = WB_WAKEUP_CMD;
-    spi_flash_transmit(cmd);
-    SPI_EXT_FLASH_CS(1);
-    for (uint32_t i = 0; i < 16 * 3; i++) // 3us
+    for (uint8_t i = 0; i < 3; i++)
     {
-        __nop();
+        SPI_EXT_FLASH_CS(0);
+        uint8_t cmd = WB_WAKEUP_CMD;
+        spi_flash_transmit(cmd);
+        SPI_EXT_FLASH_CS(1);
+        for (uint32_t i = 0; i < 16 * 3; i++) // 3us
+        {
+            __nop();
+        }
     }
+    sys_ctx_t *ctx = sys_ctx();
+    ctx->peripheral_running.name.flash_running = 1;
 }
 
 void app_spi_flash_shutdown(void)
 {
     DEBUG_PRINTF("Shutdown flash\r\n");
-    SPI_EXT_FLASH_CS(0);
-    uint8_t cmd = WB_POWER_DOWN_CMD;
-    spi_flash_transmit(cmd);
-    SPI_EXT_FLASH_CS(1);
+    for (uint8_t i = 0; i < 3; i++)
+    {
+        SPI_EXT_FLASH_CS(0);
+        uint8_t cmd = WB_POWER_DOWN_CMD;
+        spi_flash_transmit(cmd);
+        SPI_EXT_FLASH_CS(1);
+    }
 }
 
 bool app_spi_flash_check_empty_sector(uint32_t sector)

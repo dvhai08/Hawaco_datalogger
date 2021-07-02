@@ -30,6 +30,7 @@
 #include "gsm.h"
 #include "app_debug.h"
 #include "adc.h"
+#include "sys_ctx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -67,7 +68,8 @@ volatile uint32_t m_last_exti0_timestamp;
 /* External variables --------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
 /* USER CODE BEGIN EV */
-volatile uint32_t m_anti_noise_wakeup_measure_data = 0;
+
+
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -150,16 +152,12 @@ void SysTick_Handler(void)
 				if (gsm_data_layer_is_module_sleeping())
 				{
 					gsm_set_wakeup_now();
+                    sys_ctx_t *ctx = sys_ctx();
+                    ctx->peripheral_running.name.gsm_running = 1;
 				}
 			}
 		}
 	}
-    
-    if (m_anti_noise_wakeup_measure_data > 0)
-    {
-        if (m_anti_noise_wakeup_measure_data-- == 0)
-            measure_input_measure_wakeup_to_get_data();
-    }
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -197,7 +195,7 @@ void EXTI0_1_IRQHandler(void)
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
         LED1(1);
         led_blink_delay = 5;
-        m_anti_noise_wakeup_measure_data = 2000;     // ms
+        measure_input_measure_wakeup_to_get_data();
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)

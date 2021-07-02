@@ -55,7 +55,23 @@ uint8_t spi_flash_transmit(uint8_t ch);
  */
 void spi_flash_transmit_receive(uint8_t *tx_ptr, uint8_t *rx_ptr, uint32_t size);
 
+/**
+ * @brief       Receive data from spi
+ * @param[in]   rx_ptr Pointer to RX buffer
+ * @param[in]   Buffer size
+ */
 void spi_flash_receive(uint8_t *rx_ptr, uint32_t size);
+
+/**
+ * @brief       Init SPI flash
+ */
+void spi_init(void);
+
+/**
+ * @brief       Deinit spi flash
+ */
+void spi_deinit(void);
+
 
 /* USER CODE END Prototypes */
 

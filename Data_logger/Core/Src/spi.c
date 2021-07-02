@@ -123,6 +123,41 @@ void spi_flash_receive(uint8_t *rx_ptr, uint32_t size)
     }
 }
 
+void spi_init(void)
+{
+    MX_SPI2_Init();
+}
+
+void spi_deinit(void)
+{
+#ifdef DTG01
+    NVIC_DisableIRQ(SPI2_IRQn);
+    LL_SPI_Disable(SPI2);
+    LL_SPI_DeInit(SPI2);
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_SPI2);
+    
+    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    GPIO_InitStruct.Pin = LL_GPIO_PIN_2;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = LL_GPIO_PIN_3;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Alternate = LL_GPIO_AF_2;
+    LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+#else
+    #warning "Please turn off spi dtg02"
+#endif
+}
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

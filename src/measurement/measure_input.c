@@ -87,7 +87,7 @@ static bool m_force_sensor_build_msq = false;
 void measure_input_measure_wakeup_to_get_data()
 {
     m_this_is_the_first_time = true;
-    adc_start();
+    sys_ctx()->peripheral_running.name.adc = 1;
 }
 
 void measure_input_task(void)
@@ -163,11 +163,11 @@ void measure_input_task(void)
             {
                 if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
                 {
-                memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
-                queue_full = false;
-                DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
-                break;
-            }
+                    memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                    queue_full = false;
+                    DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
+                    break;
+                }
             }        
 
             if (queue_full)
@@ -177,6 +177,8 @@ void measure_input_task(void)
 
             m_last_time_measure_data = sys_get_ms();
         }
+        
+        sys_ctx()->peripheral_running.name.adc = 0;
 	}
 	#warning "Please implement save data to flash"
 }
