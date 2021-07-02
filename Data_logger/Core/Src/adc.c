@@ -68,7 +68,7 @@ void MX_ADC_Init(void)
 {
 
   /* USER CODE BEGIN ADC_Init 0 */
-	
+	DEBUG_PRINTF("ADC inititlize\r\n");
   /* USER CODE END ADC_Init 0 */
 
   LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
@@ -108,16 +108,18 @@ void MX_ADC_Init(void)
   LL_GPIO_Init(ADC_24V_GPIO_Port, &GPIO_InitStruct);
 
   /* ADC interrupt Init */
-  NVIC_SetPriority(ADC1_COMP_IRQn, 0);
-  NVIC_EnableIRQ(ADC1_COMP_IRQn);
+//  NVIC_SetPriority(ADC1_COMP_IRQn, 0);
+//  NVIC_EnableIRQ(ADC1_COMP_IRQn);
 
   /* USER CODE BEGIN ADC_Init 1 */
   if (SystemCoreClock > 8000000)
   {
+        DEBUG_PRINTF("ADC main clk is high\r\n");
         LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV12);
   }
   else
   {
+      DEBUG_PRINTF("ADC main clk is low\r\n");
       LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV1);
   }
   /* USER CODE END ADC_Init 1 */
@@ -169,15 +171,15 @@ void MX_ADC_Init(void)
   /* CPU processing cycles (depends on compilation optimization). */
   /* Note: If system core clock frequency is below 200kHz, wait time */
   /* is only a few CPU processing cycles. */
-  uint32_t wait_loop_index;
-  wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+  volatile uint32_t wait_loop_index;
+  wait_loop_index = ((2*LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
   while(wait_loop_index != 0)
   {
     wait_loop_index--;
   }
   /* USER CODE BEGIN ADC_Init 2 */
   
-    if (LL_ADC_IsEnabled(ADC1) == 0)
+//    if (LL_ADC_IsEnabled(ADC1) == 0)
     {
         DEBUG_PRINTF("Start calib AD \r\n");
         /* Run ADC self calibration */
@@ -205,12 +207,13 @@ void MX_ADC_Init(void)
         }
     }
     
-    LL_ADC_EnableIT_EOC(ADC1);
+//    LL_ADC_EnableIT_EOC(ADC1);
     // Clear the ADRDY bit in ADC_ISR register by programming this bit to 1.
 	SET_BIT(ADC1->ISR, LL_ADC_FLAG_ADRDY);
     LL_ADC_Enable(ADC1);
     DEBUG_PRINTF("Wait for adc ready\r\n");
     while (LL_ADC_IsActiveFlag_ADRDY(ADC1) == 0);
+    DEBUG_PRINTF("ADC ready\r\n");
   /* USER CODE END ADC_Init 2 */
 
 }
@@ -219,6 +222,7 @@ void MX_ADC_Init(void)
 
 void adc_isr_cb(void)
 {
+    DEBUG_PRINTF("ADC ISR cb\r\n");
     /* Check whether ADC group regular end of unitary conversion caused         */
     /* the ADC interruption.                                                    */
     if(LL_ADC_IsActiveFlag_EOC(ADC1) != 0)
@@ -285,20 +289,17 @@ void adc_start(void)
             }
             else if (i == 3)
             {
+                DEBUG_PRINTF("Seq11\r\n");
                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
             }
             else if (i == 4)
             {
-                  LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);
-                  volatile uint32_t wait_loop_index;
-                  wait_loop_index = ((LL_ADC_DELAY_TEMPSENSOR_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
-                  while (wait_loop_index != 0)
-                  {
-                    wait_loop_index--;
-                  }                
+                DEBUG_PRINTF("Seq vtemp\r\n");
+                  LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
             }
             else if (i == 5)
             {
+                DEBUG_PRINTF("Seq refint\r\n");
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
             }
     #else
@@ -310,7 +311,7 @@ void adc_start(void)
             }
             while (LL_ADC_REG_IsConversionOngoing(ADC1))
             {
-                __WFI();
+//                __WFI();
             }
             m_adc_raw_data[i] += LL_ADC_REG_ReadConversionData12(ADC1);
         }
@@ -328,8 +329,8 @@ void adc_stop(void)
 {
     DEBUG_PRINTF("ADC stop\r\n");
 	ENABLE_NTC_POWER(0);
-    NVIC_DisableIRQ(ADC1_COMP_IRQn);
-    LL_ADC_Disable(ADC1);
+//    NVIC_DisableIRQ(ADC1_COMP_IRQn);
+    LL_ADC_DeInit(ADC1);
     LL_ADC_DisableInternalRegulator(ADC1);
     LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_ADC1);
 }
@@ -421,7 +422,10 @@ void adc_convert(void)
 	/* v_temp */
 //	m_adc_input.temp = m_adc_raw_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
 //    m_adc_input.temp = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
-    m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+    if (m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX])
+    {
+        m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+    }
 }
 
 //bool adc_conversion_cplt(bool clear_on_exit)

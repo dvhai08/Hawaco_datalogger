@@ -57,6 +57,7 @@
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            36864     // ( ~18s)
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
+#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -171,10 +172,13 @@ int main(void)
 #if GSM_ENABLE
 	gsm_hw_layer_run();
 #endif
+      
+#if TEST_POWER_ALWAYS_TURN_OFF_GSM
     if (!gsm_data_layer_is_module_sleeping())
     {
         gsm_change_state(GSM_STATE_SLEEP);
     }
+#endif
 	control_ouput_task();
 	measure_input_task();
 	app_cli_poll();
@@ -214,6 +218,10 @@ int main(void)
     if (gsm_data_layer_is_module_sleeping())
     {
         system->peripheral_running.name.gsm_running = 0;
+        usart1_control(false);
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(0);
+        GSM_PWR_KEY(0);
     }
     else
     {
@@ -221,12 +229,7 @@ int main(void)
     }
     
     if (system->peripheral_running.value == 0)
-    {
-        usart1_control(false);
-        GSM_PWR_EN(0);
-        GSM_PWR_RESET(0);
-        GSM_PWR_KEY(0);
-        
+    {        
         sys_config_low_power_mode();
     }
     else
@@ -246,10 +249,10 @@ int main(void)
     }
     
 	
-//	if (cfg->io_enable.name.rs485_en)
-//	{
-//		RS485_EN(cfg->io_enable.name.rs485_en);
-//	}
+	if (cfg->io_enable.name.rs485_en)
+	{
+		RS485_EN(cfg->io_enable.name.rs485_en);
+	}
 	
 //	__WFI();
     /* USER CODE END WHILE */
@@ -435,12 +438,10 @@ void sys_config_low_power_mode(void)
         
 #if 1
         /* Disable GPIOs clock */
-        __HAL_RCC_GPIOA_CLK_DISABLE();
-        __HAL_RCC_GPIOB_CLK_DISABLE();
-        __HAL_RCC_GPIOC_CLK_DISABLE();
-        __HAL_RCC_GPIOD_CLK_DISABLE();
-        __HAL_RCC_GPIOH_CLK_DISABLE();
-        __HAL_RCC_GPIOE_CLK_DISABLE();
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOA);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOC);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOH);
 #endif  
 
         HAL_SuspendTick();
@@ -461,14 +462,15 @@ void sys_config_low_power_mode(void)
 
           /* Enter Stop Mode */
         HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+        
+        __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+        
 #if 1   
         /* Enable GPIOs clock */
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        __HAL_RCC_GPIOB_CLK_ENABLE();
-        __HAL_RCC_GPIOC_CLK_ENABLE();
-        __HAL_RCC_GPIOD_CLK_ENABLE();
-        __HAL_RCC_GPIOH_CLK_ENABLE();
-        __HAL_RCC_GPIOE_CLK_ENABLE();
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOC);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOH);
 #endif        
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
