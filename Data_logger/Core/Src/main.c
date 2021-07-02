@@ -213,6 +213,12 @@ int main(void)
         }
     }
     
+    if (ota_update_is_running())
+    {
+        system->status.sleep_time_s = 0;
+        system->status.disconnect_timeout_s = 0;
+    }
+    
 	
 //	if (cfg->io_enable.name.rs485_en)
 //	{
@@ -329,6 +335,11 @@ static void gsm_mnr_task(void *arg)
     if (gsm_data_layer_is_module_sleeping())
     {
         ctx->status.sleep_time_s++;
+        ctx->status.disconnect_timeout_s = 0;
+    }
+    else
+    {
+        ctx->status.disconnect_timeout_s++;
     }
 }
 

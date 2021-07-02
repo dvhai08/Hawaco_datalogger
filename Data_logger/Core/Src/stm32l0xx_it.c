@@ -67,6 +67,7 @@ volatile uint32_t m_last_exti0_timestamp;
 
 /* External variables --------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
+extern int32_t ota_update_timeout_ms;
 /* USER CODE BEGIN EV */
 
 
@@ -158,6 +159,15 @@ void SysTick_Handler(void)
 			}
 		}
 	}
+    
+    if (ota_update_timeout_ms != -1)
+    {
+        if (ota_update_timeout_ms-- == 0)
+        {
+            DEBUG_PRINTF("OTA update timeout\r\n");
+            NVIC_SystemReset();
+        }
+    }
   /* USER CODE END SysTick_IRQn 1 */
 }
 

@@ -51,11 +51,7 @@
       
 
 extern gsm_manager_t gsm_manager;
-
-
 static char m_at_cmd_buffer[128];
-uint8_t in_sleep_mode_tick = 0;
-uint8_t m_timeout_to_sleep = 0;
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer);
@@ -88,11 +84,6 @@ void gsm_wakeup_periodically(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-    if (in_sleep_mode_tick % 10 == 0)
-    {
-        DEBUG_PRINTF("GSM is sleeping...\r\n");
-    }
-    in_sleep_mode_tick++;
     DEBUG_PRINTF("Sleep time %usecond, periodic send msg %us, remaining %us\r\n",
                  ctx->status.sleep_time_s,
                  cfg->send_to_server_interval_ms/1000,
@@ -101,7 +92,6 @@ void gsm_wakeup_periodically(void)
     if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
     {
         ctx->status.sleep_time_s = 0;
-        in_sleep_mode_tick = 0;
         gsm_change_state(GSM_STATE_WAKEUP);
     }
 }
@@ -173,11 +163,6 @@ void gsm_manager_tick(void)
             gsm_change_state(GSM_STATE_READ_SMS);
         }
 #endif
-        if (m_timeout_to_sleep++ >= MAX_TIMEOUT_TO_SLEEP_S)
-        {
-            DEBUG_WARN("GSM in at mode : need to sleep\r\n");
-        }
-
         gsm_wakeup_periodically();
 #if GSM_READ_SMS_ENABLE
         if (gsm_manager.state == GSM_STATE_OK)
@@ -230,13 +215,6 @@ void gsm_manager_tick(void)
 			{
                 gsm_hw_layer_reset_rx_buffer();
 				gsm_change_state(GSM_STATE_SLEEP);
-			}
-			else
-			{
-				if (m_timeout_to_sleep > 15)
-				{
-					m_timeout_to_sleep -= 15;
-				}
 			}
         }
     }
@@ -325,7 +303,6 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_SLEEP: /* Dang trong che do Sleep */
-        m_timeout_to_sleep = 0;
         usart1_control(false);
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
@@ -373,7 +350,6 @@ void gsm_change_state(gsm_state_t new_state)
     if (new_state == GSM_STATE_OK) //Command state -> Data state trong PPP mode
     {
         gsm_manager.gsm_ready = 2;
-        m_timeout_to_sleep = 0;
     }
     DEBUG_PRINTF("Change GSM state to: ");
     switch ((uint8_t)new_state)
@@ -901,15 +877,6 @@ SEND_SMS_FAIL:
 }
 
 
-void gsm_set_timeout_to_sleep(uint32_t sec)
-{
-    if (sec <= MAX_TIMEOUT_TO_SLEEP_S && m_timeout_to_sleep < MAX_TIMEOUT_TO_SLEEP_S)
-    {
-        DEBUG_PRINTF("GSM sleep in next %u second\r\n", sec);
-        m_timeout_to_sleep = MAX_TIMEOUT_TO_SLEEP_S - sec;
-    }
-}
-
 //static LargeBuffer_t m_http_buffer;
 /* {
 	"Timestamp":"1623849775","ID":"860262050129720","PhoneNum":"000","Money":"0","Input1":"5558",
@@ -1077,6 +1044,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_EVENT_CONNTECTED:
         DEBUG_PRINTF("HTTP connected, data size %u\r\n", *((uint32_t *)data));
+        ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)
         {
             ota_update_start(*((uint32_t*)data));

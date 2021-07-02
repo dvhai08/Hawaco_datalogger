@@ -23,6 +23,7 @@ static bool m_ota_is_running = false;
 ota_bytes_remain_t m_ota_remain;
 extern uint32_t flash_if_erase(uint32_t start);
 extern uint32_t flash_if_write(uint32_t destination, uint32_t *p_source, uint32_t length);
+volatile int32_t ota_update_timeout_ms = -1;
 
 bool ota_update_is_running(void)
 {
@@ -49,6 +50,7 @@ bool ota_update_start(uint32_t expected_size)
 
     m_found_header = false;
 	m_ota_is_running = true;
+    ota_update_timeout_ms =  100000;
     return true;
 }
 

@@ -265,9 +265,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			{
 				link += strlen("LINK:\"");
 				link = strtok(link, "\"");
-				if (link && strlen(link))
+				if (link && strlen(link) && strstr(link, "http"))
 				{
-					#warning "Please implement http ota update"
+                    sys_ctx()->status.enter_ota_update = true;
+                    sprintf((char*)sys_ctx()->status.ota_url, "%s", link);
 				}
 			}
 			else
@@ -280,12 +281,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     //Luu config moi
     if (has_new_cfg)
     {
-        gsm_set_timeout_to_sleep(10);        // Wait more 5 second
 		app_eeprom_save_config();
     }
     else
     {
-        gsm_set_timeout_to_sleep(5);        // Wait more 5 second
         DEBUG_PRINTF("CFG: has no new config\r\n");
     }
 
