@@ -38,4 +38,10 @@ uint32_t app_rtc_get_counter(void);
  */
 bool app_rtc_get_time(rtc_date_time_t *time);
 
+/**
+ * @brief          Get subsecond counter from RTC
+ * @retval         RTC subsecond counter value
+ */
+uint32_t app_rtc_get_subsecond_counter(void);
+
 #endif /* APP_RTC_H */

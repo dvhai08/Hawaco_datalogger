@@ -28,6 +28,8 @@
 #include "trans_recieve_buff_control.h"
 #include "app_debug.h"
 #include "app_rtc.h"
+#include "rtc.h"
+#include "stm32l0xx_ll_rtc.h"
 
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
@@ -40,16 +42,18 @@ typedef struct
     uint32_t reserve;
 } backup_pulse_data_t;
 
+typedef struct
+{
+    uint32_t counter;
+    int32_t subsecond;
+} measure_input_timestamp_t;
+
+
 uint8_t m_is_pulse_trigger = 0;
-#ifdef GD32E10X
-uint32_t m_begin_pulse_timestamp, m_end_pulse_timestamp;
-int8_t m_pull_state = -1;
-static uint32_t m_pull_diff;
-#else
-uint32_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+
+measure_input_timestamp_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-#endif
 
 static measure_input_water_meter_input_t m_water_meter_input[2];
 static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
@@ -68,15 +72,20 @@ static void measure_input_pulse_counter_poll(void)
 									m_pulse_counter_in_backup[0].reserve,
 									0,
 									0);
+        DEBUG_INFO("Save counter %u-%u to backup\r\n", m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
 #else
         //Store to BKP register
         app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
 									m_pulse_counter_in_backup[0].reserve,
 									m_pulse_counter_in_backup[1].forward,
 									m_pulse_counter_in_backup[1].forward);
+        DEBUG_PRINTF("Save counter (%u-%u), (%u-%u) to backup\r\n", 
+                                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
+                                    m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
 #endif
         m_is_pulse_trigger = 0;
     }
+    sys_ctx()->peripheral_running.name.measure_input_pwm_running = 0;
 }
 
 static uint32_t m_last_time_measure_data = 0;
@@ -113,70 +122,64 @@ void measure_input_task(void)
         m_measure_data.input_4_20mA[i] = input_adc->in_4_20ma_in[i];
     }
     
-//	if (m_this_is_the_first_time ||
-//		((sys_get_ms() - m_last_time_measure_data) >= (uint32_t)5000))
-//    #warning "Test measurement interval 5000ms"
 	if (m_this_is_the_first_time ||
 		((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms))
 	{
         adc_start();
-//        if (m_number_of_adc_conversion++ > 1)
+        m_last_time_measure_data = sys_get_ms();
+        if (m_this_is_the_first_time)
         {
-            m_last_time_measure_data = sys_get_ms();
-            if (m_this_is_the_first_time)
-            {
-                m_this_is_the_first_time = false;
-                #warning "Please check rs485 then force build msg"
-                m_force_sensor_build_msq = true;
-            }
             m_this_is_the_first_time = false;
-            m_number_of_adc_conversion = 0;
-            adc_stop();
-            
-            // Put data to msq
-            adc_input_value_t *adc_retval = adc_get_input_result();
-            measurement_msg_queue_t queue;
-            m_force_sensor_build_msq = false;
-
-            queue.measure_timestamp = app_rtc_get_counter();
-            queue.vbat_mv = adc_retval->bat_mv;
-            queue.vbat_percent = adc_retval->bat_percent;     
-
-            app_bkup_read_pulse_counter(&queue.counter0_f, 
-                   &queue.counter1_f,
-                   &queue.counter0_r,
-                   &queue.counter1_r);
-
-            queue.csq_percent = gsm_get_csq_in_percent();
-            for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
-            {
-                queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
-            }
-
-            queue.temperature = adc_retval->temp;
-
-            queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
-
-            // Scan for empty buffer
-            bool queue_full = true;
-            for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
-            {
-                if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
-                {
-                    memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
-                    queue_full = false;
-                    DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
-                    break;
-                }
-            }        
-
-            if (queue_full)
-            {
-                DEBUG_ERROR("Message queue full\r\n");
-            }
-
-            m_last_time_measure_data = sys_get_ms();
+            #warning "Please check rs485 then force build msg"
+            m_force_sensor_build_msq = true;
         }
+        m_this_is_the_first_time = false;
+        m_number_of_adc_conversion = 0;
+        adc_stop();
+        
+        // Put data to msq
+        adc_input_value_t *adc_retval = adc_get_input_result();
+        measurement_msg_queue_t queue;
+        m_force_sensor_build_msq = false;
+
+        queue.measure_timestamp = app_rtc_get_counter();
+        queue.vbat_mv = adc_retval->bat_mv;
+        queue.vbat_percent = adc_retval->bat_percent;     
+
+        app_bkup_read_pulse_counter(&queue.counter0_f, 
+               &queue.counter1_f,
+               &queue.counter0_r,
+               &queue.counter1_r);
+
+        queue.csq_percent = gsm_get_csq_in_percent();
+        for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+        {
+            queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
+        }
+
+        queue.temperature = adc_retval->temp;
+
+        queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
+
+        // Scan for empty buffer
+        bool queue_full = true;
+        for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+        {
+            if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+            {
+                memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                queue_full = false;
+                DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
+                break;
+            }
+        }        
+
+        if (queue_full)
+        {
+            DEBUG_ERROR("Message queue full\r\n");
+        }
+
+        m_last_time_measure_data = sys_get_ms();
         
         sys_ctx()->peripheral_running.name.adc = 0;
 	}
@@ -227,32 +230,41 @@ measure_input_water_meter_input_t *measure_input_get_backup_counter(void)
 	return &m_water_meter_input[0];
 }
 
+
+static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_input_timestamp_t *end)
+{
+    uint32_t ms = (end->counter - begin->counter)*((uint32_t)1000);
+    uint32_t prescaler = LL_RTC_GetSynchPrescaler(RTC);
+    end->subsecond = 1000 *(prescaler - end->subsecond) / (prescaler + 1);
+    begin->subsecond = 1000 *(prescaler - begin->subsecond) / (prescaler + 1);
+    
+    ms += end->subsecond;
+    ms -= begin->subsecond;
+}
+
+
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
 	  __disable_irq();
 	if (input->pwm_level)
 	{
-		m_begin_pulse_timestamp[input->port] = sys_get_ms();
+		m_begin_pulse_timestamp[input->port].counter = app_rtc_get_counter();
+        m_begin_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
 		m_pull_state[input->port] = 0;
 	}
 	else if (m_pull_state[input->port] != PULSE_STATE_INVALID)
 	{
 		m_pull_state[input->port] = PULSE_STATE_INVALID;
-		m_end_pulse_timestamp[input->port] = sys_get_ms();
-		if (m_end_pulse_timestamp[input->port] > m_begin_pulse_timestamp[input->port])
-		{
-			m_pull_diff[input->port] = m_end_pulse_timestamp[input->port] - m_begin_pulse_timestamp[input->port];
-		}
-		else
-		{
-			m_pull_diff[input->port] = 0xFFFFFFFF - m_begin_pulse_timestamp[input->port] + m_end_pulse_timestamp[input->port];
-		}
-
+		m_end_pulse_timestamp[input->port].counter = app_rtc_get_counter();
+        m_end_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
+        m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], &m_end_pulse_timestamp[input->port]);
+        
+        
         if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
 		{
             if (m_pull_diff[input->port] > 50)
             {
-                DEBUG_PRINTF("+++++++++ in %ums\r\n", m_pull_diff[input->port]);
+                DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
                 m_is_pulse_trigger = 1;
                 if (input->dir_level == 0)
                 {
@@ -288,7 +300,6 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 m_pulse_counter_in_backup[input->port].reserve++;
             }
         }
-		sys_set_delay_time_before_deep_sleep(2000);
 	}
     __enable_irq();
 }

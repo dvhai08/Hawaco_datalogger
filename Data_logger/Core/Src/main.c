@@ -227,21 +227,7 @@ int main(void)
     {
         system->peripheral_running.name.gsm_running = 1;
     }
-    
-    if (system->peripheral_running.value == 0)
-    {        
-        sys_config_low_power_mode();
-    }
-    else
-    {
-        if (system->peripheral_running.name.flash_running)
-        {
-            app_spi_flash_shutdown();
-            spi_deinit();
-            system->peripheral_running.name.flash_running = 0;
-        }
-    }
-    
+        
     if (ota_update_is_running())
     {
         system->status.sleep_time_s = 0;
@@ -253,6 +239,20 @@ int main(void)
 	{
 		RS485_EN(cfg->io_enable.name.rs485_en);
 	}
+    
+    if (system->peripheral_running.value)
+    {      
+        if (system->peripheral_running.name.flash_running)
+        {
+            app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+        }
+    }
+    else
+    {
+        sys_config_low_power_mode();
+    }
 	
 //	__WFI();
     /* USER CODE END WHILE */
@@ -478,7 +478,8 @@ void sys_config_low_power_mode(void)
         DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
         ctx->status.sleep_time_s += diff;
-        
+        HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+        m_wakeup_timer_run = false;
         DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
 #if DEBUG_LOW_POWER
         LED1(1);

@@ -27,6 +27,8 @@
 #include "hardware.h"
 #include "app_eeprom.h"
 
+//#define DEBUG_ADC
+
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				8
@@ -57,6 +59,7 @@
 #endif
 #define GAIN_INPUT_4_20MA_IN				143
 #define VREF_OFFSET_MV						80
+
 
 static volatile bool m_adc_started = false;
 volatile uint16_t m_adc_raw_data[ADC_CHANNEL_DMA_COUNT];

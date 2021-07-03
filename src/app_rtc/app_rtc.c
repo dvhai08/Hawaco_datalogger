@@ -166,3 +166,8 @@ bool app_rtc_get_time(rtc_date_time_t *time)
     return false;
 }
 
+uint32_t app_rtc_get_subsecond_counter(void)
+{
+    return LL_RTC_TIME_GetSubSecond(RTC);
+}
+

@@ -31,16 +31,23 @@
 #include "app_debug.h"
 #include "adc.h"
 #include "sys_ctx.h"
+#include "rtc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-
+typedef struct
+{
+    uint32_t last_exti;
+} input_ext_isr_t;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define EXIT_INPUT0_TIMESTAMP_INDEX 0
+#ifdef DTG2
+#define EXIT_INPUT1_TIMESTAMP_INDEX 1
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -69,7 +76,7 @@ volatile uint32_t m_last_exti0_timestamp;
 extern RTC_HandleTypeDef hrtc;
 extern int32_t ota_update_timeout_ms;
 /* USER CODE BEGIN EV */
-
+input_ext_isr_t m_last_exti[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 
 /* USER CODE END EV */
 
@@ -210,11 +217,11 @@ void EXTI0_1_IRQHandler(void)
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
+        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
-      uint32_t current_tick = sys_get_ms();
-      if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
-      {
+        uint32_t current_tick = sys_get_ms();
+//        if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
+        {
             m_last_exti0_timestamp = current_tick;
 #ifdef DTG01
             measure_input_water_meter_input_t input;
@@ -225,7 +232,8 @@ void EXTI0_1_IRQHandler(void)
             input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
             measure_input_pulse_irq(&input);
 #endif
-      }
+            sys_ctx()->peripheral_running.name.measure_input_pwm_running = 1;
+        }
       LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE END LL_EXTI_LINE_1 */
   }
