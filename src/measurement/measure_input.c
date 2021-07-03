@@ -33,8 +33,9 @@
 
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
-#define PULSE_STATE_INVALID                     -1
-#define PULSE_DIR_FORWARD_LOGICAL_LEVEL          1
+#define PULSE_STATE_WAIT_FOR_FALLING_EDGE       0
+#define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
+#define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 
 typedef struct
 {
@@ -190,7 +191,7 @@ void measure_input_initialize(void)
 {	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-		m_pull_state[i] = PULSE_STATE_INVALID;
+		m_pull_state[i] = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
 	}
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
@@ -250,22 +251,21 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 	{
 		m_begin_pulse_timestamp[input->port].counter = app_rtc_get_counter();
         m_begin_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
-		m_pull_state[input->port] = 0;
+		m_pull_state[input->port] = PULSE_STATE_WAIT_FOR_RISING_EDGE;
 	}
-	else if (m_pull_state[input->port] != PULSE_STATE_INVALID)
+	else if (m_pull_state[input->port] == PULSE_STATE_WAIT_FOR_RISING_EDGE)
 	{
-		m_pull_state[input->port] = PULSE_STATE_INVALID;
+		m_pull_state[input->port] = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+        
 		m_end_pulse_timestamp[input->port].counter = app_rtc_get_counter();
         m_end_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
         m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], &m_end_pulse_timestamp[input->port]);
-        
-        
-        if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
-		{
-            if (m_pull_diff[input->port] > 50)
+        if (m_pull_diff[input->port] > 50)
+        {
+            m_is_pulse_trigger = 1;
+            DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
+            if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
             {
-                DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
-                m_is_pulse_trigger = 1;
                 if (input->dir_level == 0)
                 {
                     DEBUG_INFO("Reserve\r\n");
@@ -283,22 +283,27 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 }
                 m_pulse_counter_in_backup[input->port].reserve = 0;
             }
-		}
-        else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
-        {
-            m_pulse_counter_in_backup[input->port].forward++;
-            m_pulse_counter_in_backup[input->port].reserve = 0;
-        }
-        else
-        {
-            if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
+            else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
             {
+                
                 m_pulse_counter_in_backup[input->port].forward++;
+                m_pulse_counter_in_backup[input->port].reserve = 0;
             }
             else
             {
-                m_pulse_counter_in_backup[input->port].reserve++;
+                if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
+                {
+                    m_pulse_counter_in_backup[input->port].forward++;
+                }
+                else
+                {
+                    m_pulse_counter_in_backup[input->port].reserve++;
+                }
             }
+        }
+        else
+        {
+            DEBUG_PRINTF("Noise\r\n");
         }
 	}
     __enable_irq();

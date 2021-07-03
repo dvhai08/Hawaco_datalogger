@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define DEBUG_LEVEL_ALL         0
+#define DEBUG_LEVEL_VERBOSE     1
+#define DEBUG_LEVEL_INFO        2
+#define DEBUG_LEVEL_WARN        3
+#define DEBUG_LEVEL_ERROR       4
+
+#define DEBUG_LEVEL             DEBUG_LEVEL_VERBOSE  
+
 #include "SEGGER_RTT.h"
 #if 1
 #define KNRM  "\x1B[0m"
@@ -30,9 +38,25 @@
 
 
 #define DEBUG_DUMP                           app_debug_dump
+
+#if (DEBUG_LEVEL_INFO > DEBUG_LEVEL)
 #define DEBUG_INFO(s, args...)               app_debug_rtt_raw(KGRN "<%u> [I] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
+#else
+#define DEBUG_INFO(s, args...)
+#endif
+
+#if (DEBUG_LEVEL_ERROR > DEBUG_LEVEL)
 #define DEBUG_ERROR(s, args...)              app_debug_rtt_raw(KRED "<%u> [E] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
+#else
+#define DEBUG_ERROR(s, args...)
+#endif
+
+#if (DEBUG_LEVEL_WARN > DEBUG_LEVEL)
 #define DEBUG_WARN(s, args...)               app_debug_rtt_raw(KYEL "<%u> [W] %s : " s KNRM,  sys_get_ms(), __FILE__, ##args)
+#else
+#define DEBUG_WARN(s, args...)
+#endif
+
 #define DEBUG_COLOR(color, s, args...)       app_debug_rtt_raw(color s KNRM, ##args)
 
 
