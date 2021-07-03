@@ -243,15 +243,6 @@ void adc_isr_cb(void)
     }
 }
 
-static bool m_is_the_first_time_convert = true;
-//static bool m_adc_new_data = false;
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
-//{
-//	/* Get the converted value of regular channel */
-//	m_adc_started = false;
-//	m_adc_new_data = true;
-//}
-
 void adc_start(void)
 {
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();

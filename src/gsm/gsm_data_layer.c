@@ -918,10 +918,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	
 	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
     p += sprintf(p, "%u", app_spi_flash_is_ok() ? 0 : 1);
-
-	
-	#warning "Please store default input 2 offset"
-
+    
     total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
     
 	msg->counter0_f = msg->counter0_f / cfg->k0 + cfg->offset0;
@@ -1115,7 +1112,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
         if (build_msg)
         {
-            #warning "Please build sensor msg and send to cloud"
             if (m_last_http_msg)
             {
                 umm_free(m_last_http_msg);

@@ -321,12 +321,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void sys_set_delay_time_before_deep_sleep(uint32_t ms)
-{
-	m_delay_afer_wakeup_from_deep_sleep_to_measure_data = 0;
-	#warning "Please implement delay timeout afer wakeup from deep sleep"
-}
-
 
 uint32_t sys_get_ms()
 {
@@ -416,9 +410,6 @@ void sys_config_low_power_mode(void)
         sys_ctx_t *ctx = sys_ctx();
         
 #if DEBUG_LOW_POWER
-        LED1(1);
-        HAL_Delay(10);
-        LED1(0);
         __DBGMCU_CLK_ENABLE() ; // (RCC->APB2ENR |= (RCC_APB2ENR_DBGMCUEN))
         HAL_EnableDBGStopMode();  //  SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP);
 #endif
@@ -436,13 +427,11 @@ void sys_config_low_power_mode(void)
         }
         __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
         
-#if 1
         /* Disable GPIOs clock */
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOA);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOB);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOC);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOH);
-#endif  
 
         HAL_SuspendTick();
         
@@ -481,11 +470,7 @@ void sys_config_low_power_mode(void)
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
         DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
-#if DEBUG_LOW_POWER
-        LED1(1);
-#endif
         HAL_ResumeTick();
-        #warning "Please set voltage scale and disable vref, temp"
         SystemClock_Config();
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);

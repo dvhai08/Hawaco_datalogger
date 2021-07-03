@@ -1341,14 +1341,14 @@
           <GroupName>eeprom</GroupName>
           <Files>
             <File>
-              <FileName>app_eeprom.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\src\app_eeprom\app_eeprom.h</FilePath>
-            </File>
-            <File>
               <FileName>app_eeprom.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\src\app_eeprom\app_eeprom.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_eeprom.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_eeprom\app_eeprom.h</FilePath>
             </File>
           </Files>
         </Group>

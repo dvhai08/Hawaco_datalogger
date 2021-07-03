@@ -241,6 +241,7 @@ static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_inp
     
     ms += end->subsecond;
     ms -= begin->subsecond;
+    return ms;
 }
 
 
