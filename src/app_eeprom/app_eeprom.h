@@ -11,7 +11,7 @@
 #define APP_EEPROM_METER_MODE_PWM_F_PWM_R			2 // Meter mode 2 : PWM_F & PWM_R
 #define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
 #define APP_EEPROM_MAX_PHONE_LENGTH                 16
-
+#define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           32
 typedef union
 {
 	struct
@@ -52,6 +52,7 @@ typedef struct
     uint8_t meter_mode[APP_EEPROM_METER_MODE_MAX_ELEMENT];	
 	uint32_t valid_flag;
     uint32_t send_to_server_delay_s;
+    uint8_t server_addr[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
 } app_eeprom_config_data_t;
 
 

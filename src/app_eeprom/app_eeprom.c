@@ -8,6 +8,7 @@
 #define EEPROM_STORE_DATA_ADDR	        0x08080000
 #define MEASURE_INTERVAL_S              (30*60*1000)
 #define SEND_TO_SERVER_INTERVAL_S       (60*60*1000)
+#define DEFAULT_SERVER_ADDR             "https://iot.wilad.vn"
 
 static app_eeprom_config_data_t m_cfg;
 
@@ -27,6 +28,7 @@ void app_eeprom_init(void)
         memcpy(m_cfg.phone, "0", 3);
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
+        sprintf((char*)m_cfg.server_addr, "%s", DEFAULT_SERVER_ADDR);
         app_eeprom_save_config();
 	}
     else

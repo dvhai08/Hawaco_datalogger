@@ -54,6 +54,8 @@ typedef struct
 	uint8_t vbat_raw;
 	uint8_t output_4_20mA;
 	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+    int32_t temperature;
+    int32_t temperature_error;
 } measure_input_perpheral_data_t;
 
 typedef struct

@@ -46,8 +46,8 @@
 #define GSM_DONT_NEED_HTTP_POST() (m_enter_http_post = false)
 #define GSM_ENTER_HTTP_POST()       (m_enter_http_post = true)
 
-#define POST_URL        "https://iot.wilad.vn/api/v1/%s/telemetry"
-#define GET_URL         "https://iot.wilad.vn/api/v1/%s/attributes"
+#define POST_URL        "%s/api/v1/%s/telemetry"
+#define GET_URL         "%s/api/v1/%s/attributes"
       
 
 extern gsm_manager_t gsm_manager;
@@ -256,6 +256,7 @@ void gsm_manager_tick(void)
             GSM_DONT_NEED_HTTP_POST();
             static gsm_http_config_t cfg;
             snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, POST_URL,
+                    (char*)app_eeprom_read_config_data()->server_addr,
                     gsm_get_module_imei());
             //sprintf(cfg.url, "%s", "https://iot.wilad.vn");
             cfg.on_event_cb = gsm_http_event_cb;
@@ -274,7 +275,10 @@ void gsm_manager_tick(void)
             static gsm_http_config_t cfg;
             if (!sys_ctx()->status.enter_ota_update)
             {
-                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, GET_URL, gsm_get_module_imei());
+                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
+                        GET_URL, 
+                        (char*)app_eeprom_read_config_data()->server_addr,
+                        gsm_get_module_imei());
                 cfg.on_event_cb = gsm_http_event_cb;
                 cfg.action = GSM_HTTP_ACTION_GET;
 //                cfg.port = 443;
@@ -887,7 +891,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     char *p = alarm_str;
     uint16_t total_length = 0;
 
-    // bat,temp,4glost,sensor_err,sensor_overflow, sensor break
+    // bat,temp,4glost,sensor_err,sensor_overflow, sensor break, vtemp is valid or not
     if (msg->vbat_percent < 10)
     {
         p += sprintf(p, "%u,", 1);
@@ -897,7 +901,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
         p += sprintf(p, "%u,", 0);
     }
     
-    //4glost,sensor_err,sensor_overflow,sensor_break,flash_err
+    //4glost,sensor_err,sensor_overflow,sensor_break,flash_err, vtemp is valid or not
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
     p += sprintf(p, "%u,", 0);
@@ -912,7 +916,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	}
 	
 	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
-    p += sprintf(p, "%u", app_spi_flash_is_ok() ? 0 : 1);
+    p += sprintf(p, "%u,", app_spi_flash_is_ok() ? 0 : 1);
+    p += sprintf(p, "%u", measure_input->temperature_error ? 0 : 1);
     
     total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
     
@@ -986,25 +991,28 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
 
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":\"%d\",", msg->vbat_percent);
-
+    
+    if (!measure_input->temperature_error)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":\"%d\",", measure_input->temperature);
+    }
+    
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":\"%u\",", msg->vbat_mv);
+    total_length += sprintf((char *)(ptr + total_length), "\"RST\":\"%u\",", hardware_manager_get_reset_reason()->value);
+    total_length += sprintf((char *)(ptr + total_length), "\"K0\":\"%u\",", cfg->k0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":\"%u\",", cfg->offset0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Mode0\":\"%u\",", cfg->meter_mode[0]);
+    
 #ifdef DTG02
-    total_length += sprintf((char *)(ptr + total_length), "\"Info\":\"%umV, RST-%u, k-%u-%u, offset-%u-%u, mode-%u,%u, vs %s-%s\"}", 
-                                                            msg->vbat_mv,
-                                                            hardware_manager_get_reset_reason()->value,
-                                                            cfg->k0, cfg->k1,
-                                                            cfg->offset0, cfg->offset1,
-                                                            cfg->meter_mode[0], cfg->meter_mode[1],
-                                                            VERSION_CONTROL_FW, VERSION_CONTROL_HW);
-#else
-    total_length += sprintf((char *)(ptr + total_length), "\"Info\":\"bat %umv, RST-%u, k-%u, offset-%u, mode-%u, vs %s-%s\"}", 
-                                                        msg->vbat_mv,
-                                                        hardware_manager_get_reset_reason()->value,
-                                                        cfg->k0,
-                                                        cfg->offset0,
-                                                        cfg->meter_mode[0],
-                                                        VERSION_CONTROL_FW, VERSION_CONTROL_HW);
+    total_length += sprintf((char *)(ptr + total_length), "\"K1\":\"%u\",", cfg->k1);
+    total_length += sprintf((char *)(ptr + total_length), "\"Offset1\":\"%u\",", cfg->offset1);
+    total_length += sprintf((char *)(ptr + total_length), "\"Mode1\":\"%u\",", cfg->meter_mode[1]);
 #endif
-    hardware_manager_get_reset_reason()->value = 0;
+    
+    total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
+    total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
+        
+//    hardware_manager_get_reset_reason()->value = 0;
 
     DEBUG_RAW("%s\r\n", (char*)ptr);
     return total_length;

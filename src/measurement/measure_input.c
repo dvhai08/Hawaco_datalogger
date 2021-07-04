@@ -64,12 +64,6 @@ volatile uint32_t store_measure_result_timeout = 0;
 static bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 
-void test_pulse_counter(void)
-{
-    m_is_pulse_trigger = 1;
-    m_pulse_counter_in_backup[0].forward++;
-}
-
 static void measure_input_pulse_counter_poll(void)
 {
     if (m_is_pulse_trigger)
@@ -112,22 +106,39 @@ void measure_input_task(void)
 	eeprom_cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
     adc_input_value_t *input_adc = adc_get_input_result();
+    
 #ifdef DTG02
+    TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
+    TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
+    TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
+    TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
+    
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 	
-	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);    
 #else	// DTG01	
-	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
 #endif	
+    m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+    
     m_measure_data.vbat_percent = input_adc->bat_percent;
     m_measure_data.vbat_raw = input_adc->bat_mv;
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
         m_measure_data.input_4_20mA[i] = input_adc->in_4_20ma_in[i];
+    }
+    
+    // Vtemp
+    if (input_adc->temp_is_valid)
+    {
+        m_measure_data.temperature_error = 0;
+        m_measure_data.temperature = input_adc->temp;
+    }
+    else
+    {
+        m_measure_data.temperature_error = 1;
     }
     
 	if (m_this_is_the_first_time ||

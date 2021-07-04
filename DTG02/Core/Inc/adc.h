@@ -42,6 +42,7 @@ typedef struct
 	uint32_t in_4_20ma_in[1];		// 4.5mA =>> convert to 45
 #endif
 	int32_t temp;
+    uint32_t temp_is_valid;
 } adc_input_value_t;
 
 /**

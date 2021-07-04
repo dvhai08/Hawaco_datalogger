@@ -174,7 +174,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			config->phone[15] = 0;
             if (changed)
             {
-                    DEBUG_PRINTF("Phone number changed to %s\r\n", config->phone);
+                DEBUG_PRINTF("Phone number changed to %s\r\n", config->phone);
             }
 #endif
         }
@@ -280,6 +280,28 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 #endif
 	
+    char *p_delay = strstr(buffer, "Delay\":");
+    if (p_delay)
+    {
+        uint32_t delay = gsm_utilities_get_number_from_string(strlen("Delay\":"), p_delay);
+        config->send_to_server_delay_s = delay;
+        DEBUG_INFO("Delay changed to %us\r\n", delay);
+        has_new_cfg++;
+    }
+    
+    char *server = strstr(buffer, "Server\":");
+    if (server)
+    {
+        phone_num += strlen("Server\":");
+        uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
+        if (gsm_utilities_copy_parameters(phone_num, (char*)tmp, '"', '"'))
+        {
+            has_new_cfg++;
+            snprintf((char*)config->server_addr, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
+            DEBUG_INFO("Server changed to %s\r\n", config->server_addr);
+        }
+    }
+    
 	char *do_ota = strstr(buffer, "Update\":");
 	char *version = strstr(buffer, "version\":\"");
 	char *link = strstr(buffer, "Link\":");
