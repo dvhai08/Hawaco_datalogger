@@ -313,7 +313,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     //Luu config moi
     if (has_new_cfg)
     {
-		app_eeprom_save_config();
+ 		app_eeprom_save_config();
     }
     else
     {

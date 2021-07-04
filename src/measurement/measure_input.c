@@ -61,7 +61,7 @@ static measure_input_water_meter_input_t m_water_meter_input[2];
 static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
-bool m_this_is_the_first_time = true;
+static bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 
 void test_pulse_counter(void)
@@ -138,7 +138,6 @@ void measure_input_task(void)
         if (m_this_is_the_first_time)
         {
             m_this_is_the_first_time = false;
-            #warning "Please check rs485 then force build msg"
             m_force_sensor_build_msq = true;
         }
         m_this_is_the_first_time = false;
@@ -177,7 +176,7 @@ void measure_input_task(void)
             {
                 memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
                 queue_full = false;
-                DEBUG_PRINTF("Puts new msg to sensor queue\r\n");
+                DEBUG_INFO("Puts new msg to sensor queue\r\n");
                 break;
             }
         }        
@@ -246,6 +245,7 @@ void measure_input_initialize(void)
     DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
                     m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve, 
                     m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
+    m_this_is_the_first_time = true;
 }
 
 

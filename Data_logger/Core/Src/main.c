@@ -56,7 +56,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            36864     // ( ~18s)
-#define DEBUG_LOW_POWER                                 0
+#define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 /* USER CODE END PTD */
@@ -93,6 +93,7 @@ static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
+#warning "Please handle sensor msg full"
 /* USER CODE END 0 */
 
 /**

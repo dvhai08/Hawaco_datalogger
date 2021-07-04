@@ -3,6 +3,7 @@
 #include "stm32l0xx_hal_flash_ex.h"
 #include "app_debug.h"
 #include <string.h>
+#include "flash_if.h"
 
 #define EEPROM_STORE_DATA_ADDR	        0x08080000
 #define MEASURE_INTERVAL_S              (30*60*1000)
@@ -38,6 +39,9 @@ void app_eeprom_save_config(void)
 {	
 	uint32_t err;
 	uint8_t *tmp = (uint8_t*)&m_cfg;
+    
+    flash_if_init();
+    
 	HAL_FLASHEx_DATAEEPROM_Unlock();
 	
     for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t)/sizeof(uint32_t); i++)
@@ -55,11 +59,15 @@ void app_eeprom_save_config(void)
 		err = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, EEPROM_STORE_DATA_ADDR + i, tmp[i]);
 		if (HAL_OK != err)
 		{
-			DEBUG_PRINTF("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
+			DEBUG_ERROR("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
 			break;
 		}
 	}
 	
+    if (err == HAL_OK)
+    {
+        DEBUG_INFO("Store data success\r\n");
+    }
 	HAL_FLASHEx_DATAEEPROM_Lock();
 }
 
