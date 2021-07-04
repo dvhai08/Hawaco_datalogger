@@ -65,7 +65,7 @@
 #define SPI_FLASH_PAGE_SIZE 256
 #define SPI_FLASH_SECTOR_SIZE 4096
 #define SPI_FLASH_MAX_SECTOR (APP_SPI_FLASH_SIZE / SPI_FLASH_SECTOR_SIZE)
-
+#define SPI_FLASH_SHUTDOWN_ENABLE   1
 #define HAL_SPI_Initialize() while (0)
 
 static uint8_t flash_self_test(void);
@@ -92,6 +92,7 @@ void app_spi_flash_initialize(void)
     
     uint16_t flash_test_status = 0;
     //	HAL_SPI_Initialize();
+    app_spi_flash_wakeup();
     if (flash_self_test())
     {
         m_flash_inited = true;
@@ -896,6 +897,7 @@ uint32_t app_spi_flash_dump_all_data(void)
 void app_spi_flash_wakeup(void)
 {
     DEBUG_PRINTF("Wakeup flash\r\n");
+#if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 3; i++)
     {
         SPI_EXT_FLASH_CS(0);
@@ -907,6 +909,7 @@ void app_spi_flash_wakeup(void)
             __nop();
         }
     }
+#endif
     sys_ctx_t *ctx = sys_ctx();
     ctx->peripheral_running.name.flash_running = 1;
 }
@@ -914,6 +917,7 @@ void app_spi_flash_wakeup(void)
 void app_spi_flash_shutdown(void)
 {
     DEBUG_PRINTF("Shutdown flash\r\n");
+#if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 3; i++)
     {
         SPI_EXT_FLASH_CS(0);
@@ -921,6 +925,7 @@ void app_spi_flash_shutdown(void)
         spi_flash_transmit(cmd);
         SPI_EXT_FLASH_CS(1);
     }
+#endif
 }
 
 bool app_spi_flash_check_empty_sector(uint32_t sector)
