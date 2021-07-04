@@ -184,6 +184,11 @@ void measure_input_task(void)
         if (queue_full)
         {
             DEBUG_ERROR("Message queue full\r\n");
+            for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+            {
+                m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_IDLE;
+            }
+            #warning "Please save memory to flash"
         }
 
         m_last_time_measure_data = sys_get_ms();
