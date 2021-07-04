@@ -190,7 +190,6 @@ void measure_input_task(void)
         
         sys_ctx()->peripheral_running.name.adc = 0;
 	}
-	#warning "Please implement save data to flash"
 }
 
 void measure_input_initialize(void)
@@ -239,6 +238,22 @@ void measure_input_initialize(void)
         {
             m_pulse_counter_in_backup[1].reserve = last_data.meter_input[1].dir_r;
             save = true;    
+        }
+        
+        if (save)
+        {
+            app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
+                                        m_pulse_counter_in_backup[0].reserve, 
+                                        m_pulse_counter_in_backup[1].forward, 
+                                        m_pulse_counter_in_backup[1].reserve);
+        }
+#else
+        if (save)
+        {
+            app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
+                                        m_pulse_counter_in_backup[0].reserve, 
+                                        0, 
+                                        0);
         }
 #endif
     }

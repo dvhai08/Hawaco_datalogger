@@ -18,7 +18,7 @@
 
 void app_bkup_init(void)
 {
-    #warning "Please read data in flash and save to backup register"
+    
 }
 
 #ifdef GD32E10X

@@ -8,12 +8,13 @@
 #include "hardware.h"
 #include "version_control.h"
 #include "app_debug.h"
+#include "app_spi_flash.h"
+#include "app_rtc.h"
 
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;
-//    utilities_to_upper_case(buffer);
-	
+    uint8_t rewrite_data_to_flash = 0;	
 	app_eeprom_config_data_t *config = app_eeprom_read_config_data();
 
 	
@@ -164,8 +165,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
                 if(tmp_phone[i] != config->phone[i]
                     && changed == 0) 
                 {
-                        changed = 1;
-                        has_new_cfg++;
+                    changed = 1;
+                    has_new_cfg++;
                 }
                 config->phone[i] = tmp_phone[i];
             }
@@ -191,7 +192,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
             app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
-			#warning "Please write current measurement data to flash"
+			rewrite_data_to_flash |= (1 << 0);
         }
     }
 
@@ -207,7 +208,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
             app_bkup_write_pulse_counter(counter0_f, counter0_r, 0, 0);
-			#warning "Please write current measurement data to flash"
+			rewrite_data_to_flash |= (1 << 1);
         }
     }
 	
@@ -257,6 +258,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
             app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
+            rewrite_data_to_flash |= (1 << 0);
         }
     }
 	
@@ -318,6 +320,29 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     else
     {
         DEBUG_PRINTF("CFG: has no new config\r\n");
+    }
+    
+    if (rewrite_data_to_flash)
+    {
+        app_spi_flash_data_t data;
+        if (app_spi_flash_get_lastest_data(&data))
+        {
+            if (rewrite_data_to_flash & 0x01)
+            {
+                data.meter_input[0].pwm_f = 0;
+                data.meter_input[0].dir_r = 0;
+            }
+#ifdef DTG02
+            if (rewrite_data_to_flash & 0x02)
+            {
+                data.meter_input[1].pwm_f = 0;
+                data.meter_input[1].dir_r = 0;
+            }
+#endif
+            data.timestamp = app_rtc_get_counter();
+            DEBUG_INFO("Save new config to flash\r\n");
+            app_spi_flash_write_data(&data);
+        }
     }
 
     *new_config = has_new_cfg;
