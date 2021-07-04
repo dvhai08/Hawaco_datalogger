@@ -29,9 +29,10 @@
 
 //#define DEBUG_ADC
 
-#define ADC_NUMBER_OF_CONVERSION_TIMES		10
+//#define ADC_NUMBER_OF_CONVERSION_TIMES		10
+
 #ifdef DTG02
-#define ADC_CHANNEL_DMA_COUNT				8
+#define ADC_CHANNEL_DMA_COUNT				9
 #define ADC_VBAT_RESISTOR_DIV				7911
 #define ADC_VIN_RESISTOR_DIV				7911
 #define ADC_VREF							3300
@@ -42,8 +43,9 @@
 #define V_INPUT_1_4_20MA_CHANNEL_INDEX		3
 #define V_INPUT_0_4_20MA_CHANNEL_INDEX		4
 #define VBAT_CHANNEL_INDEX					5
-#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  6
-#define V_TEMP_CHANNEL_INDEX				7
+#define V_TEMP_CHANNEL_INDEX				6
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
+#define V_REF_CHANNEL_INDEX				    8
 #else
 #define ADC_CHANNEL_DMA_COUNT				6
 #define ADC_VBAT_RESISTOR_DIV				2
@@ -86,33 +88,47 @@ void MX_ADC_Init(void)
   LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
   /**ADC GPIO Configuration
   PC1   ------> ADC_IN11
+  PA0   ------> ADC_IN0
   PA1   ------> ADC_IN1
-  PA4   ------> ADC_IN4
+  PA5   ------> ADC_IN5
   PA6   ------> ADC_IN6
+  PA7   ------> ADC_IN7
+  PC5   ------> ADC_IN15
   */
-  GPIO_InitStruct.Pin = VTEMP_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(VTEMP_GPIO_Port, &GPIO_InitStruct);
-
   GPIO_InitStruct.Pin = ADC_VBAT_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(ADC_VBAT_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = ADC_4_20MA_IN_Pin;
+  GPIO_InitStruct.Pin = ADC_4_20MA_IN4_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(ADC_4_20MA_IN_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(ADC_4_20MA_IN4_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = ADC_24V_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(ADC_24V_GPIO_Port, &GPIO_InitStruct);
 
-  /* ADC interrupt Init */
-//  NVIC_SetPriority(ADC1_COMP_IRQn, 0);
-//  NVIC_EnableIRQ(ADC1_COMP_IRQn);
+  GPIO_InitStruct.Pin = ADC_4_20MA_IN3_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_4_20MA_IN3_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = ADC_4_20MA_IN2_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_4_20MA_IN2_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = ADC_4_20MA_IN1_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_4_20MA_IN1_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = ADC_VTEMP_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_VTEMP_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN ADC_Init 1 */
   if (SystemCoreClock > 8000000)
@@ -128,16 +144,25 @@ void MX_ADC_Init(void)
   /* USER CODE END ADC_Init 1 */
   /** Configure Regular Channel
   */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_0);
+  /** Configure Regular Channel
+  */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_1);
   /** Configure Regular Channel
   */
-  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_4);
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_5);
   /** Configure Regular Channel
   */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_6);
   /** Configure Regular Channel
   */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_7);
+  /** Configure Regular Channel
+  */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_11);
+  /** Configure Regular Channel
+  */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_15);
   /** Configure Regular Channel
   */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);
@@ -160,11 +185,11 @@ void MX_ADC_Init(void)
   LL_ADC_SetCommonFrequencyMode(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_FREQ_MODE_LOW);
   LL_ADC_DisableIT_EOC(ADC1);
   LL_ADC_DisableIT_EOS(ADC1);
+  ADC_InitStruct.Clock = LL_ADC_CLOCK_SYNC_PCLK_DIV1;
   ADC_InitStruct.Resolution = LL_ADC_RESOLUTION_12B;
   ADC_InitStruct.DataAlignment = LL_ADC_DATA_ALIGN_RIGHT;
   ADC_InitStruct.LowPowerMode = LL_ADC_LP_MODE_NONE;
   LL_ADC_Init(ADC1, &ADC_InitStruct);
-  LL_ADC_SetClock(ADC1, LL_ADC_CLOCK_ASYNC);
 
   /* Enable ADC internal voltage regulator */
   LL_ADC_EnableInternalRegulator(ADC1);
@@ -174,8 +199,8 @@ void MX_ADC_Init(void)
   /* CPU processing cycles (depends on compilation optimization). */
   /* Note: If system core clock frequency is below 200kHz, wait time */
   /* is only a few CPU processing cycles. */
-  volatile uint32_t wait_loop_index;
-  wait_loop_index = ((2*LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
+  uint32_t wait_loop_index;
+  wait_loop_index = ((LL_ADC_DELAY_INTERNAL_REGUL_STAB_US * (SystemCoreClock / (100000 * 2))) / 10);
   while(wait_loop_index != 0)
   {
     wait_loop_index--;
@@ -294,7 +319,42 @@ void adc_start(void)
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
             }
     #else
-            #warning "Please implemte adc channel seq"
+            if (i == 0)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_0);
+            }
+            else if (i == 1)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
+            }
+            else if (i == 2)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_5);
+            }
+            else if (i == 3)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6); 
+            }
+            else if (i == 4)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_7);            
+            }
+            else if (i == 5)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
+            }
+            else if (i == 6)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_15); 
+            }
+            else if (i == 7)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
+            }
+            else if (i == 8)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
+            }
     #endif
             if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
             {
@@ -404,9 +464,9 @@ void adc_convert(void)
 
 #ifdef DTG02
     #warning "Get vtemp"
-	m_adc_input.i_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
 
 	/* v_temp */

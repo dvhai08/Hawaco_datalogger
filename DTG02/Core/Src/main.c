@@ -131,9 +131,9 @@ int main(void)
   MX_RTC_Init();
   MX_ADC_Init();
   MX_USART1_UART_Init();
+  MX_TIM2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
-  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
@@ -191,12 +191,16 @@ int main(void)
 	if (led_blink_delay)
 	{
 		LED1(1);
+#ifdef DTG01
 		LED2(1);
+#endif
 	}
 	else
 	{
 		LED1(0);
+#ifdef DTG01
 		LED2(0);
+#endif
 	}	
 	if (system->status.is_enter_test_mode)
 	{

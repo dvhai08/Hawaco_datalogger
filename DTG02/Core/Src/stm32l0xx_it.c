@@ -40,6 +40,7 @@ typedef struct
 {
     uint32_t last_exti;
 } input_ext_isr_t;
+extern volatile int32_t ota_update_timeout_ms;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
@@ -74,7 +75,6 @@ volatile uint32_t m_last_exti0_timestamp;
 
 /* External variables --------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
-extern int32_t ota_update_timeout_ms;
 /* USER CODE BEGIN EV */
 input_ext_isr_t m_last_exti[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 
@@ -155,6 +155,7 @@ void SysTick_Handler(void)
 		led_blink_delay--;
 		if (led_blink_delay == 0)
 		{
+#ifdef DTG01
 			if (!LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin))
 			{
 				if (gsm_data_layer_is_module_sleeping())
@@ -164,6 +165,7 @@ void SysTick_Handler(void)
                     ctx->peripheral_running.name.gsm_running = 1;
 				}
 			}
+#endif
 		}
 	}
     
@@ -197,77 +199,6 @@ void RTC_IRQHandler(void)
   /* USER CODE BEGIN RTC_IRQn 1 */
 
   /* USER CODE END RTC_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line 0 and line 1 interrupts.
-  */
-void EXTI0_1_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI0_1_IRQn 0 */
-  /* USER CODE END EXTI0_1_IRQn 0 */
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
-    /* USER CODE BEGIN LL_EXTI_LINE_0 */
-        LED1(1);
-        led_blink_delay = 5;
-        measure_input_measure_wakeup_to_get_data();
-    /* USER CODE END LL_EXTI_LINE_0 */
-  }
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
-    /* USER CODE BEGIN LL_EXTI_LINE_1 */
-        uint32_t current_tick = sys_get_ms();
-//        if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
-        {
-            m_last_exti0_timestamp = current_tick;
-#ifdef DTG01
-            measure_input_water_meter_input_t input;
-            input.port = MEASURE_INPUT_PORT_0;
-            input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
-            input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
-            input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-            input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
-            measure_input_pulse_irq(&input);
-#endif
-            sys_ctx()->peripheral_running.name.measure_input_pwm_running = 1;
-        }
-      LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
-    /* USER CODE END LL_EXTI_LINE_1 */
-  }
-  /* USER CODE BEGIN EXTI0_1_IRQn 1 */
-
-  /* USER CODE END EXTI0_1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles EXTI line 2 and line 3 interrupts.
-  */
-void EXTI2_3_IRQHandler(void)
-{
-  /* USER CODE BEGIN EXTI2_3_IRQn 0 */
-    DEBUG_PRINTF("EXT2-3 irq\r\n");
-  /* USER CODE END EXTI2_3_IRQn 0 */
-  if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
-  {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_3);
-    /* USER CODE BEGIN LL_EXTI_LINE_3 */
-#ifdef DTG01
-        measure_input_water_meter_input_t input;
-        input.port = MEASURE_INPUT_PORT_0;
-        input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
-        input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
-        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
-        measure_input_pulse_irq(&input);
-#endif
-    /* USER CODE END LL_EXTI_LINE_3 */
-  }
-  /* USER CODE BEGIN EXTI2_3_IRQn 1 */
-
-  /* USER CODE END EXTI2_3_IRQn 1 */
 }
 
 /**
@@ -312,33 +243,6 @@ void DMA1_Channel2_3_IRQHandler(void)
 		// USART_TransferError_Callback();
 	}
   /* USER CODE END DMA1_Channel2_3_IRQn 1 */
-}
-
-/**
-  * @brief This function handles ADC, COMP1 and COMP2 interrupts (COMP interrupts through EXTI lines 21 and 22).
-  */
-void ADC1_COMP_IRQHandler(void)
-{
-  /* USER CODE BEGIN ADC1_COMP_IRQn 0 */
-    adc_isr_cb();
-  /* USER CODE END ADC1_COMP_IRQn 0 */
-
-  /* USER CODE BEGIN ADC1_COMP_IRQn 1 */
-
-  /* USER CODE END ADC1_COMP_IRQn 1 */
-}
-
-/**
-  * @brief This function handles SPI2 global interrupt.
-  */
-void SPI2_IRQHandler(void)
-{
-  /* USER CODE BEGIN SPI2_IRQn 0 */
-
-  /* USER CODE END SPI2_IRQn 0 */
-  /* USER CODE BEGIN SPI2_IRQn 1 */
-
-  /* USER CODE END SPI2_IRQn 1 */
 }
 
 /**
