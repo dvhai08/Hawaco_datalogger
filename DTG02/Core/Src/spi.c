@@ -47,29 +47,29 @@ void MX_SPI2_Init(void)
   PB13   ------> SPI2_SCK
   PB15   ------> SPI2_MOSI
   */
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_2;
+  GPIO_InitStruct.Pin = EXT_FLASH_MISO_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_2;
-  LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  LL_GPIO_Init(EXT_FLASH_MISO_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
+  GPIO_InitStruct.Pin = EXT_FLASH_SCK_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_0;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  LL_GPIO_Init(EXT_FLASH_SCK_GPIO_Port, &GPIO_InitStruct);
 
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_15;
+  GPIO_InitStruct.Pin = EXT_FLASH_MOSI_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   GPIO_InitStruct.Alternate = LL_GPIO_AF_0;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  LL_GPIO_Init(EXT_FLASH_MOSI_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN SPI2_Init 1 */
 
@@ -150,7 +150,28 @@ void spi_deinit(void)
     GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
     LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 #else
-    #warning "Please turn off spi dtg02"
+    NVIC_DisableIRQ(SPI2_IRQn);
+    LL_SPI_Disable(SPI2);
+    LL_SPI_DeInit(SPI2);
+    LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_SPI2);
+    
+    LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    GPIO_InitStruct.Pin = EXT_FLASH_MISO_Pin;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(EXT_FLASH_MISO_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = EXT_FLASH_SCK_Pin;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    GPIO_InitStruct.Alternate = LL_GPIO_AF_2;
+    LL_GPIO_Init(EXT_FLASH_SCK_GPIO_Port, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = EXT_FLASH_MOSI_Pin;
+    GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+    LL_GPIO_Init(EXT_FLASH_MOSI_GPIO_Port, &GPIO_InitStruct);
 #endif
 }
 

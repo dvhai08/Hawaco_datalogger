@@ -83,6 +83,8 @@ void Error_Handler(void);
 #define EN_4_20MA_IN_GPIO_Port GPIOC
 #define ADC_VBAT_Pin LL_GPIO_PIN_1
 #define ADC_VBAT_GPIO_Port GPIOC
+#define EXT_FLASH_MISO_Pin LL_GPIO_PIN_2
+#define EXT_FLASH_MISO_GPIO_Port GPIOC
 #define BUZZER_Pin LL_GPIO_PIN_3
 #define BUZZER_GPIO_Port GPIOC
 #define ADC_4_20MA_IN4_Pin LL_GPIO_PIN_0
@@ -113,8 +115,12 @@ void Error_Handler(void);
 #define RS485_RX_GPIO_Port GPIOB
 #define GSM_PWR_KEY_Pin LL_GPIO_PIN_12
 #define GSM_PWR_KEY_GPIO_Port GPIOB
+#define EXT_FLASH_SCK_Pin LL_GPIO_PIN_13
+#define EXT_FLASH_SCK_GPIO_Port GPIOB
 #define PWMIN1_Pin LL_GPIO_PIN_14
 #define PWMIN1_GPIO_Port GPIOB
+#define EXT_FLASH_MOSI_Pin LL_GPIO_PIN_15
+#define EXT_FLASH_MOSI_GPIO_Port GPIOB
 #define DIRIN1_Pin LL_GPIO_PIN_7
 #define DIRIN1_GPIO_Port GPIOC
 #define PWMIN2_Pin LL_GPIO_PIN_8
