@@ -51,7 +51,7 @@ typedef struct
 } measure_input_timestamp_t;
 
 
-uint8_t m_is_pulse_trigger = 0;
+volatile uint8_t m_is_pulse_trigger = 0;
 
 measure_input_timestamp_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
@@ -63,6 +63,12 @@ static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
+
+void test_pulse_counter(void)
+{
+    m_is_pulse_trigger = 1;
+    m_pulse_counter_in_backup[0].forward++;
+}
 
 static void measure_input_pulse_counter_poll(void)
 {

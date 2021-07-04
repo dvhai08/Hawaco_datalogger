@@ -217,7 +217,7 @@ void EXTI0_1_IRQHandler(void)
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)
   {
-        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
+    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_1);
     /* USER CODE BEGIN LL_EXTI_LINE_1 */
         uint32_t current_tick = sys_get_ms();
 //        if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
