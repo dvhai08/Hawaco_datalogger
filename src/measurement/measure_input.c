@@ -30,6 +30,7 @@
 #include "app_rtc.h"
 #include "rtc.h"
 #include "stm32l0xx_ll_rtc.h"
+#include "app_spi_flash.h"
 
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
@@ -196,14 +197,49 @@ void measure_input_initialize(void)
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
     */
-	uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
-	app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-    DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", counter0_f, counter0_r, counter1_f, counter1_r);
+    
+	app_bkup_read_pulse_counter(&m_pulse_counter_in_backup[0].forward, 
+                                &m_pulse_counter_in_backup[0].reserve, 
+                                &m_pulse_counter_in_backup[1].forward, 
+                                &m_pulse_counter_in_backup[1].reserve);
     
     for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
     {
         m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_IDLE;
     }
+    
+    app_spi_flash_data_t last_data;
+    if (app_spi_flash_get_lastest_data(&last_data))
+    {
+        bool save = false;
+        if (last_data.meter_input[0].pwm_f > m_pulse_counter_in_backup[0].forward)
+        {
+            m_pulse_counter_in_backup[0].forward = last_data.meter_input[0].pwm_f;
+            save = true;
+        }
+        
+        if (last_data.meter_input[0].dir_r > m_pulse_counter_in_backup[0].reserve)
+        {
+            m_pulse_counter_in_backup[0].reserve = last_data.meter_input[0].dir_r;
+            save = true;
+        }
+#ifdef DTG02
+        if (last_data.meter_input[1].pwm_f > m_pulse_counter_in_backup[1].forward)
+        {
+            m_pulse_counter_in_backup[1].forward = last_data.meter_input[1].pwm_f;
+            save = true; 
+        }
+        
+        if (last_data.meter_input[1].dir_r > m_pulse_counter_in_backup[1].reserve)
+        {
+            m_pulse_counter_in_backup[1].reserve = last_data.meter_input[1].dir_r;
+            save = true;    
+        }
+#endif
+    }
+    DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
+                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve, 
+                    m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
 }
 
 

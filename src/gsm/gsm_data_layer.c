@@ -69,7 +69,7 @@ static bool m_enter_http_post = false;
 static uint32_t m_malloc_count = 0;
 
 static char *m_last_http_msg = NULL;
-static app_flash_data_t *m_retransmision_data_in_flash;
+static app_spi_flash_data_t *m_retransmision_data_in_flash;
 
 #if GSM_READ_SMS_ENABLE
 bool m_do_read_sms = false;
@@ -395,12 +395,6 @@ void gsm_change_state(gsm_state_t new_state)
         DEBUG_RAW("SLEEP\r\n");
         sys_ctx_t *ctx = sys_ctx();
         ctx->peripheral_running.name.gsm_running = 0;
-        if (ctx->peripheral_running.name.flash_running)
-        {
-            app_spi_flash_shutdown();
-            spi_deinit();
-            ctx->peripheral_running.name.flash_running = 0;
-        }
     }
         break;
     case GSM_STATE_HTTP_GET:
@@ -1169,7 +1163,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             m_last_http_msg = NULL;
         }
         LED1(0);
-        app_flash_data_t wr_data;
+        app_spi_flash_data_t wr_data;
         wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
         wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
@@ -1205,7 +1199,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq = NULL;
         
         bool retransmition;
-        static app_flash_data_t rd_data;
+        static app_spi_flash_data_t rd_data;
         if (!ctx->peripheral_running.name.flash_running)
         {
             spi_init();
@@ -1237,7 +1231,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
     {
-        app_flash_data_t wr_data;
+        app_spi_flash_data_t wr_data;
         wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
         wr_data.resend_to_server_flag = 0;
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)

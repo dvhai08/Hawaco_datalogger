@@ -222,6 +222,13 @@ int main(void)
     if (gsm_data_layer_is_module_sleeping())
     {
         system->peripheral_running.name.gsm_running = 0;
+        if (system->peripheral_running.name.flash_running)
+        {
+            app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+        }
+        
         usart1_control(false);
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
@@ -244,17 +251,9 @@ int main(void)
 		RS485_EN(cfg->io_enable.name.rs485_en);
 	}
     
-    if (system->peripheral_running.value)
-    {      
-        if (system->peripheral_running.name.flash_running)
-        {
-            app_spi_flash_shutdown();
-            spi_deinit();
-            system->peripheral_running.name.flash_running = 0;
-        }
-    }
-    else
+    if (system->peripheral_running.value == 0)
     {
+        adc_stop();
         sys_config_low_power_mode();
     }
 	
