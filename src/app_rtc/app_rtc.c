@@ -110,7 +110,6 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 	}
 	int week_day;
 	get_weekday(time->year + 2000, time->month, time->day, &week_day);
-	week_day %= 7;
 	sDate.WeekDay = __LL_RTC_CONVERT_BIN2BCD((uint8_t)week_day);
 	sDate.Month = __LL_RTC_CONVERT_BIN2BCD(time->month);
 	sDate.Date = __LL_RTC_CONVERT_BIN2BCD(time->day);

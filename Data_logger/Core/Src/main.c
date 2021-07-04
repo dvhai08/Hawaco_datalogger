@@ -50,6 +50,7 @@
 #include "app_spi_flash.h"
 #include "ota_update.h"
 #include "flash_if.h"
+#include "version_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,7 +102,7 @@ void sys_config_low_power_mode(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-//	__enable_irq();
+
 	hardware_manager_get_reset_reason();
   /* USER CODE END 1 */
 
@@ -118,6 +119,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
+    __enable_irq();
 #if 1
   /* USER CODE END SysInit */
 
@@ -162,7 +164,9 @@ int main(void)
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
 
     
-    DEBUG_PRINTF("Build %s %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
+    DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
+                                                                            VERSION_CONTROL_FW,
+                                                                            ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -435,7 +439,7 @@ void sys_config_low_power_mode(void)
 
         HAL_SuspendTick();
         
-          GPIO_InitTypeDef GPIO_InitStructure;
+//          GPIO_InitTypeDef GPIO_InitStructure;
         __HAL_RCC_PWR_CLK_ENABLE();
         
         /* Enable Ultra low power mode */

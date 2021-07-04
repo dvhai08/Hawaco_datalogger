@@ -1,0 +1,5 @@
+Step1 :
+chèn 16 bytes md5 vào cuối cùng firmware
+step2: chèn header
+DTG01 : 44544730310000000000000000000000
+DTG02 : 44544730320000000000000000000000

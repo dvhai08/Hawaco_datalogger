@@ -12,15 +12,15 @@
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;
-    utilities_to_upper_case(buffer);
+//    utilities_to_upper_case(buffer);
 	
 	app_eeprom_config_data_t *config = app_eeprom_read_config_data();
 
 	
-    char *cycle_wakeup = strstr(buffer, "CYCLEWAKEUP\":");
+    char *cycle_wakeup = strstr(buffer, "Cyclewakeup\":");
     if (cycle_wakeup != NULL)
     {
-        uint32_t wake_time_measure_data_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CYCLEWAKEUP\":"), cycle_wakeup);
+        uint32_t wake_time_measure_data_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("Cyclewakeup\":"), cycle_wakeup);
         if (config->measure_interval_ms != wake_time_measure_data_ms)
         {
             config->measure_interval_ms = wake_time_measure_data_ms;
@@ -28,22 +28,22 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-    char *cycle_send_web = strstr(buffer, "CYCLESENDWEB\":");
+    char *cycle_send_web = strstr(buffer, "CycleSendWeb\":");
     if (cycle_send_web != NULL)
     {
-        uint32_t send_time_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CYCLESENDWEB\":"), cycle_send_web);
+        uint32_t send_time_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CycleSendWeb\":"), cycle_send_web);
         if (config->send_to_server_interval_ms != send_time_ms)
         {
-            DEBUG_PRINTF("CYCLESENDWEB changed\r\n");
+            DEBUG_PRINTF("CycleSendWeb changed\r\n");
             config->send_to_server_interval_ms = send_time_ms;
             has_new_cfg++;
         }
     }
 #ifdef DTG02
-    char *output1 = strstr(buffer, "OUTPUT1\":");
+    char *output1 = strstr(buffer, "Output1\":");
     if (output1 != NULL)
     {
-        uint8_t out1 = gsm_utilities_get_number_from_string(strlen("OUTPUT1\":"), output1) & 0x1;
+        uint8_t out1 = gsm_utilities_get_number_from_string(strlen("Output1\":"), output1) & 0x1;
         if (config->io_enable.name.output0 != out1)
         {
             config->io_enable.name.output0 = out1;
@@ -54,10 +54,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-    char *output2 = strstr(buffer, "OUTPUT2\":");
+    char *output2 = strstr(buffer, "Output2\":");
     if (output2 != NULL)
     {
-        uint8_t out2 = gsm_utilities_get_number_from_string(strlen("OUTPUT2\":"), output2) ? 1 : 0;
+        uint8_t out2 = gsm_utilities_get_number_from_string(strlen("Output2\":"), output2) ? 1 : 0;
         if (config->io_enable.name.output1 != out2)
         {
             config->io_enable.name.output1 = out2;
@@ -68,10 +68,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 	
 
-    char *output3 = strstr(buffer, "OUTPUT3\":");
+    char *output3 = strstr(buffer, "Output3\":");
     if (output3 != NULL)
     {
-        uint8_t out3 = gsm_utilities_get_number_from_string(strlen("OUTPUT3\":"), output3) ? 1 : 0;
+        uint8_t out3 = gsm_utilities_get_number_from_string(strlen("Output3\":"), output3) ? 1 : 0;
         if (config->io_enable.name.output2 != out3)
         {
             config->io_enable.name.output2 = out3;
@@ -81,10 +81,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-	char *output4 = strstr(buffer, "OUTPUT4\":");
+	char *output4 = strstr(buffer, "Output4\":");
     if (output4 != NULL)
     {
-        uint8_t out4 = gsm_utilities_get_number_from_string(strlen("OUTPUT4\":"), output4) ? 1 : 0;
+        uint8_t out4 = gsm_utilities_get_number_from_string(strlen("Output4\":"), output4) ? 1 : 0;
         if (config->io_enable.name.output3 != out4)
         {
             config->io_enable.name.output3 = out4;
@@ -95,10 +95,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 #endif
 	
-    char *mode_j1 = strstr(buffer, "INPUT_J1\":");		// mode
+    char *mode_j1 = strstr(buffer, "Input_j1\":");		// mode
     if (mode_j1 != NULL)
     {
-        uint8_t mode = gsm_utilities_get_number_from_string(strlen("INPUT_J1\":"), mode_j1);
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_j1\":"), mode_j1);
         if (config->meter_mode[0] != mode)
         {
             DEBUG_PRINTF("PWM1 mode changed\r\n");
@@ -107,10 +107,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-    char *mode_j2 = strstr(buffer, "INPUT_J2\":");
+    char *mode_j2 = strstr(buffer, "Input_j2\":");
     if (mode_j2 != NULL)
     {
-        uint8_t mode = gsm_utilities_get_number_from_string(strlen("INPUT_J2\":"), mode_j2);
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_j2\":"), mode_j2);
         if (config->meter_mode[1] != mode)
         {
             DEBUG_PRINTF("PWM2 mode changed\r\n");
@@ -131,13 +131,13 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-    char *alarm = strstr(buffer, "WARNING\":");
+    char *alarm = strstr(buffer, "Warning\":");
     if (alarm != NULL)
     {
-        uint8_t alrm = gsm_utilities_get_number_from_string(strlen("WARNING\":"), alarm) ? 1 : 0;
+        uint8_t alrm = gsm_utilities_get_number_from_string(strlen("Warning\":"), alarm) ? 1 : 0;
         if (config->io_enable.name.warning != alrm)
         {
-            DEBUG_PRINTF("WARNING changed\r\n");
+            DEBUG_PRINTF("Warning changed\r\n");
             config->io_enable.name.warning = alrm;
             has_new_cfg++;
         }
@@ -178,11 +178,11 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 #endif
         }
     }
-
-    char *counter_offset = strstr(buffer, "METERINDICATOR_J1\":");
+#ifdef DTG02
+    char *counter_offset = strstr(buffer, "MeterIndicator_J1\":");
     if (counter_offset)
     {
-        uint32_t offset = gsm_utilities_get_number_from_string(strlen("METERINDICATOR_J1\":"), counter_offset);
+        uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J1\":"), counter_offset);
         if (config->offset0 != offset)
         {
             has_new_cfg++;   
@@ -195,10 +195,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
-	counter_offset = strstr(buffer, "METERINDICATOR_J2\":");
+	counter_offset = strstr(buffer, "MeterIndicator_J2\":");
     if (counter_offset)
     {
-        uint32_t offset = gsm_utilities_get_number_from_string(strlen("METERINDICATOR_J2\":"), counter_offset);
+        uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J2\":"), counter_offset);
         if (config->offset1 != offset)
         {
             has_new_cfg++;   
@@ -228,6 +228,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
+    k_factor = strstr(buffer, "K_J2\":");
 	if (k_factor)
     {
         uint32_t k = gsm_utilities_get_number_from_string(strlen("K_J2\":"), k_factor);
@@ -243,32 +244,63 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++; 
         }
     }
+#else
+    char *counter_offset = strstr(buffer, "MeterIndicator\":");
+    if (counter_offset)
+    {
+        uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator\":"), counter_offset);
+        if (config->offset0 != offset)
+        {
+            has_new_cfg++;   
+            config->offset0 = offset;
+            DEBUG_PRINTF("PWM dir 1 offset changed to %u\r\n", offset);
+			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
+			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
+            app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
+        }
+    }
 	
+	char *k_factor = strstr(buffer, "K\":");
+    if (k_factor)
+    {
+        uint32_t k = gsm_utilities_get_number_from_string(strlen("K\":"), k_factor);
+        if (k == 0)
+        {
+            k = 1;
+        }
+
+        if (config->k0 != k)
+        {
+            config->k0 = k;
+            DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
+            has_new_cfg++; 
+        }
+    }
+#endif
 	
-	char *do_ota = strstr(buffer, "UPDATE\":");
-	char *version = strstr(buffer, "VERSION:\":\"");
-	char *link = strstr(buffer, "LINK:\"");
+	char *do_ota = strstr(buffer, "Update\":");
+	char *version = strstr(buffer, "version\":\"");
+	char *link = strstr(buffer, "Link\":");
     if (do_ota && version && link)
     {
-		version += strlen("VERSION:\":\"");
-		link += strlen("LINK:\"");
+		version += strlen("Version\":\"");
+		link += strlen("Link\":");
 		
-        uint32_t update = gsm_utilities_get_number_from_string(strlen("UPDATE\":"), do_ota);
+        uint32_t update = gsm_utilities_get_number_from_string(strlen("Update\":"), do_ota);
         if (update)
         {
 			DEBUG_PRINTF("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
-			uint32_t tmp[32];
 			uint8_t version_compare;
 			version = strtok(version, "\"");
 			version_compare = version_control_compare(version);
 			if (version_compare == VERSION_CONTROL_FW_NEWER)
 			{
-				link += strlen("LINK:\"");
 				link = strtok(link, "\"");
 				if (link && strlen(link) && strstr(link, "http"))
 				{
+                    sys_ctx()->status.delay_ota_update = 5;
                     sys_ctx()->status.enter_ota_update = true;
-                    sprintf((char*)sys_ctx()->status.ota_url, "%s", link);
+                    sprintf((char*)sys_ctx()->status.ota_url, "%s", strstr(link, "http"));
 				}
 			}
 			else

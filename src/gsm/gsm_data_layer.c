@@ -194,6 +194,7 @@ void gsm_manager_tick(void)
                 {
                     if (GSM_NEED_ENTER_HTTP_GET() || ctx->status.enter_ota_update)
                     {
+                        ctx->status.delay_ota_update = 0;
                         gsm_change_state(GSM_STATE_HTTP_GET);
                         enter_sleep_in_http = false;
                         m_enter_http_get = true;
@@ -1145,7 +1146,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     {
         DEBUG_PRINTF("HTTP get : event success\r\n");
         ctx->status.disconnect_timeout_s = 0;
-        if (sys_ctx()->status.enter_ota_update)
+        if (ctx->status.enter_ota_update 
+            && ctx->status.delay_ota_update == 0)
         {
             ota_update_finish(true);
         }
@@ -1272,7 +1274,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_EVENT_FINISH_FAILED:
     {
         DEBUG_PRINTF("HTTP event failed\r\n");
-        if (sys_ctx()->status.enter_ota_update)
+        if (ctx->status.enter_ota_update 
+            && ctx->status.delay_ota_update == 0)
         {
             ota_update_finish(false);
         }

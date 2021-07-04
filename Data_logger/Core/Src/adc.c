@@ -283,17 +283,14 @@ void adc_start(void)
             }
             else if (i == 3)
             {
-                DEBUG_PRINTF("Seq11\r\n");
-               LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
             }
             else if (i == 4)
             {
-                DEBUG_PRINTF("Seq vtemp\r\n");
-                  LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
             }
             else if (i == 5)
             {
-                DEBUG_PRINTF("Seq refint\r\n");
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
             }
     #else
@@ -389,7 +386,6 @@ void adc_convert(void)
 	/* ADC input 4-20mA */
 	m_adc_input.in_4_20ma_in[0] = m_adc_filterd_data[V_INPUT_0_4_20MA_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #else
-	m_is_the_first_time_convert = false;
 	
     // VREF and VDDA
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
@@ -421,18 +417,6 @@ void adc_convert(void)
         m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
     }
 }
-
-//bool adc_conversion_cplt(bool clear_on_exit)
-//{
-//	bool retval = m_adc_new_data;
-//	
-//	if (clear_on_exit)
-//	{
-//		m_adc_new_data = false;
-//	}
-//	return retval;
-//}
-
 
 
 /* USER CODE END 1 */

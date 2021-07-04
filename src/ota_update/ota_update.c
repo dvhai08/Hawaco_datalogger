@@ -149,6 +149,7 @@ void ota_update_finish(bool status)
     m_ota_remain.size = 0;
 	m_ota_is_running = false;
     NVIC_SystemReset();
+    while(1);
 }
 
 static bool verify_checksum(uint32_t begin_addr, uint32_t length)

@@ -304,7 +304,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
         }
         else
         {
-            DEBUG_PRINTF("Noise\r\n");
+            DEBUG_WARN("Noise, diff time %ums\r\n", m_pull_diff[input->port]);
         }
 	}
     __enable_irq();
