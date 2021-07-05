@@ -173,7 +173,7 @@ void SysTick_Handler(void)
     {
         if (ota_update_timeout_ms-- == 0)
         {
-            DEBUG_PRINTF("OTA update timeout\r\n");
+            DEBUG_ERROR("OTA update timeout\r\n");
             NVIC_SystemReset();
         }
     }
@@ -193,7 +193,6 @@ void SysTick_Handler(void)
 void RTC_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_IRQn 0 */
-    DEBUG_PRINTF("RTC IRQ\r\n");
   /* USER CODE END RTC_IRQn 0 */
   HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
   /* USER CODE BEGIN RTC_IRQn 1 */

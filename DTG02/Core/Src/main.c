@@ -452,8 +452,6 @@ void sys_config_low_power_mode(void)
         /* Enable the fast wake up from Ultra low power mode */
         HAL_PWREx_EnableFastWakeUp();
         
-
-        
         /* Select MSI as system clock source after Wake Up from Stop mode */
         __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
 

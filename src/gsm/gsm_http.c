@@ -154,8 +154,7 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
             m_total_bytes_recv = 0;
             m_http_read_big_file_step = 0;
 			m_file_handle = -1;
-            if (m_http_cfg.on_event_cb) 
-                m_http_cfg.on_event_cb(GSM_HTTP_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+            m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
             return;
         }
     }
@@ -193,7 +192,7 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
             m_http_read_big_file_step = 0;
 			m_file_handle = -1;
             if (m_http_cfg.on_event_cb) 
-                m_http_cfg.on_event_cb(GSM_HTTP_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+                m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
             return;
 		}
     }
@@ -264,7 +263,7 @@ void gsm_http_close_on_error(void)
     m_renew_config_ssl = 0;
     if (m_http_cfg.on_event_cb)
     {
-        if (m_http_cfg.on_event_cb) m_http_cfg.on_event_cb(GSM_HTTP_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+        m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
     }
 }
 
@@ -278,7 +277,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         {
             if (m_http_cfg.on_event_cb)
             {
-                if (m_http_cfg.on_event_cb) m_http_cfg.on_event_cb(GSM_HTTP_EVENT_START, NULL);
+                m_http_cfg.on_event_cb(GSM_HTTP_EVENT_START, NULL);
             }
 
             DEBUG_PRINTF("Set PDP context as 1\r\n");
@@ -576,7 +575,10 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             else        // POST
             {
                 post_rx_data.action = m_http_cfg.action;
-                m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
+                if (m_http_cfg.on_event_cb)
+                {
+                    m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
+                }
                 DEBUG_PRINTF("Send post data\r\n"); 
                 sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,3,7\r\n", 
                                             post_rx_data.data_length); 
@@ -609,7 +611,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                     {
                         if (m_http_cfg.on_event_cb)
                         {
-                            if (m_http_cfg.on_event_cb) m_http_cfg.on_event_cb(GSM_HTTP_EVENT_CONNTECTED, &m_content_length);
+                            m_http_cfg.on_event_cb(GSM_HTTP_EVENT_CONNTECTED, &m_content_length);
                         }
 
                         DEBUG_PRINTF("Content length %u\r\n", m_content_length);
@@ -689,9 +691,12 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                     post_rx_data.action = m_http_cfg.action;
                     post_rx_data.data_length = p_end - p_begin;
                     post_rx_data.data = (uint8_t*)p_begin;
-
-                    m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_DATA, &post_rx_data);
-                    m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_SUCCESS, &m_total_bytes_recv);
+                    
+                    if (m_http_cfg.on_event_cb)
+                    {
+                        m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_DATA, &post_rx_data);
+                        m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_SUCCESS, &m_total_bytes_recv);
+                    }
                 }
                 else
                 {
@@ -731,7 +736,10 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 }
                 else
                 {
-                    m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_FAILED, NULL);
+                    if (m_http_cfg.on_event_cb)
+                    {
+                        m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_FAILED, NULL);
+                    }
                 }
             }
         }
@@ -741,7 +749,10 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             DEBUG_PRINTF("HTTP post response : %s, data %s\r\n", 
                             (event == GSM_EVENT_OK) ? "OK" : "FAIL",
                              (char*)response_buffer);
-            m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+            if (m_http_cfg.on_event_cb)
+            {
+                m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
+            }
             m_http_step = 0;
             return;
             break;

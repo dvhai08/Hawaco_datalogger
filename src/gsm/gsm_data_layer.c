@@ -1160,6 +1160,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         if (ctx->status.enter_ota_update 
             && ctx->status.delay_ota_update == 0)
         {
+            GSM_PWR_EN(0);
+            GSM_PWR_RESET(0);
+            GSM_PWR_KEY(0);
             ota_update_finish(true);
         }
         gsm_change_state(GSM_STATE_OK);
@@ -1282,13 +1285,16 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
     }
-    case GSM_HTTP_EVENT_FINISH_FAILED:
+    case GSM_HTTP_GET_EVENT_FINISH_FAILED:
     {
         DEBUG_PRINTF("HTTP event failed\r\n");
         if (ctx->status.enter_ota_update 
             && ctx->status.delay_ota_update == 0)
         {
             ota_update_finish(false);
+            GSM_PWR_EN(0);
+            GSM_PWR_RESET(0);
+            GSM_PWR_KEY(0);
         }
         if (m_last_http_msg)
         {
