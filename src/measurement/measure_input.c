@@ -37,7 +37,7 @@
 #define PULSE_STATE_WAIT_FOR_FALLING_EDGE       0
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
-
+#define PULSE_MINMUM_WITDH_MS                   50
 typedef struct
 {
     uint32_t forward;
@@ -46,15 +46,22 @@ typedef struct
 
 typedef struct
 {
-    uint32_t counter;
-    int32_t subsecond;
+    uint32_t counter_pwm;
+    int32_t  subsecond_pwm;
+    uint32_t counter_dir;
+    int32_t  subsecond_dir;
 } measure_input_timestamp_t;
 
+typedef struct
+{
+    uint8_t pwm;
+    uint8_t dir;
+} measure_input_pull_state_t;
 
 volatile uint8_t m_is_pulse_trigger = 0;
 
 measure_input_timestamp_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-int8_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+measure_input_pull_state_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 
 static measure_input_water_meter_input_t m_water_meter_input[2];
@@ -81,7 +88,7 @@ static void measure_input_pulse_counter_poll(void)
 									m_pulse_counter_in_backup[0].reserve,
 									m_pulse_counter_in_backup[1].forward,
 									m_pulse_counter_in_backup[1].forward);
-        DEBUG_PRINTF("Save counter (%u-%u), (%u-%u) to backup\r\n", 
+        DEBUG_INFO("Save counter (%u-%u), (%u-%u) to backup\r\n", 
                                     m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
                                     m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
 #endif
@@ -131,6 +138,7 @@ void measure_input_task(void)
     }
     
     // Vtemp
+    #warning "Check tempearature valid or not"
     if (input_adc->temp_is_valid)
     {
         m_measure_data.temperature_error = 0;
@@ -212,7 +220,8 @@ void measure_input_initialize(void)
 {	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-		m_pull_state[i] = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+		m_pull_state[i].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+        m_pull_state[i].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
 	}
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
@@ -305,81 +314,133 @@ measure_input_water_meter_input_t *measure_input_get_backup_counter(void)
 }
 
 
-static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_input_timestamp_t *end)
+static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_input_timestamp_t *end, uint8_t isr_type)
 {
-    uint32_t ms = (end->counter - begin->counter)*((uint32_t)1000);
+    uint32_t ms;
     uint32_t prescaler = LL_RTC_GetSynchPrescaler(RTC);
-    end->subsecond = 1000 *(prescaler - end->subsecond) / (prescaler + 1);
-    begin->subsecond = 1000 *(prescaler - begin->subsecond) / (prescaler + 1);
-    
-    ms += end->subsecond;
-    ms -= begin->subsecond;
+    if (isr_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
+    {
+        ms = (end->counter_pwm - begin->counter_pwm)*((uint32_t)1000);
+        
+        end->subsecond_pwm = 1000 *(prescaler - end->subsecond_pwm) / (prescaler + 1);
+        begin->subsecond_pwm = 1000 *(prescaler - begin->subsecond_pwm) / (prescaler + 1);
+        
+        ms += end->subsecond_pwm;
+        ms -= begin->subsecond_pwm;
+    }
+    else
+    {
+        ms = (end->counter_dir - begin->counter_dir)*((uint32_t)1000);
+        
+        end->subsecond_dir = 1000 *(prescaler - end->subsecond_dir) / (prescaler + 1);
+        begin->subsecond_dir = 1000 *(prescaler - begin->subsecond_dir) / (prescaler + 1);
+        
+        ms += end->subsecond_dir;
+        ms -= begin->subsecond_dir;
+    }
     return ms;
 }
 
 
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
-	  __disable_irq();
-	if (input->pwm_level)
-	{
-		m_begin_pulse_timestamp[input->port].counter = app_rtc_get_counter();
-        m_begin_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
-		m_pull_state[input->port] = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-	else if (m_pull_state[input->port] == PULSE_STATE_WAIT_FOR_RISING_EDGE)
-	{
-		m_pull_state[input->port] = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-        
-		m_end_pulse_timestamp[input->port].counter = app_rtc_get_counter();
-        m_end_pulse_timestamp[input->port].subsecond = app_rtc_get_subsecond_counter();
-        m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], &m_end_pulse_timestamp[input->port]);
-        if (m_pull_diff[input->port] > 50)
+	__disable_irq();
+    if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
+    {
+        if (input->pwm_level)
         {
-            m_is_pulse_trigger = 1;
-            DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
-            if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
+            m_begin_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
+            m_begin_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
+            m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
+            m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+        }
+        else if (m_pull_state[input->port].pwm == PULSE_STATE_WAIT_FOR_RISING_EDGE)
+        {
+            m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+            m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+            
+            m_end_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
+            m_end_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
+            
+            m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
+                                                &m_end_pulse_timestamp[input->port],
+                                                MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN);
+            if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
             {
-                if (input->dir_level == 0)
+                m_is_pulse_trigger = 1;
+                DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
+                if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
                 {
-                    DEBUG_INFO("Reserve\r\n");
+                    if (input->dir_level == 0)
+                    {
+                        DEBUG_INFO("Reserve\r\n");
+                    }
+                    if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
+                    {
+                        m_pulse_counter_in_backup[input->port].forward++;
+                    }
+                    else
+                    {
+                        if (m_pulse_counter_in_backup[input->port].forward > 0)
+                        {
+                            m_pulse_counter_in_backup[input->port].forward--;
+                        }
+                    }
+                    m_pulse_counter_in_backup[input->port].reserve = 0;
                 }
-                if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
+                else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
                 {
+                    
                     m_pulse_counter_in_backup[input->port].forward++;
+                    m_pulse_counter_in_backup[input->port].reserve = 0;
                 }
                 else
                 {
-                    if (m_pulse_counter_in_backup[input->port].forward > 0)
-                    {
-                        m_pulse_counter_in_backup[input->port].forward--;
-                    }
+                    m_pulse_counter_in_backup[input->port].forward++;
                 }
-                m_pulse_counter_in_backup[input->port].reserve = 0;
-            }
-            else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
-            {
-                
-                m_pulse_counter_in_backup[input->port].forward++;
-                m_pulse_counter_in_backup[input->port].reserve = 0;
             }
             else
             {
-                if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
-                {
-                    m_pulse_counter_in_backup[input->port].forward++;
-                }
-                else
+                DEBUG_WARN("PWM Noise, diff time %ums\r\n", m_pull_diff[input->port]);
+            }
+        }
+    }
+    else if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN)
+    {
+        if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+        {
+            if (input->dir_level)
+            {
+                m_begin_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
+                m_begin_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
+                m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
+                m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+            }
+            else if (m_pull_state[input->port].dir == PULSE_STATE_WAIT_FOR_RISING_EDGE)
+            {
+                m_is_pulse_trigger = 1;
+                // reset state
+                m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+                m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+                
+                m_end_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
+                m_end_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
+                
+                m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
+                                                    &m_end_pulse_timestamp[input->port],
+                                                    MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN);
+                
+                if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
                     m_pulse_counter_in_backup[input->port].reserve++;
                 }
             }
+            else
+            {
+                DEBUG_WARN("DIR Noise, diff time %ums\r\n", m_pull_diff[input->port]);
+            }
         }
-        else
-        {
-            DEBUG_WARN("Noise, diff time %ums\r\n", m_pull_diff[input->port]);
-        }
-	}
+    }
     __enable_irq();
 }
 

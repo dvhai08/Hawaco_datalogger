@@ -416,7 +416,11 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
     #define RESISTOR_ROOM_TEMP 470000.0f //Resistance in Ohms @ 25oC	330k/470k
 
     bool retval = true;
-
+    float vtemp_float;
+    float vbat_float;
+    float r_ntc;
+    float temp ;
+    
     if(vtemp_mv == vbat_mv
         || vtemp_mv == 0)
     {
@@ -426,11 +430,11 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     //NTC ADC: Vntc1 = Vntc2 = Vin
     //Tinh dien ap NTC
-    float vtemp_float = vtemp_mv / 1000.0f;
-    float vbat_float = vbat_mv / 1000.0f;
+    vtemp_float = vtemp_mv / 1000.0f;
+    vbat_float = vbat_mv / 1000.0f;
 
     //Caculate NTC resistor : Vntc = Vin*Rs/(Rs + Rntc) -> Rntc = Rs(Vin/Vntc - 1)
-    float r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
+    r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
     DEBUG_PRINTF("Resistant NTC = %d\r\n", (int)r_ntc);
 
 
@@ -440,7 +444,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
         goto end;
     }
 
-    float temp = (BETA * ROOM_TEMP) / (BETA + (ROOM_TEMP * log(r_ntc / RESISTOR_ROOM_TEMP))) - 273.15f;
+    temp = (BETA * ROOM_TEMP) / (BETA + (ROOM_TEMP * log(r_ntc / RESISTOR_ROOM_TEMP))) - 273.15f;
 
     if (temp < 0)
     {

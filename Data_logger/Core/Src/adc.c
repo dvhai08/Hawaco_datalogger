@@ -26,7 +26,7 @@
 #include "lpf.h"
 #include "hardware.h"
 #include "app_eeprom.h"
-
+#include "math.h"
 //#define DEBUG_ADC
 
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
@@ -243,6 +243,7 @@ void adc_isr_cb(void)
     }
 }
 
+
 void adc_start(void)
 {
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
@@ -346,6 +347,66 @@ adc_input_value_t *adc_get_input_result(void)
 	return &m_adc_input;
 }
 
+static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *result)
+{
+    #define HW_RESISTOR_SERIES_NTC 300000 //300K Ohm
+    /* This is thermistor dependent and it should be in the datasheet, or refer to the
+    article for how to calculate it using the Beta equation.
+    I had to do this, but I would try to get a thermistor with a known
+    beta if you want to avoid empirical calculations. */
+    #define BETA 4570.0f //B25/B75
+
+    /* This is also needed for the conversion equation as "typical" room temperature
+    is needed as an input. */
+    #define ROOM_TEMP 298.15f // room temperature in Kelvin
+
+    /* Thermistors will have a typical resistance at room temperature so write this 
+    down here. Again, needed for conversion equations. */
+    #define RESISTOR_ROOM_TEMP 470000.0f //Resistance in Ohms @ 25oC	330k/470k
+
+    bool retval = true;
+    float vtemp_float;
+    float vbat_float;
+    float r_ntc;
+    float temp ;
+    
+    if(vtemp_mv == vbat_mv
+        || vtemp_mv == 0)
+    {
+        retval = false;
+        goto end;
+    }
+
+    //NTC ADC: Vntc1 = Vntc2 = Vin
+    //Tinh dien ap NTC
+    vtemp_float = vtemp_mv / 1000.0f;
+    vbat_float = vbat_mv / 1000.0f;
+
+    //Caculate NTC resistor : Vntc = Vin*Rs/(Rs + Rntc) -> Rntc = Rs(Vin/Vntc - 1)
+    r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
+    DEBUG_PRINTF("Resistant NTC = %d\r\n", (int)r_ntc);
+
+
+    if (r_ntc <= 0)
+    {
+        retval = false;
+        goto end;
+    }
+
+    temp = (BETA * ROOM_TEMP) / (BETA + (ROOM_TEMP * log(r_ntc / RESISTOR_ROOM_TEMP))) - 273.15f;
+
+    if (temp < 0)
+    {
+        DEBUG_ERROR("Invalid temperature %.1f\r\n", temp);
+        retval = false;
+        goto end;
+    }
+
+    *result = (int32_t)temp;
+end:
+    return retval;
+}
+
 void adc_convert(void)
 {
 #if 0
@@ -410,11 +471,17 @@ void adc_convert(void)
 #endif
 
 	/* v_temp */
-//	m_adc_input.temp = m_adc_raw_data[V_TEMP_CHANNEL_INDEX].estimate_value*m_adc_input.vdda_mv/4095;
-//    m_adc_input.temp = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
     if (m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX])
     {
-        m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+        uint32_t vtemp_mv = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
+        if (convert_temperature(vtemp_mv, m_adc_input.vdda_mv, &m_adc_input.temp))
+        {
+            m_adc_input.temp_is_valid = 1;
+        }
+        else
+        {
+            m_adc_input.temp_is_valid = 0;
+        }
     }
 }
 
