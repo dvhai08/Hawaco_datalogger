@@ -28,7 +28,7 @@
 #include "app_eeprom.h"
 #include "math.h"
 //#define DEBUG_ADC
-
+#define USE_INTERNAL_VREF                   1
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				8
@@ -464,16 +464,16 @@ void adc_convert(void)
 #endif
 
 #ifdef DTG02
-    #warning "Get vtemp"
-	m_adc_input.i_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
-	m_adc_input.i_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
+	m_adc_input.in_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
 
+#if USE_INTERNAL_VREF == 0
 	/* v_temp */
-    if (m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX])
+    if (m_adc_raw_data[V_TEMP_CHANNEL_INDEX])
     {
-        uint32_t vtemp_mv = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
+        uint32_t vtemp_mv = m_adc_raw_data[V_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
         if (convert_temperature(vtemp_mv, m_adc_input.vdda_mv, &m_adc_input.temp))
         {
             m_adc_input.temp_is_valid = 1;
@@ -483,6 +483,10 @@ void adc_convert(void)
             m_adc_input.temp_is_valid = 0;
         }
     }
+#else
+    m_adc_input.temp_is_valid = 1;
+    m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+#endif
 }
 
 

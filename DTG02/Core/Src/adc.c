@@ -30,7 +30,7 @@
 //#define DEBUG_ADC
 
 //#define ADC_NUMBER_OF_CONVERSION_TIMES		10
-
+#define USE_INTERNAL_VREF                   1
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				9
 #define ADC_VBAT_RESISTOR_DIV				7911
@@ -349,11 +349,13 @@ void adc_start(void)
             }
             else if (i == 7)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);      
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);                
             }
             else if (i == 8)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT);
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT); 
             }
     #endif
             if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
@@ -397,10 +399,10 @@ static uint8_t convert_vin_to_percent(uint32_t vin)
         return 0;
     return ((vin - VIN_MIN) * 100) / (VIN_MAX - VIN_MIN);
 }
-
+#if USE_INTERNAL_VREF == 0
 static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *result)
 {
-    #define HW_RESISTOR_SERIES_NTC 300000 //300K Ohm
+    #define HW_RESISTOR_SERIES_NTC 10000 //10K Ohm
     /* This is thermistor dependent and it should be in the datasheet, or refer to the
     article for how to calculate it using the Beta equation.
     I had to do this, but I would try to get a thermistor with a known
@@ -413,7 +415,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     /* Thermistors will have a typical resistance at room temperature so write this 
     down here. Again, needed for conversion equations. */
-    #define RESISTOR_ROOM_TEMP 470000.0f //Resistance in Ohms @ 25oC	330k/470k
+    #define RESISTOR_ROOM_TEMP 10000.0f //Resistance in Ohms @ 25oC	330k/470k
 
     bool retval = true;
     float vtemp_float;
@@ -457,7 +459,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 end:
     return retval;
 }
-
+#endif
 
 adc_input_value_t m_adc_input;
 
@@ -523,16 +525,16 @@ void adc_convert(void)
 #endif
 
 #ifdef DTG02
-    #warning "Get vtemp"
 	m_adc_input.in_4_20ma_in[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 	m_adc_input.in_4_20ma_in[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 	m_adc_input.in_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
 
+#if USE_INTERNAL_VREF == 0
 	/* v_temp */
-    if (m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX])
+    if (m_adc_raw_data[V_TEMP_CHANNEL_INDEX])
     {
-        uint32_t vtemp_mv = m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
+        uint32_t vtemp_mv = m_adc_raw_data[V_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
         if (convert_temperature(vtemp_mv, m_adc_input.vdda_mv, &m_adc_input.temp))
         {
             m_adc_input.temp_is_valid = 1;
@@ -542,6 +544,10 @@ void adc_convert(void)
             m_adc_input.temp_is_valid = 0;
         }
     }
+#else
+    m_adc_input.temp_is_valid = 1;
+    m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
+#endif
 }
 
 
