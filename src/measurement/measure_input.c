@@ -138,7 +138,6 @@ void measure_input_task(void)
     }
     
     // Vtemp
-    #warning "Check tempearature valid or not"
     if (input_adc->temp_is_valid)
     {
         m_measure_data.temperature_error = 0;
@@ -273,6 +272,7 @@ void measure_input_initialize(void)
                                         m_pulse_counter_in_backup[1].reserve);
         }
 #else
+        
         if (save)
         {
             app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
@@ -368,7 +368,6 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
             {
                 m_is_pulse_trigger = 1;
-                DEBUG_INFO("+++++++ in %ums\r\n", m_pull_diff[input->port]);
                 if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
                 {
                     if (input->dir_level == 0)
@@ -377,12 +376,14 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                     }
                     if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
                     {
+                        DEBUG_INFO("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                         m_pulse_counter_in_backup[input->port].forward++;
                     }
                     else
                     {
                         if (m_pulse_counter_in_backup[input->port].forward > 0)
                         {
+                            DEBUG_INFO("[PWM] ----- in %ums\r\n", m_pull_diff[input->port]);
                             m_pulse_counter_in_backup[input->port].forward--;
                         }
                     }
@@ -390,7 +391,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 }
                 else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
                 {
-                    
+                    DEBUG_INFO("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                     m_pulse_counter_in_backup[input->port].forward++;
                     m_pulse_counter_in_backup[input->port].reserve = 0;
                 }
@@ -432,6 +433,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
+                    DEBUG_INFO("[DIR] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                     m_pulse_counter_in_backup[input->port].reserve++;
                 }
             }
@@ -439,6 +441,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             {
                 DEBUG_WARN("DIR Noise, diff time %ums\r\n", m_pull_diff[input->port]);
             }
+        }
+        else
+        {
+
         }
     }
     __enable_irq();

@@ -921,7 +921,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     
     total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
     
-	msg->counter0_f = msg->counter0_f / cfg->k0 + cfg->offset0;
+    uint32_t temp_counter;
 
 #ifdef DTG02
 	msg->counter1_f = msg->counter1_f / cfg->k1 + cfg->offset1;
@@ -931,20 +931,28 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 #endif
     total_length += sprintf((char *)(ptr + total_length), "\"PhoneNum\":\"%s\",", cfg->phone);
     total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
+       
 #ifdef DTG02
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1\":\"%u\",\"Input1_J2\":\"%u\",",
-                              msg->counter0_f, msg->counter1_f); //so xung
+    temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1\":\"%u\",",
+                              temp_counter);
+    
+    temp_counter = msg->counter1_f / cfg->k1 + cfg->offset1;
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2\":\"%u\",",
+                              temp_counter, msg->counter1_f); //so xung
 	
 	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
+        temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":\"%u\",",
-									msg->counter0_r);
+									temp_counter);
 	}
 	
+    temp_counter = msg->counter1_r / cfg->k1 + cfg->offset1;
 	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_DIR\":\"%u\",",
-									msg->counter1_r);
+									temp_counter);
 	}
 
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
@@ -968,16 +976,17 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	}
     total_length += sprintf((char *)(ptr + total_length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
 #else	
+    temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
-                              msg->counter0_f); //so xung
-	
-	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+                              temp_counter); //so xung
+    
+    if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
+        temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":%u,",
-									msg->counter0_r);
+									temp_counter);
 	}
-	
-
+    
     total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
                                                                         msg->input_4_20ma[0]); // dau vao 4-20mA 0
 
