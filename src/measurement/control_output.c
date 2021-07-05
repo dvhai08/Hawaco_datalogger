@@ -90,7 +90,7 @@ static bool is_4_20ma_output_valid(void)
 
 static void stop_dac_output(void *arg)
 {
-	DEBUG_PRINTF("Stop dac\r\n");
+	DEBUG_VERBOSE("Stop dac\r\n");
 	m_max_4_20ma_output_ms = 0;
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	ENABLE_OUTPUT_4_20MA_POWER(0);

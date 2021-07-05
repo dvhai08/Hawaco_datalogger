@@ -29,11 +29,17 @@
 #define DEBUG_USART1_DMA        0
 #define UART1_RX_BUFFER_SIZE    512
 
+#ifdef DTG01
+#define UART1_TX_BUFFER_SIZE    (512)
+#else
+#define UART1_TX_BUFFER_SIZE    (512+128)
+#endif
+
 static lwrb_t m_ringbuffer_usart1_tx = 		// for GSM
 {
     .buff = NULL,
 };
-static uint8_t m_usart1_tx_buffer[512-128];
+static uint8_t m_usart1_tx_buffer[UART1_TX_BUFFER_SIZE];
 static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
 uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 static volatile bool m_usart1_tx_run = false;

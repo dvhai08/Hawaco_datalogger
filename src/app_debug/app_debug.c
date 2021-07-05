@@ -13,6 +13,11 @@ static char m_debug_buffer[RTT_PRINTF_BUFFER_SIZE];
 
 extern uint32_t sys_get_ms(void);
 
+int app_debug_rtt_nothing(const char *fmt,...)
+{
+    return -1;
+}
+
 int app_debug_rtt(const char *fmt,...)
 {
     int     n;

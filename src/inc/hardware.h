@@ -23,6 +23,8 @@
 
 #define GSM_UART				0
 #define RS485_UART				1
+
+#ifdef HW_VERSION_0
 #define LED1(x)             	{	if (x) \
 										LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
 									else	\
@@ -34,6 +36,19 @@
 									else	\
 										LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
 									}	
+#else
+#define LED1(x)             	{	if (x) \
+                                        LL_GPIO_SetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+                                    else	\
+                                        LL_GPIO_ResetOutputPin(LED1_GPIO_Port, LED1_Pin);	\
+                                }		
+
+#define LED2(x)             	{	if (x) \
+										LL_GPIO_SetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
+									else	\
+										LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
+                                }	
+#endif
 								
 #define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
 #define SENS_420mA_PWR_ON()			LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
@@ -98,5 +113,13 @@
 #define RS485_DIR_IS_TX()               LL_GPIO_IsOutputPinSet(RS485_DIR_GPIO_Port, RS485_DIR_Pin)
 #endif
 
+#ifdef DTG02
+#define BUZZER(x)                       {	if (x) \
+												LL_GPIO_ResetOutputPin(BUZZER_GPIO_Port, BUZZER_Pin);	\
+											else	\
+												LL_GPIO_SetOutputPin(BUZZER_GPIO_Port, BUZZER_Pin);	\
+										}   
+#endif                                        
+                                        
 
 #endif /* __HARDWARE_H__ */

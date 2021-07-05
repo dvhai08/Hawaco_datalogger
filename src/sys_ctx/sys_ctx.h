@@ -23,6 +23,7 @@ typedef struct
     bool is_enter_test_mode;
     bool enter_ota_update;
     uint8_t delay_ota_update;
+    uint8_t delay_store_data_to_ext_flash;
     uint8_t ota_url[128+48];
 } sys_ctx_status_t;
 

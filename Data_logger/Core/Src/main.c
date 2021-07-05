@@ -56,7 +56,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            36864     // ( ~18s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 /* USER CODE END PTD */
@@ -423,7 +423,7 @@ void sys_config_low_power_mode(void)
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
-        DEBUG_PRINTF("Before sleep - counter %u\r\n", counter_before_sleep);
+        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
@@ -468,7 +468,7 @@ void sys_config_low_power_mode(void)
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;
-        DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
+        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
         ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -489,7 +489,7 @@ void sys_config_low_power_mode(void)
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
     m_wakeup_timer_run = false;
-    DEBUG_PRINTF("Wakeup timer event callback\r\n");
+    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 /* USER CODE END 4 */
@@ -501,7 +501,8 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  DEBUG_ERROR("Error handle\r\n");
+    DEBUG_ERROR("Error handle\r\n");
+    NVIC_SystemReset();
   __disable_irq();
   while (1)
   {
@@ -523,6 +524,7 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 	DEBUG_ERROR("Assert failed %s, line %u\r\n", file, line);
+    NVIC_SystemReset();
 	while (1);
   /* USER CODE END 6 */
 }

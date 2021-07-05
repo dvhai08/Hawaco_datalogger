@@ -35,7 +35,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint32_t send_time_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CycleSendWeb\":"), cycle_send_web);
         if (config->send_to_server_interval_ms != send_time_ms)
         {
-            DEBUG_PRINTF("CycleSendWeb changed\r\n");
+            DEBUG_INFO("CycleSendWeb changed\r\n");
             config->send_to_server_interval_ms = send_time_ms;
             has_new_cfg++;
         }
@@ -96,10 +96,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 #endif
 	
-    char *mode_j1 = strstr(buffer, "Input_j1\":");		// mode
+    char *mode_j1 = strstr(buffer, "InputMode0\":");		// mode
     if (mode_j1 != NULL)
     {
-        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_j1\":"), mode_j1);
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("InputMode0\":"), mode_j1);
         if (config->meter_mode[0] != mode)
         {
             DEBUG_PRINTF("PWM1 mode changed\r\n");
@@ -107,11 +107,12 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;
         }
     }
-
-    char *mode_j2 = strstr(buffer, "Input_j2\":");
+    
+#ifdef DTG02
+    char *mode_j2 = strstr(buffer, "InputMode1\":");
     if (mode_j2 != NULL)
     {
-        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_j2\":"), mode_j2);
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("InputMode1\":"), mode_j2);
         if (config->meter_mode[1] != mode)
         {
             DEBUG_PRINTF("PWM2 mode changed\r\n");
@@ -119,7 +120,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;
         }
     }
-
+#endif
+    
     char *rs485 = strstr(buffer, "RS485\":");
     if (rs485 != NULL)
     {

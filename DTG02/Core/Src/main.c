@@ -59,6 +59,8 @@
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
+#define TEST_OUTPUT_4_20MA                              0
+#define TEST_RS485                                      0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -134,6 +136,7 @@ int main(void)
   MX_TIM2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
+ 
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
@@ -151,7 +154,8 @@ int main(void)
 	control_ouput_init();
 	adc_start();
 	gsm_init_hw();
-	
+	BUZZER(1);
+    HAL_Delay(5); 
 	app_sync_config_t config;
 	config.get_ms = sys_get_ms;
 	config.polling_interval_ms = 1;
@@ -160,7 +164,7 @@ int main(void)
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
-	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
 
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
 
@@ -174,6 +178,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      #warning "Test output 4-20mA"
 #if GSM_ENABLE
 	gsm_hw_layer_run();
 #endif
@@ -204,22 +209,27 @@ int main(void)
 	}	
 	if (system->status.is_enter_test_mode)
 	{
-		cfg->io_enable.name.output_4_20ma_enable = 1;
-		if (cfg->io_enable.name.output_4_20ma_value == 0)
-			cfg->io_enable.name.output_4_20ma_value = 10;
-		cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+		if (eeprom_cfg->io_enable.name.output_4_20ma_value == 0)
+			eeprom_cfg->io_enable.name.output_4_20ma_value = 10;
+		eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 		control_output_dac_enable(1000000);
-		cfg->io_enable.name.rs485_en = 1;
+		eeprom_cfg->io_enable.name.rs485_en = 1;
 		ENABLE_INOUT_4_20MA_POWER(1);
+        RS485_EN(1);
+        usart_lpusart_485_control(1);
 	}
     
-    if (!cfg->io_enable.name.rs485_en)
+
+    if (!eeprom_cfg->io_enable.name.rs485_en
+        && system->status.is_enter_test_mode == 0)
     {
         system->peripheral_running.name.rs485_running = 0;
         usart_lpusart_485_control(0);
     }
+
     
-    if (!cfg->io_enable.name.input_4_20ma_enable)
+    if (!eeprom_cfg->io_enable.name.input_4_20ma_enable)
     {
         ENABLE_INOUT_4_20MA_POWER(0);
     }
@@ -251,9 +261,9 @@ int main(void)
     }
     
 	
-	if (cfg->io_enable.name.rs485_en)
+	if (eeprom_cfg->io_enable.name.rs485_en)
 	{
-		RS485_EN(cfg->io_enable.name.rs485_en);
+		RS485_EN(eeprom_cfg->io_enable.name.rs485_en);
 	}
     
     if (system->peripheral_running.value == 0)
@@ -261,6 +271,7 @@ int main(void)
         adc_stop();
         sys_config_low_power_mode();
     }
+    BUZZER(0);
 	
 //	__WFI();
     /* USER CODE END WHILE */
@@ -427,7 +438,7 @@ void sys_config_low_power_mode(void)
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
-        DEBUG_PRINTF("Before sleep - counter %u\r\n", counter_before_sleep);
+        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
@@ -470,7 +481,7 @@ void sys_config_low_power_mode(void)
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;
-        DEBUG_PRINTF("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
+        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
         ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -484,14 +495,15 @@ void sys_config_low_power_mode(void)
     }
     else
     {
-        DEBUG_PRINTF("RTC timer still running\r\n");
+        DEBUG_WARN("RTC timer still running\r\n");
     }
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
     m_wakeup_timer_run = false;
-    DEBUG_PRINTF("Wakeup timer event callback\r\n");
+    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
+    HAL_RTCEx_DeactivateWakeUpTimer(hrtc);
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 /* USER CODE END 4 */
@@ -503,11 +515,12 @@ void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  DEBUG_ERROR("Error handle\r\n");
-  __disable_irq();
-  while (1)
-  {
-  }
+    DEBUG_ERROR("Error handle\r\n");
+    __disable_irq();
+    NVIC_SystemReset();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -525,6 +538,7 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 	DEBUG_ERROR("Assert failed %s, line %u\r\n", file, line);
+    NVIC_SystemReset();
 	while (1);
   /* USER CODE END 6 */
 }

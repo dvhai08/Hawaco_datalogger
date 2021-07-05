@@ -626,16 +626,10 @@ uint8_t flash_self_test(void)
         else
         {
             DEBUG_ERROR("Unknown device\r\n");
+            return 0;
         }
 
-        if (m_flash_version == 0xFF || manufacture_id == 0xFF)
-        {
-            DEBUG_PRINTF("DevID: %X, FacID: %X\r\n", device_id, manufacture_id);
-        }
-        else
-        {
-            return 1;
-        }
+        return 1;
     }
     return 0;
 }
@@ -668,7 +662,7 @@ void app_spi_flash_erase_all(void)
 {
     uint8_t status = 0xFF;
     uint8_t cmd;
-    DEBUG_PRINTF("Erase all flash\r\n");
+    DEBUG_INFO("Erase all flash\r\n");
 
     flash_write_control(1, 0);
     SPI_EXT_FLASH_CS(0);
@@ -716,7 +710,7 @@ void app_spi_flash_erase_all(void)
     }
 #endif
 
-    DEBUG_PRINTF("Erase [DONE] in %ums\r\n", sys_get_ms() - begin_tick);
+    DEBUG_INFO("Erase [DONE] in %ums\r\n", sys_get_ms() - begin_tick);
 }
 
 static uint8_t flash_check_first_run(void)
@@ -728,7 +722,7 @@ static uint8_t flash_check_first_run(void)
 
     if (tmp != 0xA5)
     {
-        DEBUG_PRINTF("Erase flash\r\n");
+        DEBUG_INFO("Erase flash\r\n");
         app_spi_flash_erase_all();
 
         tmp_buff[0] = 0xA5;
@@ -737,7 +731,7 @@ static uint8_t flash_check_first_run(void)
     }
     else
     {
-        DEBUG_PRINTF("Check Byte : 0x%X\r\n", tmp);
+        DEBUG_VERBOSE("Check Byte : 0x%X\r\n", tmp);
     }
 
     return 1;
@@ -786,14 +780,14 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
     if (*flash_full)
     {
         m_wr_addr = SPI_FLASH_PAGE_SIZE;
-        DEBUG_PRINTF("Flash full, erase first block\r\n");
+        DEBUG_WARN("Flash full, erase first block\r\n");
         flash_erase_sector_4k(0);
         uint8_t tmp_buff[1] = {0xA5};
         flash_write_bytes(FLASH_CHECK_FIRST_RUN, tmp_buff, 1);
     }
 
     // Erase next page
-    DEBUG_PRINTF("Write addr 0x%08X\r\n", m_wr_addr);
+    DEBUG_VERBOSE("Write addr 0x%08X\r\n", m_wr_addr);
     return m_wr_addr;
 }
 
@@ -887,13 +881,13 @@ uint32_t app_spi_flash_dump_all_data(void)
     uint8_t read[5];
     flash_read_bytes(0, read, 4);
     read[4] = 0;
-    DEBUG_PRINTF("Read data %s\r\n", (char *)read);
+    DEBUG_VERBOSE("Read data %s\r\n", (char *)read);
     return 0;
 }
 
 void app_spi_flash_wakeup(void)
 {
-    DEBUG_INFO("Wakeup flash\r\n");
+    DEBUG_VERBOSE("Wakeup flash\r\n");
 #if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 3; i++)
     {
@@ -913,7 +907,7 @@ void app_spi_flash_wakeup(void)
 
 void app_spi_flash_shutdown(void)
 {
-    DEBUG_INFO("Shutdown flash\r\n");
+    DEBUG_VERBOSE("Shutdown flash\r\n");
 #if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 1; i++)
     {
@@ -942,7 +936,7 @@ bool app_spi_flash_check_empty_sector(uint32_t sector)
     }
     if (retval)
     {
-        DEBUG_PRINTF("We need erase next sector %u\r\n", sector);
+        DEBUG_VERBOSE("We need erase next sector %u\r\n", sector);
     }
     return retval;
 }
@@ -951,7 +945,7 @@ bool app_spi_flash_check_empty_sector(uint32_t sector)
 
 void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
 {
-    DEBUG_PRINTF("Flash write new data\r\n");
+    DEBUG_VERBOSE("Flash write new data\r\n");
     if (!m_flash_inited)
     {
         DEBUG_ERROR("Flash init error, ignore write msg\r\n");
@@ -970,7 +964,7 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
         uint32_t expect_next_sector = (addr+sizeof(app_spi_flash_data_t))/SPI_FLASH_SECTOR_SIZE;
         if (expect_next_sector != expect_write_sector)
         {
-            DEBUG_PRINTF("Consider erase next sector\r\n");
+            DEBUG_VERBOSE("Consider erase next sector\r\n");
             // Consider write next page
             if (!app_spi_flash_check_empty_sector(expect_next_sector))
             {
@@ -978,13 +972,13 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
             }
             else
             {
-                DEBUG_PRINTF("We dont need to erase next sector\r\n");
+                DEBUG_VERBOSE("We dont need to erase next sector\r\n");
             }
         }
         
         if (flash_full)
         {
-            DEBUG_PRINTF("Flash full\r\n");
+            DEBUG_WARN("Flash full\r\n");
         }
         flash_write_bytes(addr, (uint8_t *)wr_data, sizeof(app_spi_flash_data_t));
         flash_read_bytes(addr, (uint8_t *)&rd_data, sizeof(app_spi_flash_data_t));
@@ -994,7 +988,7 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
         }
         else
         {
-            DEBUG_INFO("Flash write data success\r\n");
+            DEBUG_VERBOSE("Flash write data success\r\n");
         }
     }
 }
@@ -1056,7 +1050,7 @@ bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data
             // Read next sector and write remain data to new page
             if (next_sector >= SPI_FLASH_MAX_SECTOR)
             {
-                DEBUG_PRINTF("We running to the end of flash\r\n");
+                DEBUG_WARN("We running to the end of flash\r\n");
                 next_sector = 0;
                 sector_offset = SPI_FLASH_PAGE_SIZE; // data from addr 0x0000->PAGESIZE is reserve for init process
             }
@@ -1075,7 +1069,7 @@ bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data
         }
         else
         {
-            DEBUG_PRINTF("Remark flash success\r\n");
+            DEBUG_VERBOSE("Remark flash success\r\n");
         }
         umm_free(page_data);
         return true;
@@ -1086,7 +1080,7 @@ bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data
 
 void app_spi_flash_stress_test(uint32_t nb_of_write_times)
 {
-    DEBUG_PRINTF("Flash write %u times\r\n", nb_of_write_times);
+    DEBUG_INFO("Flash write %u times\r\n", nb_of_write_times);
     app_spi_flash_data_t wr_data;
     memset(&wr_data, 0, sizeof(wr_data));
     while (1)
@@ -1117,7 +1111,7 @@ void app_spi_flash_stress_test(uint32_t nb_of_write_times)
         }
         else
         {
-            DEBUG_PRINTF("Exit flash test\r\n");
+            DEBUG_INFO("Exit flash test\r\n");
             break;
         }
     }
@@ -1137,12 +1131,12 @@ void app_spi_flash_retransmission_data_test(void)
         app_spi_flash_data_t rd_data;
         if (retransmition)
         {
-            DEBUG_PRINTF("Retransmition addr 0x%08X\r\n", addr);
+            DEBUG_VERBOSE("Retransmition addr 0x%08X\r\n", addr);
             app_flash_mask_retransmiton_is_valid(addr, &rd_data);
         }
         else
         {
-            DEBUG_PRINTF("No retransmission data found\r\n");
+            DEBUG_VERBOSE("No retransmission data found\r\n");
         }
     }
 }

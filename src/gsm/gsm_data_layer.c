@@ -189,7 +189,7 @@ void gsm_manager_tick(void)
             }
             else
             {
-                DEBUG_PRINTF("Queue empty\r\n");
+                DEBUG_VERBOSE("Queue empty\r\n");
                 if (gsm_manager.state == GSM_STATE_OK)
                 {
                     if (GSM_NEED_ENTER_HTTP_GET() || ctx->status.enter_ota_update)
@@ -316,7 +316,7 @@ void gsm_manager_tick(void)
         break;
 
     default:
-        DEBUG_PRINTF("Unhandled case %u\r\n",gsm_manager.state);
+        DEBUG_ERROR("Unhandled case %u\r\n", gsm_manager.state);
         break;
     }
 }
@@ -329,7 +329,7 @@ static void init_http_msq(void)
     {
         m_is_the_first_time = false;
         umm_init();
-        DEBUG_PRINTF("HTTP: init buffer\r\n");
+        DEBUG_VERBOSE("HTTP: init buffer\r\n");
     }
 }
 
@@ -356,7 +356,7 @@ void gsm_change_state(gsm_state_t new_state)
     {
         gsm_manager.gsm_ready = 2;
     }
-    DEBUG_PRINTF("Change GSM state to: ");
+    DEBUG_INFO("Change GSM state to: ");
     switch ((uint8_t)new_state)
     {
     case GSM_STATE_OK:
@@ -944,26 +944,26 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
         temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":\"%u\",",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
 	
     temp_counter = msg->counter1_r / cfg->k1 + cfg->offset1;
 	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_DIR\":\"%u\",",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_DIR\":%u,",
 									temp_counter);
 	}
 
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":\"%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%u,", 
 																			i,
 																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
 	}
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":\"%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":%u,", 
 																			i,
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
@@ -1005,6 +1005,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     {
         total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
     }
+    
     
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
     total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
@@ -1129,7 +1130,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 umm_free(m_last_http_msg);
                 m_malloc_count--;
             }
+#ifdef DTG01
             m_last_http_msg = (char*)umm_malloc(384);
+#else
+            m_last_http_msg = (char*)umm_malloc(512 + 32);
+#endif
             if (m_last_http_msg == NULL)
             {
                 DEBUG_ERROR("Malloc error\r\n");
@@ -1205,7 +1210,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
         if (!ctx->peripheral_running.name.flash_running)
         {
-            DEBUG_PRINTF("Wakup flash\r\n");
+            DEBUG_VERBOSE("Wakup flash\r\n");
             spi_init();
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
@@ -1287,7 +1292,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     }
     case GSM_HTTP_GET_EVENT_FINISH_FAILED:
     {
-        DEBUG_PRINTF("HTTP event failed\r\n");
+        DEBUG_WARN("HTTP event failed\r\n");
         if (ctx->status.enter_ota_update 
             && ctx->status.delay_ota_update == 0)
         {
@@ -1300,7 +1305,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             m_malloc_count--;
             umm_free(m_last_http_msg);
-            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
+            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
         gsm_change_state(GSM_STATE_OK);
@@ -1308,7 +1313,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     break;
 
     default:
-        DEBUG_PRINTF("Unknown http event %d\r\n", (int)event);
+        DEBUG_WARN("Unknown http event %d\r\n", (int)event);
         gsm_change_state(GSM_STATE_OK);
         break;
     }

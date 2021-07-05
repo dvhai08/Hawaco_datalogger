@@ -27,8 +27,7 @@
 #include "hardware.h"
 #include "app_eeprom.h"
 #include "math.h"
-//#define DEBUG_ADC
-#define USE_INTERNAL_VREF                   1
+
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				8
@@ -184,7 +183,7 @@ void MX_ADC_Init(void)
   
 //    if (LL_ADC_IsEnabled(ADC1) == 0)
     {
-        DEBUG_PRINTF("Start calib AD \r\n");
+        DEBUG_VERBOSE("Start calib AD \r\n");
         /* Run ADC self calibration */
         LL_ADC_StartCalibration(ADC1);
 
@@ -193,7 +192,7 @@ void MX_ADC_Init(void)
         Timeout = ADC_CALIBRATION_TIMEOUT_MS;
         #endif /* USE_TIMEOUT */
         
-        DEBUG_PRINTF("Wait for adc calib\r\n");
+        DEBUG_VERBOSE("Wait for adc calib\r\n");
         while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0)
         {
         #if (USE_TIMEOUT == 1)
@@ -214,9 +213,9 @@ void MX_ADC_Init(void)
     // Clear the ADRDY bit in ADC_ISR register by programming this bit to 1.
 	SET_BIT(ADC1->ISR, LL_ADC_FLAG_ADRDY);
     LL_ADC_Enable(ADC1);
-    DEBUG_PRINTF("Wait for adc ready\r\n");
+    DEBUG_VERBOSE("Wait for adc ready\r\n");
     while (LL_ADC_IsActiveFlag_ADRDY(ADC1) == 0);
-    DEBUG_PRINTF("ADC ready\r\n");
+    DEBUG_VERBOSE("ADC ready\r\n");
   /* USER CODE END ADC_Init 2 */
 
 }
@@ -225,7 +224,7 @@ void MX_ADC_Init(void)
 
 void adc_isr_cb(void)
 {
-    DEBUG_PRINTF("ADC ISR cb\r\n");
+    DEBUG_VERBOSE("ADC ISR cb\r\n");
     /* Check whether ADC group regular end of unitary conversion caused         */
     /* the ADC interruption.                                                    */
     if(LL_ADC_IsActiveFlag_EOC(ADC1) != 0)
@@ -256,10 +255,14 @@ void adc_start(void)
         ENABLE_INOUT_4_20MA_POWER(0);
     }
     
+#ifndef USE_INTERNAL_VREF    
     if (!NTC_IS_POWERED())
     {
         ENABLE_NTC_POWER(1);
     }
+#else
+    ENABLE_NTC_POWER(0);
+#endif
     
     if (LL_ADC_IsEnabled(ADC1) == 0)
     {
@@ -269,7 +272,7 @@ void adc_start(void)
     {
         for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
         {
-    #ifdef DTG01
+#ifdef DTG01
             if (i == 0)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
@@ -288,15 +291,17 @@ void adc_start(void)
             }
             else if (i == 4)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);      
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);               
             }
             else if (i == 5)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT);
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT); 
             }
-    #else
+#else
             #warning "Please implemte adc channel seq"
-    #endif
+#endif
             if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
             {
                 LL_ADC_REG_StartConversion(ADC1);
@@ -313,13 +318,13 @@ void adc_start(void)
         m_adc_raw_data[i] /= 3;
     }
     ENABLE_INOUT_4_20MA_POWER(0);
-    DEBUG_PRINTF("Convert complete\r\n");
+    DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();
 }
 
 void adc_stop(void)
 {
-    DEBUG_PRINTF("ADC stop\r\n");
+    DEBUG_VERBOSE("ADC stop\r\n");
 	ENABLE_NTC_POWER(0);
 //    NVIC_DisableIRQ(ADC1_COMP_IRQn);
     LL_ADC_DeInit(ADC1);
@@ -346,7 +351,7 @@ adc_input_value_t *adc_get_input_result(void)
 {
 	return &m_adc_input;
 }
-
+#ifndef USE_INTERNAL_VREF
 static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *result)
 {
     #define HW_RESISTOR_SERIES_NTC 300000 //300K Ohm
@@ -406,6 +411,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 end:
     return retval;
 }
+#endif /* USE_INTERNAL_VREF */
 
 void adc_convert(void)
 {
@@ -469,7 +475,7 @@ void adc_convert(void)
 	m_adc_input.in_4_20ma_in[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv*10/(GAIN_INPUT_4_20MA_IN*4095);
 #endif
 
-#if USE_INTERNAL_VREF == 0
+#ifndef USE_INTERNAL_VREF
 	/* v_temp */
     if (m_adc_raw_data[V_TEMP_CHANNEL_INDEX])
     {

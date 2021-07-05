@@ -34,6 +34,10 @@ void app_eeprom_init(void)
     else
     {
         memcpy(&m_cfg, tmp, sizeof(app_eeprom_config_data_t));
+        if (m_cfg.send_to_server_interval_ms == 0)
+        {
+            m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
+        }
         if (strlen((char*)m_cfg.server_addr) < 8)
         {
             sprintf((char*)m_cfg.server_addr, "%s", DEFAULT_SERVER_ADDR); 

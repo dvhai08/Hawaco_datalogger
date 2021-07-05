@@ -171,7 +171,7 @@ void gsm_hw_layer_run(void)
             char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.buffer), "CME ERROR: ");
             if (p && strstr(p, "\r\n"))
             {
-                DEBUG_PRINTF("%s", p);
+                DEBUG_VERBOSE("%s", p);
                 if (m_gsm_hardware.atc.send_at_callback)
                 {
                     m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.buffer);
@@ -221,7 +221,7 @@ void gsm_hw_layer_run(void)
         if (m_gsm_hardware.atc.recv_buff.index > 2 
             && strstr((char*)m_gsm_hardware.atc.recv_buff.buffer+10, "\r\n"))
         {
-            DEBUG_PRINTF("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
+            DEBUG_WARN("ATC : unhandled %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
             m_gsm_hardware.atc.recv_buff.index = 0;
             m_gsm_hardware.atc.recv_buff.buffer[m_gsm_hardware.atc.recv_buff.index] = 0;
         }

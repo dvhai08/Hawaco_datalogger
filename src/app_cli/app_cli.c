@@ -49,6 +49,7 @@ static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **ar
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -60,6 +61,7 @@ static const shell_command_context_t cli_command_table[] =
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
     {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
+    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -271,6 +273,13 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 		DEBUG_PRINTF("Skip write to end sector\r\n");
         app_spi_flash_skip_to_end_flash_test();
 	}
+    return 0;
+}
+
+static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv)
+{
+    sys_ctx()->status.is_enter_test_mode = 1;
+    DEBUG_INFO("Test rs485\r\n");
     return 0;
 }
 
