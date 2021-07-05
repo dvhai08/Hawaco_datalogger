@@ -309,9 +309,7 @@ char* gsm_get_sim_imei(void)
 
 char* gsm_get_module_imei(void)
 {
-	#warning "Hardcode module imei"
-	return "863674040981159";
-//	return m_gsm_imei;
+	return m_gsm_imei;
 }
 
 void gsm_set_sim_imei(char *imei)

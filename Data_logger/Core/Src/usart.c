@@ -349,7 +349,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         {
             DEBUG_ERROR("UART TX queue full\r\n");
             sys_delay_ms(5);
-//            NVIC_SystemReset();
+            NVIC_SystemReset();
         }
     }
     usart1_hw_transmit_dma();

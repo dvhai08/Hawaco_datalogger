@@ -53,7 +53,7 @@ typedef struct
 	uint32_t valid_flag;
     uint32_t send_to_server_delay_s;
     uint8_t server_addr[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
-} app_eeprom_config_data_t;
+} __attribute__((packed))  app_eeprom_config_data_t;
 
 
 /**

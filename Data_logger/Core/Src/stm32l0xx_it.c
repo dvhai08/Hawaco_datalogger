@@ -153,18 +153,6 @@ void SysTick_Handler(void)
 	if (led_blink_delay > 0)
 	{
 		led_blink_delay--;
-		if (led_blink_delay == 0)
-		{
-			if (!LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin))
-			{
-				if (gsm_data_layer_is_module_sleeping())
-				{
-					gsm_set_wakeup_now();
-                    sys_ctx_t *ctx = sys_ctx();
-                    ctx->peripheral_running.name.gsm_running = 1;
-				}
-			}
-		}
 	}
     
     if (ota_update_timeout_ms != -1)
@@ -212,7 +200,13 @@ void EXTI0_1_IRQHandler(void)
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
         LED1(1);
         led_blink_delay = 5;
-        measure_input_measure_wakeup_to_get_data();
+		if (gsm_data_layer_is_module_sleeping())
+        {
+            measure_input_measure_wakeup_to_get_data();
+            gsm_set_wakeup_now();
+            sys_ctx_t *ctx = sys_ctx();
+            ctx->peripheral_running.name.gsm_running = 1;
+        }
     /* USER CODE END LL_EXTI_LINE_0 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_1) != RESET)

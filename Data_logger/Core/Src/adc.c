@@ -27,6 +27,7 @@
 #include "hardware.h"
 #include "app_eeprom.h"
 #include "math.h"
+#include "sys_ctx.h"
 
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
 #ifdef DTG02
@@ -70,7 +71,7 @@ void MX_ADC_Init(void)
 {
 
   /* USER CODE BEGIN ADC_Init 0 */
-	DEBUG_PRINTF("ADC inititlize\r\n");
+	DEBUG_VERBOSE("ADC inititlize\r\n");
   /* USER CODE END ADC_Init 0 */
 
   LL_ADC_REG_InitTypeDef ADC_REG_InitStruct = {0};
@@ -116,12 +117,12 @@ void MX_ADC_Init(void)
   /* USER CODE BEGIN ADC_Init 1 */
   if (SystemCoreClock > 8000000)
   {
-        DEBUG_PRINTF("ADC main clk is high\r\n");
+        DEBUG_VERBOSE("ADC main clk is high\r\n");
         LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV12);
   }
   else
   {
-      DEBUG_PRINTF("ADC main clk is low\r\n");
+      DEBUG_VERBOSE("ADC main clk is low\r\n");
       LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV1);
   }
   /* USER CODE END ADC_Init 1 */
@@ -317,7 +318,14 @@ void adc_start(void)
     {
         m_adc_raw_data[i] /= 3;
     }
-    ENABLE_INOUT_4_20MA_POWER(0);
+    if (sys_ctx()->status.is_enter_test_mode)
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);   
+    }
+    else
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);
+    }
     DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();
 }

@@ -1053,6 +1053,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         break;
 
     case GSM_HTTP_EVENT_CONNTECTED:
+        LED1(1);
         DEBUG_PRINTF("HTTP connected, data size %u\r\n", *((uint32_t *)data));
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)

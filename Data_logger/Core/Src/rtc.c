@@ -60,8 +60,8 @@ void MX_RTC_Init(void)
     rtc_date_time_t time;
     if (app_rtc_get_time(&time))
     {
-//        HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
-//        HAL_NVIC_EnableIRQ(RTC_IRQn);
+        HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(RTC_IRQn);
         return;
     }
     else

@@ -55,7 +55,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            36864     // ( ~18s)
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            20864     // ( ~18s)
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
@@ -168,7 +168,15 @@ int main(void)
 
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
 
-    
+#if TEST_OUTPUT_4_20MA
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+	eeprom_cfg->io_enable.name.output_4_20ma_value = 10;
+	eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+	control_output_dac_enable(1000000);
+    system->status.is_enter_test_mode = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+#endif     
+
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
@@ -207,8 +215,7 @@ int main(void)
 		LED2(0);
 #endif
 	}	
-    #warning "Enter test mode"
-    system->status.is_enter_test_mode = 1;
+
 	if (system->status.is_enter_test_mode)
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -416,11 +423,17 @@ static void info_task(void *arg)
         rtc_date_time_t time;
         app_rtc_get_time(&time);
         uint32_t clk = HAL_RCC_GetSysClockFreq() / 1000000;
-		DEBUG_PRINTF("CLK %uMhz, bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
-                    clk,
+        char tmp[24];
+        char *p = tmp;
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            p += sprintf(p, "(%u.%u),", adc->in_4_20ma_in[i]/10, adc->in_4_20ma_in[i]%10);
+        }
+        
+		DEBUG_PRINTF("bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
-					adc->in_4_20ma_in[0]/10, adc->in_4_20ma_in[0]%10,
+					tmp,
 					adc->temp);
 	}
 }

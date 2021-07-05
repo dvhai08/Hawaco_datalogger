@@ -25,10 +25,10 @@ void app_eeprom_init(void)
         m_cfg.meter_mode[1] = 0;
         m_cfg.offset0 = 0;
         m_cfg.offset1 = 0;
-        memcpy(m_cfg.phone, "0", 3);
+        memcpy(m_cfg.phone, "0", 1);
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
-        sprintf((char*)m_cfg.server_addr, "%s", DEFAULT_SERVER_ADDR);
+        sprintf((char*)&m_cfg.server_addr[0], "%s", DEFAULT_SERVER_ADDR);
         app_eeprom_save_config();
 	}
     else
@@ -40,7 +40,7 @@ void app_eeprom_init(void)
         }
         if (strlen((char*)m_cfg.server_addr) < 8)
         {
-            sprintf((char*)m_cfg.server_addr, "%s", DEFAULT_SERVER_ADDR); 
+            sprintf((char*)&m_cfg.server_addr[0], "%s", DEFAULT_SERVER_ADDR); 
         }
     }
 }

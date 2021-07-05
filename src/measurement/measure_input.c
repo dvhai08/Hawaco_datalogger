@@ -38,6 +38,7 @@
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 #define PULSE_MINMUM_WITDH_MS                   50
+#define ADC_OFFSET_MA                           6      // 0.6mA, mul by 10
 typedef struct
 {
     uint32_t forward;
@@ -147,7 +148,10 @@ void measure_input_task(void)
     {
         m_measure_data.temperature_error = 1;
     }
-    
+    if (sys_ctx()->status.is_enter_test_mode)
+    {
+        eeprom_cfg->measure_interval_ms = 2000;
+    }
 	if (m_this_is_the_first_time ||
 		((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms))
 	{
@@ -164,6 +168,7 @@ void measure_input_task(void)
         
         // Put data to msq
         adc_input_value_t *adc_retval = adc_get_input_result();
+
         measurement_msg_queue_t queue;
         m_force_sensor_build_msq = false;
 
@@ -179,6 +184,10 @@ void measure_input_task(void)
         queue.csq_percent = gsm_get_csq_in_percent();
         for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
         {
+            if (adc_retval->in_4_20ma_in[i] >= ADC_OFFSET_MA)
+            {
+                adc_retval->in_4_20ma_in[i] -= ADC_OFFSET_MA;
+            }
             queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
         }
 

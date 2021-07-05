@@ -218,7 +218,7 @@ static void wait_write_in_process(uint32_t addr)
 
 static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
 {
-    DEBUG_PRINTF("Flash write page addr 0x%08X, size %u\r\n", addr, length);
+    DEBUG_VERBOSE("Flash write page addr 0x%08X, size %u\r\n", addr, length);
     uint32_t i = 0;
     uint32_t old_addr = addr;
 

@@ -27,7 +27,7 @@
 #include "hardware.h"
 #include "app_eeprom.h"
 #include "math.h"
-
+#include "sys_ctx.h"
 
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				9
@@ -373,8 +373,15 @@ void adc_start(void)
     {
         m_adc_raw_data[i] /= 3;
     }
-    ENABLE_INOUT_4_20MA_POWER(0);
-    DEBUG_PRINTF("Convert complete\r\n");
+    if (sys_ctx()->status.is_enter_test_mode)
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);   
+    }
+    else
+    {
+        ENABLE_INOUT_4_20MA_POWER(0);
+    }
+    DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();
 }
 

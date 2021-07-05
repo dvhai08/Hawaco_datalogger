@@ -1,0 +1,2 @@
+Trans output
+4-20ma out =>> tắng thời gian đo lên 15s
