@@ -939,7 +939,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     
     temp_counter = msg->counter1_f / cfg->k1 + cfg->offset1;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2\":\"%u\",",
-                              temp_counter, msg->counter1_f); //so xung
+                              temp_counter); //so xung
 	
 	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{

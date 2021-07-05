@@ -153,7 +153,7 @@ void tim_pwm_stop(void)
 {
 //	DEBUG_PRINTF("Stop pwm\r\n");
 	m_dac_started = false;
-	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_4);
 	HAL_TIM_PWM_MspDeInit(&htim2);
     HAL_TIM_Base_MspDeInit(&htim2);
 }
@@ -173,8 +173,8 @@ void tim_pwm_output_percent(uint32_t thoughsand)
 		m_dac_started = true;
 		tim_pwm_start();
 	}
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	TIM2->CCR1 = thoughsand * 4096 / 1000;
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+	TIM2->CCR4 = thoughsand * 4096 / 1000;
 }
 /* USER CODE END 1 */
 
