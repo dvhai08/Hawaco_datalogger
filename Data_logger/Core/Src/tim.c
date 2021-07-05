@@ -161,6 +161,7 @@ void tim_pwm_stop(void)
 void tim_pwm_start(void)
 {
 //	DEBUG_PRINTF("Start pwm\r\n");
+    HAL_TIM_Base_MspInit(&htim2);
 	HAL_TIM_PWM_MspInit(&htim2);
 	MX_TIM2_Init();
 }
