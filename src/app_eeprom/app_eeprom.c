@@ -10,7 +10,7 @@
 #define SEND_TO_SERVER_INTERVAL_S       (60*60*1000)
 #define DEFAULT_SERVER_ADDR             "https://iot.wilad.vn"
 
-static app_eeprom_config_data_t m_cfg;
+app_eeprom_config_data_t m_cfg;
 
 void app_eeprom_init(void)
 {
@@ -34,6 +34,10 @@ void app_eeprom_init(void)
     else
     {
         memcpy(&m_cfg, tmp, sizeof(app_eeprom_config_data_t));
+        if (strlen((char*)m_cfg.server_addr) < 8)
+        {
+            sprintf((char*)m_cfg.server_addr, "%s", DEFAULT_SERVER_ADDR); 
+        }
     }
 }
 

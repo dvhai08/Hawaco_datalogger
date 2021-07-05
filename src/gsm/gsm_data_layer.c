@@ -968,40 +968,40 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	}
     total_length += sprintf((char *)(ptr + total_length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
 #else	
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1\":\"%u\",",
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               msg->counter0_f); //so xung
 	
 	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":\"%u\",",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":%u,",
 									msg->counter0_r);
 	}
 	
 
-    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":\"%u\",", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
                                                                         msg->input_4_20ma[0]); // dau vao 4-20mA 0
 
-    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":\"%u\",", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%u,", 
                                                                         measure_input->output_4_20mA); // dau ra 4-20mA 0
 #endif
     if (msg->csq_percent)
     {
-        total_length += sprintf((char *)(ptr + total_length), "\"SignalStrength\":\"%d\",", msg->csq_percent);
+        total_length += sprintf((char *)(ptr + total_length), "\"SignalStrength\":%d,", msg->csq_percent);
     }
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
 
-    total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":\"%d\",", msg->vbat_percent);
+    total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
     
     if (!measure_input->temperature_error)
     {
-        total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":\"%d\",", measure_input->temperature);
+        total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
     }
     
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":\"%u\",", msg->vbat_mv);
-    total_length += sprintf((char *)(ptr + total_length), "\"RST\":\"%u\",", hardware_manager_get_reset_reason()->value);
-    total_length += sprintf((char *)(ptr + total_length), "\"K0\":\"%u\",", cfg->k0);
-    total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":\"%u\",", cfg->offset0);
-    total_length += sprintf((char *)(ptr + total_length), "\"Mode0\":\"%u\",", cfg->meter_mode[0]);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
+    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
+    total_length += sprintf((char *)(ptr + total_length), "\"K0\":%u,", cfg->k0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":%u,", cfg->offset0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Mode0\":%u,", cfg->meter_mode[0]);
     
 #ifdef DTG02
     total_length += sprintf((char *)(ptr + total_length), "\"K1\":\"%u\",", cfg->k1);
@@ -1010,7 +1010,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 #endif
     
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
-    total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
+    total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}", VERSION_CONTROL_HW);
         
 //    hardware_manager_get_reset_reason()->value = 0;
 
