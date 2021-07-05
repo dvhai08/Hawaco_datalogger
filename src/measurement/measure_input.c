@@ -202,6 +202,36 @@ void measure_input_task(void)
         if (queue_full)
         {
             DEBUG_ERROR("Message queue full\r\n");
+            
+//        app_spi_flash_data_t wr_data;
+//        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+//        wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
+//        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
+//        {
+//            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
+//        }
+//        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
+//        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
+//        
+//#ifdef DTG02
+//        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
+//        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
+//#endif        
+//        wr_data.timestamp = m_sensor_msq->measure_timestamp;
+//        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+//        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
+//        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
+//        wr_data.temp = m_sensor_msq->temperature;
+//        
+//        if (!ctx->peripheral_running.name.flash_running)
+//        {
+//            DEBUG_VERBOSE("Wakup flash\r\n");
+//            spi_init();
+//            app_spi_flash_wakeup();
+//            ctx->peripheral_running.name.flash_running = 1;
+//        }
+//        app_spi_flash_write_data(&wr_data);
+        
             for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
             {
                 m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_IDLE;

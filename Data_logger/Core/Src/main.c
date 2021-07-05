@@ -63,7 +63,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define GSM_ENABLE					1
+#define GSM_ENABLE					0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -198,6 +198,10 @@ int main(void)
 		LED1(0);
 		LED2(0);
 	}	
+    
+    #warning "Enter test mode"
+    system->status.is_enter_test_mode = 1;
+    
 	if (system->status.is_enter_test_mode)
 	{
 		cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -255,7 +259,10 @@ int main(void)
     if (system->peripheral_running.value == 0)
     {
         adc_stop();
-        sys_config_low_power_mode();
+        if (system->status.is_enter_test_mode == 0)
+        {
+            sys_config_low_power_mode();
+        }
     }
 	
 //	__WFI();

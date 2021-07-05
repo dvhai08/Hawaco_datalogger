@@ -589,7 +589,7 @@ uint8_t flash_self_test(void)
                 continue;
             }
         }
-        else if (manufacture_id == 0xEF && device_id == 0x18) /* W25Q256JV - Winbond 256Mb */
+        else if (manufacture_id == 0xEF) /* W25Q256JV - Winbond 256Mb */
         {
             if (device_id == 0x18)
             {

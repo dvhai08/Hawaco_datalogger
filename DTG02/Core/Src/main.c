@@ -61,6 +61,7 @@
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
+#define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -154,8 +155,7 @@ int main(void)
 	control_ouput_init();
 	adc_start();
 	gsm_init_hw();
-	BUZZER(1);
-    HAL_Delay(5); 
+	BUZZER(0);
 	app_sync_config_t config;
 	config.get_ms = sys_get_ms;
 	config.polling_interval_ms = 1;
@@ -207,6 +207,8 @@ int main(void)
 		LED2(0);
 #endif
 	}	
+    #warning "Enter test mode"
+    system->status.is_enter_test_mode = 1;
 	if (system->status.is_enter_test_mode)
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -269,7 +271,10 @@ int main(void)
     if (system->peripheral_running.value == 0)
     {
         adc_stop();
-        sys_config_low_power_mode();
+        if (system->status.is_enter_test_mode == 0)
+        {
+            sys_config_low_power_mode();
+        }
     }
     BUZZER(0);
 	
@@ -381,7 +386,12 @@ static void gsm_mnr_task(void *arg)
     }
     else
     {
-        ctx->status.disconnect_timeout_s++;
+        if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
+        {
+            DEBUG_ERROR("GSM disconnected for a longtime\r\n");
+            ctx->status.disconnect_timeout_s = 0;
+//            gsm_change_state(GSM_STATE_SLEEP);
+        }
     }
 }
 

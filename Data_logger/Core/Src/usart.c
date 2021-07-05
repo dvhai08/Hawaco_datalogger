@@ -347,8 +347,9 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
     {
         while (lwrb_write(&m_ringbuffer_usart1_tx, raw + i, 1) == 0)
         {
-            DEBUG_PRINTF("UART TX queue full\r\n");
+            DEBUG_ERROR("UART TX queue full\r\n");
             sys_delay_ms(5);
+//            NVIC_SystemReset();
         }
     }
     usart1_hw_transmit_dma();
