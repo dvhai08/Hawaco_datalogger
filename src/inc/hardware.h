@@ -121,5 +121,62 @@
 										}   
 #endif                                        
                                         
+#define ADC_NUMBER_OF_CONVERSION_TIMES		10
+#define V_OFFSET_4_20MA_CHANNEL_0_MV        1
+#define ADC_VBAT_RESISTOR_DIV				2
+#define ADC_VIN_RESISTOR_DIV				7911
 
+#ifdef DTG02
+#define ADC_CHANNEL_DMA_COUNT				9
+//#define ADC_VREF							3300
+
+#define V_INPUT_3_4_20MA_CHANNEL_INDEX		0
+#define VIN_24V_CHANNEL_INDEX				1
+#define V_INPUT_2_4_20MA_CHANNEL_INDEX		2
+#define V_INPUT_1_4_20MA_CHANNEL_INDEX		3
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		4
+#define VBAT_CHANNEL_INDEX					5
+#define V_NTC_TEMP_CHANNEL_INDEX				6
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
+#define V_REF_CHANNEL_INDEX                 8
+#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
+#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
+#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
+#else
+#define ADC_CHANNEL_DMA_COUNT				6
+//#define ADC_VREF							3300
+
+#define VBAT_CHANNEL_INDEX					0
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
+#define VIN_24V_CHANNEL_INDEX				2	
+#define V_NTC_TEMP_CHANNEL_INDEX				3
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  4
+#define V_REF_CHANNEL_INDEX					5
+#endif
+#define GAIN_INPUT_4_20MA_IN				143
+#define VREF_OFFSET_MV						80
+                                        
+typedef struct
+{
+    uint32_t current_ma_mil_10;		// 4ma =>> 400
+    int32_t adc_mv;					    // adc voltage
+} input_4_20ma_lookup_t;
+
+static const input_4_20ma_lookup_t lookup_table_4_20ma_input[] =
+{
+    {  0,        400      },
+    {  400,      490    },
+    {  500,      591    },  
+    {  600,      688    },   
+    {  710,      800    },     
+    {  800,      890    },    
+    {  900,      992    },    
+    {  1100,     1098   },  
+    {  1290,     1385   },    
+    {  1525,     1617   },     
+    {  1823,     1915   },     
+    {  2000,     2100   },
+};
+                                  
+                                  
 #endif /* __HARDWARE_H__ */

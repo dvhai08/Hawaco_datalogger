@@ -32,7 +32,7 @@ typedef struct
     int32_t offset_ma;					// 4,08MA =>> * 100 = 408 =>> offset = 8
 } output_4_20ma_lookup_t;
 
-static const output_4_20ma_lookup_t m_4_20ma_lookup_table[] =
+static const output_4_20ma_lookup_t m_4_20ma_out_lookup_table[] =
 {
     {  400,   15   },
     {  500,   15  },  
@@ -53,7 +53,7 @@ static const output_4_20ma_lookup_t m_4_20ma_lookup_table[] =
     {  2000, -18  },
 };
 
-enum { NUM_CURRENT_LOOK_UP = sizeof(m_4_20ma_lookup_table) / sizeof(output_4_20ma_lookup_t) };
+enum { NUM_CURRENT_LOOK_UP = sizeof(m_4_20ma_out_lookup_table) / sizeof(output_4_20ma_lookup_t) };
 
 static int32_t get_offset_mv(uint32_t expect_ma)
 {
@@ -62,12 +62,12 @@ static int32_t get_offset_mv(uint32_t expect_ma)
 	expect_ma *= 100;		// 4mA convert to 400
     for (i = 0; i < NUM_CURRENT_LOOK_UP; i++)
     {
-        if (expect_ma != m_4_20ma_lookup_table[i].current_ma_mil_100)
+        if (expect_ma != m_4_20ma_out_lookup_table[i].current_ma_mil_100)
             continue;
 		else
 		{
 			// 1ma = 150mV
-			offset_mv = m_4_20ma_lookup_table[i].offset_ma*150/100;
+			offset_mv = m_4_20ma_out_lookup_table[i].offset_ma*150/100;
 			break;
 		}
     }
