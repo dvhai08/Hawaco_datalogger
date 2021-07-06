@@ -55,7 +55,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            20000     // ( ~18s)
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            23000     // ( ~18s)
 #define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
