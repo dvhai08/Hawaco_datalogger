@@ -96,7 +96,6 @@ static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
-#warning "Please handle sensor msg full"
 /* USER CODE END 0 */
 
 /**
@@ -186,7 +185,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      #warning "Test output 4-20mA"
 #if GSM_ENABLE
 	gsm_hw_layer_run();
 #endif
@@ -396,8 +394,25 @@ static void gsm_mnr_task(void *arg)
         if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
         {
             DEBUG_ERROR("GSM disconnected for a longtime\r\n");
+            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+            measure_input_save_all_data_to_flash();
             ctx->status.disconnect_timeout_s = 0;
-//            gsm_change_state(GSM_STATE_SLEEP);
+            if (ctx->status.disconnected_count++ > 24)
+            {
+                ctx->status.disconnected_count = 0;
+                if (strlen((char*)eeprom_cfg->phone) > 9)
+                {
+                    gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
+                }
+                else
+                {
+                    gsm_change_state(GSM_STATE_SLEEP);
+                }
+            }
+            else
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
         }
     }
 }

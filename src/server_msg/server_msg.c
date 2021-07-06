@@ -50,8 +50,6 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             config->io_enable.name.output0 = out1;
             has_new_cfg++;
             DEBUG_PRINTF("4-20MA output1 1 changed\r\n");
-            //Dk ngoai vi luon
-			#warning "Please control output 1 4-20mA with delay"
         }
     }
 

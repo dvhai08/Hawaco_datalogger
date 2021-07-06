@@ -53,6 +53,7 @@
 #include "version_control.h"
 /* USER CODE END Includes */
 
+
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            23000     // ( ~18s)
@@ -60,6 +61,7 @@
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
+#define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -94,7 +96,6 @@ static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
-#warning "Please handle sensor msg full"
 /* USER CODE END 0 */
 
 /**
@@ -378,7 +379,29 @@ static void gsm_mnr_task(void *arg)
     }
     else
     {
-        ctx->status.disconnect_timeout_s++;
+        if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
+        {
+            DEBUG_ERROR("GSM disconnected for a longtime\r\n");
+            measure_input_save_all_data_to_flash();
+            ctx->status.disconnect_timeout_s = 0;
+            if (ctx->status.disconnected_count++ > 24)
+            {
+                ctx->status.disconnected_count = 0;
+                app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+                if (strlen((char*)eeprom_cfg->phone) > 9)
+                {
+                    gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
+                }
+                else
+                {
+                    gsm_change_state(GSM_STATE_SLEEP);
+                }
+            }
+            else
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
+        }
     }
 }
 

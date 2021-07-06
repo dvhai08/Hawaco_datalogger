@@ -131,4 +131,9 @@ bool measure_input_sensor_data_availble(void);
  */
 measurement_msg_queue_t *measure_input_get_data_in_queue(void);
 
+/**
+ * @brief       Save all data in sensor message queue to flash 
+ */
+void measure_input_save_all_data_to_flash(void);
+
 #endif /* MEASURE_INTPUT_H */

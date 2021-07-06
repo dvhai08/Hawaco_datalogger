@@ -31,7 +31,8 @@
 #include "rtc.h"
 #include "stm32l0xx_ll_rtc.h"
 #include "app_spi_flash.h"
-
+#include "spi.h"
+#define VBAT_DETECT_HIGH_MV                     9000
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
 #define PULSE_STATE_WAIT_FOR_FALLING_EDGE       0
@@ -101,12 +102,48 @@ static void measure_input_pulse_counter_poll(void)
 static uint32_t m_last_time_measure_data = 0;
 uint32_t m_number_of_adc_conversion = 0;
 app_eeprom_config_data_t *eeprom_cfg;
-static bool m_force_sensor_build_msq = false;
-
 void measure_input_measure_wakeup_to_get_data()
 {
     m_this_is_the_first_time = true;
     sys_ctx()->peripheral_running.name.adc = 1;
+}
+
+void measure_input_save_all_data_to_flash(void)
+{
+    app_spi_flash_data_t wr_data;
+    sys_ctx_t *ctx = sys_ctx();
+    wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+    wr_data.resend_to_server_flag = 0;
+
+    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
+    {
+        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
+        {
+            wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20ma[i];
+        }
+        wr_data.meter_input[0].pwm_f = m_sensor_msq[j].counter0_f;
+        wr_data.meter_input[0].dir_r = m_sensor_msq[j].counter0_r;
+        
+    #ifdef DTG02
+        wr_data.meter_input[1].pwm_f = m_sensor_msq[j].counter1_f;
+        wr_data.meter_input[1].dir_r = m_sensor_msq[j].counter1_r;
+    #endif        
+        wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
+        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
+        wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
+        wr_data.temp = m_sensor_msq[j].temperature;
+        
+        if (!ctx->peripheral_running.name.flash_running)
+        {
+            DEBUG_VERBOSE("Wakup flash\r\n");
+            spi_init();
+            app_spi_flash_wakeup();
+            ctx->peripheral_running.name.flash_running = 1;
+        }
+        app_spi_flash_write_data(&wr_data);
+        m_sensor_msq[j].state = MEASUREMENT_QUEUE_STATE_IDLE;
+    }   
 }
 
 void measure_input_task(void)
@@ -114,7 +151,25 @@ void measure_input_task(void)
 	eeprom_cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
     adc_input_value_t *input_adc = adc_get_input_result();
+    sys_ctx_t *ctx = sys_ctx();
+    uint32_t measure_interval = eeprom_cfg->measure_interval_ms;
+    adc_input_value_t *adc_retval = adc_get_input_result();
     
+    if (ctx->status.is_enter_test_mode
+        || adc_retval->bat_mv > VBAT_DETECT_HIGH_MV)
+    {
+        measure_interval = 2000;
+    }
+    
+    if (adc_retval->bat_mv > VBAT_DETECT_HIGH_MV)
+    {
+        ctx->peripheral_running.name.high_bat_detect = 1;
+    }
+    else
+    {
+        ctx->peripheral_running.name.high_bat_detect = 0;
+    }
+        
 #ifdef DTG02
     TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
     TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
@@ -148,30 +203,24 @@ void measure_input_task(void)
     {
         m_measure_data.temperature_error = 1;
     }
-    if (sys_ctx()->status.is_enter_test_mode)
-    {
-        eeprom_cfg->measure_interval_ms = 2000;
-    }
+
 	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= eeprom_cfg->measure_interval_ms))
+		((sys_get_ms() - m_last_time_measure_data) >= measure_interval))
 	{
         adc_start();
         m_last_time_measure_data = sys_get_ms();
         if (m_this_is_the_first_time)
         {
             m_this_is_the_first_time = false;
-            m_force_sensor_build_msq = true;
         }
         m_this_is_the_first_time = false;
         m_number_of_adc_conversion = 0;
         adc_stop();
         
         // Put data to msq
-        adc_input_value_t *adc_retval = adc_get_input_result();
-
+        adc_retval = adc_get_input_result();
         measurement_msg_queue_t queue;
-        m_force_sensor_build_msq = false;
-
+        
         queue.measure_timestamp = app_rtc_get_counter();
         queue.vbat_mv = adc_retval->bat_mv;
         queue.vbat_percent = adc_retval->bat_percent;     
@@ -211,41 +260,7 @@ void measure_input_task(void)
         if (queue_full)
         {
             DEBUG_ERROR("Message queue full\r\n");
-            
-//        app_spi_flash_data_t wr_data;
-//        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
-//        wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
-//        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
-//        {
-//            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
-//        }
-//        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
-//        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
-//        
-//#ifdef DTG02
-//        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
-//        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
-//#endif        
-//        wr_data.timestamp = m_sensor_msq->measure_timestamp;
-//        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-//        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
-//        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
-//        wr_data.temp = m_sensor_msq->temperature;
-//        
-//        if (!ctx->peripheral_running.name.flash_running)
-//        {
-//            DEBUG_VERBOSE("Wakup flash\r\n");
-//            spi_init();
-//            app_spi_flash_wakeup();
-//            ctx->peripheral_running.name.flash_running = 1;
-//        }
-//        app_spi_flash_write_data(&wr_data);
-        
-            for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
-            {
-                m_sensor_msq[i].state = MEASUREMENT_QUEUE_STATE_IDLE;
-            }
-            #warning "Please save memory to flash"
+            measure_input_save_all_data_to_flash();
         }
 
         m_last_time_measure_data = sys_get_ms();
@@ -411,18 +426,18 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 {
                     if (input->dir_level == 0)
                     {
-                        DEBUG_INFO("Reserve\r\n");
+                        DEBUG_VERBOSE("Reserve\r\n");
                     }
                     if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
                     {
-                        DEBUG_INFO("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+                        DEBUG_VERBOSE("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                         m_pulse_counter_in_backup[input->port].forward++;
                     }
                     else
                     {
                         if (m_pulse_counter_in_backup[input->port].forward > 0)
                         {
-                            DEBUG_INFO("[PWM] ----- in %ums\r\n", m_pull_diff[input->port]);
+                            DEBUG_VERBOSE("[PWM] ----- in %ums\r\n", m_pull_diff[input->port]);
                             m_pulse_counter_in_backup[input->port].forward--;
                         }
                     }
@@ -430,7 +445,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 }
                 else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
                 {
-                    DEBUG_INFO("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+                    DEBUG_VERBOSE("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                     m_pulse_counter_in_backup[input->port].forward++;
                     m_pulse_counter_in_backup[input->port].reserve = 0;
                 }
@@ -472,18 +487,14 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
-                    DEBUG_INFO("[DIR] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+                    DEBUG_VERBOSE("[DIR] +++++++ in %ums\r\n", m_pull_diff[input->port]);
                     m_pulse_counter_in_backup[input->port].reserve++;
                 }
             }
             else
             {
-                DEBUG_WARN("DIR Noise, diff time %ums\r\n", m_pull_diff[input->port]);
+                DEBUG_VERBOSE("DIR Noise, diff time %ums\r\n", m_pull_diff[input->port]);
             }
-        }
-        else
-        {
-
         }
     }
     __enable_irq();

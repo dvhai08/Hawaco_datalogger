@@ -20,6 +20,7 @@ typedef struct
 {
 	uint32_t sleep_time_s;
 	uint32_t disconnect_timeout_s;
+    uint32_t disconnected_count;
     bool is_enter_test_mode;
     bool enter_ota_update;
     uint8_t delay_ota_update;
@@ -49,7 +50,8 @@ typedef union
         uint8_t gsm_running : 1;
         uint8_t flash_running : 1;
         uint8_t rs485_running : 1;
-        uint8_t reserve : 4;
+        uint8_t high_bat_detect : 1;
+        uint8_t reserve : 3;
     } name;
     uint8_t value;
 } sys_ctx_sleep_peripheral_t;
