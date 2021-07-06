@@ -57,11 +57,11 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            23000     // ( ~18s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
-#define TEST_INPUT_4_20_MA                              1
+#define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -273,7 +273,7 @@ int main(void)
         adc_stop();
         if (system->status.is_enter_test_mode == 0 
             && m_delay_consider_wakeup == 0
-            && LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin))
+            && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0))
         {
             sys_config_low_power_mode();
         }

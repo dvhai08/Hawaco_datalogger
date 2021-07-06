@@ -157,9 +157,25 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
+          <LineNumber>565</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134260390</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>../Core/Src/adc.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\DTG02\../Core/Src/adc.c\565</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
           <LineNumber>39</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134295858</Address>
+          <Address>134296446</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -326,6 +342,16 @@
           <count>30</count>
           <WinNumber>1</WinNumber>
           <ItemText>link</ItemText>
+        </Ww>
+        <Ww>
+          <count>31</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>m_adc_raw_data,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>32</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>m_adc_input,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

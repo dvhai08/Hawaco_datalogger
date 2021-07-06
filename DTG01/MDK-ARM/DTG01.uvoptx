@@ -159,16 +159,16 @@
           <Type>0</Type>
           <LineNumber>305</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>0</Address>
+          <Address>134286592</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>0</BreakIfRCount>
+          <BreakIfRCount>1</BreakIfRCount>
           <Filename>..\..\src\gsm\gsm_data_layer.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression></Expression>
+          <Expression>\\DTG01\../../src/gsm/gsm_data_layer.c\305</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -336,6 +336,11 @@
           <count>32</count>
           <WinNumber>1</WinNumber>
           <ItemText>adc_retval</ItemText>
+        </Ww>
+        <Ww>
+          <count>33</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>system</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
