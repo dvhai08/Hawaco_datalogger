@@ -246,7 +246,6 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 #else
-    #warning "Meter indicator changed. save new msg to spi flash"
     char *counter_offset = strstr(buffer, "MeterIndicator\":");
     if (counter_offset)
     {

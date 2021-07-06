@@ -40,6 +40,7 @@
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 #define PULSE_MINMUM_WITDH_MS                   50
 #define ADC_OFFSET_MA                           6      // 0.6mA, mul by 10
+
 typedef struct
 {
     uint32_t forward;
@@ -72,6 +73,7 @@ static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 static bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
+volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
 
 static void measure_input_pulse_counter_poll(void)
 {
@@ -155,9 +157,16 @@ void measure_input_task(void)
     uint32_t measure_interval = eeprom_cfg->measure_interval_ms;
     adc_input_value_t *adc_retval = adc_get_input_result();
     
-    if (ctx->status.is_enter_test_mode
-        || adc_retval->bat_mv > VBAT_DETECT_HIGH_MV)
+    if (ctx->status.is_enter_test_mode)
     {
+        if (eeprom_cfg->io_enable.name.input_4_20ma_enable)
+        {
+            ENABLE_INOUT_4_20MA_POWER(1);
+        }
+        else
+        {
+            measure_input_turn_on_in_4_20ma_power = 0;
+        }
         measure_interval = 2000;
     }
     
@@ -182,7 +191,6 @@ void measure_input_task(void)
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 	
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);    
-#else	// DTG01	
 #endif	
     m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
     
@@ -204,8 +212,8 @@ void measure_input_task(void)
         m_measure_data.temperature_error = 1;
     }
 
-	if (m_this_is_the_first_time ||
-		((sys_get_ms() - m_last_time_measure_data) >= measure_interval))
+	if ((m_this_is_the_first_time || ((sys_get_ms() - m_last_time_measure_data) >= measure_interval))
+        && (measure_input_turn_on_in_4_20ma_power == 0))
 	{
         adc_start();
         m_last_time_measure_data = sys_get_ms();
@@ -216,51 +224,58 @@ void measure_input_task(void)
         m_this_is_the_first_time = false;
         m_number_of_adc_conversion = 0;
         adc_stop();
+#ifdef DTG01
+        sys_enable_power_plug_detect();
+#endif
         
         // Put data to msq
         adc_retval = adc_get_input_result();
-        measurement_msg_queue_t queue;
         
-        queue.measure_timestamp = app_rtc_get_counter();
-        queue.vbat_mv = adc_retval->bat_mv;
-        queue.vbat_percent = adc_retval->bat_percent;     
-
-        app_bkup_read_pulse_counter(&queue.counter0_f, 
-               &queue.counter1_f,
-               &queue.counter0_r,
-               &queue.counter1_r);
-
-        queue.csq_percent = gsm_get_csq_in_percent();
-        for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+        if (ctx->status.is_enter_test_mode == 0)
         {
-            if (adc_retval->in_4_20ma_in[i] >= ADC_OFFSET_MA)
+            measurement_msg_queue_t queue;
+            
+            queue.measure_timestamp = app_rtc_get_counter();
+            queue.vbat_mv = adc_retval->bat_mv;
+            queue.vbat_percent = adc_retval->bat_percent;     
+
+            app_bkup_read_pulse_counter(&queue.counter0_f, 
+                   &queue.counter1_f,
+                   &queue.counter0_r,
+                   &queue.counter1_r);
+
+            queue.csq_percent = gsm_get_csq_in_percent();
+            for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
             {
-                adc_retval->in_4_20ma_in[i] -= ADC_OFFSET_MA;
+                if (adc_retval->in_4_20ma_in[i] >= ADC_OFFSET_MA)
+                {
+                    adc_retval->in_4_20ma_in[i] -= ADC_OFFSET_MA;
+                }
+                queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
             }
-            queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
-        }
 
-        queue.temperature = adc_retval->temp;
+            queue.temperature = adc_retval->temp;
 
-        queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
+            queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
 
-        // Scan for empty buffer
-        bool queue_full = true;
-        for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
-        {
-            if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+            // Scan for empty buffer
+            bool queue_full = true;
+            for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
             {
-                memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
-                queue_full = false;
-                DEBUG_INFO("Puts new msg to sensor queue\r\n");
-                break;
-            }
-        }        
+                if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+                {
+                    memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                    queue_full = false;
+                    DEBUG_INFO("Puts new msg to sensor queue\r\n");
+                    break;
+                }
+            }        
 
-        if (queue_full)
-        {
-            DEBUG_ERROR("Message queue full\r\n");
-            measure_input_save_all_data_to_flash();
+            if (queue_full)
+            {
+                DEBUG_ERROR("Message queue full\r\n");
+                measure_input_save_all_data_to_flash();
+            }
         }
 
         m_last_time_measure_data = sys_get_ms();
@@ -570,4 +585,9 @@ measurement_msg_queue_t *measure_input_get_data_in_queue(void)
     }
     
     return ptr;
+}
+
+void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms)
+{
+    measure_input_turn_on_in_4_20ma_power = ms;
 }

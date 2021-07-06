@@ -61,6 +61,7 @@
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
+#define TEST_INPUT_4_20_MA                              1
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -175,7 +176,10 @@ int main(void)
     system->status.is_enter_test_mode = 1;
     eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
 #endif     
-
+#if TEST_INPUT_4_20_MA
+    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);

@@ -32,6 +32,7 @@
 #include "adc.h"
 #include "sys_ctx.h"
 #include "rtc.h"
+#include "app_eeprom.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -69,7 +70,9 @@ typedef struct
 /* USER CODE BEGIN 0 */
 extern void uart1_rx_complete_callback(bool status);
 extern volatile uint32_t led_blink_delay;
-volatile uint32_t m_last_exti0_timestamp;
+//volatile uint32_t m_last_exti0_timestamp;
+extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
+extern volatile uint32_t m_delay_consider_wakeup;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -77,7 +80,6 @@ extern RTC_HandleTypeDef hrtc;
 extern int32_t ota_update_timeout_ms;
 /* USER CODE BEGIN EV */
 input_ext_isr_t m_last_exti[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -163,6 +165,35 @@ void SysTick_Handler(void)
             NVIC_SystemReset();
         }
     }
+    
+    if (measure_input_turn_on_in_4_20ma_power)
+    {
+        measure_input_turn_on_in_4_20ma_power--;
+    }
+    
+    if (m_delay_consider_wakeup)
+    {
+        m_delay_consider_wakeup--;
+        if (m_delay_consider_wakeup == 0)
+        {
+            if (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin))
+            {
+                if (gsm_data_layer_is_module_sleeping())
+                {
+                    measure_input_measure_wakeup_to_get_data();
+                    gsm_set_wakeup_now();
+                    sys_ctx_t *ctx = sys_ctx();
+                    ctx->peripheral_running.name.gsm_running = 1;
+                    if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_enable)
+                    {
+                        DEBUG_INFO("Enable inpiut 4-20ma\r\n");
+                        measure_input_delay_delay_measure_input_4_20ma(7000);
+                    }
+                }
+            }
+        }
+    }
+    
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -216,7 +247,7 @@ void EXTI0_1_IRQHandler(void)
         uint32_t current_tick = sys_get_ms();
 //        if (current_tick - m_last_exti0_timestamp > (uint32_t)10)
         {
-            m_last_exti0_timestamp = current_tick;
+//            m_last_exti0_timestamp = current_tick;
 #ifdef DTG01
             measure_input_water_meter_input_t input;
             input.port = MEASURE_INPUT_PORT_0;
@@ -415,5 +446,25 @@ void AES_RNG_LPUART1_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+void EXTI4_15_IRQHandler(void)
+{
+    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_6) != RESET)
+    {
+        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_6);
+        if (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin))
+        {
+            DEBUG_INFO("Power up\r\n");
+            m_delay_consider_wakeup = 2000;
+        }
+        else
+        {
+            DEBUG_INFO("Power down\r\n");
+            if (measure_input_turn_on_in_4_20ma_power)
+            {
+                measure_input_turn_on_in_4_20ma_power = 0;
+            }
+        }
+    }
+}
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

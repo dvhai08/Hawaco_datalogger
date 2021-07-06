@@ -161,6 +161,17 @@ void sys_set_delay_time_before_deep_sleep(uint32_t ms);
  */
 void sys_turn_on_led(uint32_t delay_ms);
 
+/**
+ * @brief       Disable IT config
+ */
+void sys_disable_power_plug_config(void);
+
+/**
+ * @brief       Enable power plug detect
+ */
+void sys_enable_power_plug_detect(void);
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

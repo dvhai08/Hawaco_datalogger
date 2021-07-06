@@ -136,4 +136,10 @@ measurement_msg_queue_t *measure_input_get_data_in_queue(void);
  */
 void measure_input_save_all_data_to_flash(void);
 
+/**
+ * @brief       Set delay time to enable input 4_20ma
+ * @param[in]   ms Delay time in ms
+ */
+void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms);
+
 #endif /* MEASURE_INTPUT_H */
