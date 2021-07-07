@@ -1,1 +1,50 @@
-{"Timestamp":"13","ID":"863674040981159","PhoneNum":"000000000000000","Money":"0","Input1":"1000","Input2":"0.0","Output1":"0","Output2":"0","SignalStrength":"85","WarningLevel":"0","BatteryLevel":"0","BatteryDebug":"0","K":"1","Offset":"1000"}
+1. DTG01
+a. Bản tin gửi
+{
+	"BatteryLevel":91,
+	"FW":"0.0.2",
+	"HW":"0.0.2",
+	"ID":"DTG1-860262050125868",		// ID của thiết bị, format DTG1(2)-IMEI
+	"Input1":0,
+	"Input1_J2_D":0,		// xung chân DIR trong trường hợp cấu hình mode gửi cả xung thuận và ngược lên
+	"Input2":2,			// Đầu vào 4-20mA, min 0, max 20,
+	"K0":1,				// Thông tin để debug hệ số K hiện tại ở thiết bị
+	"Mode0":0,			// thông tin để debug chế độ hoạt động của input, 0 =  chế độ xung (pwm++, chân dir = 1 thì số nước --)
+						// 												  1 =  chế độ xung (pwm++, chân dir không quan tâm)
+						//												  2 =  chế độ xung thuận và ngược (pwm++, dir++), gửi cả 2 thống số thuận và ngược lên server
+	"Offset0":0,		// thông tin để debug giá trị Meterindicator offset
+	"Output1":0,		// Tín hiệu on/off đầu ra
+	"Output2":0,		// Tín hiệu 4-20mA out
+	"Money":"0",
+	"PhoneNum":"0",
+	"RST":40,				// thông tin để debug nguyên nhân Reset của thiết bị
+	"SignalStrength":40,
+	"Temperature":30,
+	"Timestamp":1625556610,
+	"Vbat_mv":4155,			// thông tin để debug giá trị pin đơn vị Milis vol
+	"WarningLevel":"0,0,0,0,1,0,1"			// lần lượt là <pin thấp>,<4G hỏng>,<sensor lỗi>,<sensor ngoài ngưỡng>,<Đứt dây xung CIR đồng hồ>,<Lỗi flash>,<Lỗi cảm biến nhiệt>
+}
+
+b. DTG01 Bản tin nhận
+{
+	"Cyclewakeup": 60,		// đơn vị phút
+	"CycleSendWeb":	60,		// đơn vị phút,
+	"InputMode0":(0-1-2),	// chế độ xung (pwm++, chân dir = 1 thì số nước --)
+							// 												  1 =  chế độ xung (pwm++, chân dir không quan tâm)
+							//												  2 = chế độ xung thuận và ngược (pwm++, dir++), gửi cả 2 thống số thuận và ngược lên server
+	"RS485"		: (0-1)		// Bật hoặc tắt chế độ rs485, 0 = tắt, 1  = bật
+							// Phần ID485 đang xử lí xử lí
+	"ID_485_1"	 : x,		// Địa chỉ slave
+	"Register_1" : x,		// Địa chỉ bắt đầu thanh ghi modbus
+	"Byte_1"     : x, 		// Độ dài byte muốn đọc, bội số của 2
+	"Warning"	: (0-1)		// Tự động cảnh báo khi có bất thường
+	"Input1"	: (ngõ vào tín hiệu xung)
+	"Input2"	: Ngõ vào tín hiệu 4-20mA,
+	"Warning"	: (0-1) bật hoặc tắt chế độ tự động cảnh báo,
+	"Meterindicator" : 12345, số nước offset cho đồng hồ
+	"K" : 123456 Hệ số chia
+	"Update": (0-1)			0 là không update, 1 là update
+	"Link":"https://abc.bin"	// Đường dẫn file cần download
+	"Version":"0.0.2"			// phải lớn hơn hoặc version cũ
+	"SOS" : Số điện thoại
+}

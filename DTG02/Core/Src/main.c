@@ -61,7 +61,7 @@
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
-#define TEST_INPUT_4_20_MA                              1
+#define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -144,6 +144,7 @@ int main(void)
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     
 	DEBUG_RAW(RTT_CTRL_CLEAR);
+    gpio_config_input_as_wakeup_source();
     sys_ctx_t *system = sys_ctx();
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
@@ -357,7 +358,7 @@ void SystemClock_Config(void)
 
 uint32_t sys_get_ms()
 {
-	return HAL_GetTick();
+	return uwTick;
 }
 
 void sys_delay_ms(uint32_t ms)
@@ -404,7 +405,8 @@ static void gsm_mnr_task(void *arg)
             if (ctx->status.disconnected_count++ > 24)
             {
                 ctx->status.disconnected_count = 0;
-                if (strlen((char*)eeprom_cfg->phone) > 9)
+                if (strlen((char*)eeprom_cfg->phone) > 9
+                    && eeprom_cfg->io_enable.name.warning)
                 {
                     gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
                 }
@@ -472,11 +474,11 @@ void sys_config_low_power_mode(void)
         
 #if DEBUG_LOW_POWER
         __DBGMCU_CLK_ENABLE() ; // (RCC->APB2ENR |= (RCC_APB2ENR_DBGMCUEN))
-        HAL_EnableDBGStopMode();  //  SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP);
+        SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP);        // Enable debug stop mode
 #endif
         
 #ifdef WDT_ENABLE
-	LL_IWDG_ReloadCounter(IWDG);
+        LL_IWDG_ReloadCounter(IWDG);
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
@@ -493,8 +495,9 @@ void sys_config_low_power_mode(void)
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOB);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOC);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOH);
-
-        HAL_SuspendTick();
+        
+        // Suspend tick
+        SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
         
 //          GPIO_InitTypeDef GPIO_InitStructure;
         __HAL_RCC_PWR_CLK_ENABLE();
@@ -503,7 +506,7 @@ void sys_config_low_power_mode(void)
         HAL_PWREx_EnableUltraLowPower();
 
         /* Enable the fast wake up from Ultra low power mode */
-        HAL_PWREx_EnableFastWakeUp();
+        SET_BIT(PWR->CR, PWR_CR_FWU);
         
         /* Select MSI as system clock source after Wake Up from Stop mode */
         __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
@@ -529,7 +532,10 @@ void sys_config_low_power_mode(void)
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
         DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
-        HAL_ResumeTick();
+        
+        // Resume tick
+        SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;
+        
         SystemClock_Config();
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);

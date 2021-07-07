@@ -951,30 +951,30 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     temp_counter = msg->counter1_r / cfg->k1 + cfg->offset1;
 	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_DIR\":%u,",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_D\":%u,",
 									temp_counter);
 	}
 
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%u,", 
-																			i,
+																			i+1,
 																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
 	}
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":%u,", 
-																			i,
+																			i+1,
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
 
 	for (uint32_t i = 0; i < NUMBER_OF_OUT_ON_OFF; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
-																			i,
-																			measure_input->output_on_off[i]); // dau vao 4-20mA 0
+																			i+1,
+																			measure_input->output_on_off[i]); // dau ra 4-20mA 0
 	}
-    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20mA\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
+    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
 #else	
     temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
@@ -983,9 +983,12 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
         temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_DIR\":%u,",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
+    #warning "Please get output data"
+    total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%u,", 
+                                                                        measure_input->output_on_off[0]); // dau vao 4-20mA 0
     
     total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
                                                                         msg->input_4_20ma[0]); // dau vao 4-20mA 0

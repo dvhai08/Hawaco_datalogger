@@ -390,13 +390,14 @@ static void gsm_mnr_task(void *arg)
         if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
         {
             DEBUG_ERROR("GSM disconnected for a longtime\r\n");
+            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
             measure_input_save_all_data_to_flash();
             ctx->status.disconnect_timeout_s = 0;
             if (ctx->status.disconnected_count++ > 24)
             {
                 ctx->status.disconnected_count = 0;
-                app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-                if (strlen((char*)eeprom_cfg->phone) > 9)
+                if (strlen((char*)eeprom_cfg->phone) > 9
+                    && eeprom_cfg->io_enable.name.warning)
                 {
                     gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
                 }

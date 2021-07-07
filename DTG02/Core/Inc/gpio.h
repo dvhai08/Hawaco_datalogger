@@ -38,6 +38,10 @@ extern "C" {
 void MX_GPIO_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/**
+ *  @brief          Config GPIO IN2 as wakeup source
+ */
+void gpio_config_input_as_wakeup_source(void);
 
 /* USER CODE END Prototypes */
 

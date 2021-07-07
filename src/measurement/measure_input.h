@@ -22,6 +22,7 @@
 #define NUMBER_OF_OUT_ON_OFF						4
 #define MEASURE_INPUT_PORT_1		                1
 #else
+#define	NUMBER_OF_OUTPUT_ON_OFF						1
 #define NUMBER_OF_INPUT_4_20MA						1
 #define NUMBER_OF_OUTPUT_4_20MA                     1
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
@@ -45,8 +46,8 @@ typedef struct
 
 typedef struct
 {
+    uint8_t output_on_off[NUMBER_OF_OUTPUT_ON_OFF];
 #ifdef DTG02
-	uint8_t output_on_off[4];
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
 	uint8_t input_4_20mA[NUMBER_OF_INPUT_4_20MA];

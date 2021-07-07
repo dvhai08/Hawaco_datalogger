@@ -367,6 +367,20 @@ void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 2 */
+void gpio_config_input_as_wakeup_source(void)
+{
+    LL_GPIO_SetPinMode(OPTOIN2_GPIO_Port, OPTOIN2_Pin, LL_GPIO_MODE_INPUT);
+    
+    LL_EXTI_InitTypeDef EXTI_InitStruct = {0};
+    EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_4;
+    EXTI_InitStruct.LineCommand = ENABLE;
+    EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
+    EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_FALLING;
+    LL_EXTI_Init(&EXTI_InitStruct);
+    
+    NVIC_SetPriority(EXTI4_15_IRQn, 0);
+    NVIC_EnableIRQ(EXTI4_15_IRQn);
+}
 
 /* USER CODE END 2 */
 

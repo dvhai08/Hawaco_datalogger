@@ -105,7 +105,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	DEBUG_PRINTF("Hardfault\r\n");
-//	NVIC_SystemReset();
+	NVIC_SystemReset();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
@@ -273,7 +273,21 @@ void EXTI4_15_IRQHandler(void)
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
-
+    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_4) != RESET)
+    {
+        DEBUG_INFO("EXT4 irq\r\n");
+        LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
+        LED1(1);
+        led_blink_delay = 5;
+		if (gsm_data_layer_is_module_sleeping())
+        {
+            measure_input_measure_wakeup_to_get_data();
+            gsm_set_wakeup_now();
+            sys_ctx_t *ctx = sys_ctx();
+            ctx->peripheral_running.name.gsm_running = 1;
+        }
+    }
+  
   /* USER CODE END EXTI4_15_IRQn 1 */
 }
 
@@ -335,20 +349,20 @@ void USART1_IRQHandler(void)
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_PRINTF("GSM UART : Over run\r\n");
+        DEBUG_ERROR("GSM UART : Over run\r\n");
         uint32_t tmp = USART1->RDR;
         LL_USART_ClearFlag_ORE(USART1);
     }
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_PRINTF("Frame error\r\n");
+        DEBUG_ERROR("Frame error\r\n");
         LL_USART_ClearFlag_FE(USART1);
     }
     
     if (LL_USART_IsActiveFlag_NE(USART1))
     {
-        DEBUG_PRINTF("Noise error\r\n");
+        DEBUG_ERROR("Noise error\r\n");
         LL_USART_ClearFlag_NE(USART1);
     }
   /* USER CODE END USART1_IRQn 0 */

@@ -16,7 +16,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     uint8_t has_new_cfg = 0;
     uint8_t rewrite_data_to_flash = 0;	
 	app_eeprom_config_data_t *config = app_eeprom_read_config_data();
-
+    sys_ctx_t *ctx = sys_ctx();
+    ctx->status.disconnected_count = 0;
 	
     char *cycle_wakeup = strstr(buffer, "Cyclewakeup\":");
     if (cycle_wakeup != NULL)
@@ -303,7 +304,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
     
 	char *do_ota = strstr(buffer, "Update\":");
-	char *version = strstr(buffer, "version\":\"");
+	char *version = strstr(buffer, "Version\":\"");
 	char *link = strstr(buffer, "Link\":");
     if (do_ota && version && link)
     {
