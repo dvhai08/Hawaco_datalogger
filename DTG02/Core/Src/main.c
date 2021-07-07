@@ -436,20 +436,18 @@ static void info_task(void *arg)
         if (system->status.is_enter_test_mode)
         {
             uint8_t result;
-            uint8_t Input_Result[2];
+            uint8_t input_result[2];
             
-            ModbusMaster_begin(1000);
-    //        ModbusMaster_beginTransmission(1);
+            modbus_master_reset(1000);
 
              // read input registers function test
              // slave address 0x01, two consecutive addresses are register 0x2
-            result = ModbusMaster_readInputRegisters(0x01,0x02, 2);
-//            result = ModbusMaster_requestFrom(30001, 2);
+            result = modbus_master_read_input_register(0x01,0x02, 2);
             if (result == 0x00)
             {
-                Input_Result[0] = ModbusMaster_getResponseBuffer(0x00);
-                Input_Result[1] = ModbusMaster_getResponseBuffer(0x01);
-                DEBUG_INFO("Modbus rx %02X-%02X\r\n", Input_Result[0], Input_Result[1]);
+                input_result[0] = modbus_master_get_response_buffer(0x00);
+                input_result[1] = modbus_master_get_response_buffer(0x01);
+                DEBUG_INFO("Modbus rx %02X-%02X\r\n", input_result[0], input_result[1]);
             }
             else
             {
