@@ -86,12 +86,14 @@
 #define NTC_IS_POWERED()		LL_GPIO_IsOutputPinSet(VNTC_GPIO_Port, VNTC_Pin)						
 								
 								
-#define ENABLE_INOUT_4_20MA_POWER(x)	{	if (x) \
+#define ENABLE_INPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_ResetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
 											else	\
 												LL_GPIO_SetOutputPin(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin);	\
 										}
 
+#define INPUT_POWER_4_20_MA_IS_ENABLE()       (LL_GPIO_IsOutputPinSet(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin) ? 0 : 1)
+                                        
 #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 											else	\

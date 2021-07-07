@@ -269,11 +269,11 @@ void adc_start(void)
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
     if (cfg->io_enable.name.input_4_20ma_enable)
     {
-        ENABLE_INOUT_4_20MA_POWER(1);
+        ENABLE_INPUT_4_20MA_POWER(1);
     }
     else
     {
-        ENABLE_INOUT_4_20MA_POWER(0);
+        ENABLE_INPUT_4_20MA_POWER(0);
     }
 #ifndef USE_INTERNAL_VREF    
     if (!NTC_IS_POWERED())
@@ -373,11 +373,11 @@ void adc_start(void)
     }
     if (sys_ctx()->status.is_enter_test_mode)
     {
-        ENABLE_INOUT_4_20MA_POWER(0);   
+        ENABLE_INPUT_4_20MA_POWER(0);   
     }
     else
     {
-        ENABLE_INOUT_4_20MA_POWER(0);
+        ENABLE_INPUT_4_20MA_POWER(0);
     }
     DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();

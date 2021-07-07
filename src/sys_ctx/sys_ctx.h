@@ -51,7 +51,8 @@ typedef union
         uint8_t flash_running : 1;
         uint8_t rs485_running : 1;
         uint8_t high_bat_detect : 1;
-        uint8_t reserve : 3;
+        uint8_t wait_for_input_4_20ma_power_on : 1;
+        uint8_t reserve : 2;
     } name;
     uint8_t value;
 } sys_ctx_sleep_peripheral_t;

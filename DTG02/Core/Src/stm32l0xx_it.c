@@ -71,6 +71,7 @@ extern volatile int32_t ota_update_timeout_ms;
 extern void uart1_rx_complete_callback(bool status);
 extern volatile uint32_t led_blink_delay;
 volatile uint32_t m_last_exti0_timestamp;
+extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -176,6 +177,11 @@ void SysTick_Handler(void)
             DEBUG_ERROR("OTA update timeout\r\n");
             NVIC_SystemReset();
         }
+    }
+    
+    if (measure_input_turn_on_in_4_20ma_power)
+    {
+        --measure_input_turn_on_in_4_20ma_power;
     }
   /* USER CODE END SysTick_IRQn 1 */
 }

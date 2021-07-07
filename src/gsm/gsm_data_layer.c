@@ -753,9 +753,6 @@ void gsm_hard_reset(void)
 }
 
 
-
-
-
 void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
 {
     uint8_t count;
@@ -986,7 +983,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
-    #warning "Please get output data"
+    
     total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%u,", 
                                                                         measure_input->output_on_off[0]); // dau vao 4-20mA 0
     

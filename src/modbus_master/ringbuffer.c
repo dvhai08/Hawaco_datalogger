@@ -1,21 +1,21 @@
 #include "ringbuffer.h"
 /**
   * @brief  rbInitialize��ʼ�����ã�����������Ϣ����ṹ��
-  * @param  pRingBuff:ringbuffer�ṹ��
+  * @param  p_ringbuffer:ringbuffer�ṹ��
 	*         buff�����ݻ�����
 	*         length����������С
   * @note   
   * @retval void
   * @author xiaodaqi
   */
-void rbInitialize(RingBuffer *pRingBuff, uint8_t *buff, uint16_t length)
+void ringbuffer_initialize(ringbuffer *p_ringbuffer, uint8_t *buff, uint16_t length)
 {
-    pRingBuff->pBuff = buff;
-    pRingBuff->pEnd = buff + length;
-    pRingBuff->wp = buff;
-    pRingBuff->rp = buff;
-    pRingBuff->length = length;
-    pRingBuff->flagOverflow = 0;
+    p_ringbuffer->pBuff = buff;
+    p_ringbuffer->pEnd = buff + length;
+    p_ringbuffer->wp = buff;
+    p_ringbuffer->rp = buff;
+    p_ringbuffer->length = length;
+    p_ringbuffer->over_flow = 0;
 }
 
 /**
@@ -26,11 +26,11 @@ void rbInitialize(RingBuffer *pRingBuff, uint8_t *buff, uint16_t length)
   * @author xiaodaqi
   */
 
-void rbClear(RingBuffer *pRingBuff)
+void ringbuffer_clear(ringbuffer *p_ringbuffer)
 {
-    pRingBuff->wp = pRingBuff->pBuff;
-    pRingBuff->rp = pRingBuff->pBuff;
-    pRingBuff->flagOverflow = 0;
+    p_ringbuffer->wp = p_ringbuffer->pBuff;
+    p_ringbuffer->rp = p_ringbuffer->pBuff;
+    p_ringbuffer->over_flow = 0;
 }
 
 /**
@@ -41,21 +41,21 @@ void rbClear(RingBuffer *pRingBuff)
   * @retval void
   * @author xiaodaqi
   */
-void rbPush(RingBuffer *pRingBuff, uint8_t value)
+void ringbuffer_push(ringbuffer *p_ringbuffer, uint8_t value)
 {
-    uint8_t *wp_next = pRingBuff->wp + 1;
-    if (wp_next == pRingBuff->pEnd)
+    uint8_t *wp_next = p_ringbuffer->wp + 1;
+    if (wp_next == p_ringbuffer->pEnd)
     {
-        wp_next -= pRingBuff->length; // Rewind pointer when exceeds bound
+        wp_next -= p_ringbuffer->length; // Rewind pointer when exceeds bound
     }
-    if (wp_next != pRingBuff->rp)
+    if (wp_next != p_ringbuffer->rp)
     {
-        *pRingBuff->wp = value;
-        pRingBuff->wp = wp_next;
+        *p_ringbuffer->wp = value;
+        p_ringbuffer->wp = wp_next;
     }
     else
     {
-        pRingBuff->flagOverflow = 1;
+        p_ringbuffer->over_flow = 1;
     }
 }
 
@@ -66,15 +66,15 @@ void rbPush(RingBuffer *pRingBuff, uint8_t value)
   * @retval ѹ��������
   * @author xiaodaqi
   */
-uint8_t rbPop(RingBuffer *pRingBuff)
+uint8_t ringbuffer_pop(ringbuffer *p_ringbuffer)
 {
-    if (pRingBuff->rp == pRingBuff->wp)
+    if (p_ringbuffer->rp == p_ringbuffer->wp)
         return 0; // empty
 
-    uint8_t ret = *(pRingBuff->rp++);
-    if (pRingBuff->rp == pRingBuff->pEnd)
+    uint8_t ret = *(p_ringbuffer->rp++);
+    if (p_ringbuffer->rp == p_ringbuffer->pEnd)
     {
-        pRingBuff->rp -= pRingBuff->length; // Rewind pointer when exceeds bound
+        p_ringbuffer->rp -= p_ringbuffer->length; // Rewind pointer when exceeds bound
     }
     return ret;
 }
@@ -86,9 +86,9 @@ uint8_t rbPop(RingBuffer *pRingBuff)
   * @retval ���������ֽ���
   * @author xiaodaqi
   */
-uint16_t rbGetCount(const RingBuffer *pRingBuff)
+uint16_t ringbuffer_get_count(const ringbuffer *p_ringbuffer)
 {
-    return (pRingBuff->wp - pRingBuff->rp + pRingBuff->length) % pRingBuff->length;
+    return (p_ringbuffer->wp - p_ringbuffer->rp + p_ringbuffer->length) % p_ringbuffer->length;
 }
 
 /**
@@ -98,9 +98,9 @@ uint16_t rbGetCount(const RingBuffer *pRingBuff)
   * @retval ��Ϊ1������Ϊ0
   * @author xiaodaqi
   */
-int8_t rbIsEmpty(const RingBuffer *pRingBuff)
+int8_t ringbuffer_is_empty(const ringbuffer *p_ringbuffer)
 {
-    return pRingBuff->wp == pRingBuff->rp;
+    return p_ringbuffer->wp == p_ringbuffer->rp;
 }
 
 /**
@@ -110,7 +110,7 @@ int8_t rbIsEmpty(const RingBuffer *pRingBuff)
   * @retval ��Ϊ1������Ϊ0
   * @author xiaodaqi
   */
-int8_t rbIsFull(const RingBuffer *pRingBuff)
+int8_t ringbuffer_is_full(const ringbuffer *p_ringbuffer)
 {
-    return (pRingBuff->rp - pRingBuff->wp + pRingBuff->length - 1) % pRingBuff->length == 0;
+    return (p_ringbuffer->rp - p_ringbuffer->wp + p_ringbuffer->length - 1) % p_ringbuffer->length == 0;
 }

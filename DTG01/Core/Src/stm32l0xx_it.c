@@ -187,6 +187,7 @@ void SysTick_Handler(void)
                     if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_enable)
                     {
                         DEBUG_INFO("Enable inpiut 4-20ma\r\n");
+                        ENABLE_INPUT_4_20MA_POWER(1);
                         measure_input_delay_delay_measure_input_4_20ma(7000);
                     }
                 }

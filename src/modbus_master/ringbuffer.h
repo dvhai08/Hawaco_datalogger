@@ -6,7 +6,7 @@ extern "C"
 {
 #endif
 
-#include "bsp_board.h"
+#include <stdint.h>
 #include <stdio.h>
 
     typedef struct
@@ -16,16 +16,16 @@ extern "C"
         uint8_t *wp;   // Write Point
         uint8_t *rp;   // Read Point
         uint16_t length;
-        uint8_t flagOverflow; // set when buffer overflowed
-    } RingBuffer;
+        uint8_t over_flow; // set when buffer overflowed
+    } ringbuffer;
 
-    void rbInitialize(RingBuffer *pRingBuff, uint8_t *buff, uint16_t length);
-    void rbClear(RingBuffer *pRingBuff);
-    void rbPush(RingBuffer *pRingBuff, uint8_t value);
-    uint8_t rbPop(RingBuffer *pRingBuff);
-    uint16_t rbGetCount(const RingBuffer *pRingBuff);
-    int8_t rbIsEmpty(const RingBuffer *pRingBuff);
-    int8_t rbIsFull(const RingBuffer *pRingBuff);
+    void ringbuffer_initialize(ringbuffer *p_ringbuffer, uint8_t *buff, uint16_t length);
+    void ringbuffer_clear(ringbuffer *p_ringbuffer);
+    void ringbuffer_push(ringbuffer *p_ringbuffer, uint8_t value);
+    uint8_t ringbuffer_pop(ringbuffer *p_ringbuffer);
+    uint16_t ringbuffer_get_count(const ringbuffer *p_ringbuffer);
+    int8_t ringbuffer_is_empty(const ringbuffer *p_ringbuffer);
+    int8_t ringbuffer_is_full(const ringbuffer *p_ringbuffer);
 
 #ifdef __cplusplus
 }

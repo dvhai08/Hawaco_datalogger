@@ -1251,11 +1251,6 @@
           <GroupName>modbus_master</GroupName>
           <Files>
             <File>
-              <FileName>bsp_board.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\src\modbus_master\bsp_board.h</FilePath>
-            </File>
-            <File>
               <FileName>crc16.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\modbus_master\crc16.h</FilePath>
@@ -1281,19 +1276,19 @@
               <FilePath>..\..\src\modbus_master\ringbuffer.h</FilePath>
             </File>
             <File>
-              <FileName>trans_recieve_buff_control.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\src\modbus_master\trans_recieve_buff_control.c</FilePath>
-            </File>
-            <File>
-              <FileName>trans_recieve_buff_control.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>..\..\src\modbus_master\trans_recieve_buff_control.h</FilePath>
-            </File>
-            <File>
               <FileName>word.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\modbus_master\word.h</FilePath>
+            </File>
+            <File>
+              <FileName>modbus_memory.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\modbus_master\modbus_memory.c</FilePath>
+            </File>
+            <File>
+              <FileName>modbus_memory.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\modbus_master\modbus_memory.h</FilePath>
             </File>
           </Files>
         </Group>

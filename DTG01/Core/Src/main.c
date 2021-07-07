@@ -98,6 +98,7 @@ static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
 volatile uint32_t m_delay_consider_wakeup = 0;
+extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 /* USER CODE END 0 */
 
 /**
@@ -222,7 +223,7 @@ int main(void)
 		cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 		control_output_dac_enable(1000000);
 		cfg->io_enable.name.rs485_en = 1;
-		ENABLE_INOUT_4_20MA_POWER(1);
+		ENABLE_INPUT_4_20MA_POWER(1);
 	}
     
     if (!cfg->io_enable.name.rs485_en)
@@ -233,7 +234,9 @@ int main(void)
     
     if (!cfg->io_enable.name.input_4_20ma_enable)
     {
-        ENABLE_INOUT_4_20MA_POWER(0);
+        ENABLE_INPUT_4_20MA_POWER(0);
+        system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+        measure_input_turn_on_in_4_20ma_power = 0;
     }
     
     if (gsm_data_layer_is_module_sleeping())

@@ -97,6 +97,7 @@ static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
+extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 /* USER CODE END 0 */
 
 /**
@@ -184,6 +185,7 @@ int main(void)
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
+    system->status.is_enter_test_mode = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -218,7 +220,7 @@ int main(void)
 		LED2(0);
 #endif
 	}	
-
+    system->status.is_enter_test_mode = 1;
 	if (system->status.is_enter_test_mode)
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -227,12 +229,11 @@ int main(void)
 		eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 		control_output_dac_enable(1000000);
 		eeprom_cfg->io_enable.name.rs485_en = 1;
-		ENABLE_INOUT_4_20MA_POWER(1);
+		ENABLE_INPUT_4_20MA_POWER(1);
         RS485_EN(1);
         usart_lpusart_485_control(1);
 	}
     
-
     if (!eeprom_cfg->io_enable.name.rs485_en
         && system->status.is_enter_test_mode == 0)
     {
@@ -243,7 +244,9 @@ int main(void)
     
     if (!eeprom_cfg->io_enable.name.input_4_20ma_enable)
     {
-        ENABLE_INOUT_4_20MA_POWER(0);
+        ENABLE_INPUT_4_20MA_POWER(0);
+        system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+        measure_input_turn_on_in_4_20ma_power = 0;
     }
     
     if (gsm_data_layer_is_module_sleeping())
@@ -430,12 +433,30 @@ static void info_task(void *arg)
     
 	if (system->status.is_enter_test_mode)
 	{
-		char buf[48];
-		sprintf(buf, "%u\r\n", sys_get_ms());
-		RS485_EN(1);
-        RS485_DIR_RX();
+        if (system->status.is_enter_test_mode)
+        {
+            uint8_t result;
+            uint8_t Input_Result[2];
+            
+            ModbusMaster_begin(1000);
+    //        ModbusMaster_beginTransmission(1);
+
+             // read input registers function test
+             // slave address 0x01, two consecutive addresses are register 0x2
+            result = ModbusMaster_readInputRegisters(0x01,0x02, 2);
+//            result = ModbusMaster_requestFrom(30001, 2);
+            if (result == 0x00)
+            {
+                Input_Result[0] = ModbusMaster_getResponseBuffer(0x00);
+                Input_Result[1] = ModbusMaster_getResponseBuffer(0x01);
+                DEBUG_INFO("Modbus rx %02X-%02X\r\n", Input_Result[0], Input_Result[1]);
+            }
+            else
+            {
+                DEBUG_ERROR("Modbus failed\r\n");
+            }
+        }
         i = 5;
-//		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
 	}
     if (i++ >= 5)
 	{
