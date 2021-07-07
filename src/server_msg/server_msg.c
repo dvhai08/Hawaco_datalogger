@@ -93,8 +93,27 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			TRANS_4_OUTPUT(out4);
         }
     }
+    
+    char *output4_20mA = strstr(buffer, "Output4_20\":");
+    if (output4_20mA != NULL)
+    {
+        uint8_t out_4_20 = gsm_utilities_get_number_from_string(strlen("Output4_20\":"), output4_20mA);
+        if (config->io_enable.name.output_4_20ma_value != out_4_20)
+        {
+            config->io_enable.name.output_4_20ma_enable = 1;
+            config->io_enable.name.output_4_20ma_value = out_4_20;
+            has_new_cfg++;
+            DEBUG_INFO("Output 4-20ma changed\r\n");
+        }
+        
+        if (config->io_enable.name.output_4_20ma_value == 0)
+        {
+            config->io_enable.name.output_4_20ma_enable = 0;
+        }
+    }
 #endif
 	
+#ifdef DTG01
     char *mode_j1 = strstr(buffer, "InputMode0\":");		// mode
     if (mode_j1 != NULL)
     {
@@ -107,11 +126,40 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
     
-#ifdef DTG02
-    char *mode_j2 = strstr(buffer, "InputMode1\":");
+    char *output4_20mA = strstr(buffer, "Output2\":");
+    if (output4_20mA != NULL)
+    {
+        uint8_t out_4_20 = gsm_utilities_get_number_from_string(strlen("Output2\":"), output4_20mA);
+        if (config->io_enable.name.output_4_20ma_value != out_4_20)
+        {
+            config->io_enable.name.output_4_20ma_enable = 1;
+            config->io_enable.name.output_4_20ma_value = out_4_20;
+            has_new_cfg++;
+            DEBUG_INFO("Output 4-20ma changed\r\n");
+        }
+        
+        if (config->io_enable.name.output_4_20ma_value == 0)
+        {
+            config->io_enable.name.output_4_20ma_enable = 0;
+        }
+    }
+#else
+    char *mode_j1 = strstr(buffer, "Input_J1\":");		// mode
+    if (mode_j1 != NULL)
+    {
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J1\":"), mode_j1);
+        if (config->meter_mode[0] != mode)
+        {
+            DEBUG_PRINTF("PWM1 mode changed\r\n");
+            config->meter_mode[0] = mode;
+            has_new_cfg++;
+        }
+    }
+    
+    char *mode_j2 = strstr(buffer, "Input_J2\":");
     if (mode_j2 != NULL)
     {
-        uint8_t mode = gsm_utilities_get_number_from_string(strlen("InputMode1\":"), mode_j2);
+        uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J2\":"), mode_j2);
         if (config->meter_mode[1] != mode)
         {
             DEBUG_PRINTF("PWM2 mode changed\r\n");
@@ -293,9 +341,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     char *server = strstr(buffer, "Server\":");
     if (server)
     {
-        phone_num += strlen("Server\":");
+        server += strlen("Server\":");
         uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
-        if (gsm_utilities_copy_parameters(phone_num, (char*)tmp, '"', '"'))
+        if (gsm_utilities_copy_parameters(server, (char*)tmp, '"', '"'))
         {
             has_new_cfg++;
             snprintf((char*)config->server_addr, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);

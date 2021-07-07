@@ -1,0 +1,259 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "adc.h"
+#include "iwdg.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+#include "app_debug.h"
+#include "ota_update.h"
+#include <string.h>
+#include "flash_if.h"
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define WDT_ENABLE      1
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+typedef  void (*p_func)(void);
+p_func jump_to_application;
+uint32_t m_jump_addr;
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+/* memory for ummalloc */
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
+    
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+#if WDT_ENABLE
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_IWDG_Init();
+  MX_ADC_Init();
+  /* USER CODE BEGIN 2 */
+#endif
+	ota_flash_cfg_t cfg;
+	memcpy(&cfg, (ota_flash_cfg_t*)OTA_INFO_START_ADDR, sizeof(ota_flash_cfg_t));
+    if (cfg.flag == OTA_FLAG_UPDATE_NEW_FW)
+	{
+		cfg.flag = OTA_FLAG_NO_NEW_FIRMWARE;
+        sprintf((char*)&cfg.reserve[0], "%s", "OTA success");
+        
+        LL_IWDG_ReloadCounter(IWDG);
+		if (flash_if_erase(APPLICATION_START_ADDR, APPLICATION_END_ADDR) != FLASH_IF_OK)
+        {
+            while (1);
+        }	
+        
+        LL_IWDG_ReloadCounter(IWDG);
+        volatile uint32_t p_addr = DONWLOAD_START_ADDR;
+        if (flash_if_write(APPLICATION_START_ADDR, (uint32_t*)p_addr, (cfg.firmware_size+3)/4) != HAL_OK)
+        {
+            while (1);
+        }
+        
+        LL_IWDG_ReloadCounter(IWDG);
+        flash_if_erase_ota_info_page();
+        
+        LL_IWDG_ReloadCounter(IWDG);
+		flash_if_write(OTA_INFO_START_ADDR, (uint32_t*)&cfg, sizeof(cfg)/4);
+		
+        LL_IWDG_ReloadCounter(IWDG);
+		NVIC_SystemReset();
+	}
+	else
+	{
+		__disable_irq();
+		if (((*(__IO uint32_t*)APPLICATION_START_ADDR) & 0x2FFE0000) == 0x20000000)
+		{
+			/* Jump to user application */
+			m_jump_addr = *(__IO uint32_t*) (APPLICATION_START_ADDR + 4);
+			jump_to_application = (p_func) m_jump_addr;
+			/* Initialize user application's Stack Pointer */
+			__set_MSP(*(__IO uint32_t*) APPLICATION_START_ADDR);
+			jump_to_application();
+		}
+	}
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+      NVIC_SystemReset();
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
+  while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_0)
+  {
+  }
+  LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+  LL_RCC_HSI_Enable();
+
+   /* Wait till HSI is ready */
+  while(LL_RCC_HSI_IsReady() != 1)
+  {
+
+  }
+  LL_RCC_HSI_SetCalibTrimming(16);
+  LL_RCC_LSI_Enable();
+
+   /* Wait till LSI is ready */
+  while(LL_RCC_LSI_IsReady() != 1)
+  {
+
+  }
+  LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
+  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+  LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+
+   /* Wait till System clock is ready */
+  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
+  {
+
+  }
+  LL_SetSystemCoreClock(16000000);
+
+   /* Update the time base */
+  if (HAL_InitTick (TICK_INT_PRIORITY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+
+//uint32_t sys_get_ms()
+//{
+//	return HAL_GetTick();
+//}
+
+//void sys_delay_ms(uint32_t ms)
+//{
+//	uint32_t current_tick = HAL_GetTick();
+//	
+//	while (1)
+//	{
+//		__WFI();
+//		if (HAL_GetTick() - current_tick >= ms)
+//		{
+//			break;
+//		}
+//	}
+//}
+
+
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+    NVIC_SystemReset();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    Error_Handler();
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */
+
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

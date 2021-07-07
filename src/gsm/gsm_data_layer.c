@@ -968,7 +968,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
 
-	for (uint32_t i = 0; i < NUMBER_OF_OUT_ON_OFF; i++)
+	for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_ON_OFF; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
 																			i+1,

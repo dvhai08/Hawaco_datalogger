@@ -6,20 +6,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define	MEASURE_INPUT_ADC_DMA_UNIT		4
-
-#define	ADCMEM_V20mV	0		/* Chan ADC_IN4 */
-#define	ADCMEM_VSYS		1		/* Chan ADC_IN6 */
-#define ADCMEM_VTEM             2
-#define ADCMEM_VINTREF          3
-
 #define MEASURE_INPUT_PORT_0		0
 
 #ifdef DTG02
 #define NUMBER_OF_INPUT_4_20MA						4
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
 #define	NUMBER_OF_INPUT_ON_OFF						4
-#define NUMBER_OF_OUT_ON_OFF						4
+#define NUMBER_OF_OUTPUT_ON_OFF						4
 #define MEASURE_INPUT_PORT_1		                1
 #else
 #define	NUMBER_OF_OUTPUT_ON_OFF						1

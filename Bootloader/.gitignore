@@ -1,0 +1,42 @@
+/GD32E103_Main/Project/Keil_project/output
+/GD32E103_Main/Project/gd32e10x_it.c
+/GD32E103_Main/Project/gd32e10x_libopt.h
+/GD32E103_Main/Project/main.c
+/GD32E103_Main/Project/readme.txt
+/GD32E103_Main/Project/systick.c
+/GD32E103_Main/Project/systick.h
+/GD32E103_Main/Project/gd32e10x_it.h
+HAWACO_DATALOGER_V1.0 (5-4-2021 10-15-09 PM)/Sch/__Previews
+HAWACO_DATALOGER_V1.0 (5-4-2021 10-15-09 PM)
+*.map
+*.lst
+*.huybk213
+~$Data fomat datalogger (1).xlsx
+GD32E103_Main/Project/Keil_project/JLinkLog.txt
+GD32E103_Main/Project/Keil_project/Project.uvoptx
+*.jlink
+GD32E103_Main/Bootloader/MDK-ARM/object
+GD32E103_Main/Bootloader/Test_Images
+~$Data fomat datalogger (2).xlsx
+GD32E103_Main/Project/Keil_project/Project.emSession
+GD32E103_Main/Project/.vscode
+GD32E103_Main/Project/Keil_project/Project.uvguix.huybk
+*.o
+*.crf
+*.d
+Data_logger/MDK-ARM/DebugConfig/Data_logger_STM32L083RZTx.dbgconf
+*.huybk
+*.htm
+*.dep
+.vscode
+hw/HAWACO_DATALOGER_DT-G2_V1.0 (6-12-2021 11-17-38 AM)/Sch/__Previews
+~$Estimate.xlsx
+~$Data fomat datalogger_ByTech,PLC comment (1).xlsx
+*.__i
+Data_logger/MDK-ARM/Data_logger/Data_logger.axf
+*.axf
+*.lnp
+*.dbgconf
+Data_logger/MDK-ARM/JLinkLog.txt
+*.ini
+GD32E103_Main
