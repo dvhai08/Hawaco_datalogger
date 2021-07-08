@@ -12,6 +12,12 @@
 #define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
 #define APP_EEPROM_MAX_PHONE_LENGTH                 16
 #define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           32
+#ifdef DTG02
+#define APP_EEPROM_NB_OF_INPUT_4_20MA               4
+#else
+#define APP_EEPROM_NB_OF_INPUT_4_20MA               1
+#endif
+
 typedef union
 {
 	struct

@@ -297,10 +297,6 @@ void measure_input_task(void)
                 queue.csq_percent = gsm_get_csq_in_percent();
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
-                    if (adc_retval->in_4_20ma_in[i] >= ADC_OFFSET_MA)
-                    {
-                        adc_retval->in_4_20ma_in[i] -= ADC_OFFSET_MA;
-                    }
                     queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
                 }
 

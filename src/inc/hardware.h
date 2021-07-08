@@ -124,7 +124,7 @@
 #endif                                        
                                         
 #define ADC_NUMBER_OF_CONVERSION_TIMES		10
-#define V_OFFSET_4_20MA_CHANNEL_0_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_0_MV        1
 #define ADC_VBAT_RESISTOR_DIV				2
 #define ADC_VIN_RESISTOR_DIV				7911
 
@@ -141,9 +141,9 @@
 #define V_NTC_TEMP_CHANNEL_INDEX				6
 #define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
 #define V_REF_CHANNEL_INDEX                 8
-#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
-#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
-#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
 #else
 #define ADC_CHANNEL_DMA_COUNT				6
 //#define ADC_VREF							3300
