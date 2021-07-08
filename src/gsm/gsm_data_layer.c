@@ -399,6 +399,7 @@ void gsm_change_state(gsm_state_t new_state)
         DEBUG_RAW("SLEEP\r\n");
         sys_ctx_t *ctx = sys_ctx();
         ctx->peripheral_running.name.gsm_running = 0;
+        gsm_hw_layer_reset_rx_buffer();
     }
         break;
     case GSM_STATE_HTTP_GET:
@@ -647,7 +648,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
         default:
-            DEBUG_PRINTF("GSM unhandled step %u\r\n", gsm_manager.step);
+            DEBUG_WARN("GSM unhandled step %u\r\n", gsm_manager.step);
             break;
 
     }

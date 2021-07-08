@@ -29,7 +29,7 @@
 #include "math.h"
 #include "sys_ctx.h"
 #include <string.h>
-
+#define ADC_INPUT_4_20MA_MIN_OFFSET_MV  27
 #define ADC_INPUT_4_20MA_MAX_OFFSET_MV  150
 
 enum { NUM_CURRENT_LOOK_UP = sizeof(lookup_table_4_20ma_input) / sizeof(input_4_20ma_lookup_t) };
@@ -281,9 +281,17 @@ void adc_isr_cb(void)
 void adc_start(void)
 {
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
-    if (cfg->io_enable.name.input_4_20ma_enable)
+    if (cfg->io_enable.name.input_4_20ma_enable || m_is_the_first_time)
     {
         ENABLE_INPUT_4_20MA_POWER(1);
+        if (m_is_the_first_time)
+        {
+            sys_delay_ms(200);
+        }
+        else
+        {
+            sys_delay_ms(2);
+        }
     }
     else
     {
@@ -301,7 +309,15 @@ void adc_start(void)
     {
         MX_ADC_Init();
     }
-    for (uint32_t j = 0; j < 3; j++)
+    
+    // Reset all adc value
+    for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
+    {
+        m_adc_raw_data[i] = 0;
+    }
+    
+    // Start convert ADC channel
+    for (uint32_t j = 0; j < ADC_NUMBER_OF_CONVERSION_TIMES; j++)
     {
         for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
         {
@@ -378,21 +394,25 @@ void adc_start(void)
             {
 //                __WFI();
             }
-            m_adc_raw_data[i] = LL_ADC_REG_ReadConversionData12(ADC1);
+            m_adc_raw_data[i] += LL_ADC_REG_ReadConversionData12(ADC1);
         }
     }
-//    for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
-//    {
-//        m_adc_raw_data[i] /= 3;
-//    }
+    // Get avg adc data
+    for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
+    {
+        m_adc_raw_data[i] /= ADC_NUMBER_OF_CONVERSION_TIMES;
+    }
+    
+    // If in test mode =>> always turn on input 4-20ma power
     if (sys_ctx()->status.is_enter_test_mode)
     {
-        ENABLE_INPUT_4_20MA_POWER(0);   
+        ENABLE_INPUT_4_20MA_POWER(1);   
     }
     else
     {
         ENABLE_INPUT_4_20MA_POWER(0);
     }
+    
     DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();
 }
@@ -489,12 +509,13 @@ adc_input_value_t *adc_get_input_result(void)
 
 void adc_convert(void)
 {	
-    // VREF and VDDA
+        // Get VREF and VDDA
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
     DEBUG_INFO("VDDA %umv\r\n", m_adc_input.vdda_mv);
-	/* ADC Vbat */
+    
+	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
 	m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.bat_mv);
     /* ADC Vin 24V */
@@ -505,7 +526,8 @@ void adc_convert(void)
     // Channel 0
     m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
     if (m_is_the_first_time 
-        && (m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV))
+        && (m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV)
+        && (m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] > ADC_INPUT_4_20MA_MIN_OFFSET_MV))
     {
         offset_input_4_20ma_mv[0] = m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX];
     }
@@ -517,13 +539,14 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN0 4-20] %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX]); 
+    DEBUG_PRINTF("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
     
 #ifdef DTG02
     // Channel 1
     m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
     if (m_is_the_first_time 
-        && (m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV))
+        && (m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV)
+        && (m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] > ADC_INPUT_4_20MA_MIN_OFFSET_MV))
     {
         offset_input_4_20ma_mv[1] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX];
     }
@@ -535,12 +558,13 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN1 4-20] %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]); 
+    DEBUG_PRINTF("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
     
     
     // Channel 2
     if (m_is_the_first_time 
-        && (m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV))
+        && (m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV)
+        && (m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] > ADC_INPUT_4_20MA_MIN_OFFSET_MV))
     {
         offset_input_4_20ma_mv[2] = m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX];
     }
@@ -553,12 +577,13 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN2 4-20] %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX]); 
+    DEBUG_PRINTF("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
     
     // 4-20ma channel 3
     m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
     if (m_is_the_first_time 
-        && (m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV))
+        && (m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] < ADC_INPUT_4_20MA_MAX_OFFSET_MV)
+        && (m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] > ADC_INPUT_4_20MA_MIN_OFFSET_MV))
     {
         offset_input_4_20ma_mv[3] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX];
         m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] -= offset_input_4_20ma_mv[3];
@@ -571,25 +596,42 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN3 4-20] %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]); 
+    DEBUG_PRINTF("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
     
 #endif
     
     // Get final 4-20mA value, 4.5mA ->> x10 =  45
-    m_adc_input.in_4_20ma_in[0] = look_up_current(m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX])/10;
+    if (m_is_the_first_time == false)
+    {
+        m_adc_input.in_4_20ma_in[0] = look_up_current(m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX])/10;
+    }
+    else
+    {
+        m_adc_input.in_4_20ma_in[0] = 0;
+        sys_delay_ms(100);
+    }
 
 #ifdef DTG02
-    m_adc_input.in_4_20ma_in[1] = look_up_current(m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX])/10;
-    m_adc_input.in_4_20ma_in[2] = look_up_current(m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX])/10;
-    m_adc_input.in_4_20ma_in[3] = look_up_current(m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX])/10;
+    if (m_is_the_first_time == false)
+    {
+        m_adc_input.in_4_20ma_in[1] = look_up_current(m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX])/10;
+        m_adc_input.in_4_20ma_in[2] = look_up_current(m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX])/10;
+        m_adc_input.in_4_20ma_in[3] = look_up_current(m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX])/10;
+    }
+    else
+    {
+        m_adc_input.in_4_20ma_in[1] = 0;
+        m_adc_input.in_4_20ma_in[2] = 0;
+        m_adc_input.in_4_20ma_in[3] = 0;
+    }
 #endif
 
     /* Temperature */
 #ifndef USE_INTERNAL_VREF
 	/* v_temp */
-    if (m_adc_raw_data[V_TEMP_CHANNEL_INDEX])
+    if (m_adc_raw_data[V_NTC_TEMP_CHANNEL_INDEX])
     {
-        uint32_t vtemp_mv = m_adc_raw_data[V_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
+        uint32_t vtemp_mv = m_adc_raw_data[V_NTC_TEMP_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
         if (convert_temperature(vtemp_mv, m_adc_input.vdda_mv, &m_adc_input.temp))
         {
             m_adc_input.temp_is_valid = 1;

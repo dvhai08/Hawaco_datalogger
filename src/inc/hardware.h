@@ -50,8 +50,6 @@
                                 }	
 #endif
 								
-#define SENS_420mA_PWR_OFF()		LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);								
-#define SENS_420mA_PWR_ON()			LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);		
 							
 #define TRANS_1_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\

@@ -60,8 +60,9 @@
 #define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              0
-#define TEST_INPUT_4_20_MA                              0
+#define TEST_OUTPUT_4_20MA                              1
+#define TEST_INPUT_4_20_MA                              1
+#define TEST_RS485                                      0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -118,7 +119,17 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+    app_eeprom_init();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    sys_ctx_t *system = sys_ctx();
+#if TEST_OUTPUT_4_20MA
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
+//#if TEST_INPUT_4_20_MA
+//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+//    system->status.is_enter_test_mode = 1;
+//#endif
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -143,9 +154,9 @@ int main(void)
 #endif
 //	HAL_ADC
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
-    
+    ENABLE_INPUT_4_20MA_POWER(0);
+    RS485_EN(0);
 	DEBUG_RAW(RTT_CTRL_CLEAR);
-    sys_ctx_t *system = sys_ctx();
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
@@ -282,7 +293,9 @@ int main(void)
         }
     }
 	
-//	__WFI();
+#ifdef WDT_ENABLE
+    LL_IWDG_ReloadCounter(IWDG);
+#endif
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -437,12 +450,18 @@ static void info_task(void *arg)
 		adc_input_value_t *adc = adc_get_input_result();
         rtc_date_time_t time;
         app_rtc_get_time(&time);
-        uint32_t clk = HAL_RCC_GetSysClockFreq() / 1000000;
-		DEBUG_PRINTF("CLK %uMhz, bat_mv %u-%u%, vin-24 %umV, 4-20mA in %u.%u, temp %u\r\n",
-                    clk,
+        char tmp[24];
+        char *p = tmp;
+        for (uint32_t i = 0; i < 1; i++)
+        {
+            p += sprintf(p, "(%u.%u),", adc->in_4_20ma_in[i]/10, adc->in_4_20ma_in[i]%10);
+        }
+        
+		DEBUG_PRINTF("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+                    adc->vdda_mv,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
-					adc->in_4_20ma_in[0]/10, adc->in_4_20ma_in[0]%10,
+					tmp,
 					adc->temp);
 	}
 }

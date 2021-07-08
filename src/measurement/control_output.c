@@ -46,11 +46,14 @@ static const output_4_20ma_lookup_t m_4_20ma_out_lookup_table[] =
     {  1300, 5  },     
     {  1400, 5  },     
     {  1500, 0    },     
-    {  1600, -2   },    
-    {  1700, -8   },     
-    {  1800, -12  },    
-    {  1900, -16  },    
-    {  2000, -18  },
+    {  1600, -20   },    
+    {  1700, -35   },     
+    {  1800, -45  },    
+    {  1900, -51  },    
+    {  2000, -55  },
+//    {  1800, 0  },    
+//    {  1900, 0  },    
+//    {  2000, 0  },
 };
 
 enum { NUM_CURRENT_LOOK_UP = sizeof(m_4_20ma_out_lookup_table) / sizeof(output_4_20ma_lookup_t) };

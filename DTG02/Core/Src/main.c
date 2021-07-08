@@ -59,9 +59,9 @@
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              1
-#define TEST_RS485                                      0
-#define TEST_INPUT_4_20_MA                              1
+#define TEST_OUTPUT_4_20MA                              0
+#define TEST_RS485                                      0 
+#define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -117,7 +117,17 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+    app_eeprom_init();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    sys_ctx_t *system = sys_ctx();
+#if TEST_OUTPUT_4_20MA
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
+//#if TEST_INPUT_4_20_MA
+//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+//    system->status.is_enter_test_mode = 1;
+//#endif
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -143,15 +153,15 @@ int main(void)
 #endif
 //	HAL_ADC
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+    ENABLE_INPUT_4_20MA_POWER(0);
+    RS485_EN(0);
     
 	DEBUG_RAW(RTT_CTRL_CLEAR);
     gpio_config_input_as_wakeup_source();
-    sys_ctx_t *system = sys_ctx();
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
 	app_bkup_init();
-    app_eeprom_init();
     app_spi_flash_initialize();
 	measure_input_initialize();
 	control_ouput_init();
@@ -166,7 +176,7 @@ int main(void)
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
-	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+
 
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
 
@@ -219,7 +229,6 @@ int main(void)
 		LED2(0);
 #endif
 	}	
-    system->status.is_enter_test_mode = 1;
 	if (system->status.is_enter_test_mode)
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -465,7 +474,6 @@ static void info_task(void *arg)
 		adc_input_value_t *adc = adc_get_input_result();
         rtc_date_time_t time;
         app_rtc_get_time(&time);
-        uint32_t clk = HAL_RCC_GetSysClockFreq() / 1000000;
         char tmp[24];
         char *p = tmp;
         for (uint32_t i = 0; i < 4; i++)
@@ -473,7 +481,8 @@ static void info_task(void *arg)
             p += sprintf(p, "(%u.%u),", adc->in_4_20ma_in[i]/10, adc->in_4_20ma_in[i]%10);
         }
         
-		DEBUG_PRINTF("bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+		DEBUG_PRINTF("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+                    adc->vdda_mv,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,
 					tmp,
