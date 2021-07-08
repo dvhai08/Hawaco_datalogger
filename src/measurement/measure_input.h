@@ -2,7 +2,7 @@
 #define MEASURE_INTPUT_H
 
 #include "hardware.h"
-
+#include "app_spi_flash.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -50,6 +50,7 @@ typedef struct
 	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
     int32_t temperature;
     int32_t temperature_error;
+    app_spi_flash_rs485_data_t rs485;
 } measure_input_perpheral_data_t;
 
 typedef struct
@@ -65,6 +66,7 @@ typedef struct
     uint8_t csq_percent;
     uint8_t state;
     uint8_t temperature;
+    
 } measurement_msg_queue_t;
 
 /**

@@ -1218,7 +1218,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>losspass_filter</GroupName>
+          <GroupName>lowpass_filter</GroupName>
           <Files>
             <File>
               <FileName>lpf.c</FileName>

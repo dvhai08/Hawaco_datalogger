@@ -12,11 +12,19 @@
 #define APP_FLASH_NB_OFF_4_20MA_INPUT               4
 #define APP_FLASH_NB_OF_METER_INPUT                 2
 #endif
-#define APP_FLASH_RS485_MAX_SIZE                    16
+#define APP_FLASH_RS485_MAX_SIZE                    32
 #define APP_SPI_FLASH_SIZE						    (1024*1024)
 #define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
 #define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
 
+typedef struct
+{
+    uint8_t id;
+    uint8_t length;
+    uint8_t function_code;
+    uint8_t function_lengh;
+    uint8_t data[APP_FLASH_RS485_MAX_SIZE];
+} __attribute__((packed)) app_spi_flash_rs485_data_t;
 
 typedef struct
 {
@@ -28,7 +36,7 @@ typedef struct
 {
     uint32_t header_overlap_detect;
     app_spi_flash_measurement_water_input_data_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
-    uint8_t rs485[APP_FLASH_RS485_MAX_SIZE];
+    app_spi_flash_rs485_data_t rs485;
     uint8_t temp;
     uint16_t vbat_mv;
     uint8_t vbat_precent;

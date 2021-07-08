@@ -32,6 +32,8 @@
 #include "stm32l0xx_ll_rtc.h"
 #include "app_spi_flash.h"
 #include "spi.h"
+#include "modbus_master.h"
+
 #define VBAT_DETECT_HIGH_MV                     9000
 #define STORE_MEASURE_INVERVAL_SEC              30
 #define ADC_MEASURE_INTERVAL_MS			        30000
@@ -39,7 +41,7 @@
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 #define PULSE_MINMUM_WITDH_MS                   50
-#define ADC_OFFSET_MA                           6      // 0.6mA, mul by 10
+#define ADC_OFFSET_MA                           0      // 0.6mA, mul by 10
 #define DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT     7000
 typedef struct
 {
@@ -74,6 +76,38 @@ volatile uint32_t store_measure_result_timeout = 0;
 static bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
+
+static void process_rs485(void)
+{
+    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    sys_ctx_t *ctx = sys_ctx();
+    bool do_stop = true;
+    if (eeprom_cfg->io_enable.name.rs485_en)
+    {
+        ctx->peripheral_running.name.rs485_running = 1;
+        usart_lpusart_485_control(1);
+        
+        if (eeprom_cfg->modbus_function_code == MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER)
+        {
+            DEBUG_PRINTF("Read holding register\r\n");
+        }
+        else if (eeprom_cfg->modbus_function_code == MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER)
+        {
+            DEBUG_PRINTF("Read input register\r\n");
+        }
+        
+    }
+    else if (ctx->status.is_enter_test_mode == 0)
+    {
+        do_stop = false;
+    }
+    
+    if (do_stop)
+    {
+        ctx->peripheral_running.name.rs485_running = 0;
+        usart_lpusart_485_control(0);
+    }
+}
 
 static void measure_input_pulse_counter_poll(void)
 {
@@ -225,6 +259,10 @@ void measure_input_task(void)
         }
         if (measure_input_turn_on_in_4_20ma_power == 0)
         {
+            // Process rs485
+            process_rs485();
+            
+            // ADC conversion
             adc_start();
             m_last_time_measure_data = sys_get_ms();
             if (m_this_is_the_first_time)
@@ -233,6 +271,8 @@ void measure_input_task(void)
             }
             m_this_is_the_first_time = false;
             m_number_of_adc_conversion = 0;
+            
+            // Stop adc
             adc_stop();
     #ifdef DTG01
             sys_enable_power_plug_detect();

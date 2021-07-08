@@ -53,6 +53,10 @@ typedef struct
 	uint32_t valid_flag;
     uint32_t send_to_server_delay_s;
     uint8_t server_addr[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
+    uint8_t rs485_addr;
+    uint8_t modbus_function_code;
+    uint8_t register_offset;
+    uint8_t register_length;
 } __attribute__((packed))  app_eeprom_config_data_t;
 
 

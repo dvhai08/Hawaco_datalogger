@@ -59,9 +59,9 @@
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              0
+#define TEST_OUTPUT_4_20MA                              1
 #define TEST_RS485                                      0
-#define TEST_INPUT_4_20_MA                              0
+#define TEST_INPUT_4_20_MA                              1
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */
 
@@ -185,7 +185,6 @@ int main(void)
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
-    system->status.is_enter_test_mode = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -290,7 +289,9 @@ int main(void)
         }
     }
     BUZZER(0);
-	
+#ifdef WDT_ENABLE
+    LL_IWDG_ReloadCounter(IWDG);
+#endif
 //	__WFI();
     /* USER CODE END WHILE */
 
@@ -435,6 +436,7 @@ static void info_task(void *arg)
 	{
         if (system->status.is_enter_test_mode)
         {
+#if TEST_RS485
             uint8_t result;
             uint8_t input_result[2];
             
@@ -453,6 +455,7 @@ static void info_task(void *arg)
             {
                 DEBUG_ERROR("Modbus failed\r\n");
             }
+#endif
         }
         i = 5;
 	}
@@ -521,8 +524,8 @@ void sys_config_low_power_mode(void)
 //          GPIO_InitTypeDef GPIO_InitStructure;
         __HAL_RCC_PWR_CLK_ENABLE();
         
-        /* Enable Ultra low power mode */
-        HAL_PWREx_EnableUltraLowPower();
+        /* Enable the Ultra Low Power mode */
+        SET_BIT(PWR->CR, PWR_CR_ULP);
 
         /* Enable the fast wake up from Ultra low power mode */
         SET_BIT(PWR->CR, PWR_CR_FWU);
