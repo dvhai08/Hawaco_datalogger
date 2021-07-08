@@ -155,6 +155,7 @@ int main(void)
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_EN(0);
+    LED1(1);
     
 	DEBUG_RAW(RTT_CTRL_CLEAR);
     gpio_config_input_as_wakeup_source();
@@ -474,11 +475,15 @@ static void info_task(void *arg)
 		adc_input_value_t *adc = adc_get_input_result();
         rtc_date_time_t time;
         app_rtc_get_time(&time);
-        char tmp[24];
+        char tmp[48];
         char *p = tmp;
         for (uint32_t i = 0; i < 4; i++)
         {
             p += sprintf(p, "(%u.%u),", adc->in_4_20ma_in[i]/10, adc->in_4_20ma_in[i]%10);
+        }
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            p += sprintf(p, "IN%u-%u,", i, measure_input_current_data()->input_on_off[i]);
         }
         
 		DEBUG_PRINTF("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
