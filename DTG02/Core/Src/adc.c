@@ -340,11 +340,13 @@ void adc_start(void)
             }
             else if (i == 4)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);            
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);   
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);                   
             }
             else if (i == 5)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
+                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT);   
             }
     #else
             if (i == 0)
