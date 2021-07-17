@@ -465,6 +465,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 9:
+        DEBUG_PRINTF("AT cmd: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
@@ -492,13 +493,16 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         if (strlen(gsm_get_sim_imei()) < 15)
         {
             DEBUG_ERROR("SIM's not inserted!\r\n");
-            gsm_manager.step = 8;
-            gsm_change_hw_polling_interval(500);
-//            gsm_change_state(GSM_STATE_RESET); //Neu ko nhan SIM -> reset module GSM!
+            gsm_manager.step = 10;
+//            gsm_change_hw_polling_interval(10);
+            gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
 //            return;
         }
-        gsm_change_hw_polling_interval(5);
-        gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm);
+        else
+        {
+            gsm_change_hw_polling_interval(5);
+            gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm);
+        }
 	}
         break;
 

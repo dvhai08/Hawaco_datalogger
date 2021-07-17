@@ -266,12 +266,12 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     m_gsm_hardware.atc.send_at_callback = callback;
     m_gsm_hardware.atc.timeout_atc_ms = timeout;
     m_gsm_hardware.atc.current_timeout_atc_ms = sys_get_ms();
-
     memset(m_gsm_hardware.atc.recv_buff.buffer, 0, sizeof(((sys_ctx_small_buffer_t*)0)->buffer));
     m_gsm_hardware.atc.recv_buff.index = 0;
     m_gsm_hardware.atc.recv_buff.state = SYS_CTX_BUFFER_STATE_IDLE;
 
     gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
+    DEBUG_VERBOSE("Done\r\n");
 }
 
 extern void usart1_hw_uart_send_raw(uint8_t *data, uint32_t length);
@@ -292,7 +292,11 @@ void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
 			m_gsm_hardware.atc.recv_buff.buffer[m_gsm_hardware.atc.recv_buff.index++] = data[i];
 			if (m_gsm_hardware.atc.recv_buff.index >= sizeof(((sys_ctx_small_buffer_t*)0)->buffer))
 			{
-				DEBUG_ERROR("[%s] Overflow, previous index %u, bytes written %u\r\n", __FUNCTION__, prev_index, i);
+				DEBUG_ERROR("[%s] Overflow, previous index %u, bytes written %u, length need to wr %ubytes\r\n", 
+                            __FUNCTION__, 
+                            prev_index, 
+                            i,
+                            length);
 				m_gsm_hardware.atc.recv_buff.index = 0;
                 m_gsm_hardware.atc.recv_buff.buffer[0] = 0;
 				return;

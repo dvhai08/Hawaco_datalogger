@@ -469,7 +469,7 @@ static void info_task(void *arg)
         }
         i = 5;
 	}
-    if (i++ >= 5)
+    if (i++ > 4)
 	{
 		i = 0;
 		adc_input_value_t *adc = adc_get_input_result();
@@ -486,7 +486,7 @@ static void info_task(void *arg)
             p += sprintf(p, "IN%u-%u,", i, measure_input_current_data()->input_on_off[i]);
         }
         
-		DEBUG_PRINTF("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+		DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
                     adc->vdda_mv,
 					adc->bat_mv, adc->bat_percent, 
 					adc->vin_24,

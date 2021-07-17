@@ -390,7 +390,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
     else
     {
-        DEBUG_PRINTF("CFG: has no new config\r\n");
+        DEBUG_INFO("CFG: has no new config\r\n");
     }
     
     if (rewrite_data_to_flash)

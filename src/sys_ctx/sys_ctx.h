@@ -7,7 +7,7 @@
 #define SYS_CTX_BUFFER_STATE_BUSY 1       // Trang thai dang them du lieu
 #define SYS_CTX_BUFFER_STATE_IDLE 2       // Trang thai cho
 #define SYS_CTX_BUFFER_STATE_PROCESSING 3 // Trang thai du lieu dang duoc xu ly
-#define SYS_CTX_SMALL_BUFFER_SIZE 384
+#define SYS_CTX_SMALL_BUFFER_SIZE (384+238)
 
 typedef struct
 {
