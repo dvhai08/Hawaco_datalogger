@@ -557,7 +557,7 @@ void sys_config_low_power_mode(void)
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
     m_wakeup_timer_run = false;
-    DEBUG_INFO("Wakeup timer event callback\r\n");
+    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 
