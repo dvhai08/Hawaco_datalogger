@@ -1,0 +1,31 @@
+case 3:
+			xSystem.Uart->Init(GSM_UART, 921600 );
+			DebugPrint("\rThiet lap toc do truyen du lieu: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");						
+			SendATCommand ("AT+CMEE=2\r", "OK", 1000, 10, PowerOnModuleGSM);
+			break;
+		case 4:
+			DebugPrint("\rThiet lap thong bao dang ky mang: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
+				SendATCommand ("AT+QCFG=\"nwscanseq\",1\r", "OK", 1000, 10, PowerOnModuleGSM);
+			else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
+				SendATCommand ("AT+QCFG=\"nwscanseq\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);
+			else
+				SendATCommand ("AT+QCFG=\"nwscanseq\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);
+			break;
+		case 5:
+			DebugPrint("\rThiet lap chon mang: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
+				SendATCommand ("AT+QCFG=\"nwscanmode\",1\r", "OK", 1000, 10, PowerOnModuleGSM);	
+			else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
+				SendATCommand ("AT+QCFG=\"nwscanmode\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);	
+			else
+				SendATCommand ("AT+QCFG=\"nwscanmode\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);			
+			break;
+		case 6:
+			DebugPrint("\rThiet lap che do uu tien mang: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			SendATCommand ("AT+QCFG=\"band\",00,45\r", "OK", 1000, 10, PowerOnModuleGSM);
+			break;
+		case 7:
+			DebugPrint("\rUnlock band: %s",(event == EVEN_OK) ? "[OK]" : "[FAIL]");
+			SendATCommand ("AT+CPIN?\r", "+CPIN: READY\r\n", 1000, 10, PowerOnModuleGSM);
+			break;

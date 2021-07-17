@@ -491,10 +491,13 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("Get SIM IMSI: %s\r\n", gsm_get_sim_imei());
         if (strlen(gsm_get_sim_imei()) < 15)
         {
-            DEBUG_PRINTF("SIM's not inserted!\r\n");
-            gsm_change_state(GSM_STATE_RESET); //Neu ko nhan SIM -> reset module GSM!
-            return;
+            DEBUG_ERROR("SIM's not inserted!\r\n");
+            gsm_manager.step = 8;
+            gsm_change_hw_polling_interval(500);
+//            gsm_change_state(GSM_STATE_RESET); //Neu ko nhan SIM -> reset module GSM!
+//            return;
         }
+        gsm_change_hw_polling_interval(5);
         gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm);
 	}
         break;
@@ -999,16 +1002,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
         total_length += sprintf((char *)(ptr + total_length), "\"SignalStrength\":%d,", msg->csq_percent);
     }
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
-
+#ifdef DTG01
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
-    
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
+#else
+    total_length += sprintf((char *)(ptr + total_length), "\"Vin_mv\":%u,", msg->vin_mv);
+#endif    
     if (!measure_input->temperature_error)
     {
         total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
     }
     
-    
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
+   
     total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
     total_length += sprintf((char *)(ptr + total_length), "\"K0\":%u,", cfg->k0);
     total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":%u,", cfg->offset0);

@@ -443,7 +443,7 @@ static uint8_t convert_vin_to_percent(uint32_t vin)
 #ifndef USE_INTERNAL_VREF
 static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *result)
 {
-    #define HW_RESISTOR_SERIES_NTC 300000 //10K Ohm
+    #define HW_RESISTOR_SERIES_NTC 10000 //10K Ohm
     /* This is thermistor dependent and it should be in the datasheet, or refer to the
     article for how to calculate it using the Beta equation.
     I had to do this, but I would try to get a thermistor with a known
@@ -456,7 +456,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     /* Thermistors will have a typical resistance at room temperature so write this 
     down here. Again, needed for conversion equations. */
-    #define RESISTOR_ROOM_TEMP 300000.0f //Resistance in Ohms @ 25oC	330k/470k
+    #define RESISTOR_ROOM_TEMP 10000.0f //Resistance in Ohms @ 25oC	330k/470k
 
     bool retval = true;
     float vtemp_float;
@@ -497,6 +497,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
     }
 
     *result = (int32_t)temp;
+    DEBUG_INFO("Temp %d\r\n", (int32_t)temp);
 end:
     return retval;
 }

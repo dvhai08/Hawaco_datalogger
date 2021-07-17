@@ -287,8 +287,10 @@ void measure_input_task(void)
                 
                 queue.measure_timestamp = app_rtc_get_counter();
                 queue.vbat_mv = adc_retval->bat_mv;
-                queue.vbat_percent = adc_retval->bat_percent;     
-
+                queue.vbat_percent = adc_retval->bat_percent;
+#ifdef DTG02                
+                queue.vin_mv = adc_retval->vin_24;
+#endif
                 app_bkup_read_pulse_counter(&queue.counter0_f, 
                        &queue.counter1_f,
                        &queue.counter0_r,

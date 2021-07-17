@@ -66,7 +66,9 @@ typedef struct
     uint8_t csq_percent;
     uint8_t state;
     uint8_t temperature;
-    
+#ifdef DTG02
+    uint32_t vin_mv;
+#endif
 } measurement_msg_queue_t;
 
 /**
