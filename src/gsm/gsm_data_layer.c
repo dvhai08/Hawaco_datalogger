@@ -80,20 +80,38 @@ void gsm_set_flag_prepare_enter_read_sms_mode(void)
 }
 #endif
 
+uint32_t estimate_wakeup_time = 0;
 void gsm_wakeup_periodically(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+    uint32_t current_sec = app_rtc_get_counter();
+    uint32_t send_interval = cfg->send_to_server_interval_ms/1000;
+    if (send_interval == 0)
+    {
+        send_interval = 1;
+    }
+    
     DEBUG_PRINTF("Sleep time %usecond, periodic send msg %us, remaining %us\r\n",
                  ctx->status.sleep_time_s,
-                 cfg->send_to_server_interval_ms/1000,
-                 cfg->send_to_server_interval_ms/1000 - ctx->status.sleep_time_s);
-
-    if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
+                 send_interval,
+                 send_interval - ctx->status.sleep_time_s);
+    
+    if (estimate_wakeup_time == 0)
     {
-        ctx->status.sleep_time_s = 0;
-        gsm_change_state(GSM_STATE_WAKEUP);
+        estimate_wakeup_time = send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s;
     }
+    if (current_sec >= estimate_wakeup_time)
+    {
+        gsm_change_state(GSM_STATE_WAKEUP);
+        ctx->status.sleep_time_s = 0;
+    }
+    
+//    if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
+//    {
+//        ctx->status.sleep_time_s = 0;
+//        gsm_change_state(GSM_STATE_WAKEUP);
+//    }
 }
 
 void gsm_set_wakeup_now(void)
@@ -214,6 +232,7 @@ void gsm_manager_tick(void)
 			//#warning "Sleep in http mode is not enabled"
 			if (enter_sleep_in_http)
 			{
+                DEBUG_INFO("Sleep in http\r\n");
                 gsm_hw_layer_reset_rx_buffer();
 				gsm_change_state(GSM_STATE_SLEEP);
 			}
@@ -308,11 +327,22 @@ void gsm_manager_tick(void)
         break;
 
     case GSM_STATE_SLEEP: /* Dang trong che do Sleep */
+    {
+        app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+        uint32_t current_sec = app_rtc_get_counter();
+        uint32_t send_interval = cfg->send_to_server_interval_ms/1000 + cfg->send_to_server_delay_s;
+        if (send_interval == 0)
+        {
+            send_interval = 1;
+        }
+        estimate_wakeup_time = send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s;
+        DEBUG_INFO("Estimate next wakeup time %us\r\n", estimate_wakeup_time);
         usart1_control(false);
         GSM_PWR_EN(0);
         GSM_PWR_RESET(0);
         GSM_PWR_KEY(0);
         gsm_wakeup_periodically();
+    }
         break;
 
     default:
