@@ -629,7 +629,8 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         rtc_date_time_t time;
         gsm_utilities_parse_timestamp_buffer((char *)resp_buffer, &time);
         time.hour += 7;     // GMT + 7
-        if (time.year > 20 && time.year < 40)
+        if (time.year > 20 && time.year < 40 && time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
+                                                                // Lazy solution : do not update time from 17h
         {
             app_rtc_set_counter(&time);
         }
