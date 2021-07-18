@@ -135,7 +135,7 @@ static void measure_input_pulse_counter_poll(void)
     sys_ctx()->peripheral_running.name.measure_input_pwm_running = 0;
 }
 
-static uint32_t m_last_time_measure_data = 0;
+//static uint32_t m_last_time_measure_data = 0;
 uint32_t m_number_of_adc_conversion = 0;
 app_eeprom_config_data_t *eeprom_cfg;
 void measure_input_measure_wakeup_to_get_data()
@@ -182,14 +182,21 @@ void measure_input_save_all_data_to_flash(void)
     }   
 }
 
+uint32_t estimate_measure_timestamp = 0;
 void measure_input_task(void)
 {
 	eeprom_cfg = app_eeprom_read_config_data();
     measure_input_pulse_counter_poll();
     adc_input_value_t *input_adc = adc_get_input_result();
     sys_ctx_t *ctx = sys_ctx();
-    uint32_t measure_interval = eeprom_cfg->measure_interval_ms;
+    uint32_t measure_interval_sec = eeprom_cfg->measure_interval_ms/1000;
     adc_input_value_t *adc_retval = adc_get_input_result();
+    uint32_t current_sec = app_rtc_get_counter();
+    
+    if (estimate_measure_timestamp == 0)
+    {
+        estimate_measure_timestamp = (measure_interval_sec*(current_sec/measure_interval_sec + 1));
+    }
     
     if (ctx->status.is_enter_test_mode)
     {
@@ -201,7 +208,7 @@ void measure_input_task(void)
         {
             measure_input_turn_on_in_4_20ma_power = 0;
         }
-        measure_interval = 2000;
+        estimate_measure_timestamp = current_sec + 2;
     }
     
     if (adc_retval->bat_mv > VBAT_DETECT_HIGH_MV)
@@ -246,7 +253,7 @@ void measure_input_task(void)
         m_measure_data.temperature_error = 1;
     }
 
-	if ((m_this_is_the_first_time || ((sys_get_ms() - m_last_time_measure_data) >= measure_interval))
+	if ((m_this_is_the_first_time || (current_sec >= estimate_measure_timestamp))
         && (measure_input_turn_on_in_4_20ma_power == 0))
 	{
         if (eeprom_cfg->io_enable.name.input_4_20ma_enable)
@@ -264,7 +271,7 @@ void measure_input_task(void)
             
             // ADC conversion
             adc_start();
-            m_last_time_measure_data = sys_get_ms();
+//            m_last_time_measure_data = sys_get_ms();
             if (m_this_is_the_first_time)
             {
                 m_this_is_the_first_time = false;
@@ -325,7 +332,9 @@ void measure_input_task(void)
                     measure_input_save_all_data_to_flash();
                 }
             }        
-            m_last_time_measure_data = sys_get_ms();
+            
+            estimate_measure_timestamp = (measure_interval_sec*(current_sec/measure_interval_sec + 1));
+//            m_last_time_measure_data = sys_get_ms();
             ctx->peripheral_running.name.adc = 0;
             ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
         }

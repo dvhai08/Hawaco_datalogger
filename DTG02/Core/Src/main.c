@@ -193,6 +193,7 @@ int main(void)
     eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
+    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
@@ -567,7 +568,7 @@ void sys_config_low_power_mode(void)
         ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
-        DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
+        DEBUG_VERBOSE("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
         
         // Resume tick
         SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;

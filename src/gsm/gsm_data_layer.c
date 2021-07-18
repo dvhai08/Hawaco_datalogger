@@ -94,7 +94,7 @@ void gsm_wakeup_periodically(void)
     
     if (estimate_wakeup_time == 0)
     {
-        estimate_wakeup_time = send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s;
+        estimate_wakeup_time = (send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s);
     }
     
     DEBUG_INFO("Periodic send msg %us, remaining %us\r\n",
@@ -1302,6 +1302,10 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             DEBUG_PRINTF("No more data need to re-send to server\r\n");
             m_retransmision_data_in_flash = NULL;
         }
+        
+#ifdef WDT_ENABLE
+    LL_IWDG_ReloadCounter(IWDG);
+#endif
     }
     break;
 

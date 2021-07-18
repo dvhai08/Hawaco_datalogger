@@ -38,7 +38,7 @@ void app_eeprom_init(void)
         {
             m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         }
-        if (strlen((char*)m_cfg.server_addr) < 8)
+        if (strlen((char*)m_cfg.server_addr) < 12)
         {
             sprintf((char*)&m_cfg.server_addr[0], "%s", DEFAULT_SERVER_ADDR); 
         }

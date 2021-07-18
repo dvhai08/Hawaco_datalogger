@@ -1001,7 +1001,8 @@ bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data
     flash_read_bytes(read_addr, (uint8_t *)rd_data, sizeof(app_spi_flash_data_t));
     if (rd_data->valid_flag == APP_FLASH_VALID_DATA_KEY 
         && rd_data->resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG
-        && rd_data->header_overlap_detect == APP_FLASH_DATA_HEADER_KEY)
+        && rd_data->header_overlap_detect == APP_FLASH_DATA_HEADER_KEY
+        && rd_data->timestamp)
     {
         rd_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG; // mark no need to retransmission
 
@@ -1069,7 +1070,7 @@ bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data
         }
         else
         {
-            DEBUG_VERBOSE("Remark flash success\r\n");
+            DEBUG_INFO("Remark flash success at addr 0x%08X\r\n", read_addr);
         }
         umm_free(page_data);
         return true;
