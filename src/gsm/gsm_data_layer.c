@@ -92,17 +92,18 @@ void gsm_wakeup_periodically(void)
         send_interval = 1;
     }
     
-    DEBUG_INFO("Sleep time %us, periodic send msg %us, remaining %us\r\n",
-                 ctx->status.sleep_time_s,
-                 send_interval,
-                 send_interval - ctx->status.sleep_time_s);
-    
     if (estimate_wakeup_time == 0)
     {
         estimate_wakeup_time = send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s;
     }
     
-    DEBUG_INFO("Current sec %us\r\n", current_sec);
+    DEBUG_INFO("Periodic send msg %us, remaining %us\r\n",
+                 send_interval,
+                 estimate_wakeup_time - current_sec);
+    
+
+    
+    DEBUG_VERBOSE("Current sec %us\r\n", current_sec);
     if (current_sec >= estimate_wakeup_time)
     {
         if (gsm_data_layer_is_module_sleeping())
@@ -1220,6 +1221,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         gsm_change_state(GSM_STATE_OK);
         DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);
+#ifdef WDT_ENABLE
+    LL_IWDG_ReloadCounter(IWDG);
+#endif
     }
     break;
 

@@ -57,7 +57,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            23000     // ( ~18s)
-#define DEBUG_LOW_POWER                                 0
+#define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
@@ -541,7 +541,7 @@ void sys_config_low_power_mode(void)
         ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
-        DEBUG_PRINTF("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
+        DEBUG_VERBOSE("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
         HAL_ResumeTick();
         SystemClock_Config();
 #ifdef WDT_ENABLE
