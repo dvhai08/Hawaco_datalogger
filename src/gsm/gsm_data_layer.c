@@ -1126,13 +1126,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"Offset1\":\"%u\",", cfg->offset1);
     total_length += sprintf((char *)(ptr + total_length), "\"Mode1\":\"%u\",", cfg->meter_mode[1]);
 #endif
-    
+    total_length += sprintf((char *)(ptr + total_length), "\"SIM\":\"%s\",", gsm_get_sim_imei());
+    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":\"%u\",", sys_get_ms()/1000);
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}", VERSION_CONTROL_HW);
         
 //    hardware_manager_get_reset_reason()->value = 0;
 
-    DEBUG_RAW("%s\r\n", (char*)ptr);
+    DEBUG_VERBOSE("%s\r\n", (char*)ptr);
     return total_length;
 }
 
@@ -1211,8 +1212,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 tmp.counter0_r = m_retransmision_data_in_flash->meter_input[0].dir_r;
                 
 #ifdef DTG02
-                tmp.counter0_f = m_retransmision_data_in_flash->meter_input[1].pwm_f;
-                tmp.counter0_r = m_retransmision_data_in_flash->meter_input[1].dir_r;  
+                tmp.counter1_f = m_retransmision_data_in_flash->meter_input[1].pwm_f;
+                tmp.counter1_r = m_retransmision_data_in_flash->meter_input[1].dir_r;  
 #endif
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
