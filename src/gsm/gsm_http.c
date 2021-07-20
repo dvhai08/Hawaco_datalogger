@@ -676,7 +676,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         
         case 11:     // Proccess data
         {
-            DEBUG_PRINTF("HTTP response : %s, data %s\r\n", 
+            DEBUG_VERBOSE("HTTP response : %s, data %s\r\n", 
                             (event == GSM_EVENT_OK) ? "OK" : "FAIL",
                              (char*)response_buffer);
 
@@ -716,7 +716,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                     if (http_response_code != 200)
                     {
                         success = false;
-                        DEBUG_PRINTF("HTTP error code %u\r\n", http_response_code);
+                        DEBUG_ERROR("HTTP error code %u\r\n", http_response_code);
                     }
                     else
                     {
@@ -746,7 +746,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             break;
         
         case 12:
-            DEBUG_PRINTF("HTTP post response : %s, data %s\r\n", 
+            DEBUG_VERBOSE("HTTP post response : %s, data %s\r\n", 
                             (event == GSM_EVENT_OK) ? "OK" : "FAIL",
                              (char*)response_buffer);
             if (m_http_cfg.on_event_cb)
@@ -758,7 +758,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             break;
         
         default:
-            DEBUG_PRINTF("[%s] Unhandle step %d\r\n", __FUNCTION__, m_http_step);
+            DEBUG_ERROR("[%s] Unhandle step %d\r\n", __FUNCTION__, m_http_step);
             break;
     }
     m_http_step++;

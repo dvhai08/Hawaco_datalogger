@@ -104,7 +104,11 @@ void measure_input_rs485_idle_detect(void);
  */
 measure_input_perpheral_data_t *measure_input_current_data(void);
 
-void measure_input_reset_all_counter(void);
+/**
+ * @brief       Reset counter in backup domain
+ * @param[in]	index Pulse meter index
+ */
+void measure_input_reset_counter(uint8_t index);
 
 /**
  * @brief       Measure input callback

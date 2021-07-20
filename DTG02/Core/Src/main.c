@@ -484,7 +484,7 @@ static void info_task(void *arg)
         }
         for (uint32_t i = 0; i < 4; i++)
         {
-            p += sprintf(p, "IN%u-%u,", i, measure_input_current_data()->input_on_off[i]);
+            p += sprintf(p, "IN%u-%u,", i+1, measure_input_current_data()->input_on_off[i]);
         }
         
 		DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",

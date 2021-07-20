@@ -238,12 +238,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;   
             config->offset0 = offset;
             DEBUG_WARN("PWM dir 1 offset changed to %u\r\n", offset);
-            measure_input_reset_all_counter();
+            measure_input_reset_counter(0);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
-            app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            DEBUG_WARN("Readback value %u %u\r\n", counter0_f, counter1_f);
+            app_bkup_write_pulse_counter(0, counter1_f, 0, counter1_r);
 			rewrite_data_to_flash |= (1 << 0);
         }
     }
@@ -257,12 +255,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;   
             config->offset1 = offset;
             DEBUG_PRINTF("PWM dir 2 offset changed to %u\r\n", offset);
-            measure_input_reset_all_counter();
+            measure_input_reset_counter(1);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            app_bkup_write_pulse_counter(counter0_f, counter0_r, 0, 0);
-            app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            DEBUG_WARN("Readback value %u %u\r\n", counter0_f, counter1_f);
+            app_bkup_write_pulse_counter(counter0_f, 0, counter0_r, 0);
 			rewrite_data_to_flash |= (1 << 1);
         }
     }
@@ -280,7 +276,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             config->k0 = k;
             DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
-            measure_input_reset_all_counter();
+//            measure_input_reset_all_counter();
             has_new_cfg++; 
         }
     }
@@ -298,7 +294,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             config->k1 = k;
             DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
-            measure_input_reset_all_counter();
+//            measure_input_reset_all_counter();
             has_new_cfg++; 
         }
     }

@@ -628,7 +628,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 16:
         DEBUG_PRINTF("Define PDP context: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        //			SendATCommand ("AT+QIACT=1\r\n", "OK\r\n", "", 5000, 5, PowerOnModuleGSM);	/** Bật QIACT lỗi gửi tin với 1 số SIM dùng gói cước trả sau! */
+        //			gsm_hw_send_at_cmd("AT+QIACT=1\r\n", "OK\r\n", "", 5000, 5, gsm_at_cb_power_on_gsm);	/** Bật QIACT lỗi gửi tin với 1 số SIM dùng gói cước trả sau! */
         gsm_hw_send_at_cmd("AT+CSCS=\"GSM\"\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_power_on_gsm);
         break;
 
@@ -1028,7 +1028,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     uint32_t temp_counter;
 
 #ifdef DTG02
-	msg->counter1_f = msg->counter1_f / cfg->k1 + cfg->offset1;
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
 #else
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG1-%s\",", gsm_get_module_imei());
@@ -1158,12 +1157,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     switch (event)
     {
     case GSM_HTTP_EVENT_START:
-        DEBUG_PRINTF("HTTP task started\r\n");
+        DEBUG_VERBOSE("HTTP task started\r\n");
         break;
 
     case GSM_HTTP_EVENT_CONNTECTED:
         LED1(1);
-        DEBUG_PRINTF("HTTP connected, data size %u\r\n", *((uint32_t *)data));
+        DEBUG_INFO("HTTP connected, data size %u\r\n", *((uint32_t *)data));
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)
         {
@@ -1176,7 +1175,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
         if (!ctx->status.enter_ota_update)
         {
-            DEBUG_PRINTF("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
+            DEBUG_VERBOSE("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
             uint8_t new_cfg = 0;
             server_msg_process_cmd((char *)get_data->data, &new_cfg);
             if (new_cfg)
@@ -1226,7 +1225,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
                 m_sensor_msq = &tmp;
                 build_msg = true;
-                DEBUG_PRINTF("Build retransmision data\r\n");
+                DEBUG_VERBOSE("Build retransmision data\r\n");
             }
         }
         else

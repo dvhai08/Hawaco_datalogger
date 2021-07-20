@@ -116,16 +116,16 @@ static void measure_input_pulse_counter_poll(void)
 #ifdef DTG01
         //Store to BKP register
         app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
-									m_pulse_counter_in_backup[0].reserve,
 									0,
+                                    m_pulse_counter_in_backup[0].reserve,
 									0);
         DEBUG_INFO("Save counter %u-%u to backup\r\n", m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
 #else
         //Store to BKP register
         app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
+                                    m_pulse_counter_in_backup[1].forward,
 									m_pulse_counter_in_backup[0].reserve,
-									m_pulse_counter_in_backup[1].forward,
-									m_pulse_counter_in_backup[1].forward);
+									m_pulse_counter_in_backup[1].reserve);
         DEBUG_INFO("Save counter (%u-%u), (%u-%u) to backup\r\n", 
                                     m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
                                     m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
@@ -144,15 +144,24 @@ void measure_input_measure_wakeup_to_get_data()
     sys_ctx()->peripheral_running.name.adc = 1;
 }
 
-void measure_input_reset_all_counter(void)
+void measure_input_reset_counter(uint8_t index)
 {
-    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
+    if (index == 0)
     {
-        m_sensor_msq[j].counter0_f = 0;
-        m_sensor_msq[j].counter0_r = 0;
-        m_sensor_msq[j].counter1_f = 0;
-        m_sensor_msq[j].counter1_f = 0;
-    } 
+        m_pulse_counter_in_backup[0].forward = 0;
+        m_pulse_counter_in_backup[0].reserve = 0;
+    }
+#ifdef DTG02
+    else
+    {
+        m_pulse_counter_in_backup[1].forward = 0;
+        m_pulse_counter_in_backup[1].forward = 0;
+    }
+#endif
+    app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
+                                m_pulse_counter_in_backup[1].forward,
+                                m_pulse_counter_in_backup[0].reserve,
+                                m_pulse_counter_in_backup[1].forward);
 }
 
 void measure_input_save_all_data_to_flash(void)
@@ -171,10 +180,10 @@ void measure_input_save_all_data_to_flash(void)
         wr_data.meter_input[0].pwm_f = m_sensor_msq[j].counter0_f;
         wr_data.meter_input[0].dir_r = m_sensor_msq[j].counter0_r;
         
-    #ifdef DTG02
+#ifdef DTG02
         wr_data.meter_input[1].pwm_f = m_sensor_msq[j].counter1_f;
         wr_data.meter_input[1].dir_r = m_sensor_msq[j].counter1_r;
-    #endif        
+#endif        
         wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
@@ -319,7 +328,8 @@ void measure_input_task(void)
                 {
                     queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
                 }
-
+                
+                DEBUG_INFO("PWM0 %u, PWM1 %u\r\n", queue.counter0_f, queue.counter1_f);
                 queue.temperature = adc_retval->temp;
 
                 queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
@@ -364,8 +374,8 @@ void measure_input_initialize(void)
     */
     
 	app_bkup_read_pulse_counter(&m_pulse_counter_in_backup[0].forward, 
-                                &m_pulse_counter_in_backup[0].reserve, 
-                                &m_pulse_counter_in_backup[1].forward, 
+                                &m_pulse_counter_in_backup[1].reserve, 
+                                &m_pulse_counter_in_backup[0].forward, 
                                 &m_pulse_counter_in_backup[1].reserve);
     
     for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
@@ -403,6 +413,7 @@ void measure_input_initialize(void)
         
         if (save)
         {
+            DEBUG_WARN("Save new data from flash\r\n");
             app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
                                         m_pulse_counter_in_backup[0].reserve, 
                                         m_pulse_counter_in_backup[1].forward, 
@@ -504,7 +515,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                     }
                     if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
                     {
-                        DEBUG_VERBOSE("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+                        DEBUG_VERBOSE("[PWM%u] +++++++ in %ums\r\n", input->port, m_pull_diff[input->port]);
                         m_pulse_counter_in_backup[input->port].forward++;
                     }
                     else
