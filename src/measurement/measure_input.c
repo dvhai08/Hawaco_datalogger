@@ -415,8 +415,8 @@ void measure_input_initialize(void)
         {
             DEBUG_WARN("Save new data from flash\r\n");
             app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
-                                        m_pulse_counter_in_backup[0].reserve, 
                                         m_pulse_counter_in_backup[1].forward, 
+                                        m_pulse_counter_in_backup[0].reserve, 
                                         m_pulse_counter_in_backup[1].reserve);
         }
 #else

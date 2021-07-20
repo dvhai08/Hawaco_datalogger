@@ -237,7 +237,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             has_new_cfg++;   
             config->offset0 = offset;
-            DEBUG_WARN("PWM dir 1 offset changed to %u\r\n", offset);
+            DEBUG_WARN("PWM 1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(0);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
@@ -254,7 +254,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             has_new_cfg++;   
             config->offset1 = offset;
-            DEBUG_PRINTF("PWM dir 2 offset changed to %u\r\n", offset);
+            DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(1);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
@@ -307,7 +307,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             has_new_cfg++;   
             config->offset0 = offset;
-            DEBUG_PRINTF("PWM dir 1 offset changed to %u\r\n", offset);
+            DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
             app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
