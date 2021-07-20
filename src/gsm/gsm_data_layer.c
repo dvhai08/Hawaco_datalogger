@@ -31,6 +31,7 @@
 #include "app_rtc.h"
 #include "app_spi_flash.h"
 #include "spi.h"
+#include "umm_malloc_cfg.h"
 
 #ifdef STM32L083xx
 #include "usart.h"
@@ -355,7 +356,7 @@ static void init_http_msq(void)
     if (m_is_the_first_time)
     {
         m_is_the_first_time = false;
-        umm_init();
+
         DEBUG_VERBOSE("HTTP: init buffer\r\n");
     }
 }
@@ -990,7 +991,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 {
     app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
-	
+    DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
+    
 	char alarm_str[32];
     char *p = alarm_str;
     uint16_t total_length = 0;
@@ -1173,6 +1175,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     
     case GSM_HTTP_GET_EVENT_DATA:
     {
+        LED1(1);
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
         if (!ctx->status.enter_ota_update)
         {
@@ -1239,12 +1242,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             if (m_last_http_msg)
             {
                 umm_free(m_last_http_msg);
+                m_last_http_msg = NULL;
+                DEBUG_VERBOSE("Umm free\r\n");
                 m_malloc_count--;
             }
+            DEBUG_VERBOSE("Malloc data\r\n");
 #ifdef DTG01
             m_last_http_msg = (char*)umm_malloc(384);
 #else
-            m_last_http_msg = (char*)umm_malloc(512 + 32);
+            m_last_http_msg = (char*)umm_malloc(512 + 96);
 #endif
             if (m_last_http_msg == NULL)
             {
@@ -1282,7 +1288,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             ota_update_finish(true);
         }
         gsm_change_state(GSM_STATE_OK);
-        DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
+        DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);
@@ -1298,7 +1304,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             m_malloc_count--;
             umm_free(m_last_http_msg);
-            DEBUG_PRINTF("Free um memory, malloc count[%u]\r\n", m_malloc_count);
+            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
         LED1(0);
@@ -1423,7 +1429,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             m_malloc_count--;
             umm_free(m_last_http_msg);
-            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
+            DEBUG_ERROR("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
         gsm_change_state(GSM_STATE_OK);
