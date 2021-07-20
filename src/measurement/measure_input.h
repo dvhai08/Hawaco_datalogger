@@ -104,6 +104,7 @@ void measure_input_rs485_idle_detect(void);
  */
 measure_input_perpheral_data_t *measure_input_current_data(void);
 
+void measure_input_reset_all_counter(void);
 
 /**
  * @brief       Measure input callback

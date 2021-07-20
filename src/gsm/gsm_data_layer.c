@@ -37,7 +37,7 @@
 #include "app_rtc.h"
 #endif
 
-
+#define UNLOCK_BAND     1
 #define CUSD_ENABLE     0
 #define MAX_TIMEOUT_TO_SLEEP_S 60
 #define GSM_NEED_ENTER_HTTP_GET() (m_enter_http_get)
@@ -451,6 +451,57 @@ void gsm_change_state(gsm_state_t new_state)
     gsm_manager.step = 0;
 }
 
+#if UNLOCK_BAND
+uint8_t m_unlock_band_step = 0;
+void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
+{
+    switch(m_unlock_band_step)
+    {
+        case 0:
+        {
+//            if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
+//              SendATCommand ("AT+QCFG=\"nwscanseq\",1\r", "OK", 1000, 10, PowerOnModuleGSM);
+//            else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
+//              SendATCommand ("AT+QCFG=\"nwscanseq\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);
+//            else
+                gsm_hw_send_at_cmd("AT+QCFG=\"nwscanseq\",3,1\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
+        }
+            break;
+        
+        case 1:
+        {
+            DEBUG_PRINTF("Thiet lap chon mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//            if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
+//              SendATCommand ("AT+QCFG=\"nwscanmode\",1\r", "OK", 1000, 10, PowerOnModuleGSM);	
+//            else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
+//              SendATCommand ("AT+QCFG=\"nwscanmode\",3,1\r", "OK", 1000, 10, PowerOnModuleGSM);	
+//            else
+                gsm_hw_send_at_cmd("AT+QCFG=\"nwscanmode\",3,1\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);			
+        }
+                break;
+        
+        case 2:
+        {
+            DEBUG_PRINTF("Thiet lap che do uu tien mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            gsm_hw_send_at_cmd("AT+QCFG=\"band\",00,45\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
+        }
+            break;
+        
+        case 3:
+        {
+            DEBUG_PRINTF("Unlock band: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            m_unlock_band_step = 0;
+            gsm_hw_send_at_cmd("AT+CPIN?\r\n", "+CPIN: READY\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+            break;
+        }
+        
+        default:
+            break;
+    }
+    m_unlock_band_step++;
+}
+#endif /* UNLOCK_BAND */
+
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 {
     //DEBUG_PRINTF("%s\r\n", __FUNCTION__);
@@ -553,14 +604,25 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_PRINTF("CPIN: %s\r\n", (char *)resp_buffer);
         gsm_hw_send_at_cmd("AT+QIDEACT=1\r\n", "OK\r\n", "", 3000, 1, gsm_at_cb_power_on_gsm);
         break;
-     
+#if UNLOCK_BAND == 0        // o lan dau tien active sim, voi module ec200 thi phai active band, ec20 thi ko can
+                            // neu ko active thi se ko reg dc vao nha mang
     case 14:
         DEBUG_PRINTF("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"nwscanmode\",0\r\n", "OK\r\n", "", 5000, 2, gsm_at_cb_power_on_gsm); // Select mode AUTO
         break;
-
+#else
+    case 14:
+        DEBUG_PRINTF("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        m_unlock_band_step = 0;
+        gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
+        break;
+#endif
     case 15:
+#if UNLOCK_BAND == 0
         DEBUG_PRINTF("Network search mode AUTO: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+#else
+        DEBUG_PRINTF("Unlock band: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+#endif
         gsm_hw_send_at_cmd("AT+CGDCONT=1,\"IP\",\"v-internet\"\r\n", "", "OK\r\n", 1000, 2, gsm_at_cb_power_on_gsm); /** <cid> = 1-24 */
         break;
 
@@ -1014,9 +1076,9 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
 																			i+1,
-																			measure_input->output_on_off[i]); // dau ra 4-20mA 0
+																			measure_input->output_on_off[i]);  //dau ra on/off 
 	}
-    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%d\",", measure_input->output_4_20mA);    //dau ra on/off
+    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%d\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
 #else	
     temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
@@ -1120,6 +1182,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             if (new_cfg)
             {
                 measure_input_measure_wakeup_to_get_data();
+                app_eeprom_save_config();
                 m_delay_wait_for_measurement_again_s = 10;
             }
         }

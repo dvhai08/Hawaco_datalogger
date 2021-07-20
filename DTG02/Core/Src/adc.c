@@ -542,7 +542,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
+    DEBUG_WARN("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
     
 #ifdef DTG02
     // Channel 1
@@ -561,7 +561,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
+    DEBUG_WARN("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
     
     
     // Channel 2
@@ -580,7 +580,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
+    DEBUG_WARN("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
     
     // 4-20ma channel 3
     m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
@@ -599,7 +599,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_PRINTF("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
+    DEBUG_WARN("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
     
 #endif
     

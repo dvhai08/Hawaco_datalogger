@@ -60,7 +60,7 @@
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
-#define TEST_RS485                                      0 
+#define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 /* USER CODE END PTD */

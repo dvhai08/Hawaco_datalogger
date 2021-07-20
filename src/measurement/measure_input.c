@@ -144,6 +144,17 @@ void measure_input_measure_wakeup_to_get_data()
     sys_ctx()->peripheral_running.name.adc = 1;
 }
 
+void measure_input_reset_all_counter(void)
+{
+    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
+    {
+        m_sensor_msq[j].counter0_f = 0;
+        m_sensor_msq[j].counter0_r = 0;
+        m_sensor_msq[j].counter1_f = 0;
+        m_sensor_msq[j].counter1_f = 0;
+    } 
+}
+
 void measure_input_save_all_data_to_flash(void)
 {
     app_spi_flash_data_t wr_data;

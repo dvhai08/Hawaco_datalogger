@@ -25,7 +25,7 @@
 #define __GSM_SLEEP_MODE__ 1
 #define __USED_HTTP__ 0
 
-#define GSM_READ_SMS_ENABLE     0
+#define GSM_READ_SMS_ENABLE     1
 #define GSM_MAX_SMS_CONTENT_LENGTH   160
 #define GSM_MAX_SMS_PHONE_LENGTH     16
 
