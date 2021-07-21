@@ -98,7 +98,7 @@
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 										}	
 
-#define RS485_EN(x)						{	if (x) \
+#define RS485_POWER_EN(x)				{	if (x) \
 												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 											else	\
 												LL_GPIO_SetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
@@ -153,9 +153,9 @@
 #define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  4
 #define V_REF_CHANNEL_INDEX					5
 #endif
-#define GAIN_INPUT_4_20MA_IN				143
 #define VREF_OFFSET_MV						80
-                                        
+#define ADC_INPUT_4_20MA_GAIN               (50.0f)   
+
 typedef struct
 {
     uint32_t current_ma_mil_10;		// 4ma =>> 400

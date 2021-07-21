@@ -103,23 +103,20 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         gsm_utilities_copy_parameters(output4_20mA+strlen("Output4_20\""), output_value, ':', ',');
         DEBUG_INFO("Output 4-20ma %s\r\n", output_value);
         float new_value = atof(output_value);
-        uint32_t interger = (uint32_t)new_value;
-        uint32_t dec = (uint32_t)((new_value-interger)/10);
+//        uint32_t interger = (uint32_t)new_value;
+//        uint32_t dec = (uint32_t)((new_value-interger)/10);
 //        uint8_t out_4_20 = gsm_utilities_get_number_from_string(strlen("Output4_20\":"), output4_20mA);
         
-        if (config->io_enable.name.output_4_20ma_value != interger
-            || dec != config->io_enable.name.output_4_20ma_value)
+        if (config->output_4_20ma != new_value)
         {
             config->io_enable.name.output_4_20ma_enable = 1;
-            config->io_enable.name.output_4_20ma_value = interger;
-            config->io_enable.name.output_4_20ma_value_extend = dec;
+            config->output_4_20ma = new_value;
             has_new_cfg++;
-            DEBUG_INFO("Output 4-20ma changed to %u.%u\r\n", config->io_enable.name.output_4_20ma_value,
-                                                             config->io_enable.name.output_4_20ma_value_extend);
+            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", config->output_4_20ma);
         }
         
-        if (config->io_enable.name.output_4_20ma_value < 4
-            || config->io_enable.name.output_4_20ma_value > 20)
+        if (config->output_4_20ma < 4.0f
+            || config->output_4_20ma > 20.0f)
         {
             config->io_enable.name.output_4_20ma_enable = 0;
         }
@@ -148,23 +145,16 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         gsm_utilities_copy_parameters(output2+strlen("Output2\""), output_value, ':', ',');
         DEBUG_INFO("Output 4-20ma %s\r\n", output_value);
         float new_value = atof(output_value);
-        uint32_t interger = (uint32_t)new_value;
-        uint32_t dec = (uint32_t)((new_value-interger)/10);
-//        uint8_t out_4_20 = gsm_utilities_get_number_from_string(strlen("Output2\":"), Output2mA);
-        
-        if (config->io_enable.name.output_4_20ma_value != interger
-            || dec != config->io_enable.name.output_4_20ma_value)
+        if (config->output_4_20ma != new_value)
         {
             config->io_enable.name.output_4_20ma_enable = 1;
-            config->io_enable.name.output_4_20ma_value = interger;
-            config->io_enable.name.output_4_20ma_value_extend = dec;
+            config->output_4_20ma = new_value;
             has_new_cfg++;
-            DEBUG_INFO("Output 4-20ma changed to %u.%u\r\n", config->io_enable.name.output_4_20ma_value,
-                                                             config->io_enable.name.output_4_20ma_value_extend);
+            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", config->output_4_20ma);
         }
         
-        if (config->io_enable.name.output_4_20ma_value < 4
-            || config->io_enable.name.output_4_20ma_value > 20)
+        if (config->output_4_20ma < 4.0f
+            || config->output_4_20ma > 20.0f)
         {
             config->io_enable.name.output_4_20ma_enable = 0;
         }

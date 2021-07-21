@@ -154,7 +154,7 @@ int main(void)
 //	HAL_ADC
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     ENABLE_INPUT_4_20MA_POWER(0);
-    RS485_EN(0);
+    RS485_POWER_EN(0);
     LED1(1);
     
 	DEBUG_RAW(RTT_CTRL_CLEAR);
@@ -183,7 +183,7 @@ int main(void)
 
 #if TEST_OUTPUT_4_20MA
 	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
-	eeprom_cfg->io_enable.name.output_4_20ma_value = 10;
+	eeprom_cfg->output_4_20ma = 10;
 	eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 	control_output_dac_enable(1000000);
     system->status.is_enter_test_mode = 1;
@@ -241,13 +241,13 @@ int main(void)
 	if (system->status.is_enter_test_mode)
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
-		if (eeprom_cfg->io_enable.name.output_4_20ma_value == 0)
-			eeprom_cfg->io_enable.name.output_4_20ma_value = 10;
+		if (eeprom_cfg->output_4_20ma < 1.0f)
+			eeprom_cfg->output_4_20ma = 10;
 		eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 		control_output_dac_enable(1000000);
 		eeprom_cfg->io_enable.name.rs485_en = 1;
 		ENABLE_INPUT_4_20MA_POWER(1);
-        RS485_EN(1);
+        RS485_POWER_EN(1);
         usart_lpusart_485_control(1);
 	}
     
@@ -288,14 +288,14 @@ int main(void)
         
     if (ota_update_is_running())
     {
-        system->status.sleep_time_s = 0;
+//        system->status.sleep_time_s = 0;
         system->status.disconnect_timeout_s = 0;
     }
     
 	
 	if (eeprom_cfg->io_enable.name.rs485_en)
 	{
-		RS485_EN(eeprom_cfg->io_enable.name.rs485_en);
+		RS485_POWER_EN(eeprom_cfg->io_enable.name.rs485_en);
 	}
     
     if (system->peripheral_running.value == 0)
@@ -407,7 +407,7 @@ static void gsm_mnr_task(void *arg)
     sys_ctx_t *ctx = sys_ctx();
     if (gsm_data_layer_is_module_sleeping())
     {
-        ctx->status.sleep_time_s++;
+//        ctx->status.sleep_time_s++;
         ctx->status.disconnect_timeout_s = 0;
     }
     else
@@ -446,8 +446,6 @@ static void info_task(void *arg)
     
 	if (system->status.is_enter_test_mode)
 	{
-        if (system->status.is_enter_test_mode)
-        {
 #if TEST_RS485
             uint8_t result;
             uint8_t input_result[2];
@@ -468,7 +466,6 @@ static void info_task(void *arg)
                 DEBUG_ERROR("Modbus failed\r\n");
             }
 #endif
-        }
         i = 5;
 	}
     if (i++ > 4)
@@ -481,7 +478,7 @@ static void info_task(void *arg)
         char *p = tmp;
         for (uint32_t i = 0; i < 4; i++)
         {
-            p += sprintf(p, "(%u.%u),", adc->in_4_20ma_in[i]/10, adc->in_4_20ma_in[i]%10);
+            p += sprintf(p, "%.2f", adc->in_4_20ma_in[i]);
         }
         for (uint32_t i = 0; i < 4; i++)
         {
@@ -566,10 +563,10 @@ void sys_config_low_power_mode(void)
         uwTick += diff*1000;
         DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
-        ctx->status.sleep_time_s += diff;
+//        ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
-        DEBUG_VERBOSE("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
+        DEBUG_VERBOSE("Wakeup\r\n");
         
         // Resume tick
         SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;

@@ -203,16 +203,12 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
 {
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
     float value = atof(argv[1]);
-    uint32_t interger = (uint32_t)(value*10);
-    interger %= 10;
     
 	cfg->io_enable.name.output_4_20ma_enable = 1;
-	cfg->io_enable.name.output_4_20ma_value = (uint32_t)value;
-    cfg->io_enable.name.output_4_20ma_value_extend = interger;
+	cfg->output_4_20ma = value;
 	cfg->io_enable.name.output_4_20ma_timeout_100ms = atoi(argv[2])/100;
 	control_output_dac_enable(atoi(argv[2]));
-	DEBUG_PRINTF("Control DAC output %u.%uma in ms %ums\r\n", cfg->io_enable.name.output_4_20ma_value,
-                                                              cfg->io_enable.name.output_4_20ma_value_extend,
+	DEBUG_PRINTF("Control DAC output %.2fma in ms %ums\r\n", cfg->output_4_20ma,
                                                                 atoi(argv[2]));
 	return 0;
 }

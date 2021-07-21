@@ -39,7 +39,7 @@ typedef struct
     uint8_t temp;
     uint16_t vbat_mv;
     uint8_t vbat_precent;
-    uint8_t input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 1.3mA =>> 13
+    float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 1.3mA =>> 13
     uint32_t timestamp;
     uint32_t valid_flag;
     uint32_t resend_to_server_flag;

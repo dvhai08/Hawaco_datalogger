@@ -263,7 +263,7 @@ void measure_input_task(void)
         {
             measure_input_turn_on_in_4_20ma_power = 0;
         }
-        estimate_measure_timestamp = current_sec + 2;
+        estimate_measure_timestamp = current_sec;
     }
     
     if (adc_retval->bat_mv > VBAT_DETECT_HIGH_MV)

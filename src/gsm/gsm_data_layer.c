@@ -110,21 +110,15 @@ void gsm_wakeup_periodically(void)
         if (gsm_data_layer_is_module_sleeping())
         {
             gsm_change_state(GSM_STATE_WAKEUP);
-            ctx->status.sleep_time_s = 0;
+//            ctx->status.sleep_time_s = 0;
         }
     }
-    
-//    if (ctx->status.sleep_time_s*1000 >= cfg->send_to_server_interval_ms)
-//    {
-//        ctx->status.sleep_time_s = 0;
-//        gsm_change_state(GSM_STATE_WAKEUP);
-//    }
 }
 
 void gsm_set_wakeup_now(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
-	ctx->status.sleep_time_s = 0;
+//	ctx->status.sleep_time_s = 0;
 	gsm_change_state(GSM_STATE_WAKEUP);
 }
 
@@ -1067,7 +1061,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     // Build input 4-20ma
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%u,", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%.2f,", 
 																			i+1,
 																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
 	}
@@ -1089,7 +1083,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 	}
     
     // Build output 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%d\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
+    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%.1f\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
 #else	
     // Build pulse counter
     temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
@@ -1108,11 +1102,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
                                                                         measure_input->output_on_off[0]); // dau vao on/off
     
     // Build input 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%.2f,", 
                                                                         msg->input_4_20ma[0]); // dau vao 4-20mA 0
 
     // Build ouput 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%u,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%.2f,", 
                                                                         measure_input->output_4_20mA); // dau ra 4-20mA
 #endif
     // CSQ in percent 

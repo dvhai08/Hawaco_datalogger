@@ -18,7 +18,7 @@ typedef struct
 
 typedef struct
 {
-	uint32_t sleep_time_s;
+//	uint32_t sleep_time_s;
 	uint32_t disconnect_timeout_s;
     uint32_t disconnected_count;
     bool is_enter_test_mode;

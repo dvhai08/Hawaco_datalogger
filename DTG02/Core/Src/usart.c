@@ -473,12 +473,12 @@ void usart_lpusart_485_control(bool enable)
 		/* Peripheral clock enable */
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_LPUART1);
         
-        RS485_EN(0);
+        RS485_POWER_EN(0);
     }
     else
     {
 		MX_LPUART1_UART_Init();
-        RS485_EN(1);
+        RS485_POWER_EN(1);
     }
         
     m_lpusart_rs485_is_enabled = enable;

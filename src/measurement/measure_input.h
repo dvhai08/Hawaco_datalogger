@@ -43,10 +43,10 @@ typedef struct
 #ifdef DTG02
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
-	uint8_t input_4_20mA[NUMBER_OF_INPUT_4_20MA];
+	float input_4_20mA[NUMBER_OF_INPUT_4_20MA];
 	uint8_t vbat_percent;
-	uint8_t vbat_raw;
-	uint8_t output_4_20mA;
+	uint16_t vbat_raw;
+	float output_4_20mA;
 	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
     int32_t temperature;
     int32_t temperature_error;
@@ -70,7 +70,7 @@ typedef struct
     uint32_t counter0_r;
     uint32_t counter1_f;
     uint32_t counter1_r;
-    uint8_t input_4_20ma[NUMBER_OF_INPUT_4_20MA];
+    float input_4_20ma[NUMBER_OF_INPUT_4_20MA];
     uint8_t csq_percent;
     uint8_t state;
     uint8_t temperature;

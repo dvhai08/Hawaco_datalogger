@@ -95,8 +95,8 @@ static bool is_4_20ma_output_valid(void)
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	return (cfg->io_enable.name.output_4_20ma_enable 
 		&& cfg->io_enable.name.output_4_20ma_timeout_100ms
-	    && cfg->io_enable.name.output_4_20ma_value >= 4
-		&& cfg->io_enable.name.output_4_20ma_value <= 20);
+	    && cfg->output_4_20ma >= 4.0f
+		&& cfg->output_4_20ma <= 20.0f);
 }
 
 static void stop_dac_output(void *arg)
@@ -123,11 +123,8 @@ void control_output_dac_enable(uint32_t ms)
 		dac_value = voltage * 4095 / adc_get_input_result()->vdda_mv;
 #else
 		uint32_t thoughsand = 0;
-		int32_t offset_mv = get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
-        float tmp = cfg->io_enable.name.output_4_20ma_value;
-        // output_4_20ma_value = 4, output_4_20ma_value_extend = 2 =>>> Iout = 4.2
-        tmp += ((float)cfg->io_enable.name.output_4_20ma_value_extend)/10.0f;
-		uint32_t set_mv = 600 + 150.0f * (tmp - 4.0f) - offset_mv;
+		int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
+		uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
 		thoughsand = set_mv * 1000 / VREG;
 		tim_pwm_output_percent(thoughsand);
         if (m_last_mv != set_mv)
@@ -183,9 +180,9 @@ void control_ouput_task(void)
 			* DAC: 0.6-3V () <=> 4-20mA output -> 1mA <=> 0.15V
 			*/
 			uint32_t thoughsand = 0;
-			int32_t offset_mv = get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
-			uint32_t set_mv = 600 + 150 * (cfg->io_enable.name.output_4_20ma_value - 4) - offset_mv;
-			thoughsand = set_mv * 1000 / 4890;		// output pwm voltage is 4890mv
+			int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
+			uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
+			thoughsand = set_mv * 1000 / VREG;		// output pwm voltage is 4890mv
 			tim_pwm_output_percent(thoughsand);
 #endif
 		}
@@ -222,8 +219,8 @@ static void output_4_20ma_config(void)
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	if (cfg->io_enable.name.output_4_20ma_enable 
 		&& cfg->io_enable.name.output_4_20ma_timeout_100ms
-		&& cfg->io_enable.name.output_4_20ma_value >= 4
-		&& cfg->io_enable.name.output_4_20ma_value <= 20)
+		&& cfg->output_4_20ma >= 4.0f
+		&& cfg->output_4_20ma <= 20.0f)
 	{
 #ifdef DAC_4_20MA
 		dac_start();
