@@ -64,6 +64,7 @@
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_RS485                                      0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
+#define TEST_BACKUP_REGISTER                            1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -194,7 +195,14 @@ int main(void)
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
-  LED1(1);
+    LED1(1);
+#if TEST_BACKUP_REGISTER
+    for(uint32_t i = 0; i < 4; i++)
+    {
+        app_bkup_write_pulse_counter(i, i*2, i*3, i*4);
+    }
+    app_bkup_write_pulse_counter(0, 0, 0, 0);
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */

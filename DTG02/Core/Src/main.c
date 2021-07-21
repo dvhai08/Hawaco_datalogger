@@ -58,11 +58,12 @@
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            20864     // ( ~18s)
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
-#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              0
+#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  1
+#define TEST_OUTPUT_4_20MA                              1
 #define TEST_RS485                                      0
-#define TEST_INPUT_4_20_MA                              0
+#define TEST_INPUT_4_20_MA                              1
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
+#define TEST_BACKUP_REGISTER                            1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -197,6 +198,13 @@ int main(void)
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
+#if TEST_BACKUP_REGISTER
+    for(uint32_t i = 0; i < 4; i++)
+    {
+        app_bkup_write_pulse_counter(i, i*2, i*3, i*4);
+    }
+    app_bkup_write_pulse_counter(0, 0, 0, 0);
+#endif
   /* USER CODE END 2 */
 
   /* Infinite loop */

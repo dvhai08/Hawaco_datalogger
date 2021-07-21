@@ -57,6 +57,8 @@ void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
+    HAL_RTCEx_DeactivateTamper(&hrtc, RTC_TAMPER_1);
+    __HAL_RTC_TAMPER_CLEAR_FLAG(&hrtc, RTC_FLAG_TAMP1F);
     rtc_date_time_t time;
     if (app_rtc_get_time(&time))
     {
@@ -109,7 +111,8 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
   if(rtcHandle->Instance==RTC)
   {
   /* USER CODE BEGIN RTC_MspInit 0 */
-
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
   /* USER CODE END RTC_MspInit 0 */
     /* RTC clock enable */
     __HAL_RCC_RTC_ENABLE();
