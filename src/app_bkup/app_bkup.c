@@ -38,14 +38,14 @@ void app_bkup_write_data(bkp_data_register_enum regAddr, uint16_t data)
 void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint32_t counter0_r, uint32_t counter1_r)
 {
 #if USE_RTC_BACKUP
-    LL_RTC_DisableWriteProtection(RTC);
-    HAL_PWR_EnableBkUpAccess();
-    LL_RTC_DisableWriteProtection(RTC);
+//    LL_RTC_DisableWriteProtection(RTC);
+//    HAL_PWR_EnableBkUpAccess();
+//    LL_RTC_DisableWriteProtection(RTC);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, RTC_BACKUP_VALID_DATA);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter0_f);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter1_f);
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter0_r);
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter1_r);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter0_r);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR4, counter1_r);
 //	LL_PWR_DisableBkUpAccess();
     
     

@@ -45,6 +45,12 @@ void app_eeprom_init(void)
     }
 }
 
+void app_eeprom_erase(void)
+{
+    memset(&m_cfg, 0, sizeof(m_cfg));
+    app_eeprom_save_config();
+}
+
 void app_eeprom_save_config(void)
 {	
 	uint32_t err;

@@ -25,6 +25,7 @@
 #include "app_sync.h"
 #include "adc.h"
 #include "tim.h"
+#define USE_LOOKUP_TABLE            0
 
 typedef struct
 {
@@ -34,23 +35,23 @@ typedef struct
 
 static const output_4_20ma_lookup_t m_4_20ma_out_lookup_table[] =
 {
-    {  400,   15   },
-    {  500,   15  },  
-    {  600,   20  },   
-    {  700,   23  },     
-    {  800,   19   },    
-    {  900,   16   },    
-    {  1000, 10   },  
-    {  1100, 5  },    
-    {  1200, 5  },     
-    {  1300, 5  },     
-    {  1400, 5  },     
+    {  400,   0   },
+    {  500,   0  },  
+    {  600,   0  },   
+    {  700,   0  },     
+    {  800,   0   },    
+    {  900,   0   },    
+    {  1000, 0   },  
+    {  1100, 0  },    
+    {  1200, 0  },     
+    {  1300, 0  },     
+    {  1400, 0  },     
     {  1500, 0    },     
-    {  1600, -20   },    
-    {  1700, -35   },     
-    {  1800, -45  },    
-    {  1900, -51  },    
-    {  2000, -55  },
+    {  1600, -0   },    
+    {  1700, -0   },     
+    {  1800, -0  },    
+    {  1900, -0  },    
+    {  2000, -0  },
 //    {  1800, 0  },    
 //    {  1900, 0  },    
 //    {  2000, 0  },
@@ -60,6 +61,7 @@ enum { NUM_CURRENT_LOOK_UP = sizeof(m_4_20ma_out_lookup_table) / sizeof(output_4
 
 static int32_t get_offset_mv(uint32_t expect_ma)
 {
+#if USE_LOOKUP_TABLE
     uint32_t i;
 	int32_t offset_mv = 0;
 	expect_ma *= 100;		// 4mA convert to 400
@@ -75,7 +77,9 @@ static int32_t get_offset_mv(uint32_t expect_ma)
 		}
     }
     return offset_mv;
-//	return 0;
+#else
+	return 0;
+#endif
 }
 
 static void output_4_20ma_config(void);

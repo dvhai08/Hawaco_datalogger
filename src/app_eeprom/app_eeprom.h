@@ -82,4 +82,9 @@ void app_eeprom_save_config(void);
  */
 app_eeprom_config_data_t *app_eeprom_read_config_data(void);
 
+/**
+ * @brief       Erase eeprom data
+ */
+void app_eeprom_erase(void);
+
 #endif /* APP_EEPROM_H */

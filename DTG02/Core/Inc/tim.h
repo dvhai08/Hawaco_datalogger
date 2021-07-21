@@ -58,6 +58,12 @@ void tim_pwm_start(void);
  */
 void tim_pwm_output_percent(uint32_t thoughsand);
 
+/**
+ * @brief		Change pwm freq
+ * @param[in]   freq : Frequency
+ */
+void tim_pwm_change_freq(uint32_t freq);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

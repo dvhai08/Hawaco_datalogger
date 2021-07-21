@@ -23,7 +23,12 @@
 /* USER CODE BEGIN 0 */
 #include "app_debug.h"
 #include "stdbool.h"
+
+#define TIME_FREQ       8000000
+
 bool m_dac_started = false;
+volatile uint32_t m_reload_value = 7999;     // 1khz
+
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim2;
@@ -46,7 +51,7 @@ void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4095;
+  htim2.Init.Period = m_reload_value;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -115,7 +120,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef* timHandle)
     GPIO_InitStruct.Pin = GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF5_TIM2;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -149,6 +154,17 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 
+void tim_pwm_change_freq(uint32_t freq)
+{
+    if (freq)
+    {
+        m_reload_value = TIME_FREQ/freq - 1;
+        DEBUG_INFO("Change reload value to %u\r\n", m_reload_value);
+        tim_pwm_stop();
+        tim_pwm_start();
+    }
+}
+
 void tim_pwm_stop(void)
 {
 //	DEBUG_PRINTF("Stop pwm\r\n");
@@ -175,7 +191,7 @@ void tim_pwm_output_percent(uint32_t thoughsand)
 		tim_pwm_start();
 	}
 	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	TIM2->CCR1 = thoughsand * 4096 / 1000;
+	TIM2->CCR1 = thoughsand * m_reload_value / 1000;
 }
 /* USER CODE END 1 */
 
