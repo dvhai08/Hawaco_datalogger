@@ -44,26 +44,26 @@ int rtt_custom_printf(const char *format, ...)
 static shell_context_struct m_user_context;
 static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
     {"reset",           "\treset: reset system\r\n",                            cli_reset_system,                           0},   
     {"factory",         "\tfactory : Factory reset\r\n",                        cli_factory_reset,                          0},
-    {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
+//    {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
     {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
     {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
     {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
-    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
+//    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
 };
 
@@ -137,7 +137,7 @@ void app_cli_start()
 /* Reset System */
 static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **argv)
 {
-    DEBUG_PRINTF("System reset\r\n");
+//    DEBUG_PRINTF("System reset\r\n");
     NVIC_SystemReset();
     return 0;
 }
@@ -151,23 +151,23 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
     return 0;
 }
 
-static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
-{
-//    extern System_t xSystem;
-//    extern bool gsm_data_layer_is_module_sleeping();
-//    if (strstr(argv[1], "enter"))
-//    {
-//        
-//    }
-//    else if (strstr(argv[1], "exit"))
-//    {
-//        if (gsm_data_layer_is_module_sleeping())
-//        {
-//            xSystem.Status.gsm_sleep_time_s = app_eeprom_read_config_data()->send_to_server_interval_ms / 1000;
-//        }
-//    }
-    return 0;
-}
+//static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv)
+//{
+////    extern System_t xSystem;
+////    extern bool gsm_data_layer_is_module_sleeping();
+////    if (strstr(argv[1], "enter"))
+////    {
+////        
+////    }
+////    else if (strstr(argv[1], "exit"))
+////    {
+////        if (gsm_data_layer_is_module_sleeping())
+////        {
+////            xSystem.Status.gsm_sleep_time_s = app_eeprom_read_config_data()->send_to_server_interval_ms / 1000;
+////        }
+////    }
+//    return 0;
+//}
 
 extern bool gsm_send_sms(char *phone_number, char *message);
 static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv)
@@ -275,12 +275,12 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
     return 0;
 }
 
-static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv)
-{
-    sys_ctx()->status.is_enter_test_mode = 1;
-    DEBUG_INFO("Test rs485\r\n");
-    return 0;
-}
+//static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    sys_ctx()->status.is_enter_test_mode = 1;
+//    DEBUG_INFO("Test rs485\r\n");
+//    return 0;
+//}
 
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv)
 {

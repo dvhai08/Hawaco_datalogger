@@ -77,25 +77,60 @@ static bool m_this_is_the_first_time = true;
 measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
 
-static void process_rs485(void)
+static void process_rs485(measure_input_modbus_register_t *register_value)
 {
     app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
     sys_ctx_t *ctx = sys_ctx();
     bool do_stop = true;
+    register_value->nb_of_register = 0;
+    
     if (eeprom_cfg->io_enable.name.rs485_en)
     {
         ctx->peripheral_running.name.rs485_running = 1;
         usart_lpusart_485_control(1);
-        
-        if (eeprom_cfg->modbus_function_code == MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER)
+        uint32_t function_code = eeprom_cfg->modbus_register / 10000;
+        uint32_t register_offset = eeprom_cfg->modbus_register - function_code * 10000;
+        switch (function_code)
         {
-            DEBUG_PRINTF("Read holding register\r\n");
-        }
-        else if (eeprom_cfg->modbus_function_code == MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER)
-        {
-            DEBUG_PRINTF("Read input register\r\n");
-        }
-        
+            case MODBUS_MASTER_FUNCTION_READ_COILS:
+                break;
+            
+            case MODBUS_MASTER_FUNCTION_READ_DISCRETE_INPUT:
+                break;
+
+            case MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER:
+                break;
+            
+            case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
+            {
+                uint8_t result;
+                
+                modbus_master_reset(1000);
+                result = modbus_master_read_input_register(eeprom_cfg->modbus_addr, 
+                                                            register_offset, 
+                                                            eeprom_cfg->modbus_register_size);
+                if (result == MODBUS_MASTER_OK)
+                {
+                    register_value->slave_addr = eeprom_cfg->modbus_addr;
+                    for (uint32_t i = 0; i < eeprom_cfg->modbus_register_size; i++)
+                    {
+                        register_value->value[i] = modbus_master_get_response_buffer(i);
+                        register_value->nb_of_register++;
+                        register_value->register_index = eeprom_cfg->modbus_register;
+                    }
+                    DEBUG_INFO("Read modbus success\r\n");
+                }
+                else
+                {
+                    DEBUG_ERROR("Modbus read register failed\r\n");
+                }
+            }
+                break;
+            
+            default:
+                DEBUG_WARN("Unsupported function code %u\r\n", function_code);
+                break;
+        }        
     }
     else if (ctx->status.is_enter_test_mode == 0)
     {
@@ -284,10 +319,11 @@ void measure_input_task(void)
                 ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 1;
             }
         }
+        measurement_msg_queue_t queue;
         if (measure_input_turn_on_in_4_20ma_power == 0)
         {
             // Process rs485
-            process_rs485();
+            process_rs485(&queue.modbus_register);
             
             // ADC conversion
             adc_start();
@@ -301,17 +337,15 @@ void measure_input_task(void)
             
             // Stop adc
             adc_stop();
-    #ifdef DTG01
+#ifdef DTG01
             sys_enable_power_plug_detect();
-    #endif
+#endif
             
             // Put data to msq
             adc_retval = adc_get_input_result();
             
             if (ctx->status.is_enter_test_mode == 0)
-            {
-                measurement_msg_queue_t queue;
-                
+            {                
                 queue.measure_timestamp = app_rtc_get_counter();
                 queue.vbat_mv = adc_retval->bat_mv;
                 queue.vbat_percent = adc_retval->bat_percent;
@@ -589,9 +623,9 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 void modbus_master_serial_write(uint8_t *buf, uint8_t length)
 {
     volatile uint32_t i;
-    if (!RS485_DIR_IS_TX())
+    if (!RS485_GET_DIRECTION())
     {
-        RS485_DIR_TX();
+        RS485_DIR_TX();     // Set TX mode
         i = 32;     // clock = 16Mhz =>> 1us = 16, delay at least 1.3us
         while (i--);        
     }

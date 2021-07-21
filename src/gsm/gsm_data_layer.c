@@ -239,7 +239,7 @@ void gsm_manager_tick(void)
 			//#warning "Sleep in http mode is not enabled"
 			if (enter_sleep_in_http)
 			{
-                DEBUG_INFO("Sleep in http\r\n");
+                DEBUG_VERBOSE("Sleep in http\r\n");
                 gsm_hw_layer_reset_rx_buffer();
 				gsm_change_state(GSM_STATE_SLEEP);
 			}
@@ -405,10 +405,10 @@ void gsm_change_state(gsm_state_t new_state)
         gsm_hw_layer_reset_rx_buffer();
         break;
     case GSM_STATE_REOPEN_PPP:
-        DEBUG_RAW("REOPENPPP\r\n");
+        DEBUG_VERBOSE("REOPENPPP\r\n");
         break;
     case GSM_STATE_GET_BTS_INFO:
-        DEBUG_RAW("GETSIGNAL\r\n");
+        DEBUG_VERBOSE("GETSIGNAL\r\n");
         break;
 //    case GSM_STATE_SEND_ATC:
 //        DEBUG_RAW("Quit PPP and send AT command\r\n");
@@ -420,7 +420,7 @@ void gsm_change_state(gsm_state_t new_state)
         DEBUG_RAW("WAKEUP\r\n");
         break;
     case GSM_STATE_AT_MODE_IDLE:
-        DEBUG_RAW("IDLE\r\n");
+        DEBUG_VERBOSE("IDLE\r\n");
         break;
     case GSM_STATE_SLEEP:
     {
@@ -471,7 +471,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 1:
         {
-            DEBUG_PRINTF("Thiet lap chon mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            DEBUG_VERBOSE("Thiet lap chon mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 //            if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
 //              SendATCommand ("AT+QCFG=\"nwscanmode\",1\r", "OK", 1000, 10, PowerOnModuleGSM);	
 //            else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
@@ -483,7 +483,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 2:
         {
-            DEBUG_PRINTF("Thiet lap che do uu tien mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            DEBUG_VERBOSE("Thiet lap che do uu tien mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
             gsm_hw_send_at_cmd("AT+QCFG=\"band\",00,45\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
         }
             break;
@@ -511,7 +511,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 1:
         if (event != GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("Connect modem ERR!\r\n");
+            DEBUG_ERROR("Connect modem ERR!\r\n");
         }
         gsm_hw_send_at_cmd("ATE0\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
@@ -532,29 +532,29 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 5:
-        DEBUG_PRINTF("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",2000\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 6:
-        DEBUG_PRINTF("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
     
     case 7:
-        DEBUG_PRINTF("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 8:
-        DEBUG_PRINTF("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         //gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         gsm_hw_send_at_cmd("AT\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 9:
         DEBUG_PRINTF("AT cmd: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//        DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
@@ -613,7 +613,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 #else
     case 14:
-        DEBUG_PRINTF("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         m_unlock_band_step = 0;
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
         break;
@@ -634,7 +634,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 17:
-        DEBUG_PRINTF("CSCS=GSM: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("CSCS=GSM: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGREG=2\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm); /** Query CGREG? => +CGREG: <n>,<stat>[,<lac>,<ci>[,<Act>]] */
         break;
 
@@ -672,7 +672,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
                 gsm_change_hw_polling_interval(1000);
                 return;
             }
-            DEBUG_PRINTF("Network operator: %s\r\n", gsm_get_network_operator());
+            DEBUG_VERBOSE("Network operator: %s\r\n", gsm_get_network_operator());
         }
         gsm_change_hw_polling_interval(5);
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
@@ -798,7 +798,7 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 void gsm_hard_reset(void)
 {
     static uint8_t step = 0;
-    DEBUG_PRINTF("GSM hard reset step %d\r\n", step);
+    DEBUG_VERBOSE("GSM hard reset step %d\r\n", step);
 
     switch (step)
     {
@@ -997,6 +997,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     char *p = alarm_str;
     uint16_t total_length = 0;
 
+    // Build error msg
     // bat,temp,4glost,sensor_err,sensor_overflow, sensor break, vtemp is valid or not
     if (msg->vbat_percent < 10)
     {
@@ -1025,10 +1026,12 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     p += sprintf(p, "%u,", app_spi_flash_is_ok() ? 0 : 1);
     p += sprintf(p, "%u", measure_input->temperature_error ? 0 : 1);
     
+    // Build timestamp
     total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
     
     uint32_t temp_counter;
 
+    // Build ID, phone and id
 #ifdef DTG02
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
 #else
@@ -1038,6 +1041,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
        
 #ifdef DTG02
+    // Build input pulse counter
     temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1\":\"%u\",",
                               temp_counter);
@@ -1060,12 +1064,15 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 									temp_counter);
 	}
 
+    // Build input 4-20ma
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%u,", 
 																			i+1,
 																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
 	}
+    
+    // Build input on/off
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":%u,", 
@@ -1073,14 +1080,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
 	}	
 
+    // Build output on/off
 	for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_ON_OFF; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
 																			i+1,
 																			measure_input->output_on_off[i]);  //dau ra on/off 
 	}
+    
+    // Build output 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%d\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
 #else	
+    // Build pulse counter
     temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
@@ -1092,33 +1103,45 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 									temp_counter);
 	}
     
+    // Build input on/off
     total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%u,", 
-                                                                        measure_input->output_on_off[0]); // dau vao 4-20mA 0
+                                                                        measure_input->output_on_off[0]); // dau vao on/off
     
+    // Build input 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
                                                                         msg->input_4_20ma[0]); // dau vao 4-20mA 0
 
+    // Build ouput 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%u,", 
-                                                                        measure_input->output_4_20mA); // dau ra 4-20mA 0
+                                                                        measure_input->output_4_20mA); // dau ra 4-20mA
 #endif
+    // CSQ in percent 
     if (msg->csq_percent)
     {
         total_length += sprintf((char *)(ptr + total_length), "\"SignalStrength\":%d,", msg->csq_percent);
     }
+    
+    // Warning level
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
-#ifdef DTG01
+    
+#ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
-#else
+#else   // DTG02 : Vinput 24V
     total_length += sprintf((char *)(ptr + total_length), "\"Vin_mv\":%u,", msg->vin_mv);
 #endif    
+    // Temperature
     if (!measure_input->temperature_error)
     {
         total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
     }
     
-   
+    // Reset reason
     total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
+    
+    // K0 : he so chia cua dong ho nuoc, input 1
+    // Offset0: Gia tri offset cua dong ho nuoc
+    // Mode : che do hoat dong
     total_length += sprintf((char *)(ptr + total_length), "\"K0\":%u,", cfg->k0);
     total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":%u,", cfg->offset0);
     total_length += sprintf((char *)(ptr + total_length), "\"Mode0\":%u,", cfg->meter_mode[0]);
@@ -1128,8 +1151,29 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"Offset1\":\"%u\",", cfg->offset1);
     total_length += sprintf((char *)(ptr + total_length), "\"Mode1\":\"%u\",", cfg->meter_mode[1]);
 #endif
+    
+    // 485
+    if (cfg->io_enable.name.rs485_en
+        && msg->modbus_register.nb_of_register)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"MBA\":%u,", msg->modbus_register.slave_addr);
+        total_length += sprintf((char *)(ptr + total_length), "\"MBI\":%u,", msg->modbus_register.register_index);
+        total_length += sprintf((char *)(ptr + total_length), "%s", "\"MBV\":(");
+        for (uint32_t i = 0; i < msg->modbus_register.nb_of_register; i++)
+        {
+            total_length += sprintf((char *)(ptr + total_length), "%u,", msg->modbus_register.value[i]);
+        }
+        total_length -= 1;  // delete comma ','
+        total_length += sprintf((char *)(ptr + total_length), "%s", "),");
+    }
+    
+    // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":\"%s\",", gsm_get_sim_imei());
+    
+    // Uptime
     total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":\"%u\",", sys_get_ms()/1000);
+    
+    // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}", VERSION_CONTROL_HW);
         
@@ -1165,7 +1209,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_EVENT_CONNTECTED:
         LED1(1);
-        DEBUG_INFO("HTTP connected, data size %u\r\n", *((uint32_t *)data));
+        DEBUG_VERBOSE("HTTP connected, data size %u\r\n", *((uint32_t *)data));
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)
         {
@@ -1203,7 +1247,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq = measure_input_get_data_in_queue();
         if (!m_sensor_msq)
         {
-            DEBUG_PRINTF("No more sensor data\r\n");
+            DEBUG_VERBOSE("No more sensor data\r\n");
             if (!m_retransmision_data_in_flash)
             {
                 gsm_change_state(GSM_STATE_OK);
@@ -1227,6 +1271,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 tmp.temperature = m_retransmision_data_in_flash->temp;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
+                tmp.modbus_register.nb_of_register = m_retransmision_data_in_flash->rs485.nb_of_register;
+                tmp.modbus_register.register_index = m_retransmision_data_in_flash->rs485.register_index;
+                tmp.modbus_register.slave_addr =  m_retransmision_data_in_flash->rs485.slave_addr;
+                memcpy(tmp.modbus_register.value, m_retransmision_data_in_flash->rs485.data, m_retransmision_data_in_flash->rs485.nb_of_register*2);
+                
                 m_sensor_msq = &tmp;
                 build_msg = true;
                 DEBUG_VERBOSE("Build retransmision data\r\n");
@@ -1246,11 +1295,13 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 DEBUG_VERBOSE("Umm free\r\n");
                 m_malloc_count--;
             }
+            
+            // Malloc data to http post
             DEBUG_VERBOSE("Malloc data\r\n");
 #ifdef DTG01
-            m_last_http_msg = (char*)umm_malloc(384);
+            m_last_http_msg = (char*)umm_malloc(512);
 #else
-            m_last_http_msg = (char*)umm_malloc(512 + 96);
+            m_last_http_msg = (char*)umm_malloc(736);
 #endif
             if (m_last_http_msg == NULL)
             {
@@ -1260,8 +1311,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             else
             {
                 ++m_malloc_count;
+                
+                // Build sensor message
                 m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_PROCESSING;
                 gsm_build_sensor_msq(m_last_http_msg, m_sensor_msq);
+                
                 ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg;
                 ((gsm_http_data_t *)data)->data_length = strlen(m_last_http_msg);
 #if GSM_HTTP_CUSTOM_HEADER
@@ -1278,8 +1332,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_GET_EVENT_FINISH_SUCCESS:
     {
         DEBUG_PRINTF("HTTP get : event success\r\n");
+        
         ctx->status.disconnect_timeout_s = 0;
-        if (ctx->status.enter_ota_update 
+        if (ctx->status.enter_ota_update            // Neu dang trong tien trinh ota update =>> turn off gsm
             && ctx->status.delay_ota_update == 0)
         {
             GSM_PWR_EN(0);
@@ -1287,6 +1342,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             GSM_PWR_KEY(0);
             ota_update_finish(true);
         }
+        
         gsm_change_state(GSM_STATE_OK);
         DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);
@@ -1328,6 +1384,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
         
+        memcpy(wr_data.rs485.data, m_sensor_msq->modbus_register.value, m_sensor_msq->modbus_register.nb_of_register*2);
+        wr_data.rs485.nb_of_register = m_sensor_msq->modbus_register.nb_of_register;
+        wr_data.rs485.register_index = m_sensor_msq->modbus_register.register_index;
+        wr_data.rs485.slave_addr = m_sensor_msq->modbus_register.slave_addr;
+        
         if (!ctx->peripheral_running.name.flash_running)
         {
             DEBUG_VERBOSE("Wakup flash\r\n");
@@ -1336,9 +1397,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             ctx->peripheral_running.name.flash_running = 1;
         }
         app_spi_flash_write_data(&wr_data);
-        
-        #warning "Please save RS485 to flash\r\n";
-//        data.rs485;
         
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
@@ -1399,6 +1457,10 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
+        memcpy(wr_data.rs485.data, m_sensor_msq->modbus_register.value, m_sensor_msq->modbus_register.nb_of_register*2);
+        wr_data.rs485.nb_of_register = m_sensor_msq->modbus_register.nb_of_register;
+        wr_data.rs485.register_index = m_sensor_msq->modbus_register.register_index;
+        wr_data.rs485.slave_addr = m_sensor_msq->modbus_register.slave_addr;
         
         if (!ctx->peripheral_running.name.flash_running)
         {
@@ -1407,9 +1469,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             ctx->peripheral_running.name.flash_running = 1;
         }
         app_spi_flash_write_data(&wr_data);
-        
-        #warning "Please save RS485 to flash\r\n";
-//        data.rs485;
+
         
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;

@@ -191,9 +191,9 @@ int main(void)
     cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-    DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
-                                                                            VERSION_CONTROL_FW,
-                                                                            ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
+//    DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
+//                                                                            VERSION_CONTROL_FW,
+//                                                                            ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
     LED1(1);
 #if TEST_BACKUP_REGISTER
     for(uint32_t i = 0; i < 4; i++)
@@ -366,7 +366,7 @@ void SystemClock_Config(void)
 
 uint32_t sys_get_ms()
 {
-	return HAL_GetTick();
+	return uwTick;
 }
 
 void sys_delay_ms(uint32_t ms)
@@ -436,15 +436,15 @@ static void info_task(void *arg)
 	static uint32_t i = 0;
     sys_ctx_t *system = sys_ctx();
     
-	if (system->status.is_enter_test_mode)
-	{
-		char buf[48];
-		sprintf(buf, "%u\r\n", sys_get_ms());
-		RS485_EN(1);
-        RS485_DIR_RX();
-        i = 5;
-//		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
-	}
+//	if (system->status.is_enter_test_mode)
+//	{
+//		char buf[48];
+//		sprintf(buf, "%u\r\n", sys_get_ms());
+//		RS485_EN(1);
+//        RS485_DIR_RX();
+//        i = 5;
+////		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
+//	}
     if (i++ >= 5)
 	{
 		i = 0;
@@ -490,7 +490,7 @@ void sys_config_low_power_mode(void)
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
-        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
+//        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
@@ -506,16 +506,17 @@ void sys_config_low_power_mode(void)
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOC);
         LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOH);
 
-        HAL_SuspendTick();
+        /* Disable SysTick Interrupt */
+        SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
         
 //          GPIO_InitTypeDef GPIO_InitStructure;
         __HAL_RCC_PWR_CLK_ENABLE();
         
-        /* Enable Ultra low power mode */
-        HAL_PWREx_EnableUltraLowPower();
+        /* Enable the Ultra Low Power mode */
+        SET_BIT(PWR->CR, PWR_CR_ULP);
 
-        /* Enable the fast wake up from Ultra low power mode */
-        HAL_PWREx_EnableFastWakeUp();
+        /* Enable the fast wake up */
+        SET_BIT(PWR->CR, PWR_CR_FWU);
         
 
         
@@ -537,13 +538,16 @@ void sys_config_low_power_mode(void)
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;
-        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
+//        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
         ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         m_wakeup_timer_run = false;
         DEBUG_VERBOSE("Wake, sleep time %us\r\n", ctx->status.sleep_time_s);
-        HAL_ResumeTick();
+        
+        /* Enable SysTick Interrupt */
+        SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;
+        
         SystemClock_Config();
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);
@@ -551,14 +555,14 @@ void sys_config_low_power_mode(void)
     }
     else
     {
-        DEBUG_PRINTF("RTC timer still running\r\n");
+//        DEBUG_PRINTF("RTC timer still running\r\n");
     }
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
     m_wakeup_timer_run = false;
-    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
+//    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 
@@ -596,7 +600,6 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
     DEBUG_ERROR("Error handle\r\n");
     NVIC_SystemReset();
-  __disable_irq();
   while (1)
   {
   }

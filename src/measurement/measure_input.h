@@ -55,6 +55,14 @@ typedef struct
 
 typedef struct
 {
+    uint16_t value[16];
+    uint16_t register_index;
+    uint8_t nb_of_register;
+    uint8_t slave_addr;
+} measure_input_modbus_register_t;
+
+typedef struct
+{
     uint32_t measure_timestamp;
     uint8_t vbat_percent;
     uint16_t vbat_mv;
@@ -66,6 +74,7 @@ typedef struct
     uint8_t csq_percent;
     uint8_t state;
     uint8_t temperature;
+    measure_input_modbus_register_t modbus_register;
 #ifdef DTG02
     uint32_t vin_mv;
 #endif

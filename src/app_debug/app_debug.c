@@ -7,9 +7,8 @@
 
 //#include "gd32e10x.h"
 
-#define RTT_PRINTF_BUFFER_SIZE 256
-#define BLE_PRINTF_MTU_SIZE 23
-static char m_debug_buffer[RTT_PRINTF_BUFFER_SIZE];
+//#define SEGGER_RTT_PRINTF_BUFFER_SIZE 256
+static char m_debug_buffer[SEGGER_RTT_PRINTF_BUFFER_SIZE];
 
 extern uint32_t sys_get_ms(void);
 
@@ -23,10 +22,10 @@ int app_debug_rtt(const char *fmt,...)
     int     n;
 
     char *p = &m_debug_buffer[0];
-    int size = RTT_PRINTF_BUFFER_SIZE;
+    int size = SEGGER_RTT_PRINTF_BUFFER_SIZE;
     int time_stamp_size;
 
-    p += sprintf(m_debug_buffer, "<%u>: ", sys_get_ms());
+    p += sprintf(m_debug_buffer, "%u: ", sys_get_ms());
     time_stamp_size = (p-m_debug_buffer);
     size -= time_stamp_size;
     va_list args;
@@ -51,21 +50,18 @@ int app_debug_rtt_raw(const char *fmt,...)
     int     n;
 
     char *p = &m_debug_buffer[0];
-    int size = RTT_PRINTF_BUFFER_SIZE;
-    int time_stamp_size;
-    time_stamp_size = (p-m_debug_buffer);
-    size -= time_stamp_size;
+    int size = SEGGER_RTT_PRINTF_BUFFER_SIZE;
     va_list args;
 
     va_start (args, fmt);
     n = vsnprintf(p, size, fmt, args);
     if (n > (int)size) 
     {
-        SEGGER_RTT_Write(0, m_debug_buffer, size + time_stamp_size);
+        SEGGER_RTT_Write(0, m_debug_buffer, size);
     } 
     else if (n > 0) 
     {
-        SEGGER_RTT_Write(0, m_debug_buffer, n + time_stamp_size);
+        SEGGER_RTT_Write(0, m_debug_buffer, n);
     }
     va_end(args);
     
@@ -79,7 +75,7 @@ void app_debug_dump(const void* data, int len, const char* string, ...)
     int32_t i_len;
     int32_t i;
 
-    DEBUG_RAW("%s %u bytes\n", string, len);
+//    DEBUG_RAW("%s %u bytes\n", string, len);
     while (len > 0)
     {
         i_len = (len > 16) ? 16 : len;

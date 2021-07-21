@@ -19,10 +19,9 @@
 
 typedef struct
 {
-    uint8_t id;
-    uint8_t length;
-    uint8_t function_code;
-    uint8_t function_lengh;
+    uint8_t slave_addr;
+    uint8_t nb_of_register;
+    uint16_t register_index;
     uint8_t data[APP_FLASH_RS485_MAX_SIZE];
 } __attribute__((packed)) app_spi_flash_rs485_data_t;
 

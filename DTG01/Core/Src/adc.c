@@ -197,7 +197,7 @@ void MX_ADC_Init(void)
   
 //    if (LL_ADC_IsEnabled(ADC1) == 0)
     {
-        DEBUG_VERBOSE("Start calib AD \r\n");
+        DEBUG_VERBOSE("Start calib ADC\r\n");
         /* Run ADC self calibration */
         LL_ADC_StartCalibration(ADC1);
 
@@ -465,7 +465,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     //Caculate NTC resistor : Vntc = Vin*Rs/(Rs + Rntc) -> Rntc = Rs(Vin/Vntc - 1)
     r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
-    DEBUG_PRINTF("Resistant NTC = %d\r\n", (int)r_ntc);
+    DEBUG_VERBOSE("Resistant NTC = %d\r\n", (int)r_ntc);
 
 
     if (r_ntc <= 0)
@@ -484,7 +484,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
     }
 
     *result = (int32_t)temp;
-    DEBUG_INFO("Temp %d\r\n", (int32_t)temp);
+    DEBUG_VERBOSE("Temp %d\r\n", (int32_t)temp);
 end:
     return retval;
 }
@@ -496,7 +496,7 @@ void adc_convert(void)
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
-    DEBUG_INFO("VDDA %umv\r\n", m_adc_input.vdda_mv);
+    DEBUG_VERBOSE("VDDA %umv\r\n", m_adc_input.vdda_mv);
     
 	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);

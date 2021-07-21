@@ -290,9 +290,7 @@ static inline void usart1_hw_transmit_dma(void)
     {
         m_usart1_tx_run = false;
         m_last_usart1_transfer_size = 0;
-#if DEBUG_USART1_DMA
-		DEBUG_PRINTF("TX cplt\r\n");
-#endif
+        DEBUG_VERBOSE("TX cplt\r\n");
         return;
     }	
 	
@@ -334,7 +332,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 	
     if (length == 0 || m_usart1_is_enabled == false)
     {
-        DEBUG_PRINTF("[%s] Invalid params\r\n", __FUNCTION__);
+        DEBUG_ERROR("[%s] Invalid params\r\n", __FUNCTION__);
         return;
     }
 

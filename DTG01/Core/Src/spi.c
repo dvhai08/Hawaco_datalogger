@@ -102,7 +102,6 @@ uint8_t spi_flash_transmit(uint8_t ch)
     LL_SPI_TransmitData8(EXT_FLASH_HSPI, ch);
     while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0);
     
-    
     while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_HSPI) == 0);
     return LL_SPI_ReceiveData8(EXT_FLASH_HSPI);
 }
@@ -130,7 +129,6 @@ void spi_init(void)
 
 void spi_deinit(void)
 {
-#ifdef DTG01
     NVIC_DisableIRQ(SPI2_IRQn);
     LL_SPI_Disable(SPI2);
     LL_SPI_DeInit(SPI2);
@@ -153,9 +151,6 @@ void spi_deinit(void)
     GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
     LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-#else
-    #warning "Please turn off spi dtg02"
-#endif
 }
 
 /* USER CODE END 1 */

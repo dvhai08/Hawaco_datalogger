@@ -349,13 +349,22 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         lwrb_reset(&m_ringbuffer_usart1_tx);
     }
 
+    bool buffer_full = false;
     for (uint32_t i = 0; i < length; i++)
     {
         while (lwrb_write(&m_ringbuffer_usart1_tx, raw + i, 1) == 0)
         {
-            DEBUG_PRINTF("UART TX queue full\r\n");
+            if (buffer_full == false)
+            {
+                buffer_full = true;
+                DEBUG_PRINTF("UART TX queue full\r\n");
+            }
             sys_delay_ms(5);
         }
+    }
+    if (buffer_full)
+    {
+        DEBUG_INFO("Transmit tx\r\n");
     }
     usart1_hw_transmit_dma();
 }

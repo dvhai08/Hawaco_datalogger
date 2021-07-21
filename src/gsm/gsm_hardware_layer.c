@@ -213,7 +213,7 @@ void gsm_hw_layer_run(void)
     if (m_gsm_hardware.atc.recv_buff.index > 32 
         && strstr((char*)m_gsm_hardware.atc.recv_buff.buffer+10, "CUSD:"))
         {
-            DEBUG_PRINTF("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
+            DEBUG_VERBOSE("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
         }
 
     if (m_gsm_hardware.atc.retry_count_atc == 0)

@@ -25,6 +25,8 @@
 #include "app_sync.h"
 #include "adc.h"
 #include "tim.h"
+
+#define VREG                        4890
 #define USE_LOOKUP_TABLE            0
 
 typedef struct
@@ -126,7 +128,7 @@ void control_output_dac_enable(uint32_t ms)
         // output_4_20ma_value = 4, output_4_20ma_value_extend = 2 =>>> Iout = 4.2
         tmp += ((float)cfg->io_enable.name.output_4_20ma_value_extend)/10.0f;
 		uint32_t set_mv = 600 + 150.0f * (tmp - 4.0f) - offset_mv;
-		thoughsand = set_mv * 1000 / 4890;		// output pwm voltage is 4890mv
+		thoughsand = set_mv * 1000 / VREG;
 		tim_pwm_output_percent(thoughsand);
         if (m_last_mv != set_mv)
         {

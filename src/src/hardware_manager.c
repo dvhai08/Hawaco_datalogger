@@ -26,38 +26,38 @@ hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void)
 {
     if (m_reset_reason.value == 0)
     {
-        DEBUG_RAW("Reset reason : ");
+        DEBUG_RAW("RST:");
     }
 	
 #ifdef STM32L083xx
 	if (LL_RCC_IsActiveFlag_PINRST())
     {
 		m_reset_reason.name.pin_reset = 1;
-		DEBUG_RAW("PIN, ");
+		DEBUG_RAW("PIN,");
     }
 	
 	if (LL_RCC_IsActiveFlag_SFTRST())
     {
 		m_reset_reason.name.software = 1;
-		DEBUG_RAW("SFT, ");
+		DEBUG_RAW("SFT,");
     }
 
 	if (LL_RCC_IsActiveFlag_FWRST())
     {
 		m_reset_reason.name.fault = 1;
-		DEBUG_RAW("FAULT, ");
+		DEBUG_RAW("FAULT,");
     }
 	
     if (LL_RCC_IsActiveFlag_IWDGRST())
     {
 		m_reset_reason.name.watchdog = 1;
-		DEBUG_RAW("IWD, ");
+		DEBUG_RAW("IWD,");
     }
 
     if (LL_RCC_IsActiveFlag_WWDGRST())
     {
 		m_reset_reason.name.watchdog = 1;
-		DEBUG_RAW("WWDG, ");
+		DEBUG_RAW("WWDG,");
     }
 
     if (LL_RCC_IsActiveFlag_LPWRRST())

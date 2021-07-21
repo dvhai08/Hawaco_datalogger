@@ -249,7 +249,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			config->phone[15] = 0;
             if (changed)
             {
-                DEBUG_PRINTF("Phone number changed to %s\r\n", config->phone);
+                DEBUG_PRINTF("Phone changed to %s\r\n", config->phone);
             }
 #endif
         }
@@ -353,7 +353,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         if (config->k0 != k)
         {
             config->k0 = k;
-            DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
+            DEBUG_PRINTF("K0 changed to %u\r\n", k);
             has_new_cfg++; 
         }
     }
@@ -392,7 +392,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint32_t update = gsm_utilities_get_number_from_string(strlen("Update\":"), do_ota);
         if (update)
         {
-			DEBUG_PRINTF("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
+			DEBUG_VERBOSE("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
 			uint8_t version_compare;
 			version = strtok(version, "\"");
 			version_compare = version_control_compare(version);
@@ -401,15 +401,62 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 				link = strtok(link, "\"");
 				if (link && strlen(link) && strstr(link, "http"))
 				{
-                    sys_ctx()->status.delay_ota_update = 5;
-                    sys_ctx()->status.enter_ota_update = true;
-                    sprintf((char*)sys_ctx()->status.ota_url, "%s", strstr(link, "http"));
+                    ctx->status.delay_ota_update = 5;
+                    ctx->status.enter_ota_update = true;
+                    sprintf((char*)ctx->status.ota_url, "%s", strstr(link, "http"));
 				}
 			}
 			else
 			{
-				DEBUG_PRINTF("Invalid fw version\r\n");
+				DEBUG_VERBOSE("Invalid fw version\r\n");
 			}
+        }
+    }
+    
+    // Process RS485
+    // Total 2 device
+    //"ID":(id,reg,nb_of_bytes)
+    char *rs485_id = strstr(buffer, "ID\":");
+    if (rs485_id && config->io_enable.name.rs485_en)
+    {
+        rs485_id += strlen("\"ID\":");
+        char tmp[32];
+        memset(tmp, 0, sizeof(tmp));
+        gsm_utilities_copy_parameters(rs485_id, tmp, '(', ')');
+        DEBUG_INFO("RS485 config %s\r\n", tmp);
+        char *id_str;
+        char *reg_str;
+        
+        id_str = strtok(tmp, ",");
+        uint32_t slave_id = atoi(id_str);
+        rs485_id += strlen(id_str) + 1;
+        
+        reg_str = strtok(tmp, ",");
+        uint32_t reg = atoi(reg_str);
+        rs485_id += strlen(reg_str) + 1;
+        
+        uint32_t nb_bytes = atoi(rs485_id);
+        
+        if (slave_id != config->modbus_addr)
+        {
+            has_new_cfg++;
+            config->modbus_addr = slave_id;
+        }
+        
+        if (reg != config->modbus_register
+            && reg < 50000)     // modbus max register support is 50000
+        {
+            has_new_cfg++;
+            config->modbus_register = reg;
+        }
+        if (nb_bytes > 16)      // maximum 16 register
+        {
+            nb_bytes = 16;
+        }
+        if (nb_bytes != config->modbus_register_size)     // modbus max register len is 16 register * 2bytes
+        {
+            config->modbus_register_size = nb_bytes;
+            has_new_cfg++;
         }
     }
 	

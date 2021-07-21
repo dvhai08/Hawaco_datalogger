@@ -4,6 +4,7 @@
 #include "app_debug.h"
 #include <string.h>
 #include "flash_if.h"
+#include "gsm_utilities.h"
 
 #define EEPROM_STORE_DATA_ADDR	        0x08080000
 #define MEASURE_INTERVAL_S              (30*60*1000)
@@ -15,7 +16,9 @@ app_eeprom_config_data_t m_cfg;
 void app_eeprom_init(void)
 {
     app_eeprom_config_data_t *tmp = (app_eeprom_config_data_t*)EEPROM_STORE_DATA_ADDR;
-	if (tmp->valid_flag != APP_EEPROM_VALID_FLAG)
+    uint16_t crc = gsm_utilities_crc16((uint8_t*)tmp, sizeof(app_eeprom_config_data_t) - 2);        // last 2 bytes old is crc
+	if (tmp->valid_flag != APP_EEPROM_VALID_FLAG
+        || tmp->crc16 != crc)
 	{
 		memset(&m_cfg, 0, sizeof(m_cfg));
         m_cfg.k0 = 1;
@@ -29,6 +32,7 @@ void app_eeprom_init(void)
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
         sprintf((char*)&m_cfg.server_addr[0], "%s", DEFAULT_SERVER_ADDR);
+        m_cfg.crc16 = gsm_utilities_crc16((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - 2);        // last 2 bytes old is crc
         app_eeprom_save_config();
 	}
     else
@@ -55,6 +59,7 @@ void app_eeprom_save_config(void)
 {	
 	uint32_t err;
 	uint8_t *tmp = (uint8_t*)&m_cfg;
+    m_cfg.crc16 = gsm_utilities_crc16((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - 2);        // last 2 bytes old is crc
     
     flash_if_init();
     
@@ -82,7 +87,7 @@ void app_eeprom_save_config(void)
 	
     if (err == HAL_OK)
     {
-        DEBUG_INFO("Store data success\r\n");
+        DEBUG_VERBOSE("Store data success\r\n");
     }
 	HAL_FLASHEx_DATAEEPROM_Lock();
 }

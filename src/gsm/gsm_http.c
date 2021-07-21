@@ -222,7 +222,7 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
         m_total_bytes_recv += size;
         if (m_total_bytes_recv >= m_content_length)
         {
-			DEBUG_PRINTF("Closing file\r\n");
+			DEBUG_VERBOSE("Closing file\r\n");
 			sprintf(m_http_cmd_buffer, "AT+QFCLOSE=%u\r\n", m_file_handle);
 			gsm_hw_send_at_cmd(m_http_cmd_buffer, 
 								"OK\r\n",
@@ -246,7 +246,7 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
     }
 	else if (m_http_read_big_file_step == 4)
 	{
-		DEBUG_PRINTF("All data received\r\n");
+		DEBUG_VERBOSE("All data received\r\n");
 		m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_SUCCESS, &m_total_bytes_recv);
 		return;
 	}
@@ -280,7 +280,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 m_http_cfg.on_event_cb(GSM_HTTP_EVENT_START, NULL);
             }
 
-            DEBUG_PRINTF("Set PDP context as 1\r\n");
+            DEBUG_VERBOSE("Set PDP context as 1\r\n");
             if (m_renew_apn)
             {
                 gsm_hw_send_at_cmd("AT+QHTTPCFG=\"contextid\",1\r\n", 
@@ -319,7 +319,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             else
             {
                 DEBUG_HTTP_POST_INC();
-                DEBUG_PRINTF("Post total %u msg\r\n", DEBUG_HTTP_POST_GET_COUNT());
+                DEBUG_VERBOSE("Post total %u msg\r\n", DEBUG_HTTP_POST_GET_COUNT());
 #if GSM_HTTP_CUSTOM_HEADER
                 gsm_hw_send_at_cmd("AT+QHTTPCFG=\"requestheader\",1\r\n", 
                                     "OK\r\n", 

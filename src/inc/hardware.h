@@ -110,7 +110,7 @@
 #define RS485_DIR_RX()                  {   \
                                             LL_GPIO_ResetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);     \
                                         }                                        
-#define RS485_DIR_IS_TX()               LL_GPIO_IsOutputPinSet(RS485_DIR_GPIO_Port, RS485_DIR_Pin)
+#define RS485_GET_DIRECTION()               LL_GPIO_IsOutputPinSet(RS485_DIR_GPIO_Port, RS485_DIR_Pin)
 #endif
 
 #ifdef DTG02

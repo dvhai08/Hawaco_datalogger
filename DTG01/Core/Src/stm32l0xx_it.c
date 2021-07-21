@@ -161,7 +161,7 @@ void SysTick_Handler(void)
     {
         if (ota_update_timeout_ms-- == 0)
         {
-            DEBUG_PRINTF("OTA update timeout\r\n");
+            DEBUG_VERBOSE("OTA update timeout\r\n");
             NVIC_SystemReset();
         }
     }
@@ -274,7 +274,7 @@ void EXTI0_1_IRQHandler(void)
 void EXTI2_3_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI2_3_IRQn 0 */
-    DEBUG_PRINTF("EXT2-3 irq\r\n");
+    DEBUG_VERBOSE("EXT2-3 irq\r\n");
   /* USER CODE END EXTI2_3_IRQn 0 */
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
   {
@@ -311,7 +311,7 @@ void DMA1_Channel2_3_IRQHandler(void)
 	}
 	else if(LL_DMA_IsActiveFlag_TE2(DMA1))
 	{
-		DEBUG_PRINTF("USART1 TE2 error\r\n");
+		DEBUG_ERROR("USART1 TE2 error\r\n");
 		/* Call Error function */
 		usart1_tx_complete_callback(false);
 	}
@@ -333,7 +333,7 @@ void DMA1_Channel2_3_IRQHandler(void)
 	else if(LL_DMA_IsActiveFlag_TE3(DMA1))
 	{
 		/* Call Error function */
-        DEBUG_PRINTF("USART1 Error\r\n");
+        DEBUG_ERROR("USART1 Error\r\n");
 		usart1_rx_complete_callback(false);
 		// USART_TransferError_Callback();
 	}
