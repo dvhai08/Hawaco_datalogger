@@ -754,7 +754,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_SUCCESS, NULL);
             }
             m_http_step = 0;
-            return;
+            //return;
             break;
         
         default:
