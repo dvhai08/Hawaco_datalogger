@@ -6,6 +6,9 @@ SourceFiles=..\Core\Src\main.c;..\Core\Src\gpio.c;..\Core\Src\adc.c;..\Core\Src\
 HeaderPath=..\Drivers\STM32L0xx_HAL_Driver\Inc;..\Drivers\STM32L0xx_HAL_Driver\Inc\Legacy;..\Drivers\CMSIS\Device\ST\STM32L0xx\Include;..\Drivers\CMSIS\Include;..\Core\Inc;
 CDefines=USE_FULL_LL_DRIVER;USE_HAL_DRIVER;STM32L083xx;USE_FULL_LL_DRIVER;USE_HAL_DRIVER;USE_HAL_DRIVER;
 
+[]
+SourceFiles=;;
+
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=12

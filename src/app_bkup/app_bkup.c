@@ -65,7 +65,7 @@ void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint
     }
     else
     {
-        DEBUG_INFO("Write backup data success\r\n");
+        DEBUG_VERBOSE("Write backup data success\r\n");
     }
 #else
     m_counter0_f = counter0_f;

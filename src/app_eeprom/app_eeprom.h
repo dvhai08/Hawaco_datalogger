@@ -38,9 +38,10 @@ typedef union
 		uint32_t output_4_20ma_enable : 1;
 		
 		uint32_t output_4_20ma_timeout_100ms : 8;
-		uint32_t output_4_20ma_value : 5;
-		
-		uint32_t reserve : 6;
+		uint32_t output_4_20ma_value : 5;       // phan chan, vi du 4.2ma => value = 4
+		uint32_t output_4_20ma_value_extend : 4;       // phan chan, vi du 4.2ma => value = 4
+        
+		uint32_t reserve : 2;
 	} __attribute__((packed)) name;
 	uint32_t value;
 } __attribute__((packed)) app_eeprom_io_enable_t;
