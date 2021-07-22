@@ -153,6 +153,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	if (led_blink_delay > 0)
 	{
+        LED1(1);
 		led_blink_delay--;
 		if (led_blink_delay == 0)
 		{
@@ -284,7 +285,7 @@ void EXTI4_15_IRQHandler(void)
         DEBUG_VERBOSE("Wakeup\r\n");
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
         LED1(1);
-        led_blink_delay = 5;
+        led_blink_delay = 10;
 		if (gsm_data_layer_is_module_sleeping())
         {
             measure_input_measure_wakeup_to_get_data();

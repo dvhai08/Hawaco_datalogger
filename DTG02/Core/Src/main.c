@@ -56,12 +56,12 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~18s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              1
+#define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
-#define TEST_INPUT_4_20_MA                              1
+#define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 #define TEST_BACKUP_REGISTER                            0
 /* USER CODE END PTD */
@@ -152,12 +152,19 @@ int main(void)
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
-    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+//    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_POWER_EN(0);
-    LED1(1);
-    
-	DEBUG_RAW(RTT_CTRL_CLEAR);
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        LED1(1);
+        sys_delay_ms(20);
+        LED1(0);
+        sys_delay_ms(20);
+    }
+    LED1(0);
+        
+//	DEBUG_RAW(RTT_CTRL_CLEAR);
     gpio_config_input_as_wakeup_source();
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
@@ -478,7 +485,7 @@ static void info_task(void *arg)
         char *p = tmp;
         for (uint32_t i = 0; i < 4; i++)
         {
-            p += sprintf(p, "%.2f", adc->in_4_20ma_in[i]);
+            p += sprintf(p, "(%.2f),", adc->in_4_20ma_in[i]);
         }
         for (uint32_t i = 0; i < 4; i++)
         {

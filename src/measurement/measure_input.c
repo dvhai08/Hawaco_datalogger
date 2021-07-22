@@ -88,8 +88,13 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
     {
         ctx->peripheral_running.name.rs485_running = 1;
         usart_lpusart_485_control(1);
+        sys_delay_ms(50);   // ensure rs485 transmister ic power on
+        
+        // convert register to function code and offset
+        // ex : 30001 =>> function code = 04, offset = 01
         uint32_t function_code = eeprom_cfg->modbus_register / 10000;
         uint32_t register_offset = eeprom_cfg->modbus_register - function_code * 10000;
+        function_code += 1;     // 30001 =>> function code = 04 read input register
         switch (function_code)
         {
             case MODBUS_MASTER_FUNCTION_READ_COILS:
@@ -106,6 +111,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                 uint8_t result;
                 
                 modbus_master_reset(1000);
+                DEBUG_INFO("Modbus slave id %u, offset %u, size %u\r\n", eeprom_cfg->modbus_addr, register_offset, eeprom_cfg->modbus_register_size);
                 result = modbus_master_read_input_register(eeprom_cfg->modbus_addr, 
                                                             register_offset, 
                                                             eeprom_cfg->modbus_register_size);
@@ -122,7 +128,14 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                 }
                 else
                 {
-                    DEBUG_ERROR("Modbus read register failed\r\n");
+                    DEBUG_ERROR("Modbus read input register failed\r\n");
+                    register_value->slave_addr = eeprom_cfg->modbus_addr;
+                    for (uint32_t i = 0; i < eeprom_cfg->modbus_register_size; i++)
+                    {
+                        register_value->value[i] = 0;
+                        register_value->nb_of_register++;
+                        register_value->register_index = eeprom_cfg->modbus_register;
+                    }
                 }
             }
                 break;
@@ -130,7 +143,8 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
             default:
                 DEBUG_WARN("Unsupported function code %u\r\n", function_code);
                 break;
-        }        
+        }
+        RS485_POWER_EN(0);        
     }
     else if (ctx->status.is_enter_test_mode == 0)
     {
@@ -324,6 +338,7 @@ void measure_input_task(void)
         {
             // Process rs485
             process_rs485(&queue.modbus_register);
+            DEBUG_VERBOSE("Process modbus done\r\n");
             
             // ADC conversion
             adc_start();
@@ -658,7 +673,8 @@ measure_input_perpheral_data_t *measure_input_current_data(void)
 
 void modbus_master_sleep(void)
 {
-	__WFI();
+    __WFI();
+//    sys_delay_ms(1);
 }
 
 bool measure_input_sensor_data_availble(void)

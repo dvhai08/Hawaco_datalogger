@@ -154,6 +154,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	if (led_blink_delay > 0)
 	{
+        LED1(1);
 		led_blink_delay--;
 	}
     
@@ -186,7 +187,7 @@ void SysTick_Handler(void)
                     ctx->peripheral_running.name.gsm_running = 1;
                     if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_enable)
                     {
-                        DEBUG_INFO("Enable inpiut 4-20ma\r\n");
+                        DEBUG_VERBOSE("Enable input 4-20ma\r\n");
                         ENABLE_INPUT_4_20MA_POWER(1);
                         measure_input_delay_delay_measure_input_4_20ma(7000);
                     }

@@ -465,7 +465,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 1:
         {
-            DEBUG_VERBOSE("Thiet lap chon mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            DEBUG_INFO("Thiet lap chon mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 //            if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
 //              SendATCommand ("AT+QCFG=\"nwscanmode\",1\r", "OK", 1000, 10, PowerOnModuleGSM);	
 //            else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
@@ -477,14 +477,14 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 2:
         {
-            DEBUG_VERBOSE("Thiet lap che do uu tien mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            DEBUG_INFO("Thiet lap che do uu tien mang: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
             gsm_hw_send_at_cmd("AT+QCFG=\"band\",00,45\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
         }
             break;
         
         case 3:
         {
-            DEBUG_PRINTF("Unlock band: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+            DEBUG_INFO("Unlock band: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
             m_unlock_band_step = 0;
             gsm_hw_send_at_cmd("AT+CPIN?\r\n", "+CPIN: READY\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
             break;
@@ -526,28 +526,28 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 5:
-        DEBUG_VERBOSE("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",2000\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 6:
-        DEBUG_VERBOSE("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
     
     case 7:
-        DEBUG_VERBOSE("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 8:
-        DEBUG_VERBOSE("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         //gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         gsm_hw_send_at_cmd("AT\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 9:
-        DEBUG_PRINTF("AT cmd: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("AT cmd: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 //        DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
@@ -607,7 +607,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 #else
     case 14:
-        DEBUG_VERBOSE("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         m_unlock_band_step = 0;
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
         break;
@@ -628,7 +628,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 17:
-        DEBUG_VERBOSE("CSCS=GSM: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("CSCS=GSM: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGREG=2\r\n", "OK\r\n", "", 1000, 3, gsm_at_cb_power_on_gsm); /** Query CGREG? => +CGREG: <n>,<stat>[,<lac>,<ci>[,<Act>]] */
         break;
 
@@ -666,7 +666,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
                 gsm_change_hw_polling_interval(1000);
                 return;
             }
-            DEBUG_VERBOSE("Network operator: %s\r\n", gsm_get_network_operator());
+            DEBUG_INFO("Network operator: %s\r\n", gsm_get_network_operator());
         }
         gsm_change_hw_polling_interval(5);
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
@@ -792,7 +792,7 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 void gsm_hard_reset(void)
 {
     static uint8_t step = 0;
-    DEBUG_VERBOSE("GSM hard reset step %d\r\n", step);
+    DEBUG_INFO("GSM hard reset step %d\r\n", step);
 
     switch (step)
     {
@@ -975,11 +975,42 @@ SEND_SMS_FAIL:
 }
 
 
-//static LargeBuffer_t m_http_buffer;
-/* {
-	"Timestamp":"1623849775","ID":"860262050129720","PhoneNum":"000","Money":"0","Input1":"5558",
-	"Input2":"0.0","Output1":"0","Output2":"0","SignalStrength":"100","WarningLevel":"0",
-	"BatteryLevel":"77","BatteryDebug":"4086","K":"1","Offset":"5480"}
+/* DTG02
+    {
+        "Timestamp":"1626943936",
+        "ID":"DTG2-860262050127815",
+        "PhoneNum":"0",
+        "Money":"0",
+        "Inputl_J1":"0",
+        "Inputl_J2":"0",
+        "Inputl_J3_1":0.00,
+        "Inputl_J3_2":0.00,
+        "Inputl_J3_3":0.30,
+        "Inputl_J3_4":0.00,
+        "Inputl_J9_1":1,
+        "Inputl_J9_2":1,
+        "Inputl_J9_3":1,
+        "Inputl_J9_4":1,
+        "Outputl":"0",
+        "Output2":"0",
+        "Output3":"0",
+        "Output4":"0",
+        "Output4_20":"0.0",
+        "WarningLevel":"1,0,0,0,1,0,1",
+        "Vin_mv":2752,
+        "Temperature":32,
+        "RST":40,
+        "KO":1,
+        "Offset0":"0",
+        "Mode0":0,
+        "Kl":"1",
+        "Offsetl":"0",
+        "Model":"0",
+        "SIM":"452040700052216",
+        "Uptime":"18",
+        "FW":"0.0.3",
+        "HW":"0.0.1"
+    }
  */
 static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 {
@@ -1152,13 +1183,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     {
         total_length += sprintf((char *)(ptr + total_length), "\"MBA\":%u,", msg->modbus_register.slave_addr);
         total_length += sprintf((char *)(ptr + total_length), "\"MBI\":%u,", msg->modbus_register.register_index);
-        total_length += sprintf((char *)(ptr + total_length), "%s", "\"MBV\":(");
+        total_length += sprintf((char *)(ptr + total_length), "%s", "\"MBV\":\"(");
         for (uint32_t i = 0; i < msg->modbus_register.nb_of_register; i++)
         {
             total_length += sprintf((char *)(ptr + total_length), "%u,", msg->modbus_register.value[i]);
         }
         total_length -= 1;  // delete comma ','
-        total_length += sprintf((char *)(ptr + total_length), "%s", "),");
+        total_length += sprintf((char *)(ptr + total_length), "%s", ")\",");
     }
     
     // Sim imei
@@ -1203,7 +1234,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_EVENT_CONNTECTED:
         LED1(1);
-        DEBUG_VERBOSE("HTTP connected, data size %u\r\n", *((uint32_t *)data));
+        DEBUG_INFO("HTTP connected, data size %u\r\n", *((uint32_t *)data));
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)
         {
@@ -1214,6 +1245,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_GET_EVENT_DATA:
     {
         LED1(1);
+        sys_delay_ms(4);
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
         if (!ctx->status.enter_ota_update)
         {

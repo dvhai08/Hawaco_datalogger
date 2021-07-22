@@ -28,6 +28,7 @@
 
 #define DEBUG_USART1_DMA        0
 #define UART1_RX_BUFFER_SIZE    512
+#define USE_DMA_TX       0
 
 #ifdef DTG01
 #define UART1_TX_BUFFER_SIZE    (512)
@@ -35,14 +36,18 @@
 #define UART1_TX_BUFFER_SIZE    (512+128)
 #endif
 
+
+#if USE_DMA_TX
 static lwrb_t m_ringbuffer_usart1_tx = 		// for GSM
 {
     .buff = NULL,
 };
 static uint8_t m_usart1_tx_buffer[UART1_TX_BUFFER_SIZE];
+static volatile bool m_usart1_tx_run = false;
+#endif
+
 static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
 uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
-static volatile bool m_usart1_tx_run = false;
 volatile uint32_t m_last_usart1_transfer_size = 0;
 static bool m_usart1_is_enabled = true;
 static bool m_lpusart_rs485_is_enabled = true;
@@ -213,6 +218,7 @@ void MX_USART1_UART_Init(void)
 }
 
 /* USER CODE BEGIN 1 */
+#if USE_DMA_TX
 static inline void config_dma_tx(uint8_t *data, uint32_t len)
 {
     LL_DMA_DisableChannel(DMA1, LL_DMA_CHANNEL_2);
@@ -229,6 +235,7 @@ static inline void config_dma_tx(uint8_t *data, uint32_t len)
     LL_USART_EnableDMAReq_TX(USART1);
     LL_DMA_EnableChannel(DMA1, LL_DMA_CHANNEL_2);
 }
+#endif
 
 void usart1_control(bool enable)
 {	
@@ -242,10 +249,12 @@ void usart1_control(bool enable)
 	
 	if (!m_usart1_is_enabled)
 	{
+#if USE_DMA_TX
 		while (m_usart1_tx_run)
 		{
 			__WFI();
 		}
+#endif
 		LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 		GPIO_InitStruct.Pin = GSM_TX_Pin;
@@ -290,6 +299,7 @@ void usart1_control(bool enable)
 		MX_USART1_UART_Init();
 	}
 }
+#if USE_DMA_TX
 static inline void usart1_hw_transmit_dma(void)
 {
     if (lwrb_get_full(&m_ringbuffer_usart1_tx) == 0)	// No more data
@@ -323,16 +333,20 @@ static inline void usart1_hw_transmit_dma(void)
         NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
     }
 }
+#endif
 
 void usart1_tx_complete_callback(bool status)
 {
+#if USE_DMA_TX
     m_usart1_tx_run = false;
     lwrb_skip(&m_ringbuffer_usart1_tx, m_last_usart1_transfer_size);
     usart1_hw_transmit_dma();
+#endif
 }
 
 void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 {
+#if USE_DMA_TX
 	if (m_ringbuffer_usart1_tx.buff == NULL)
     {
         lwrb_init(&m_ringbuffer_usart1_tx, m_usart1_tx_buffer, sizeof(m_usart1_tx_buffer));
@@ -367,6 +381,13 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
         DEBUG_INFO("Transmit tx\r\n");
     }
     usart1_hw_transmit_dma();
+#else
+    for (uint32_t i = 0; i < length; i++)
+    {
+		LL_USART_TransmitData8(USART1, raw[i]);
+        while (0 == LL_USART_IsActiveFlag_TXE(USART1));
+    }
+#endif
 }
 
 static volatile bool m_uart_rx_ongoing = false;

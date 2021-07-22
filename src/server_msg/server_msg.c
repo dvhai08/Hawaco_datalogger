@@ -421,16 +421,17 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint32_t slave_id = atoi(id_str);
         rs485_id += strlen(id_str) + 1;
         
-        reg_str = strtok(tmp, ",");
+        reg_str = strtok(rs485_id, ",");
         uint32_t reg = atoi(reg_str);
-        rs485_id += strlen(reg_str) + 1;
+        rs485_id += strlen(reg_str) + 1 + 1;
         
-        uint32_t nb_bytes = atoi(rs485_id);
+        uint32_t nb_register = atoi(rs485_id);
         
         if (slave_id != config->modbus_addr)
         {
             has_new_cfg++;
             config->modbus_addr = slave_id;
+            DEBUG_INFO("Modbus slave addr %u\r\n", slave_id);
         }
         
         if (reg != config->modbus_register
@@ -438,14 +439,16 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             has_new_cfg++;
             config->modbus_register = reg;
+            DEBUG_INFO("Modbus register addr %u\r\n", reg);
         }
-        if (nb_bytes > 16)      // maximum 16 register
+        if (nb_register > 16)      // maximum 16 register
         {
-            nb_bytes = 16;
+            nb_register = 16;
         }
-        if (nb_bytes != config->modbus_register_size)     // modbus max register len is 16 register * 2bytes
+        if (nb_register != config->modbus_register_size)     // modbus max register len is 16 register * 2bytes
         {
-            config->modbus_register_size = nb_bytes;
+            DEBUG_INFO("Modbus nb of register %u\r\n", nb_register);
+            config->modbus_register_size = nb_register;
             has_new_cfg++;
         }
     }
@@ -453,6 +456,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     //Luu config moi
     if (has_new_cfg)
     {
+        DEBUG_INFO("Save eeprom config\r\n");
  		app_eeprom_save_config();
     }
     else
