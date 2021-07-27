@@ -1148,12 +1148,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     
     // Warning level
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
-    
-#ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat_mv\":%u,", msg->vbat_mv);
+#ifdef DTG01    // Battery
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
-    total_length += sprintf((char *)(ptr + total_length), "\"Vin_mv\":%u,", msg->vin_mv);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%u.%u,", msg->vin_mv/1000, msg->vin_mv%1000);
 #endif    
     // Temperature
     if (!measure_input->temperature_error)
