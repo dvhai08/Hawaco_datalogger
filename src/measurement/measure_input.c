@@ -301,6 +301,8 @@ void measure_input_task(void)
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 	
 	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);    
+#else
+    TRANS_OUTPUT(eeprom_cfg->io_enable.name.output0);
 #endif	
     m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
     

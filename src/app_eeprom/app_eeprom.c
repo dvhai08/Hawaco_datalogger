@@ -21,6 +21,12 @@ void app_eeprom_init(void)
         || tmp->crc16 != crc)
 	{
 		memset(&m_cfg, 0, sizeof(m_cfg));
+        // for low power application, set transoutput to 1
+        m_cfg.io_enable.name.output0 = 1;
+        m_cfg.io_enable.name.output1 = 1;
+        m_cfg.io_enable.name.output2 = 1;
+        m_cfg.io_enable.name.output3 = 1;
+        
         m_cfg.k0 = 1;
         m_cfg.k1 = 1;
         m_cfg.measure_interval_ms = MEASURE_INTERVAL_S;

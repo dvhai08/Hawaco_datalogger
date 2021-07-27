@@ -49,7 +49,12 @@
 										LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
                                 }	
 #endif
-								
+				
+#define TRANS_OUTPUT(x)      	{	if (x) \
+										LL_GPIO_ResetOutputPin(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin);	\
+									else	\
+										LL_GPIO_SetOutputPin(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin);	\
+								}	                                
 							
 #define TRANS_1_OUTPUT(x)      	{	if (x) \
 										LL_GPIO_ResetOutputPin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\

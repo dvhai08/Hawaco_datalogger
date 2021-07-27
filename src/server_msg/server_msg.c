@@ -41,7 +41,6 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             has_new_cfg++;
         }
     }
-#ifdef DTG02
     char *output1 = strstr(buffer, "Output1\":");
     if (output1 != NULL)
     {
@@ -53,7 +52,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             DEBUG_PRINTF("4-20MA output1 1 changed\r\n");
         }
     }
-
+#ifdef DTG02
     char *output2 = strstr(buffer, "Output2\":");
     if (output2 != NULL)
     {
