@@ -429,10 +429,11 @@ void adc_stop(void)
     LL_APB2_GRP1_DisableClock(LL_APB2_GRP1_PERIPH_ADC1);
 }
 
+// Voi DTG02, ta su dung vbat la v_acqui
 static uint8_t convert_vin_to_percent(uint32_t vin)
 {
-#define VIN_MAX 4200
-#define VIN_MIN 3700
+#define VIN_MAX 13800
+#define VIN_MIN 10000
 
     if (vin >= VIN_MAX)
         return 100;
@@ -520,10 +521,10 @@ void adc_convert(void)
     
 	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
-	m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.bat_mv);
+    
     /* ADC Vin 24V */
 	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
-    
+    m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin_24);
     /* Get 4-20mA input channel to mv */
     
     // Channel 0
