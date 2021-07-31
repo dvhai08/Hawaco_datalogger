@@ -479,7 +479,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     //Caculate NTC resistor : Vntc = Vin*Rs/(Rs + Rntc) -> Rntc = Rs(Vin/Vntc - 1)
     r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
-    DEBUG_PRINTF("Resistant NTC = %d\r\n", (int)r_ntc);
+    DEBUG_VERBOSE("Resistant NTC = %d\r\n", (int)r_ntc);
 
 
     if (r_ntc <= 0)

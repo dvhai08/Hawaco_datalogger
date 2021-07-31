@@ -37,7 +37,7 @@ typedef union
 		uint32_t input_4_20ma_enable : 1;
 		uint32_t output_4_20ma_enable : 1;
 		
-		uint32_t output_4_20ma_timeout_100ms : 8;        
+		uint32_t output_4_20ma_timeout_100ms : 8;   
 		uint32_t reserve : 11;
 	} __attribute__((packed)) name;
 	uint32_t value;

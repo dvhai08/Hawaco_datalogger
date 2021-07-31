@@ -97,11 +97,25 @@ void gsm_wakeup_periodically(void)
     {
         estimate_wakeup_time = (send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s);
     }
-    
+#ifdef DTG01    
     DEBUG_INFO("Periodic send msg %us, remaining %us\r\n",
                  send_interval,
                  estimate_wakeup_time - current_sec);
-    
+#else
+    rtc_date_time_t time;
+    if (app_rtc_get_time(&time))
+    {
+        DEBUG_INFO("[%02u:%02u:%02u] Send to server after %us\r\n",
+                    time.hour,
+                    time.minute,
+                    time.second,
+                    estimate_wakeup_time - current_sec);
+    }
+    else
+    {
+        DEBUG_WARN("Cannot get date time\r\n");
+    }
+#endif    
 
     
     DEBUG_VERBOSE("Current sec %us\r\n", current_sec);
@@ -430,7 +444,7 @@ void gsm_change_state(gsm_state_t new_state)
             send_interval = 1;
         }
         estimate_wakeup_time = send_interval*(current_sec/send_interval + 1) + cfg->send_to_server_delay_s;
-        DEBUG_INFO("Estimate next wakeup time %us\r\n", estimate_wakeup_time);
+        DEBUG_VERBOSE("Estimate next wakeup time %us\r\n", estimate_wakeup_time);
     }
         break;
     case GSM_STATE_HTTP_GET:
