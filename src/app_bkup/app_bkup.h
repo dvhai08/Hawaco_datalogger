@@ -22,10 +22,20 @@ void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint
  * @brief       	Read pulse counter from RTC memory region
  * @param[out]		counter0_f Current counter forward direction data of water meter port 0
  * @param[out]		counter1_f Current counter forward direction data of water meter port 1
-  * @param[out]		counter0_r Current counter reserve direction data of water meter port 0
+ * @param[out]		counter0_r Current counter reserve direction data of water meter port 0
  * @param[out]		counter1_r Current counter reserve direction data of water meter port 1
  */
 void app_bkup_read_pulse_counter(uint32_t *counter0_f, uint32_t *counter1_f, uint32_t *counter0_r, uint32_t *counter1_r);
 
+/**
+ * @brief       	Read number of wakeup time
+ */
+uint32_t app_bkup_read_nb_of_wakeup_time(void);
+
+/**
+ * @brief       	Write number of wakeup time
+ * @param[in]			Number of wakeup time
+ */
+void app_bkup_write_nb_of_wakeup_time(uint32_t wake_time);
 
 #endif /* APP_BKUP_H */

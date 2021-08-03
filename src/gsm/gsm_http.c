@@ -548,7 +548,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         case 9: // Start HTTP download
         {
             
-            DEBUG_PRINTF("HTTP setting url : %s, response %s\r\n", 
+            DEBUG_PRINTF("\r\nHTTP setting url : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
             if (m_http_cfg.action == GSM_HTTP_ACTION_GET)       // GET

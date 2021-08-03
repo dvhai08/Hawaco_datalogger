@@ -71,6 +71,7 @@ static uint32_t m_malloc_count = 0;
 
 static char *m_last_http_msg = NULL;
 static app_spi_flash_data_t *m_retransmision_data_in_flash;
+uint32_t m_wake_time = 0;
 
 #if GSM_READ_SMS_ENABLE
 bool m_do_read_sms = false;
@@ -105,7 +106,7 @@ void gsm_wakeup_periodically(void)
     rtc_date_time_t time;
     if (app_rtc_get_time(&time))
     {
-        DEBUG_INFO("[%02u:%02u:%02u] Send to server after %us\r\n",
+        DEBUG_VERBOSE("[%02u:%02u:%02u] Send to server after %us\r\n",
                     time.hour,
                     time.minute,
                     time.second,
@@ -411,6 +412,9 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_POWER_ON:
         DEBUG_RAW("POWERON\r\n");
         gsm_hw_layer_reset_rx_buffer();
+		m_wake_time = app_bkup_read_nb_of_wakeup_time();
+		m_wake_time++;
+		app_bkup_write_nb_of_wakeup_time(m_wake_time);
         break;
     case GSM_STATE_REOPEN_PPP:
         DEBUG_VERBOSE("REOPENPPP\r\n");
@@ -1209,7 +1213,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":\"%s\",", gsm_get_sim_imei());
     
     // Uptime
-    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":\"%u\",", sys_get_ms()/1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":\"%u\",", m_wake_time);
     
     // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);

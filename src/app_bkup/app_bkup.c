@@ -41,7 +41,8 @@ void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint
 //    LL_RTC_DisableWriteProtection(RTC);
 //    HAL_PWR_EnableBkUpAccess();
 //    LL_RTC_DisableWriteProtection(RTC);
-    HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, RTC_BACKUP_VALID_DATA);
+	uint32_t backup_data = RTC_BACKUP_VALID_DATA & 0x0000FFFF;
+    HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, backup_data);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter0_f);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter1_f);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter0_r);
@@ -80,7 +81,8 @@ void app_bkup_read_pulse_counter(uint32_t *counter0_f, uint32_t *counter1_f, uin
 #if USE_RTC_BACKUP
 //    LL_PWR_EnableBkUpAccess();
 //    LL_RTC_DisableWriteProtection(RTC);
-    if (RTC_BACKUP_VALID_DATA == HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0))
+	uint32_t backup = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0) & 0x0000FFFF;
+    if ((RTC_BACKUP_VALID_DATA & 0x0000FFFF) == backup)
 	{
         *counter0_f = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR1);
 		*counter1_f = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
@@ -93,7 +95,9 @@ void app_bkup_read_pulse_counter(uint32_t *counter0_f, uint32_t *counter1_f, uin
 		*counter1_f = 0;
 		*counter0_r = 0;
 		*counter1_r = 0;
-        DEBUG_WARN("No data in backup\r\n");
+        backup = 0;
+		HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, 0);
+		DEBUG_WARN("No data in backup\r\n");
 	}
 //    LL_RTC_EnableWriteProtection(RTC);
 //    LL_PWR_DisableBkUpAccess();
@@ -104,3 +108,25 @@ void app_bkup_read_pulse_counter(uint32_t *counter0_f, uint32_t *counter1_f, uin
     *counter1_r = m_counter1_r;
 #endif
 }
+
+
+uint32_t app_bkup_read_nb_of_wakeup_time(void)
+{
+	uint32_t backup = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0) & 0x0000FFFF;
+	if ((RTC_BACKUP_VALID_DATA & 0x0000FFFF) == backup)
+	{
+		return backup >> 16;
+	}
+	else
+	{
+        return 0;
+	}
+}
+
+void app_bkup_write_nb_of_wakeup_time(uint32_t wake_time)
+{
+	uint32_t backup_data = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0) & 0x0000FFFF;
+	backup_data |= (wake_time << 16);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, backup_data);
+}
+
