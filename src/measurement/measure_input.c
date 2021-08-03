@@ -40,10 +40,16 @@
 #define PULSE_STATE_WAIT_FOR_FALLING_EDGE       0
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
-#define PULSE_MINMUM_WITDH_MS                   30
 #define ADC_OFFSET_MA                           0      // 0.6mA, mul by 10
 #define DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT     7000
 #define CHECK_BOTH_INPUT_EDGE					0
+
+#if CHECK_BOTH_INPUT_EDGE
+#define PULSE_MINMUM_WITDH_MS                   30
+#else
+#define PULSE_MINMUM_WITDH_MS                   100
+#endif
+
 typedef struct
 {
     uint32_t forward;
@@ -442,6 +448,7 @@ void measure_input_task(void)
 
 void measure_input_initialize(void)
 {	
+#if DTG02
 	if (LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin))
 	{
 		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
@@ -459,8 +466,7 @@ void measure_input_initialize(void)
 	{
 		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
 	}
-	
-#ifdef DTG02
+
 	if (LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin))
 	{
 		m_pull_state[1].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
@@ -477,6 +483,24 @@ void measure_input_initialize(void)
 	else
 	{
 		m_pull_state[1].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
+	}
+#else
+	if (LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin))
+	{
+		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+	}
+	else
+	{
+		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
+	}
+	
+	if (LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin))
+	{
+		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+	}
+	else
+	{
+		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
 	}
 #endif	
 	
@@ -630,6 +654,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 				m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
 													&m_end_pulse_timestamp[input->port],
 													MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN);
+#if CHECK_BOTH_INPUT_EDGE == 0
+				m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
+				m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
+#endif
 				if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
 				{
 					m_is_pulse_trigger = 1;
@@ -712,6 +740,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                                                     &m_end_pulse_timestamp[input->port],
                                                     MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN);
                 
+#if CHECK_BOTH_INPUT_EDGE == 0
+				m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
+				m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
+#endif
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
                     DEBUG_VERBOSE("[DIR] +++++++ in %ums\r\n", m_pull_diff[input->port]);

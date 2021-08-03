@@ -41,8 +41,11 @@ void app_bkup_write_pulse_counter(uint32_t counter0_f, uint32_t counter1_f, uint
 //    LL_RTC_DisableWriteProtection(RTC);
 //    HAL_PWR_EnableBkUpAccess();
 //    LL_RTC_DisableWriteProtection(RTC);
+	uint32_t val = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0) & 0xFFFF0000;
 	uint32_t backup_data = RTC_BACKUP_VALID_DATA & 0x0000FFFF;
-    HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, backup_data);
+	val |= backup_data;
+	
+    HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, val);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter0_f);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter1_f);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter0_r);
@@ -112,10 +115,11 @@ void app_bkup_read_pulse_counter(uint32_t *counter0_f, uint32_t *counter1_f, uin
 
 uint32_t app_bkup_read_nb_of_wakeup_time(void)
 {
-	uint32_t backup = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0) & 0x0000FFFF;
+	uint32_t val = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR0);
+	uint32_t backup = val & 0x0000FFFF;
 	if ((RTC_BACKUP_VALID_DATA & 0x0000FFFF) == backup)
 	{
-		return backup >> 16;
+		return val >> 16;
 	}
 	else
 	{

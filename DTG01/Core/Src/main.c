@@ -56,7 +56,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000     // ( ~18s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
@@ -156,7 +156,7 @@ int main(void)
     __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_POWER_EN(0);
-	DEBUG_RAW(RTT_CTRL_CLEAR);
+//	DEBUG_RAW(RTT_CTRL_CLEAR);
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
