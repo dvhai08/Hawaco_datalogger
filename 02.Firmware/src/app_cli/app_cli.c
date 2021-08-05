@@ -59,7 +59,7 @@ static const shell_command_context_t cli_command_table[] =
     {"factory",         "\tfactory : Factory reset\r\n",                        cli_factory_reset,                          0},
 //    {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
     {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
-    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
+//    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
     {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},

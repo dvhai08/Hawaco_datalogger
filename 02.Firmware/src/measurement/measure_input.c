@@ -50,11 +50,8 @@
 #define PULSE_MINMUM_WITDH_MS                   100
 #endif
 
-typedef struct
-{
-    uint32_t forward;
-    uint32_t reserve;
-} backup_pulse_data_t;
+
+typedef measure_input_counter_t backup_pulse_data_t;
 
 typedef struct
 {
@@ -76,12 +73,12 @@ measure_input_timestamp_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_
 measure_input_pull_state_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 
-static measure_input_water_meter_input_t m_water_meter_input[2];
+static measure_input_water_meter_input_t m_water_meter_input[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 static bool m_this_is_the_first_time = true;
-measurement_msg_queue_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
+measure_input_perpheral_data_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
 
 static void process_rs485(measure_input_modbus_register_t *register_value)
@@ -89,7 +86,6 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
     app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
     sys_ctx_t *ctx = sys_ctx();
     bool do_stop = true;
-    register_value->nb_of_register = 0;
     
     if (eeprom_cfg->io_enable.name.rs485_en)
     {
@@ -97,60 +93,74 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
         usart_lpusart_485_control(1);
         sys_delay_ms(50);   // ensure rs485 transmister ic power on
         
-        // convert register to function code and offset
-        // ex : 30001 =>> function code = 04, offset = 01
-        uint32_t function_code = eeprom_cfg->modbus_register / 10000;
-        uint32_t register_offset = eeprom_cfg->modbus_register - function_code * 10000;
-        function_code += 1;     // 30001 =>> function code = 04 read input register
-        switch (function_code)
-        {
-            case MODBUS_MASTER_FUNCTION_READ_COILS:
-                break;
-            
-            case MODBUS_MASTER_FUNCTION_READ_DISCRETE_INPUT:
-                break;
+		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+		{
+			if (eeprom_cfg->rs485[i].nb_of_register == 0)
+			{
+				continue;
+			}
+			// convert register to function code and offset
+			// ex : 30001 =>> function code = 04, offset = 01
+			uint32_t function_code = eeprom_cfg->rs485[i].register_index / 10000;
+			uint32_t register_offset = eeprom_cfg->rs485[i].register_index - function_code * 10000;
+			function_code += 1;     // 30001 =>> function code = 04 read input register
+			uint32_t slave_addr = eeprom_cfg->rs485[i].slave_addr;
+			switch (function_code)
+			{
+				case MODBUS_MASTER_FUNCTION_READ_COILS:
+					break;
+				
+				case MODBUS_MASTER_FUNCTION_READ_DISCRETE_INPUT:
+					break;
 
-            case MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER:
-                break;
-            
-            case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
-            {
-                uint8_t result;
-                
-                modbus_master_reset(1000);
-                DEBUG_INFO("Modbus slave id %u, offset %u, size %u\r\n", eeprom_cfg->modbus_addr, register_offset, eeprom_cfg->modbus_register_size);
-                result = modbus_master_read_input_register(eeprom_cfg->modbus_addr, 
-                                                            register_offset, 
-                                                            eeprom_cfg->modbus_register_size);
-                if (result == MODBUS_MASTER_OK)
-                {
-                    register_value->slave_addr = eeprom_cfg->modbus_addr;
-                    for (uint32_t i = 0; i < eeprom_cfg->modbus_register_size; i++)
-                    {
-                        register_value->value[i] = modbus_master_get_response_buffer(i);
-                        register_value->nb_of_register++;
-                        register_value->register_index = eeprom_cfg->modbus_register;
-                    }
-                    DEBUG_INFO("Read modbus success\r\n");
-                }
-                else
-                {
-                    DEBUG_ERROR("Modbus read input register failed\r\n");
-                    register_value->slave_addr = eeprom_cfg->modbus_addr;
-                    for (uint32_t i = 0; i < eeprom_cfg->modbus_register_size; i++)
-                    {
-                        register_value->value[i] = 0;
-                        register_value->nb_of_register++;
-                        register_value->register_index = eeprom_cfg->modbus_register;
-                    }
-                }
-            }
-                break;
-            
-            default:
-                DEBUG_WARN("Unsupported function code %u\r\n", function_code);
-                break;
-        }
+				case MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER:
+					break;
+				
+				case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
+				{
+					uint8_t result;
+					
+					modbus_master_reset(1000);
+					uint32_t halfword_quality = 1;
+					if (eeprom_cfg->rs485[i].data_type == RS485_DATA_TYPE_FLOAT
+						|| eeprom_cfg->rs485[i].data_type == RS485_DATA_TYPE_FLOAT)
+					{
+						halfword_quality = 2;
+					}
+					
+					DEBUG_INFO("Modbus slave id %u, offset %u, size %u\r\n", slave_addr, register_offset, eeprom_cfg->rs485[i].nb_of_register);
+					result = modbus_master_read_input_register(slave_addr, 
+																register_offset, 
+																eeprom_cfg->rs485[i].nb_of_register*halfword_quality);
+					register_value[i].slave_addr = slave_addr;
+					if (result != MODBUS_MASTER_OK)
+					{
+						DEBUG_ERROR("Modbus read input register failed\r\n");
+						register_value[i].nb_of_register = -1;
+						modbus_master_clear_response_buffer();
+					}
+					else
+					{
+						DEBUG_INFO("Read modbus success\r\n");
+						register_value[i].nb_of_register = eeprom_cfg->rs485[i].nb_of_register;
+						for (uint32_t j = 0; j < eeprom_cfg->rs485[i].nb_of_register; j++)
+						{
+							register_value[j].value[j] = modbus_master_get_response_buffer(halfword_quality*j) << 16;
+							if (halfword_quality == 2)
+							{	
+								register_value[j].value[j] |= modbus_master_get_response_buffer(halfword_quality*j+1);
+							}
+						}
+						register_value[i].register_index = eeprom_cfg->rs485[i].register_index;
+					}
+				}
+					break;
+				
+				default:
+					DEBUG_WARN("Unsupported function code %u\r\n", function_code);
+					break;
+			}
+		}
         RS485_POWER_EN(0);        
     }
     else if (ctx->status.is_enter_test_mode == 0)
@@ -173,41 +183,28 @@ static void measure_input_pulse_counter_poll(void)
 		uint8_t total_length = 0;
 		uint32_t temp_counter;
 		app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-				// Build input pulse counter
-		temp_counter = m_pulse_counter_in_backup[0].forward / cfg->k0 + cfg->offset0;
-		total_length += sprintf((char *)(ptr + total_length), "(%u-",
-								  temp_counter);
 		
-		temp_counter = m_pulse_counter_in_backup[0].reserve / cfg->k0 + cfg->offset0;
-		total_length += sprintf((char *)(ptr + total_length), "%u),",
-									temp_counter);
+		// Build debug counter message
+		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+		{
+			temp_counter = m_pulse_counter_in_backup[i].forward / cfg->k[i] + cfg->offset[i];
+			total_length += sprintf((char *)(ptr + total_length), "(%u-",
+									  temp_counter);
+			
+			temp_counter = m_pulse_counter_in_backup[0].reserve / cfg->k[i] + cfg->offset[i];
+			total_length += sprintf((char *)(ptr + total_length), "%u),",
+										temp_counter);
+		}
 	
+        app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
 #ifdef DTG01
         //Store to BKP register
-        app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
-									0,
-                                    m_pulse_counter_in_backup[0].reserve,
-									0);
+
 		
 		DEBUG_INFO("Counter (%u-%u), real value %s\r\n", 
 				m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
 				ptr);
 #else
-        //Store to BKP register
-	app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
-								m_pulse_counter_in_backup[1].forward,
-								m_pulse_counter_in_backup[0].reserve,
-								m_pulse_counter_in_backup[1].reserve);
-		
-    temp_counter = m_pulse_counter_in_backup[1].forward / cfg->k1 + cfg->offset1;
-    total_length += sprintf((char *)(ptr + total_length), "(%u-",
-                              temp_counter); //so xung
-	
-
-	
-    temp_counter = m_pulse_counter_in_backup[1].reserve / cfg->k1 + cfg->offset1;
-	total_length += sprintf((char *)(ptr + total_length), "%u)",
-								temp_counter);
 								
 	DEBUG_INFO("Counter (%u-%u), (%u-%u), real value %s\r\n", 
 				m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
@@ -242,32 +239,27 @@ void measure_input_reset_counter(uint8_t index)
         m_pulse_counter_in_backup[1].forward = 0;
     }
 #endif
-    app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward,
-                                m_pulse_counter_in_backup[1].forward,
-                                m_pulse_counter_in_backup[0].reserve,
-                                m_pulse_counter_in_backup[1].forward);
+    app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
 }
 
 void measure_input_save_all_data_to_flash(void)
 {
     app_spi_flash_data_t wr_data;
     sys_ctx_t *ctx = sys_ctx();
-    wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
     wr_data.resend_to_server_flag = 0;
 
     for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
     {
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20ma[i];
+            wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20mA[i];
         }
-        wr_data.meter_input[0].pwm_f = m_sensor_msq[j].counter0_f;
-        wr_data.meter_input[0].dir_r = m_sensor_msq[j].counter0_r;
-        
-#ifdef DTG02
-        wr_data.meter_input[1].pwm_f = m_sensor_msq[j].counter1_f;
-        wr_data.meter_input[1].dir_r = m_sensor_msq[j].counter1_r;
-#endif        
+		
+		for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
+		{
+			memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
+		}			
+		
         wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
@@ -342,7 +334,7 @@ void measure_input_task(void)
     m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
     
     m_measure_data.vbat_percent = input_adc->bat_percent;
-    m_measure_data.vbat_raw = input_adc->bat_mv;
+    m_measure_data.vbat_mv = input_adc->bat_mv;
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
         m_measure_data.input_4_20mA[i] = input_adc->in_4_20ma_in[i];
@@ -370,11 +362,11 @@ void measure_input_task(void)
                 ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 1;
             }
         }
-        measurement_msg_queue_t queue;
+
         if (measure_input_turn_on_in_4_20ma_power == 0)
         {
             // Process rs485
-            process_rs485(&queue.modbus_register);
+            process_rs485(&m_measure_data.rs485[0]);
             DEBUG_VERBOSE("Process modbus done\r\n");
             
             // ADC conversion
@@ -398,27 +390,27 @@ void measure_input_task(void)
             
             if (ctx->status.is_enter_test_mode == 0)
             {                
-                queue.measure_timestamp = app_rtc_get_counter();
-                queue.vbat_mv = adc_retval->bat_mv;
-                queue.vbat_percent = adc_retval->bat_percent;
+                m_measure_data.measure_timestamp = app_rtc_get_counter();
+                m_measure_data.vbat_mv = adc_retval->bat_mv;
+                m_measure_data.vbat_percent = adc_retval->bat_percent;
 #ifdef DTG02                
-                queue.vin_mv = adc_retval->vin_24;
+                m_measure_data.vin_mv = adc_retval->vin_24;
 #endif
-                app_bkup_read_pulse_counter(&queue.counter0_f, 
-                       &queue.counter1_f,
-                       &queue.counter0_r,
-                       &queue.counter1_r);
+                app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
 
-                queue.csq_percent = gsm_get_csq_in_percent();
+                m_measure_data.csq_percent = gsm_get_csq_in_percent();
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
-                    queue.input_4_20ma[i] = adc_retval->in_4_20ma_in[i]/10;
+                    m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i]/10;
                 }
                 
-                DEBUG_INFO("PWM0 %u, PWM1 %u\r\n", queue.counter0_f, queue.counter1_f);
-                queue.temperature = adc_retval->temp;
+                DEBUG_INFO("PWM0 %u\r\n", m_measure_data.counter[0].forward);
+#ifdef DTG02                
+                DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
+#endif
+                m_measure_data.temperature = adc_retval->temp;
 
-                queue.state = MEASUREMENT_QUEUE_STATE_PENDING;
+                m_measure_data.state = MEASUREMENT_QUEUE_STATE_PENDING;
 
                 // Scan for empty buffer
                 bool queue_full = true;
@@ -426,7 +418,7 @@ void measure_input_task(void)
                 {
                     if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
                     {
-                        memcpy(&m_sensor_msq[i], &queue, sizeof(measurement_msg_queue_t));
+                        memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
                         queue_full = false;
                         DEBUG_INFO("Puts new msg to sensor queue\r\n");
                         break;
@@ -510,10 +502,7 @@ void measure_input_initialize(void)
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
     */
     
-	app_bkup_read_pulse_counter(&m_pulse_counter_in_backup[0].forward, 
-                                &m_pulse_counter_in_backup[1].reserve, 
-                                &m_pulse_counter_in_backup[0].forward, 
-                                &m_pulse_counter_in_backup[1].reserve);
+	app_bkup_read_pulse_counter(&m_pulse_counter_in_backup[0]);
     
     for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
     {
@@ -524,38 +513,38 @@ void measure_input_initialize(void)
     if (app_spi_flash_get_lastest_data(&last_data))
     {
         bool save = false;
-        if (last_data.meter_input[0].pwm_f > m_pulse_counter_in_backup[0].forward)
+        if (last_data.meter_input[0].forward > m_pulse_counter_in_backup[0].forward)
         {
-            m_pulse_counter_in_backup[0].forward = last_data.meter_input[0].pwm_f;
+            m_pulse_counter_in_backup[0].forward = last_data.meter_input[0].forward;
             save = true;
         }
         
-        if (last_data.meter_input[0].dir_r > m_pulse_counter_in_backup[0].reserve)
+        if (last_data.meter_input[0].reserve > m_pulse_counter_in_backup[0].reserve)
         {
-            m_pulse_counter_in_backup[0].reserve = last_data.meter_input[0].dir_r;
+            m_pulse_counter_in_backup[0].reserve = last_data.meter_input[0].reserve;
             save = true;
         }
 #ifdef DTG02
-        if (last_data.meter_input[1].pwm_f > m_pulse_counter_in_backup[1].forward)
+        if (last_data.meter_input[1].forward > m_pulse_counter_in_backup[1].forward)
         {
-            m_pulse_counter_in_backup[1].forward = last_data.meter_input[1].pwm_f;
+            m_pulse_counter_in_backup[1].forward = last_data.meter_input[1].forward;
             save = true; 
         }
         
-        if (last_data.meter_input[1].dir_r > m_pulse_counter_in_backup[1].reserve)
+        if (last_data.meter_input[1].reserve > m_pulse_counter_in_backup[1].reserve)
         {
-            m_pulse_counter_in_backup[1].reserve = last_data.meter_input[1].dir_r;
+            m_pulse_counter_in_backup[1].reserve = last_data.meter_input[1].reserve;
             save = true;    
         }
         
         if (save)
         {
             DEBUG_WARN("Save new data from flash\r\n");
-            app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
-                                        m_pulse_counter_in_backup[1].forward, 
-                                        m_pulse_counter_in_backup[0].reserve, 
-                                        m_pulse_counter_in_backup[1].reserve);
+            app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
+		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
+                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve, 
+                    m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
 #else
         
         if (save)
@@ -565,11 +554,10 @@ void measure_input_initialize(void)
                                         0, 
                                         0);
         }
+		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
+                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
 #endif
     }
-    DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
-                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve, 
-                    m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
     m_this_is_the_first_time = true;
 }
 
@@ -818,9 +806,9 @@ bool measure_input_sensor_data_availble(void)
     return retval;
 }
 
-measurement_msg_queue_t *measure_input_get_data_in_queue(void)
+measure_input_perpheral_data_t *measure_input_get_data_in_queue(void)
 {
-    measurement_msg_queue_t *ptr = NULL;
+    measure_input_perpheral_data_t *ptr = NULL;
     
     for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
     {

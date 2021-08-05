@@ -1,6 +1,6 @@
 #include <string.h>
 #include "utilities.h"
-
+#include "crc.h"
 
 void utilities_to_upper_case(char *buffer)
 {
@@ -49,4 +49,9 @@ uint16_t utilities_calculate_crc16(uint8_t *data_in, uint32_t size)
     }
 
     return ((~res_crc) & 0xFFFF);
+}
+
+uint32_t utilities_calculate_crc32(uint8_t *data, uint32_t length)
+{
+	return crc32_calculate(data, length);
 }

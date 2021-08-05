@@ -27,4 +27,12 @@ uint16_t utilities_calculate_crc16(uint8_t *data, uint32_t length);
  */
 void utilities_to_upper_case(char* str);
 
+/**
+ * @brief           Calculate CRC32 of data
+ * @param[in]       data Data
+ * @param[in]       length Data length
+ * @retval          CRC32 of buffer
+ */
+uint32_t utilities_calculate_crc32(uint8_t *data, uint32_t length);
+
 #endif // __UTILITIES_H__

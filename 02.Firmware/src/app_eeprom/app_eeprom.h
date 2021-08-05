@@ -2,23 +2,7 @@
 #define APP_EEPROM_H
 
 #include <stdint.h>
-
-#define APP_EEPROM_VALID_FLAG		0x15234519
-#define APP_EEPROM_SIZE				(6*1024)
-
-#define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		0 // Meter mode 0 : PWM++, DIR--
-#define APP_EEPROM_METER_MODE_ONLY_PWM				1 // Meter mode 1 : PWM++
-#define APP_EEPROM_METER_MODE_PWM_F_PWM_R			2 // Meter mode 2 : PWM_F & PWM_R
-#define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
-#define APP_EEPROM_MAX_PHONE_LENGTH                 16
-#define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           64
-#ifdef DTG02
-#define APP_EEPROM_NB_OF_INPUT_4_20MA               4
-#else
-#define APP_EEPROM_NB_OF_INPUT_4_20MA               1
-#endif
-#define APP_EEPROM_MAX_NUMBER_OF_SERVER				2
-#define APP_EEPROM_MAX_SYMBOL_LENGTH				6
+#include "hardware.h"
 
 typedef union
 {
@@ -51,10 +35,8 @@ typedef struct
 	app_eeprom_io_enable_t io_enable;
 	
 	// Input offset and factor
-	uint32_t k0;
-	uint32_t offset0;
-	uint32_t k1;
-	uint32_t offset1;
+	uint32_t k[APP_EEPROM_METER_MODE_MAX_ELEMENT];
+	uint32_t offset[APP_EEPROM_METER_MODE_MAX_ELEMENT];
     uint8_t meter_mode[APP_EEPROM_METER_MODE_MAX_ELEMENT];	
 	uint32_t valid_flag;
 	
@@ -65,13 +47,10 @@ typedef struct
 	uint8_t phone[APP_EEPROM_MAX_PHONE_LENGTH];
     
 	// Modbus
-    uint8_t modbus_addr;
-    uint32_t modbus_register;
-    uint8_t modbus_register_size;
-	uint8_t modbus_symbol[APP_EEPROM_MAX_SYMBOL_LENGTH];		// m3/s kg, m...
+	measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
 	
     float output_4_20ma;
-    uint16_t crc16;
+    uint32_t crc;
 } __attribute__((packed))  app_eeprom_config_data_t;
 
 

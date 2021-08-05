@@ -1026,12 +1026,13 @@ SEND_SMS_FAIL:
         "HW":"0.0.1"
     }
  */
-static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
+static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *msg)
 {
     app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
     DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
-    
+	
+
 	char alarm_str[32];
     char *p = alarm_str;
     uint16_t total_length = 0;
@@ -1080,35 +1081,33 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
        
 #ifdef DTG02
-    // Build input pulse counter
-    temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1\":\"%u\",",
-                              temp_counter);
-    
-    temp_counter = msg->counter1_f / cfg->k1 + cfg->offset1;
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2\":\"%u\",",
-                              temp_counter); //so xung
-	
-	if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-        temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
-									temp_counter);
+		// Build input pulse counter
+		temp_counter = msg->counter[i].forward / cfg->k[i] + cfg->offset[i];
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":\"%u\",",
+									i,
+								  temp_counter);
+		if (cfg->meter_mode[i] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+		{
+			temp_counter = msg->counter[i].reserve / cfg->k[i] + cfg->offset[i];
+			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
+										i,
+											temp_counter);
+			// K : he so chia cua dong ho nuoc, input 1
+			// Offset: Gia tri offset cua dong ho nuoc
+			// Mode : che do hoat dong
+			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i, cfg->k[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i, cfg->offset[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"Mode%u\":%u,", i, cfg->meter_mode[i]);
+		}
 	}
-	
-    temp_counter = msg->counter1_r / cfg->k1 + cfg->offset1;
-	if (cfg->meter_mode[1] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J2_D\":%u,",
-									temp_counter);
-	}
-
     // Build input 4-20ma
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%.2f,", 
 																			i+1,
-																			msg->input_4_20ma[i]); // dau vao 4-20mA 0
+																			msg->input_4_20mA[i]); // dau vao 4-20mA 0
 	}
     
     // Build input on/off
@@ -1131,29 +1130,30 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%.1f\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
 #else	
     // Build pulse counter
-    temp_counter = msg->counter0_f / cfg->k0 + cfg->offset0;
+    temp_counter = msg->counter[0].forward / cfg->k[0]+ cfg->offset[0];
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
     
     if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-        temp_counter = msg->counter0_r / cfg->k0 + cfg->offset0;
+        temp_counter = msg->counter[0].reserve / cfg->k[0]+ cfg->offset[0];
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
-    
+	
     // Build input on/off
     total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%u,", 
                                                                         measure_input->output_on_off[0]); // dau vao on/off
     
     // Build input 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%.2f,", 
-                                                                        msg->input_4_20ma[0]); // dau vao 4-20mA 0
+                                                                        msg->input_4_20mA[0]); // dau vao 4-20mA 0
 
     // Build ouput 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%.2f,", 
                                                                         measure_input->output_4_20mA); // dau ra 4-20mA
 #endif
+
     // CSQ in percent 
     if (msg->csq_percent)
     {
@@ -1166,7 +1166,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
 #ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
-    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%u.%u,", msg->vin_mv/1000, msg->vin_mv%1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv);
 #endif    
     // Temperature
     if (!measure_input->temperature_error)
@@ -1177,33 +1177,32 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measurement_msg_queue_t *msg)
     // Reset reason
     total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
     
-    // K0 : he so chia cua dong ho nuoc, input 1
-    // Offset0: Gia tri offset cua dong ho nuoc
-    // Mode : che do hoat dong
-    total_length += sprintf((char *)(ptr + total_length), "\"K0\":%u,", cfg->k0);
-    total_length += sprintf((char *)(ptr + total_length), "\"Offset0\":%u,", cfg->offset0);
-    total_length += sprintf((char *)(ptr + total_length), "\"Mode0\":%u,", cfg->meter_mode[0]);
-    
-#ifdef DTG02
-    total_length += sprintf((char *)(ptr + total_length), "\"K1\":\"%u\",", cfg->k1);
-    total_length += sprintf((char *)(ptr + total_length), "\"Offset1\":\"%u\",", cfg->offset1);
-    total_length += sprintf((char *)(ptr + total_length), "\"Mode1\":\"%u\",", cfg->meter_mode[1]);
-#endif
-    
-    // 485
-    if (cfg->io_enable.name.rs485_en
-        && msg->modbus_register.nb_of_register)
-    {
-        total_length += sprintf((char *)(ptr + total_length), "\"MBA\":%u,", msg->modbus_register.slave_addr);
-        total_length += sprintf((char *)(ptr + total_length), "\"MBI\":%u,", msg->modbus_register.register_index);
-        total_length += sprintf((char *)(ptr + total_length), "%s", "\"MBV\":\"(");
-        for (uint32_t i = 0; i < msg->modbus_register.nb_of_register; i++)
-        {
-            total_length += sprintf((char *)(ptr + total_length), "%u,", msg->modbus_register.value[i]);
-        }
-        total_length -= 1;  // delete comma ','
-        total_length += sprintf((char *)(ptr + total_length), "%s", ")\",");
-    }
+	    
+	for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
+	{
+		// 485
+		if (cfg->io_enable.name.rs485_en
+			&& msg->rs485[index].nb_of_register)
+		{
+			total_length += sprintf((char *)(ptr + total_length), "\"MID%u\":%u,", index, msg->rs485[index].slave_addr);
+			total_length += sprintf((char *)(ptr + total_length), "\"MBI%u\":%u,", index, msg->rs485[index].register_index);
+			total_length += sprintf((char *)(ptr + total_length), "\"MBV%u\":\"(", index);
+			
+			for (uint32_t i = 0; i < msg->rs485[index].nb_of_register; i++)
+			{
+				if (msg->rs485[index].data_type == RS485_DATA_TYPE_INT16 || msg->rs485[index].data_type == RS485_DATA_TYPE_INT32)
+				{
+					total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].value[i]);
+				}
+				else
+				{
+					total_length += sprintf((char *)(ptr + total_length), "%f,", (float)msg->rs485[index].value[i]);
+				}
+			}
+			total_length -= 1;  // delete comma ','
+			total_length += sprintf((char *)(ptr + total_length), "%s", ")\",");
+		}
+	}
     
     // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":\"%s\",", gsm_get_sim_imei());
@@ -1233,7 +1232,7 @@ static char *build_http_header(uint32_t length)
     return m_build_http_post_header;
 }
 #endif
-static measurement_msg_queue_t *m_sensor_msq;
+static measure_input_perpheral_data_t *m_sensor_msq;
 
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 {
@@ -1293,27 +1292,29 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             }
             else
             {
-                static measurement_msg_queue_t tmp;
-                tmp.counter0_f = m_retransmision_data_in_flash->meter_input[0].pwm_f;
-                tmp.counter0_r = m_retransmision_data_in_flash->meter_input[0].dir_r;
-                
-#ifdef DTG02
-                tmp.counter1_f = m_retransmision_data_in_flash->meter_input[1].pwm_f;
-                tmp.counter1_r = m_retransmision_data_in_flash->meter_input[1].dir_r;  
-#endif
+                static measure_input_perpheral_data_t tmp;
+				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+				{
+					tmp.counter[i].forward = m_retransmision_data_in_flash->meter_input[i].forward;
+					tmp.counter[i].reserve = m_retransmision_data_in_flash->meter_input[i].reserve;
+				}
+				
+               
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
-                    tmp.input_4_20ma[i] = m_retransmision_data_in_flash->input_4_20mA[i];
+                    tmp.input_4_20mA[i] = m_retransmision_data_in_flash->input_4_20mA[i];
                 }
                 tmp.csq_percent = 0;
                 tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
                 tmp.temperature = m_retransmision_data_in_flash->temp;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
-                tmp.modbus_register.nb_of_register = m_retransmision_data_in_flash->rs485.nb_of_register;
-                tmp.modbus_register.register_index = m_retransmision_data_in_flash->rs485.register_index;
-                tmp.modbus_register.slave_addr =  m_retransmision_data_in_flash->rs485.slave_addr;
-                memcpy(tmp.modbus_register.value, m_retransmision_data_in_flash->rs485.data, m_retransmision_data_in_flash->rs485.nb_of_register*2);
+				
+				// Modbus
+				for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+				{
+					memcpy(&tmp.rs485[i], &m_retransmision_data_in_flash->rs485[i], sizeof(measure_input_modbus_register_t));
+				}
                 
                 m_sensor_msq = &tmp;
                 build_msg = true;
@@ -1404,29 +1405,26 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         LED1(0);
         app_spi_flash_data_t wr_data;
-        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
         wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
         }
-        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
-        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
-        
-#ifdef DTG02
-        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
-        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
-#endif        
+		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+		{
+			memcpy(&wr_data.meter_input[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+		}
+              
         wr_data.timestamp = m_sensor_msq->measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
         
-        memcpy(wr_data.rs485.data, m_sensor_msq->modbus_register.value, m_sensor_msq->modbus_register.nb_of_register*2);
-        wr_data.rs485.nb_of_register = m_sensor_msq->modbus_register.nb_of_register;
-        wr_data.rs485.register_index = m_sensor_msq->modbus_register.register_index;
-        wr_data.rs485.slave_addr = m_sensor_msq->modbus_register.slave_addr;
+		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+		{
+			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+		}
         
         if (!ctx->peripheral_running.name.flash_running)
         {
@@ -1478,28 +1476,27 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
     {
         app_spi_flash_data_t wr_data;
-        wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
         wr_data.resend_to_server_flag = 0;
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20ma[i];
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
         }
-        wr_data.meter_input[0].pwm_f = m_sensor_msq->counter0_f;
-        wr_data.meter_input[0].dir_r = m_sensor_msq->counter0_r;
-        
-#ifdef DTG02
-        wr_data.meter_input[1].pwm_f = m_sensor_msq->counter1_f;
-        wr_data.meter_input[1].dir_r = m_sensor_msq->counter1_r;
-#endif        
+		
+		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+        {
+			memcpy(&wr_data.meter_input[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+        }
+      
         wr_data.timestamp = m_sensor_msq->measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
-        memcpy(wr_data.rs485.data, m_sensor_msq->modbus_register.value, m_sensor_msq->modbus_register.nb_of_register*2);
-        wr_data.rs485.nb_of_register = m_sensor_msq->modbus_register.nb_of_register;
-        wr_data.rs485.register_index = m_sensor_msq->modbus_register.register_index;
-        wr_data.rs485.slave_addr = m_sensor_msq->modbus_register.slave_addr;
+		
+		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+		{
+			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+		}
         
         if (!ctx->peripheral_running.name.flash_running)
         {

@@ -143,6 +143,7 @@ void modbus_master_clear_response_buffer()
     }
 }
 
+
 /**
 Place data in transmit buffer.
 

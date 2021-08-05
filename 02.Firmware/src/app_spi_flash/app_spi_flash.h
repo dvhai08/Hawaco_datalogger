@@ -3,47 +3,21 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hardware.h"
 
-#define APP_FLASH_VALID_DATA_KEY                    0x12345678               
-#ifdef DTG01
-#define APP_FLASH_NB_OFF_4_20MA_INPUT               2
-#define APP_FLASH_NB_OF_METER_INPUT                 1
-#else
-#define APP_FLASH_NB_OFF_4_20MA_INPUT               4
-#define APP_FLASH_NB_OF_METER_INPUT                 2
-#endif
-#define APP_FLASH_RS485_MAX_SIZE                    16
-#define APP_SPI_FLASH_SIZE						    (1024*1024)
-#define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
-#define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
-
-typedef struct
-{
-    uint8_t slave_addr;
-    uint8_t nb_of_register;
-    uint16_t register_index;
-	uint8_t symbol[6];		// m3/s, kg...
-    uint8_t data[APP_FLASH_RS485_MAX_SIZE];
-} __attribute__((packed)) app_spi_flash_rs485_data_t;
-
-typedef struct
-{
-    uint32_t pwm_f;     // forward
-    uint32_t dir_r;     // reserve
-} __attribute__((packed)) app_spi_flash_measurement_water_input_data_t;
 
 typedef struct
 {
     uint32_t valid_flag;
-    app_spi_flash_measurement_water_input_data_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
-    app_spi_flash_rs485_data_t rs485[2];
+    measure_input_counter_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
+    measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
     uint8_t temp;
     uint16_t vbat_mv;
     uint8_t vbat_precent;
     float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];
     uint32_t timestamp;
     uint32_t resend_to_server_flag;
-	uint16_t crc;
+	uint32_t crc;
 } __attribute__((packed)) app_spi_flash_data_t;
 
 

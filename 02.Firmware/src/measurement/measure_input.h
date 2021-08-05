@@ -6,27 +6,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define MEASURE_INPUT_PORT_0		0
-
-#ifdef DTG02
-#define NUMBER_OF_INPUT_4_20MA						4
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
-#define	NUMBER_OF_INPUT_ON_OFF						4
-#define NUMBER_OF_OUTPUT_ON_OFF						4
-#define MEASURE_INPUT_PORT_1		                1
-#else
-#define	NUMBER_OF_OUTPUT_ON_OFF						1
-#define NUMBER_OF_INPUT_4_20MA						1
-#define NUMBER_OF_OUTPUT_4_20MA                     1
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
-#endif
-#define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
-#define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
-#define MEASUREMENT_MAX_MSQ_IN_RAM                  24
-
-#define MEASUREMENT_QUEUE_STATE_IDLE                0
-#define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
-#define MEASUREMENT_QUEUE_STATE_PROCESSING          2       // Da doc nhung dang xu li, chua release thanh free
 
 typedef struct
 {
@@ -39,46 +18,38 @@ typedef struct
 
 typedef struct
 {
+	uint32_t measure_timestamp;
     uint8_t output_on_off[NUMBER_OF_OUTPUT_ON_OFF];
+// Input
+	float input_4_20mA[NUMBER_OF_INPUT_4_20MA];
 #ifdef DTG02
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
-	float input_4_20mA[NUMBER_OF_INPUT_4_20MA];
-	uint8_t vbat_percent;
-	uint16_t vbat_raw;
+	
+	// Oupput 	
 	float output_4_20mA;
+	
+	// Battery
+	uint8_t vbat_percent;
+	uint16_t vbat_mv;
+	float vin_mv;
+
 	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+	measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+	
+	// Temperature
     int32_t temperature;
     int32_t temperature_error;
-    app_spi_flash_rs485_data_t rs485;
+	
+	// RS485
+    measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
+	// CSQ
+	
+	uint8_t csq_percent;
+	
+	uint8_t state;		// memory queue state
 } measure_input_perpheral_data_t;
 
-typedef struct
-{
-    uint16_t value[16];
-    uint16_t register_index;
-    uint8_t nb_of_register;
-    uint8_t slave_addr;
-} measure_input_modbus_register_t;
-
-typedef struct
-{
-    uint32_t measure_timestamp;
-    uint8_t vbat_percent;
-    uint16_t vbat_mv;
-    uint32_t counter0_f;
-    uint32_t counter0_r;
-    uint32_t counter1_f;
-    uint32_t counter1_r;
-    float input_4_20ma[NUMBER_OF_INPUT_4_20MA];
-    uint8_t csq_percent;
-    uint8_t state;
-    uint8_t temperature;
-    measure_input_modbus_register_t modbus_register;
-#ifdef DTG02
-    uint32_t vin_mv;
-#endif
-} measurement_msg_queue_t;
 
 /**
  * @brief       Init measurement module 
@@ -141,7 +112,7 @@ bool measure_input_sensor_data_availble(void);
  * @brief       Get data in sensor message queue
  * @retval      Pointer to queue, NULL on no data availble
  */
-measurement_msg_queue_t *measure_input_get_data_in_queue(void);
+measure_input_perpheral_data_t *measure_input_get_data_in_queue(void);
 
 /**
  * @brief       Save all data in sensor message queue to flash 

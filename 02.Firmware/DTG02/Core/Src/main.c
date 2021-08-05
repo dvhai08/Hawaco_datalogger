@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "crc.h"
 #include "dma.h"
 #include "iwdg.h"
 #include "usart.h"
@@ -149,6 +150,7 @@ int main(void)
   MX_TIM2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
@@ -200,7 +202,7 @@ int main(void)
     eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
+//    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
     DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
                                                                             VERSION_CONTROL_FW,
                                                                             ota_cfg->flag, (uint8_t*)ota_cfg->reserve);

@@ -161,6 +161,82 @@
 #define VREF_OFFSET_MV						80
 #define ADC_INPUT_4_20MA_GAIN               (50.0f)   
 
+#define MEASURE_INPUT_PORT_0		0
+
+#ifdef DTG02
+#define NUMBER_OF_INPUT_4_20MA						4
+#define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
+#define	NUMBER_OF_INPUT_ON_OFF						4
+#define NUMBER_OF_OUTPUT_ON_OFF						4
+#define MEASURE_INPUT_PORT_1		                1
+#else
+#define	NUMBER_OF_OUTPUT_ON_OFF						1
+#define NUMBER_OF_INPUT_4_20MA						1
+#define NUMBER_OF_OUTPUT_4_20MA                     1
+#define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
+#endif
+#define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
+#define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
+#define MEASUREMENT_MAX_MSQ_IN_RAM                  24
+
+#define MEASUREMENT_QUEUE_STATE_IDLE                0
+#define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
+#define MEASUREMENT_QUEUE_STATE_PROCESSING          2       // Da doc nhung dang xu li, chua release thanh free
+
+#define RS485_DATA_TYPE_INT16						0
+#define RS485_DATA_TYPE_INT32						1
+#define RS485_DATA_TYPE_FLOAT						2
+#define RS485_MAX_SLAVE_ON_BUS						2
+#define RS485_MAX_REGISTER_SUPPORT					16
+#define RS485_REGISTER_ADDR_TOP						50000
+
+#define APP_EEPROM_VALID_FLAG		0x15234519
+#define APP_EEPROM_SIZE				(6*1024)
+
+#define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		0 // Meter mode 0 : PWM++, DIR--
+#define APP_EEPROM_METER_MODE_ONLY_PWM				1 // Meter mode 1 : PWM++
+#define APP_EEPROM_METER_MODE_PWM_F_PWM_R			2 // Meter mode 2 : PWM_F & PWM_R
+#define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
+#define APP_EEPROM_MAX_PHONE_LENGTH                 16
+#define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           64
+#define APP_EEPROM_MAX_NUMBER_OF_SERVER				2
+#ifdef DTG02
+#define APP_EEPROM_NB_OF_INPUT_4_20MA               4
+#else
+#define APP_EEPROM_NB_OF_INPUT_4_20MA               1
+#endif
+#define APP_EEPROM_MAX_SYMBOL_LENGTH				6
+
+#define APP_FLASH_VALID_DATA_KEY                    0x12345678               
+#ifdef DTG01
+#define APP_FLASH_NB_OFF_4_20MA_INPUT               2
+#define APP_FLASH_NB_OF_METER_INPUT                 1
+#else
+#define APP_FLASH_NB_OFF_4_20MA_INPUT               NUMBER_OF_INPUT_4_20MA
+#define APP_FLASH_NB_OF_METER_INPUT                 APP_EEPROM_METER_MODE_MAX_ELEMENT
+#endif
+#define APP_FLASH_RS485_MAX_SIZE                    (RS485_MAX_REGISTER_SUPPORT)
+#define APP_SPI_FLASH_SIZE						    (1024*1024)
+#define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
+#define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
+
+
+typedef struct
+{
+    uint32_t value[RS485_MAX_REGISTER_SUPPORT];
+	uint8_t unit[APP_EEPROM_MAX_SYMBOL_LENGTH];
+    uint16_t register_index;
+    int8_t nb_of_register;
+    uint8_t slave_addr;
+	uint8_t data_type;
+} __attribute__((packed)) measure_input_modbus_register_t;
+
+typedef struct
+{
+	uint32_t forward;
+	uint32_t reserve;
+} __attribute__((packed)) measure_input_counter_t;
+
 typedef struct
 {
     uint32_t current_ma_mil_10;		// 4ma =>> 400

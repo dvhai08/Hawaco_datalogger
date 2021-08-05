@@ -11,6 +11,9 @@
 #include "app_spi_flash.h"
 #include "app_rtc.h"
 #include "measure_input.h"
+
+#define RS485_STRCAT_ID(str,id)				str##id##"\":"		
+
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;
@@ -184,10 +187,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 #endif
     
-    char *rs485 = strstr(buffer, "RS485\":");
-    if (rs485 != NULL)
+    char *rs485_ptr = strstr(buffer, "RS485\":");
+    if (rs485_ptr != NULL)
     {
-        uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485) ? 1 : 0;
+        uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485_ptr) ? 1 : 0;
         if (config->io_enable.name.rs485_en != in485)
         {
             DEBUG_PRINTF("in485 changed\r\n");
@@ -248,15 +251,17 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J1\":"), counter_offset);
-        if (config->offset0 != offset)
+        if (config->offset[0] != offset)
         {
             has_new_cfg++;   
-            config->offset0 = offset;
+            config->offset[0] = offset;
             DEBUG_WARN("PWM 1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(0);
-			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
-			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            app_bkup_write_pulse_counter(0, counter1_f, 0, counter1_r);
+			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+			app_bkup_read_pulse_counter(&counter[0]);
+			counter[0].forward = 0;
+			counter[0].reserve = 0;
+            app_bkup_write_pulse_counter(&counter[0]);
 			rewrite_data_to_flash |= (1 << 0);
         }
     }
@@ -265,16 +270,17 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J2\":"), counter_offset);
-        if (config->offset1 != offset)
+        if (config->offset[1] != offset)
         {
             has_new_cfg++;   
-            config->offset1 = offset;
-            DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
+            config->offset[1] = offset;
+            DEBUG_PRINTF("PWM2 offset changed to %u\r\n", offset);
             measure_input_reset_counter(1);
-			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
-			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            app_bkup_write_pulse_counter(counter0_f, 0, counter0_r, 0);
-			rewrite_data_to_flash |= (1 << 1);
+			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+			counter[1].forward = 0;
+			counter[1].reserve = 0;
+            app_bkup_write_pulse_counter(&counter[0]);
+			rewrite_data_to_flash |= (1 << 0);
         }
     }
 	
@@ -287,9 +293,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             k = 1;
         }
 
-        if (config->k0 != k)
+        if (config->k[0] != k)
         {
-            config->k0 = k;
+            config->k[0] = k;
             DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
 //            measure_input_reset_all_counter();
             has_new_cfg++; 
@@ -305,9 +311,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             k = 1;
         }
 
-        if (config->k1 != k)
+        if (config->k[1] != k)
         {
-            config->k1 = k;
+            config->k[1] = k;
             DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
 //            measure_input_reset_all_counter();
             has_new_cfg++; 
@@ -426,53 +432,69 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     
     // Process RS485
     // Total 2 device
-    //"ID":(id,reg,nb_of_bytes)
-    char *rs485_id = strstr(buffer, "ID\":");
-    if (rs485_id && config->io_enable.name.rs485_en)
-    {
-        rs485_id += strlen("\"ID\":");
-        char tmp[32];
-        memset(tmp, 0, sizeof(tmp));
-        gsm_utilities_copy_parameters(rs485_id, tmp, '(', ')');
-        DEBUG_INFO("RS485 config %s\r\n", tmp);
-        char *id_str;
-        char *reg_str;
-        
-        id_str = strtok(tmp, ",");
-        uint32_t slave_id = atoi(id_str);
-        rs485_id += strlen(id_str) + 1;
-        
-        reg_str = strtok(rs485_id, ",");
-        uint32_t reg = atoi(reg_str);
-        rs485_id += strlen(reg_str) + 1 + 1;
-        
-        uint32_t nb_register = atoi(rs485_id);
-        
-        if (slave_id != config->modbus_addr)
-        {
-            has_new_cfg++;
-            config->modbus_addr = slave_id;
-            DEBUG_INFO("Modbus slave addr %u\r\n", slave_id);
-        }
-        
-        if (reg != config->modbus_register
-            && reg < 50000)     // modbus max register support is 50000
-        {
-            has_new_cfg++;
-            config->modbus_register = reg;
-            DEBUG_INFO("Modbus register addr %u\r\n", reg);
-        }
-        if (nb_register > 16)      // maximum 16 register
-        {
-            nb_register = 16;
-        }
-        if (nb_register != config->modbus_register_size)     // modbus max register len is 16 register * 2bytes
-        {
-            DEBUG_INFO("Modbus nb of register %u\r\n", nb_register);
-            config->modbus_register_size = nb_register;
-            has_new_cfg++;
-        }
-    }
+    //"ID0":(id,reg,nb_of_bytes)
+	for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS && config->io_enable.name.rs485_en; i++)
+	{
+		char keyword[12];
+		sprintf(keyword, "\"ID%u:", i);
+		char *rs485_id = strstr(buffer, keyword);
+		if (rs485_id && config->io_enable.name.rs485_en)
+		{
+			rs485_id += strlen(keyword);
+			char tmp[32];
+			memset(tmp, 0, sizeof(tmp));
+			gsm_utilities_copy_parameters(rs485_id, tmp, '(', ')');
+			DEBUG_INFO("RS485_ID%u config %s\r\n", i, tmp);
+			char *id_str;
+			char *reg_str;
+			
+			id_str = strtok(tmp, ",");
+			uint32_t slave_id = atoi(id_str);
+			rs485_id += strlen(id_str) + 1;
+			
+			reg_str = strtok(rs485_id, ",");
+			uint32_t reg = atoi(reg_str);
+			rs485_id += strlen(reg_str) + 1 + 1;
+			
+			uint32_t nb_register = atoi(rs485_id);
+			int found_slave_addr = -1;
+			for (uint32_t j = 0; j < RS485_MAX_SLAVE_ON_BUS; j++)
+			{
+				if (slave_id == config->rs485[j].slave_addr)
+				{
+					found_slave_addr = j;
+					break;
+				}
+			}
+			
+			if (found_slave_addr == -1)		// slave not existed
+			{
+				has_new_cfg++;
+				found_slave_addr = 0;
+			}
+			
+			config->rs485[found_slave_addr].slave_addr = slave_id;
+			DEBUG_INFO("Modbus slave addr %u\r\n", slave_id);
+			
+			if (reg != config->rs485[found_slave_addr].register_index
+				&& reg < RS485_REGISTER_ADDR_TOP)     // modbus max register support is 50000
+			{
+				has_new_cfg++;
+				config->rs485[found_slave_addr].register_index = reg;
+				DEBUG_INFO("Modbus register addr %u\r\n", reg);
+			}
+			if (nb_register > RS485_MAX_REGISTER_SUPPORT)      // maximum 16 register
+			{
+				nb_register = RS485_MAX_REGISTER_SUPPORT;
+			}
+			if (nb_register != config->rs485[found_slave_addr].nb_of_register)
+			{
+				DEBUG_INFO("Modbus nb of register %u\r\n", nb_register);
+				config->rs485[found_slave_addr].nb_of_register = nb_register;
+				has_new_cfg++;
+			}	
+		}
+	}
 	
     //Luu config moi
     if (has_new_cfg)
@@ -490,16 +512,16 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         app_spi_flash_data_t data;
         if (app_spi_flash_get_lastest_data(&data))
         {
-            if (rewrite_data_to_flash & 0x01)
+            if (rewrite_data_to_flash & 0x01)		// 0x01 mean we need to store new data of pulse counter[0] to eeprom
             {
-                data.meter_input[0].pwm_f = 0;
-                data.meter_input[0].dir_r = 0;
+                data.meter_input[0].forward = 0;
+                data.meter_input[0].reserve = 0;
             }
 #ifdef DTG02
-            if (rewrite_data_to_flash & 0x02)
+            if (rewrite_data_to_flash & 0x02)		// 0x01 mean we need to store new data of pulse counter[1] to eeprom
             {
-                data.meter_input[1].pwm_f = 0;
-                data.meter_input[1].dir_r = 0;
+                data.meter_input[1].forward = 0;
+                data.meter_input[1].reserve = 0;
             }
 #endif
             data.timestamp = app_rtc_get_counter();

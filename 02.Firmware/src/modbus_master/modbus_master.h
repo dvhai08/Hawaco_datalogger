@@ -57,6 +57,7 @@ uint16_t modbus_master_receive(void);
 uint16_t modbus_master_get_response_buffer(uint8_t index);
 uint8_t modbus_master_set_transmit_buffer(uint8_t index, uint16_t value);
 void modbus_master_clear_transmit_buffer(void);
+void modbus_master_clear_response_buffer(void);
 uint8_t modbus_master_read_coils(uint8_t slave_addr, uint16_t read_addr, uint16_t bit_qty);
 uint8_t modbus_master_read_discrete_input(uint8_t slave_addr, uint16_t read_addr, uint16_t bit_qty);
 uint8_t modbus_master_read_holding_register(uint8_t slave_addr, uint16_t read_addr, uint16_t read_qty);

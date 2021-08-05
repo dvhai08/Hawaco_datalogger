@@ -951,7 +951,7 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
         return;
     }
     app_spi_flash_data_t rd_data;
-    wr_data->header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+//    wr_data->header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
 //    while (1)
     {
         bool flash_full;
@@ -1088,11 +1088,13 @@ void app_spi_flash_stress_test(uint32_t nb_of_write_times)
         uint32_t addr = app_flash_estimate_next_write_addr(&flash_full);
         if (!flash_full)
         {
-            wr_data.meter_input[0].pwm_f = 3;
-            wr_data.meter_input[0].dir_r = 4;
-            wr_data.meter_input[1].pwm_f = 5;
-            wr_data.meter_input[1].dir_r = 6;
-            wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
+            wr_data.meter_input[0].forward = 3;
+            wr_data.meter_input[0].reserve = 4;
+#ifdef DTG02
+            wr_data.meter_input[1].forward = 5;
+            wr_data.meter_input[1].reserve = 6;
+#endif
+//            wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
             wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
             if (nb_of_write_times % 2 == 0)
             {
@@ -1153,8 +1155,7 @@ bool app_spi_flash_get_retransmission_data(uint32_t addr, app_spi_flash_data_t *
 bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 {
     flash_read_bytes(m_last_write_data_addr, (uint8_t *)last_data, sizeof(app_spi_flash_data_t));
-    if (last_data->header_overlap_detect == APP_FLASH_DATA_HEADER_KEY
-        && last_data->valid_flag  == APP_FLASH_VALID_DATA_KEY)
+    if (last_data->valid_flag  == APP_FLASH_VALID_DATA_KEY)
     {
         return true;
     }
