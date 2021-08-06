@@ -271,7 +271,6 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
     m_gsm_hardware.atc.recv_buff.state = SYS_CTX_BUFFER_STATE_IDLE;
 
     gsm_hw_uart_send_raw((uint8_t*)cmd, strlen(cmd));
-    DEBUG_VERBOSE("Done\r\n");
 }
 
 extern void usart1_hw_uart_send_raw(uint8_t *data, uint32_t length);

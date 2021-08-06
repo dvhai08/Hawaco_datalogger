@@ -86,7 +86,7 @@ static void copy_sms_content(char *buffer, char *content, uint32_t max_size)
     p_begin = strstr(p_begin, "\r\n");
     if (p_begin == NULL)
     {
-        DEBUG_VERBOSE("Invalid sms format\r\n");
+//        DEBUG_VERBOSE("Invalid sms format\r\n");
         return;
     }
     p_begin += 2;  // 2 = len(CRLF)
@@ -94,7 +94,7 @@ static void copy_sms_content(char *buffer, char *content, uint32_t max_size)
     char *p_end = strstr(buffer, "\r\nOK");
     if (p_end == NULL)
     {
-        DEBUG_VERBOSE("Invalid sms format\r\n");
+//        DEBUG_VERBOSE("Invalid sms format\r\n");
         return;
     }
 
@@ -135,12 +135,12 @@ bool gsm_send_sms(char *phone_number, char *message)
         m_sms_memory[cnt].need_to_send = 1;
         m_sms_memory[cnt].retry_count = 0;
 
-        DEBUG_VERBOSE("Add sms message into buffer %u : %s, phone : %s\r\n", cnt, message, phone_number);
+        DEBUG_ERROR("Add sms message into buffer %u : %s, phone : %s\r\n", cnt, message, phone_number);
 
         return true;
     }
 
-    DEBUG_VERBOSE("SMS buffer full\r\n");
+    DEBUG_ERROR("SMS buffer full\r\n");
 
     return false;
 }
@@ -148,7 +148,7 @@ bool gsm_send_sms(char *phone_number, char *message)
 #if GSM_READ_SMS_ENABLE
 void gsm_sms_layer_process_cmd(char *buffer)
 {
-    DEBUG_VERBOSE("SMS cmd %s\r\n", buffer);
+//    DEBUG_VERBOSE("SMS cmd %s\r\n", buffer);
     char sms_content[GSM_MAX_SMS_CONTENT_LENGTH];
     char phone_number[GSM_MAX_SMS_PHONE_LENGTH];
 

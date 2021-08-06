@@ -66,7 +66,7 @@
 #define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_SLEEP										1
+#define TEST_DEVICE_NEVER_SLEEP							1
 #define TEST_CRC32										0
 /* USER CODE END PTD */
 
@@ -316,7 +316,7 @@ int main(void)
         adc_stop();
         if (system->status.is_enter_test_mode == 0)
         {
-			if (TEST_SLEEP == 0)
+			if (TEST_DEVICE_NEVER_SLEEP == 0)
 			{
 				sys_config_low_power_mode();
 			}
@@ -469,27 +469,32 @@ static void info_task(void *arg)
 	if (system->status.is_enter_test_mode)
 	{
 #if TEST_RS485
-		RS485_POWER_EN(1);
+		usart_lpusart_485_control(1);
+		sys_delay_ms(100);
 		uint8_t result;
-		uint16_t input_result[4];
+		uint16_t input_result[8];
 		
 		modbus_master_reset(1000);
-
+		uint32_t before = sys_get_ms();
 		 // read input registers function test
 		 // slave address 0x01, two consecutive addresses are register 0x2
-		result = modbus_master_read_input_register(8,2, 4);
+		result = modbus_master_read_input_register(8, 106, 8);
 		if (result == 0x00)
 		{
-			input_result[0] = modbus_master_get_response_buffer(0x00);
-			input_result[1] = modbus_master_get_response_buffer(0x01);
-			input_result[2] = modbus_master_get_response_buffer(0x02);
-			input_result[3] = modbus_master_get_response_buffer(0x03);
-			DEBUG_INFO("Modbus rx %02X-%02X\r\n", input_result[0], input_result[1]);
+			DEBUG_INFO("Modbus read success in %ums\r\n", sys_get_ms() - before);
+		
+			for (uint32_t i = 0; i < 8; i++)
+			{
+				input_result[i] = modbus_master_get_response_buffer(i);
+				DEBUG_RAW("(30%u-%u),", 106 + i, input_result[i]);
+			}
+			DEBUG_RAW("\r\n");
 		}
 		else
 		{
 			DEBUG_ERROR("Modbus failed\r\n");
 		}
+		usart_lpusart_485_control(0);
 #endif
         i = 5;
 	}
@@ -528,6 +533,41 @@ static void info_task(void *arg)
 		crc = utilities_calculate_crc32((uint8_t*)feed_str1, strlen(feed_str1));
 		DEBUG_INFO("CRC1 0x%08X\r\n", crc);
 #endif
+		static sys_ctx_error_critical_t m_last_critical_err;
+		sys_ctx_t *ctx = sys_ctx();
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+		
+		// If rs485 was not enable =>> clear rs485 error code
+		if (!eeprom_cfg->io_enable.name.rs485_en)
+		{
+			ctx->error_not_critical.detail.rs485_err = 0;
+		}
+		if (m_last_critical_err.value != ctx->error_critical.value)
+		{
+			m_last_critical_err.value = ctx->error_critical.value;
+			
+			if (!eeprom_cfg->io_enable.name.warning
+				&& (strlen((char*)eeprom_cfg->phone) > 8)
+				&& m_last_critical_err.value)
+			{
+				char msg[156];
+				char *p = msg;
+				rtc_date_time_t time;
+				app_rtc_get_time(&time);
+				
+				p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] ",
+								time.year + 2000,
+								time.month,
+								time.day,
+								time.hour,
+								time.minute);
+				if (m_last_critical_err.detail.sensor_out_of_range)
+				{
+					p += sprintf(p, "%s", "He thong bi loi luu luong");
+				}
+				gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			}
+		}			
 	}
 }
 

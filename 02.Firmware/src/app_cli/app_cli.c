@@ -243,7 +243,7 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	}
     else if (strstr(argv[1], "rdall"))
 	{
-		DEBUG_PRINTF("Read flash\r\n");
+//		DEBUG_PRINTF("Read flash\r\n");
         app_spi_flash_retransmission_data_test();
 	}
     else if (strstr(argv[1], "pageerase"))
@@ -253,7 +253,7 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	}
     else if (strstr(argv[1], "empty"))
 	{
-		DEBUG_PRINTF("Check empty sector\r\n");
+//		DEBUG_PRINTF("Check empty sector\r\n");
         if (app_spi_flash_check_empty_sector(atoi(argv[2])))
         {
             DEBUG_PRINTF("Empty sector\r\n");

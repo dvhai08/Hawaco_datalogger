@@ -3,7 +3,7 @@
 #define MODBUS_MEMORY_H
 
 #include <stdint.h>
-#define MODBUS_MEMORY_MAX_RX_BUFFER_SIZE 128
+#define MODBUS_MEMORY_MAX_RX_BUFFER_SIZE 64
 
 uint8_t modbus_memory_ringbuffer_initialize(void);
 void modbus_memory_flush_rx_buffer(void);

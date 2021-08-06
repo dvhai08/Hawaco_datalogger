@@ -7,7 +7,7 @@
 #define SYS_CTX_BUFFER_STATE_BUSY 1       // Trang thai dang them du lieu
 #define SYS_CTX_BUFFER_STATE_IDLE 2       // Trang thai cho
 #define SYS_CTX_BUFFER_STATE_PROCESSING 3 // Trang thai du lieu dang duoc xu ly
-#define SYS_CTX_SMALL_BUFFER_SIZE (384+238)
+#define SYS_CTX_SMALL_BUFFER_SIZE (384+238+128)
 
 typedef struct
 {
@@ -33,13 +33,23 @@ typedef union
     struct
     {
         uint8_t flash : 1;
-        uint8_t sensor : 1;
         uint8_t low_bat : 1;
         uint8_t circuit_break : 1;
-        uint8_t reserve : 1;
+		uint8_t rs485_err : 1;
+        uint8_t reserve : 4;
     } detail;
     uint8_t value;
-} sys_ctx_error_t;
+} sys_ctx_error_not_critical_t;
+
+typedef union
+{
+    struct
+    {
+        uint8_t sensor_out_of_range : 1;		// sensor out of range
+        uint8_t reserve : 7;
+    } detail;
+    uint8_t value;
+} sys_ctx_error_critical_t;
 
 typedef union
 {
@@ -60,7 +70,8 @@ typedef union
 typedef struct
 {
 	sys_ctx_status_t status;
-    sys_ctx_error_t error;
+    sys_ctx_error_not_critical_t error_not_critical;
+	sys_ctx_error_critical_t error_critical;
     sys_ctx_sleep_peripheral_t peripheral_running;
 } sys_ctx_t;
 

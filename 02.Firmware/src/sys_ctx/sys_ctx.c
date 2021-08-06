@@ -4,7 +4,8 @@
 static sys_ctx_t m_ctx = 
 {
     .status.is_enter_test_mode = false,
-    .error.value = 0,
+    .error_not_critical.value = 0,
+	.error_critical.value = 0,
     .peripheral_running.value = 0,
 };
 

@@ -893,7 +893,6 @@ uint32_t app_spi_flash_dump_all_data(void)
 
 void app_spi_flash_wakeup(void)
 {
-    DEBUG_VERBOSE("Wakeup flash\r\n");
 #if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 3; i++)
     {
@@ -913,7 +912,6 @@ void app_spi_flash_wakeup(void)
 
 void app_spi_flash_shutdown(void)
 {
-    DEBUG_VERBOSE("Shutdown flash\r\n");
 #if SPI_FLASH_SHUTDOWN_ENABLE
     for (uint8_t i = 0; i < 1; i++)
     {

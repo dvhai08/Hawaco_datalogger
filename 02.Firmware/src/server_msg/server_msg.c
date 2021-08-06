@@ -14,6 +14,47 @@
 
 #define RS485_STRCAT_ID(str,id)				str##id##"\":"		
 
+/**
+	 {
+		"shared": {
+			"CycleSendWeb": 60,
+			"Cyclewakeup": 15,
+			"ID485_1": 8,
+			"ID485_2": 8,
+			"IMEI": "860262050125777",
+			"Input_J1": 1,
+			"Input_J2": 0,
+			"K_J1": 1,
+			"K_J2": 1,
+			"Link": "https://iot.wilad.vn/login",
+			"MeterIndicator_J1": 7649,
+			"MeterIndicator_J2": 7649,
+			"Output1": 0,
+			"Output2": 0,
+			"Output3": 0,
+			"Output4": 0,
+			"Output4_20": 0,
+			"Register_1_1": 30108,			// upto 4 register * 2 device
+			"Register_1_2": 30110,
+			"Register_2_1": 30112,
+			"Register_2_2": 30113,
+			"RS485": 1,
+			"SOS": "0916883454",
+			"Type": "G2",
+			"Type_1_1": "int32",		// int32, int16, float
+			"Type_1_2": "int32",
+			"Type_2_1": "float",
+			"Type_2_2": "int16",
+			"Unit_1_1": "m3/s",
+			"Unit_1_2": "jun",
+			"Unit_2_1": "kg",
+			"Unit_2_2": "lit",
+			"Update": 0,
+			"Version": "0.0.1",
+			"Warning": 1
+		}
+	}
+ */
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;
@@ -468,9 +509,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 				{
 					config->rs485[slave_count].slave_addr = temp;
 					has_new_cfg++;
-					DEBUG_INFO("Slave addr %u\r\n", temp);
 				}
-				
+				DEBUG_INFO("Slave addr %u\r\n", temp);
 				// Get RS485 data type
 				temp = RS485_DATA_TYPE_INT16;
 				config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
@@ -521,6 +561,11 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 					strncpy((char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit, (char*)rs485_unit, copy_len); 
 					DEBUG_INFO("Unit %s\r\n", (char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit);
 				}
+			}
+			else
+			{
+				config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 0;
+				config->rs485[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 			}
 		}
 	}

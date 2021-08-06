@@ -99,7 +99,6 @@ static bool is_4_20ma_output_valid(void)
 
 static void stop_dac_output(void *arg)
 {
-	DEBUG_VERBOSE("Stop dac\r\n");
 	m_max_4_20ma_output_ms = 0;
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	ENABLE_OUTPUT_4_20MA_POWER(0);
@@ -127,7 +126,7 @@ void control_output_dac_enable(uint32_t ms)
 		tim_pwm_output_percent(thoughsand);
         if (m_last_mv != set_mv)
         {
-            DEBUG_INFO("Set dac voltage %umv\r\n", set_mv);
+            DEBUG_VERBOSE("Set dac voltage %umv\r\n", set_mv);
             m_last_mv = set_mv;
         }
 #endif
@@ -180,7 +179,7 @@ void control_ouput_task(void)
 			uint32_t thoughsand = 0;
 			int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 			uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
-			thoughsand = set_mv * 1000 / VREG;		// output pwm voltage is 4890mv
+			thoughsand = set_mv * 1000 / VREG;		// output VREG pwm voltage is 4890mv
 			tim_pwm_output_percent(thoughsand);
 #endif
 		}

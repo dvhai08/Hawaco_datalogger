@@ -40,7 +40,7 @@ lpf_data_t m_adc_filterd_data[ADC_CHANNEL_DMA_COUNT];
 uint16_t offset_input_4_20ma_mv[APP_EEPROM_NB_OF_INPUT_4_20MA];
 static bool m_is_the_first_time = true;
 
-static int32_t look_up_current(uint32_t mv)        // 0.4mA =>> 4, 4mA >> 
+static float look_up_current(uint32_t mv)        // 0.4mA =>> 4, 4mA >> 
 {
 #if 0
     uint32_t i;
@@ -146,7 +146,6 @@ void MX_ADC_Init(void)
   }
   else
   {
-      DEBUG_VERBOSE("ADC main clk is low\r\n");
       LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV1);
   }
   /* USER CODE END ADC_Init 1 */
@@ -245,9 +244,7 @@ void MX_ADC_Init(void)
     // Clear the ADRDY bit in ADC_ISR register by programming this bit to 1.
 	SET_BIT(ADC1->ISR, LL_ADC_FLAG_ADRDY);
     LL_ADC_Enable(ADC1);
-    DEBUG_VERBOSE("Wait for adc ready\r\n");
     while (LL_ADC_IsActiveFlag_ADRDY(ADC1) == 0);
-    DEBUG_VERBOSE("ADC ready\r\n");
   /* USER CODE END ADC_Init 2 */
 
 }
@@ -471,8 +468,6 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     //Caculate NTC resistor : Vntc = Vin*Rs/(Rs + Rntc) -> Rntc = Rs(Vin/Vntc - 1)
     r_ntc = HW_RESISTOR_SERIES_NTC*(vbat_float/vtemp_float - 1);
-    DEBUG_VERBOSE("Resistant NTC = %d\r\n", (int)r_ntc);
-
 
     if (r_ntc <= 0)
     {
@@ -484,13 +479,11 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
 
     if (temp < 0)
     {
-        DEBUG_ERROR("Invalid temperature %.1f\r\n", temp);
         retval = false;
         goto end;
     }
 
     *result = (int32_t)temp;
-    DEBUG_VERBOSE("Temp %d\r\n", (int32_t)temp);
 end:
     return retval;
 }
@@ -621,20 +614,20 @@ void adc_convert(void)
         m_adc_input.in_4_20ma_in[3] = 0;
     }
     
-    if (sys_ctx()->status.is_enter_test_mode)
-    {
-		static uint32_t last_print = 0;
-		uint32_t now = sys_get_ms();
-		
-		if (now - last_print > 1000)
-		{
-			for (uint8_t i = 0; i < 4; i++)
-			{
-				DEBUG_WARN("IN%u, current %.1fmA\r\n", i, m_adc_input.in_4_20ma_in[i]); 
-			}
-			last_print = now;
-		}
-    }
+//    if (sys_ctx()->status.is_enter_test_mode)
+//    {
+//		static uint32_t last_print = 0;
+//		uint32_t now = sys_get_ms();
+//		
+//		if (now - last_print > 1000)
+//		{
+//			for (uint8_t i = 0; i < 4; i++)
+//			{
+//				DEBUG_WARN("IN%u, current %.2fmA\r\n", i, m_adc_input.in_4_20ma_in[i]); 
+//			}
+//			last_print = now;
+//		}
+//    }
 #endif
 
     /* Temperature */

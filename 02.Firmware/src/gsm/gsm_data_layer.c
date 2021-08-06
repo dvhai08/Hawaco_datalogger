@@ -477,7 +477,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 1:
         {
-            DEBUG_INFO("Setup network scan sequence: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//            DEBUG_INFO("Setup network scan sequence: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 //            if(xSystem.Parameters.GSM_Mode == GSM_MODE_2G_ONLY)
 //              SendATCommand ("AT+QCFG=\"nwscanmode\",1\r", "OK", 1000, 10, PowerOnModuleGSM);	
 //            else if(xSystem.Parameters.GSM_Mode == GSM_MODE_4G_ONLY)
@@ -489,7 +489,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
         
         case 2:
         {
-            DEBUG_INFO("Setup network scan mode: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//            DEBUG_INFO("Setup network scan mode: %s\r\n",(event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
             gsm_hw_send_at_cmd("AT+QCFG=\"band\",00,45\r\n", "OK\r\n", "", 1000, 10, do_unlock_band);
         }
             break;
@@ -883,7 +883,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
         {
             if (sms[count].need_to_send == 2)
             {
-                DEBUG_PRINTF("Sms to %s. Content : %s\r\n",
+                DEBUG_ERROR("Sms to %s. Content : %s\r\n",
                            sms[count].phone_number, sms[count].message);
 
                 sprintf(m_at_cmd_buffer, "AT+CMGS=\"%s\"\r\n", sms[count].phone_number);
@@ -911,7 +911,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
                                         30000, 
                                         1, 
                                         gsm_at_cb_send_sms);
-                    DEBUG_PRINTF("Sending sms in buffer %u\r\n", count);
+//                    DEBUG_PRINTF("Sending sms in buffer %u\r\n", count);
                     break;
                 }
             }
@@ -948,7 +948,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
         }
         else
         {
-            DEBUG_PRINTF("SMS : Send sms failed\r\n");
+            DEBUG_ERROR("SMS : Send sms failed\r\n");
             retry_count++;
             if (retry_count < 3)
             {
@@ -957,7 +957,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
             }
             else
             {
-                DEBUG_PRINTF("Send sms failed many times, cancle\r\n");
+                DEBUG_ERROR("Send sms failed many times, cancle\r\n");
                 goto SEND_SMS_FAIL;
             }
         }
@@ -988,69 +988,54 @@ SEND_SMS_FAIL:
 
 
 /* DTG02
-    {
-        "Timestamp":"1626943936",
-        "ID":"DTG2-860262050127815",
-        "Phone":"0",
-        "Money":"0",
-        "Inputl_J1":"0",
-        "Inputl_J2":"0",
-        "Inputl_J3_1":0.00,
-        "Inputl_J3_2":0.00,
-        "Inputl_J3_3":0.30,
-        "Inputl_J3_4":0.00,
-        "Inputl_J9_1":1,
-        "Inputl_J9_2":1,
-        "Inputl_J9_3":1,
-        "Inputl_J9_4":1,
-        "Outputl":"0",
-        "Output2":"0",
-        "Output3":"0",
-        "Output4":"0",
-        "Output4_20":"0.0",
-        "WarningLevel":"1,0,0,0,1,0,1",
-        "Vin_mv":2752,
-        "Temperature":32,
-        "RST":40,
-        "KO":1,
-        "Offset0":"0",
-        "Mode0":0,
-        "Kl":"1",
-        "Offsetl":"0",
-        "Model":"0",
-        "SIM":"452040700052216",
-        "Uptime":"18",
-        "FW":"0.0.3",
-        "HW":"0.0.1"
-    }
+{
+	"Timestamp": "1628275184",
+	"ID": "G2-860262050125777",
+	"Phone": "0916883454",
+	"Money": 7649,
+	"Inputl_J1": 7649,
+	"Inputl_J3_1": 0.01,
+	"Input1_J3_2": 0.00,
+	"Input1_J3_3": 0.01,
+	"Input1_J3_4 ": 0.01,
+	"Input1_J9_1 ": 1,
+	"Input1_g9_2 ": 1,
+	"Inputl_J9_3 ": 1,
+	"Input_J9_4 ": 71,
+	"Output1 ": 0,
+	"Output2": 0,
+	"Output3": 0,
+	"Output4": 0,
+	"Output4_20": 0.0,
+	"WarningLevel ": "0,0,0,0,1,0,1",
+	"BatteryLevel ": 100,
+	"Vin": 23.15,
+	"Temperature ": 29,
+	"Registerl_1 ": 64,
+	"Unitl_1 ": "m3/s",
+	"Register1_2 ": 339,
+	"Unit1_2 ": "jun ",
+	"Register2_1": 0.0000,
+	"Unit2_1": "kg",
+	"Register2_2": 0,
+	"Unit2_2": "1it",
+	"SIM": "452040700052210",
+	"Uptime": "3",
+	"FW": "0.0.5",
+	"HW": "0.0.1"
+}
  */
 static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *msg)
 {
     app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
     DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
-	
-
-	char alarm_str[32];
+	sys_ctx_t *ctx = sys_ctx();
+	bool found_break_pulse_input = false;
+	char alarm_str[128];
     char *p = alarm_str;
     uint16_t total_length = 0;
-
-    // Build error msg
-    // bat,temp,4glost,sensor_err,sensor_overflow, sensor break, vtemp is valid or not
-    if (msg->vbat_percent < 10)
-    {
-        p += sprintf(p, "%u,", 1);
-    }
-    else
-    {
-        p += sprintf(p, "%u,", 0);
-    }
-    
-    //4glost,sensor_err,sensor_overflow,sensor_break,flash_err, vtemp is valid or not
-    p += sprintf(p, "%u,", 0);
-    p += sprintf(p, "%u,", 0);
-    p += sprintf(p, "%u,", 0);
-	bool found_break_pulse_input = false;
+	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		if (measure_input->water_pulse_counter[i].line_break_detect)
@@ -1059,13 +1044,58 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 			break;
 		}
 	}
+
+	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Error\":\"");
+
+	if (found_break_pulse_input)
+	{
+		ctx->error_not_critical.detail.circuit_break = 1;
+		total_length += sprintf((char *)(ptr + total_length), "%s", "cam_bien_xung_dut,");
+	}
+	else
+	{
+		ctx->error_not_critical.detail.circuit_break = 0;
+	}
 	
-	p += sprintf(p, "%u,", found_break_pulse_input ? 1 : 0);
-    p += sprintf(p, "%u,", app_spi_flash_is_ok() ? 0 : 1);
-    p += sprintf(p, "%u", measure_input->temperature_error ? 0 : 1);
+
+    // Build error msg
+    if (msg->vbat_percent < 10)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "%s", "pin_yeu,");
+    }
     
+	// Flash
+	if (ctx->error_not_critical.detail.flash)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "%s", "flash,");
+	}
+
+	// Nhiet do
+	if (measure_input->temperature > 70)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet_do_cao,");
+	}
+
+	
+	// RS485
+	if (ctx->error_not_critical.detail.rs485_err)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
+	}
+	
+	// Cam bien
+	if (ctx->error_critical.detail.sensor_out_of_range)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "%s", "qua_nguong,");
+	}
+	
+	p[total_length - 1] = 0;
+	total_length--;		// remove char ','
+	
+	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
+	
     // Build timestamp
-    total_length += sprintf((char *)ptr, "{\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
+    total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
     
     uint32_t temp_counter;
 
@@ -1076,14 +1106,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 #endif
     total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", cfg->phone);
-    total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
        
 #ifdef DTG02
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
 		temp_counter = msg->counter[i].forward / cfg->k[i] + cfg->offset[i];
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":\"%u\",",
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
 									i,
 								  temp_counter);
 		if (cfg->meter_mode[i] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
@@ -1119,13 +1149,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build output on/off
 	for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_ON_OFF; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":\"%u\",", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":%u,", 
 																			i+1,
 																			measure_input->output_on_off[i]);  //dau ra on/off 
 	}
     
     // Build output 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":\"%.1f\",", measure_input->output_4_20mA);   // dau ra 4-20mA 0
+    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", measure_input->output_4_20mA);   // dau ra 4-20mA 0
 #else	
     // Build pulse counter
     temp_counter = msg->counter[0].forward / cfg->k[0]+ cfg->offset[0];
@@ -1162,7 +1192,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
 #ifdef DTG01    // Battery
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%.2f,", msg->vbat_mv/1000);
 #else   // DTG02 : Vinput 24V
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
@@ -1187,8 +1217,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 					&& msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
 				{
 					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":", index+1, sub_idx+1);
-					if (msg->rs485[index].sub_register[sub_idx].data_type.type == RS485_DATA_TYPE_INT16 
-						|| msg->rs485[index].sub_register[sub_idx].data_type.type == RS485_DATA_TYPE_INT32)
+					if (msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
+						|| msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
 					{
 						total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].sub_register[sub_idx].value);
 					}
@@ -1201,19 +1231,19 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 						total_length += sprintf((char *)(ptr + total_length), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
 					}
 				}
-				else
+				else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
 				{
-					total_length += sprintf((char *)(ptr + total_length), "\"Register%u\":%s,", index+1, "FFFF");
+					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "FFFF");
 				}	
 			}
 		}
 	}
     
     // Sim imei
-    total_length += sprintf((char *)(ptr + total_length), "\"SIM\":\"%s\",", gsm_get_sim_imei());
+    total_length += sprintf((char *)(ptr + total_length), "\"SIM\":%s,", gsm_get_sim_imei());
     
     // Uptime
-    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":\"%u\",", m_wake_time);
+    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
     
     // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);

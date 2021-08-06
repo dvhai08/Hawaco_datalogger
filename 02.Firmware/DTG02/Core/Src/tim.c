@@ -87,7 +87,7 @@ void tim_pwm_change_freq(uint32_t freq)
     if (freq)
     {
         m_reload_value = TIME_FREQ/freq - 1;      // 8mhz clock
-        DEBUG_INFO("Change reload value to %u\r\n", m_reload_value);
+//        DEBUG_INFO("Change reload value to %u\r\n", m_reload_value);
         tim_pwm_stop();
         tim_pwm_start();
     }

@@ -106,7 +106,7 @@
 #define RS485_POWER_EN(x)				{	if (x) \
 												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 											else	\
-												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
+												LL_GPIO_SetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 										}	
 #define RS485_DIR_TX()                  {   \
                                             LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);     \
@@ -191,8 +191,8 @@
 #define RS485_MAX_SUB_REGISTER						4
 #define RS485_REGISTER_ADDR_TOP						50000
 
-#define APP_EEPROM_VALID_FLAG		0x15234519
-#define APP_EEPROM_SIZE				(6*1024)
+#define APP_EEPROM_VALID_FLAG						0x15234519
+#define APP_EEPROM_SIZE								(6*1024)
 
 #define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		0 // Meter mode 0 : PWM++, DIR--
 #define APP_EEPROM_METER_MODE_ONLY_PWM				1 // Meter mode 1 : PWM++
@@ -230,7 +230,7 @@ typedef union
 		uint8_t valid : 1;
 		uint8_t type : 7;
 	} __attribute__((packed)) name;
-	uint8_t type;
+	uint8_t raw;
 } __attribute__((packed)) measure_input_rs485_data_type_t;
 
 typedef struct
