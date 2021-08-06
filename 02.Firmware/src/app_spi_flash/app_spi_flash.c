@@ -5,6 +5,7 @@
 #include "main.h"
 #include "umm_malloc.h"
 #include "sys_ctx.h"
+#include "utilities.h"
 
 #define VERIFY_FLASH 0
 #define DEBUG_FLASH 0
@@ -93,7 +94,7 @@ void app_spi_flash_initialize(void)
     if (flash_self_test())
     {
         m_flash_inited = true;
-        DEBUG_PRINTF("Flash self test[OK]\r\nFlash type: ");
+        DEBUG_VERBOSE("Flash self test[OK]\r\nFlash type: ");
         switch (m_flash_version)
         {
         case FL164K: //8MB
@@ -152,7 +153,7 @@ void app_spi_flash_initialize(void)
     }
     else
     {
-        DEBUG_PRINTF("Check first run ok\r\n");
+//        DEBUG_VERBOSE("Check first run ok\r\n");
     }
 
     if (m_flash_inited)
@@ -663,6 +664,8 @@ void app_spi_flash_erase_all(void)
     uint8_t status = 0xFF;
     uint8_t cmd;
     DEBUG_INFO("Erase all flash\r\n");
+	
+	app_spi_flash_wakeup();
 
     flash_write_control(1, 0);
     SPI_EXT_FLASH_CS(0);
@@ -791,7 +794,7 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
     return m_wr_addr;
 }
 
-uint32_t found_message_error_in_range(uint32_t begin_addr, uint32_t end_addr)
+uint32_t find_retransmition_messgae(uint32_t begin_addr, uint32_t end_addr)
 {
     app_spi_flash_data_t tmp;
     memset(&tmp, 0, sizeof(tmp));
@@ -831,8 +834,12 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
     if (m_resend_data_in_flash_addr == m_wr_addr) // Neu read = write =>> check current page status
     {
         flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, sizeof(tmp));
-        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY // Neu packet error
-            && (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG))
+		
+		// Neu packet error
+		uint32_t crc = utilities_calculate_crc32((uint8_t *)&tmp, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY 
+            && (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
+			&& tmp.crc == crc)
         {
             m_resend_data_in_flash_addr = m_wr_addr;
             *found_error = true;
@@ -840,7 +847,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
     }
     else if (m_wr_addr > m_resend_data_in_flash_addr) // Neu write address > read address =>> Scan from read_addr to write_addr
     {
-        tmp_addr = found_message_error_in_range(m_resend_data_in_flash_addr, m_wr_addr);
+        tmp_addr = find_retransmition_messgae(m_resend_data_in_flash_addr, m_wr_addr);
         if (tmp_addr != 0)
         {
             m_resend_data_in_flash_addr = tmp_addr;
@@ -851,7 +858,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
          // Step 1 : scan from read addr to max addr
          // Step 2 : scan from SPI_FLASH_PAGE_SIZE to write addr
     {
-        tmp_addr = found_message_error_in_range(m_resend_data_in_flash_addr, m_wr_addr);
+        tmp_addr = find_retransmition_messgae(m_resend_data_in_flash_addr, m_wr_addr);
         if (tmp_addr != 0)
         {
             m_resend_data_in_flash_addr = tmp_addr;
@@ -859,7 +866,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
         }
         else
         {
-            tmp_addr = found_message_error_in_range(SPI_FLASH_PAGE_SIZE, m_wr_addr);
+            tmp_addr = find_retransmition_messgae(SPI_FLASH_PAGE_SIZE, m_wr_addr);
             if (tmp_addr != 0)
             {
                 *found_error = true;
@@ -979,6 +986,7 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
         {
             DEBUG_WARN("Flash full\r\n");
         }
+		wr_data->crc = utilities_calculate_crc32((uint8_t *)wr_data, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
         flash_write_bytes(addr, (uint8_t *)wr_data, sizeof(app_spi_flash_data_t));
         flash_read_bytes(addr, (uint8_t *)&rd_data, sizeof(app_spi_flash_data_t));
         if (memcmp(wr_data, &rd_data, sizeof(app_spi_flash_data_t)))
@@ -998,9 +1006,11 @@ app_flash_data_t *dbg_ptr;
 bool app_flash_mask_retransmiton_is_valid(uint32_t read_addr, app_spi_flash_data_t *rd_data)
 {
     flash_read_bytes(read_addr, (uint8_t *)rd_data, sizeof(app_spi_flash_data_t));
+	uint32_t crc = utilities_calculate_crc32((uint8_t *)rd_data, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
     if (rd_data->valid_flag == APP_FLASH_VALID_DATA_KEY 
         && rd_data->resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG
-        && rd_data->timestamp)
+        && rd_data->timestamp
+		&& rd_data->crc == crc)
     {
         rd_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG; // mark no need to retransmission
 

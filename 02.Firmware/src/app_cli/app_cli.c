@@ -58,11 +58,11 @@ static const shell_command_context_t cli_command_table[] =
     {"reset",           "\treset: reset system\r\n",                            cli_reset_system,                           0},   
     {"factory",         "\tfactory : Factory reset\r\n",                        cli_factory_reset,                          0},
 //    {"sleep",           "\tsleep :enter/exit sleep\r\n",                        cli_sleep,                                  1},
-    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
+//    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
 //    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
-    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
+//    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
 };
@@ -169,25 +169,25 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
 //    return 0;
 //}
 
-extern bool gsm_send_sms(char *phone_number, char *message);
-static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv)
-{
-    if (strstr(argv[1], "send"))
-    {
-        if (!gsm_send_sms(argv[2], argv[3]))
-        {
-            DEBUG_PRINTF("Send sms failed\r\n");
-        }
-    }
-#if GSM_READ_SMS_ENABLE
-    else if (strstr(argv[1], "read"))
-    {
-        DEBUG_PRINTF("Enter read sms mode\r\n");
-        gsm_set_flag_prepare_enter_read_sms_mode();
-    }
-#endif
-    return  0;
-}
+//extern bool gsm_send_sms(char *phone_number, char *message);
+//static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    if (strstr(argv[1], "send"))
+//    {
+//        if (!gsm_send_sms(argv[2], argv[3]))
+//        {
+//            DEBUG_PRINTF("Send sms failed\r\n");
+//        }
+//    }
+//#if GSM_READ_SMS_ENABLE
+//    else if (strstr(argv[1], "read"))
+//    {
+//        DEBUG_PRINTF("Enter read sms mode\r\n");
+//        gsm_set_flag_prepare_enter_read_sms_mode();
+//    }
+//#endif
+//    return  0;
+//}
 
 //extern System_t xSystem;
 static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)

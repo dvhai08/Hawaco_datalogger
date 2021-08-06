@@ -204,17 +204,17 @@ void gsm_hw_layer_run(void)
         }
         else
         {
-            DEBUG_PRINTF("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
+//            DEBUG_VERBOSE("Resend ATC: %sExpect %s\r\n", m_gsm_hardware.atc.cmd, m_gsm_hardware.atc.expect_resp_from_atc);
             m_gsm_hardware.atc.current_timeout_atc_ms = sys_get_ms();
             gsm_hw_uart_send_raw((uint8_t*)m_gsm_hardware.atc.cmd, strlen(m_gsm_hardware.atc.cmd));
         }
     }
 
-    if (m_gsm_hardware.atc.recv_buff.index > 32 
-        && strstr((char*)m_gsm_hardware.atc.recv_buff.buffer+10, "CUSD:"))
-        {
-            DEBUG_VERBOSE("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
-        }
+//    if (m_gsm_hardware.atc.recv_buff.index > 32 
+//        && strstr((char*)m_gsm_hardware.atc.recv_buff.buffer+10, "CUSD:"))
+//        {
+//            DEBUG_VERBOSE("CUSD %s\r\n", m_gsm_hardware.atc.recv_buff.buffer);
+//        }
 
     if (m_gsm_hardware.atc.retry_count_atc == 0)
     {
@@ -292,11 +292,7 @@ void gsm_hw_layer_uart_fill_rx(uint8_t *data, uint32_t length)
 			m_gsm_hardware.atc.recv_buff.buffer[m_gsm_hardware.atc.recv_buff.index++] = data[i];
 			if (m_gsm_hardware.atc.recv_buff.index >= sizeof(((sys_ctx_small_buffer_t*)0)->buffer))
 			{
-				DEBUG_ERROR("[%s] Overflow, previous index %u, bytes written %u, length need to wr %ubytes\r\n", 
-                            __FUNCTION__, 
-                            prev_index, 
-                            i,
-                            length);
+				DEBUG_ERROR("GSM RX overflow\r\n");
 				m_gsm_hardware.atc.recv_buff.index = 0;
                 m_gsm_hardware.atc.recv_buff.buffer[0] = 0;
 				return;

@@ -26,7 +26,7 @@
 
 /*! @brief Macro to set on/off auto-complete feature. */
 #ifndef SHELL_AUTO_COMPLETE
-#define SHELL_AUTO_COMPLETE (1U)
+#define SHELL_AUTO_COMPLETE (0U)
 #endif
 
 /*! @brief Macro to set console buffer size. */
@@ -36,12 +36,12 @@
 
 /*! @brief Macro to set maximum arguments in command. */
 #ifndef SHELL_MAX_ARGS
-#define SHELL_MAX_ARGS (6U)
+#define SHELL_MAX_ARGS (4U)
 #endif
 
 /*! @brief Macro to set maximum count of history commands. */
 #ifndef SHELL_HIST_MAX
-#define SHELL_HIST_MAX (3U)
+#define SHELL_HIST_MAX (1U)
 #endif
 
 /*! @brief Macro to set maximum count of commands. */

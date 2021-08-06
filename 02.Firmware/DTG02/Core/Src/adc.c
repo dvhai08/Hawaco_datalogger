@@ -79,7 +79,6 @@ void MX_ADC_Init(void)
 {
 
   /* USER CODE BEGIN ADC_Init 0 */
-	DEBUG_VERBOSE("ADC inititlize\r\n");
     if (m_is_the_first_time)
     {
         memset(offset_input_4_20ma_mv, 0, sizeof(offset_input_4_20ma_mv));
@@ -143,7 +142,6 @@ void MX_ADC_Init(void)
   /* USER CODE BEGIN ADC_Init 1 */
   if (SystemCoreClock > 8000000)
   {
-        DEBUG_VERBOSE("ADC main clk is high\r\n");
         LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_CLOCK_ASYNC_DIV12);
   }
   else
@@ -219,7 +217,6 @@ void MX_ADC_Init(void)
   
 //    if (LL_ADC_IsEnabled(ADC1) == 0)
     {
-        DEBUG_VERBOSE("Start calib ADC\r\n");
         /* Run ADC self calibration */
         LL_ADC_StartCalibration(ADC1);
 
@@ -228,7 +225,6 @@ void MX_ADC_Init(void)
         Timeout = ADC_CALIBRATION_TIMEOUT_MS;
         #endif /* USE_TIMEOUT */
         
-        DEBUG_VERBOSE("Wait for adc calib\r\n");
         while (LL_ADC_IsCalibrationOnGoing(ADC1) != 0)
         {
         #if (USE_TIMEOUT == 1)
@@ -260,7 +256,6 @@ void MX_ADC_Init(void)
 
 void adc_isr_cb(void)
 {
-    DEBUG_VERBOSE("ADC ISR cb\r\n");
     /* Check whether ADC group regular end of unitary conversion caused         */
     /* the ADC interruption.                                                    */
     if(LL_ADC_IsActiveFlag_EOC(ADC1) != 0)
@@ -414,14 +409,11 @@ void adc_start(void)
     {
         ENABLE_INPUT_4_20MA_POWER(0);
     }
-    
-    DEBUG_VERBOSE("Convert complete\r\n");
     adc_convert();
 }
 
 void adc_stop(void)
 {
-    DEBUG_VERBOSE("ADC stop\r\n");
 	ENABLE_NTC_POWER(0);
 //    NVIC_DisableIRQ(ADC1_COMP_IRQn);
     LL_ADC_DeInit(ADC1);
@@ -498,7 +490,7 @@ static bool convert_temperature(uint32_t vtemp_mv, uint32_t vbat_mv, int32_t *re
     }
 
     *result = (int32_t)temp;
-    DEBUG_INFO("Temp %d\r\n", (int32_t)temp);
+    DEBUG_VERBOSE("Temp %d\r\n", (int32_t)temp);
 end:
     return retval;
 }
@@ -517,7 +509,7 @@ void adc_convert(void)
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
-    DEBUG_INFO("VDDA %umv\r\n", m_adc_input.vdda_mv);
+    DEBUG_VERBOSE("VDDA %umv\r\n", m_adc_input.vdda_mv);
     
 	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
@@ -543,7 +535,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_WARN("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
+    DEBUG_VERBOSE("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
     
 #ifdef DTG02
     // Channel 1
@@ -562,7 +554,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_WARN("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
+    DEBUG_VERBOSE("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
     
     
     // Channel 2
@@ -581,7 +573,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_WARN("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
+    DEBUG_VERBOSE("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
     
     // 4-20ma channel 3
     m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
@@ -600,7 +592,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_WARN("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
+    DEBUG_VERBOSE("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
     
 #endif
     
@@ -631,10 +623,17 @@ void adc_convert(void)
     
     if (sys_ctx()->status.is_enter_test_mode)
     {
-        for (uint8_t i = 0; i < 4; i++)
-        {
-            DEBUG_WARN("IN%u, current %.1fmA\r\n", i, m_adc_input.in_4_20ma_in[i]); 
-        }
+		static uint32_t last_print = 0;
+		uint32_t now = sys_get_ms();
+		
+		if (now - last_print > 1000)
+		{
+			for (uint8_t i = 0; i < 4; i++)
+			{
+				DEBUG_WARN("IN%u, current %.1fmA\r\n", i, m_adc_input.in_4_20ma_in[i]); 
+			}
+			last_print = now;
+		}
     }
 #endif
 

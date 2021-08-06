@@ -432,67 +432,96 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     
     // Process RS485
     // Total 2 device
-    //"ID0":(id,reg,nb_of_bytes)
-	for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS && config->io_enable.name.rs485_en; i++)
+    // "ID485_0":1,
+	// Register_1_1:30001
+	// Unit_1_1:"kg/m3",
+	// Type_1_1:"int16/int32/float",
+	// Register_1_3:30003,
+	// 
+	//"ID485_1":1,
+	// Register_2_1:40001
+	//  Register_2_3:40003
+	
+	for (uint32_t slave_count = 0; slave_count < RS485_MAX_SLAVE_ON_BUS && config->io_enable.name.rs485_en; slave_count++)
 	{
-		char keyword[12];
-		sprintf(keyword, "\"ID%u:", i);
-		char *rs485_id = strstr(buffer, keyword);
-		if (rs485_id && config->io_enable.name.rs485_en)
-		{
-			rs485_id += strlen(keyword);
-			char tmp[32];
-			memset(tmp, 0, sizeof(tmp));
-			gsm_utilities_copy_parameters(rs485_id, tmp, '(', ')');
-			DEBUG_INFO("RS485_ID%u config %s\r\n", i, tmp);
-			char *id_str;
-			char *reg_str;
+		char search_str[16];
+		sprintf(search_str, "ID485_%u\":", slave_count+1);
+		char *rs485_id_str = strstr(buffer, search_str);
+		
+		for (uint32_t sub_reg_idx = 0; sub_reg_idx < RS485_MAX_SUB_REGISTER; sub_reg_idx++)
+		{			
+			sprintf(search_str, "Register_%u_%u\":", slave_count+1, sub_reg_idx+1);
+			char *rs485_reg_str = strstr(buffer, search_str);
 			
-			id_str = strtok(tmp, ",");
-			uint32_t slave_id = atoi(id_str);
-			rs485_id += strlen(id_str) + 1;
+			sprintf(search_str, "Type_%u_%u\":", slave_count+1, sub_reg_idx+1);
+			char *rs485_type_str = strstr(buffer, search_str);
 			
-			reg_str = strtok(rs485_id, ",");
-			uint32_t reg = atoi(reg_str);
-			rs485_id += strlen(reg_str) + 1 + 1;
+			sprintf(search_str, "Unit_%u_%u\":", slave_count+1, sub_reg_idx+1);
+			char *rs485_unit = strstr(buffer, search_str);
 			
-			uint32_t nb_register = atoi(rs485_id);
-			int found_slave_addr = -1;
-			for (uint32_t j = 0; j < RS485_MAX_SLAVE_ON_BUS; j++)
+			if (rs485_id_str && rs485_reg_str && rs485_type_str)
 			{
-				if (slave_id == config->rs485[j].slave_addr)
+				uint32_t temp;
+				// Get rs485 slave id
+				temp = gsm_utilities_get_number_from_string(9, rs485_id_str);  //7 = strlen(ID485_1":)
+				if (temp != config->rs485[slave_count].slave_addr)
 				{
-					found_slave_addr = j;
-					break;
+					config->rs485[slave_count].slave_addr = temp;
+					has_new_cfg++;
+					DEBUG_INFO("Slave addr %u\r\n", temp);
+				}
+				
+				// Get RS485 data type
+				temp = RS485_DATA_TYPE_INT16;
+				config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
+				if (strstr(rs485_type_str, "\"int32\","))
+				{
+					temp = RS485_DATA_TYPE_INT32;
+				}
+				else if (strstr(rs485_type_str, "\"float\","))
+				{
+					temp = RS485_DATA_TYPE_FLOAT;
+				}
+				
+				if (temp != config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type)
+				{
+					config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type = temp;
+					has_new_cfg++;
+					DEBUG_INFO("Type %u\r\n", temp);
+				}
+				
+				// Get RS485 data addr 
+				temp = gsm_utilities_get_number_from_string(14, rs485_reg_str);  //14 = strlen(Register_2_1":)
+				if (temp != config->rs485[slave_count].sub_register[sub_reg_idx].register_addr)
+				{
+					config->rs485[slave_count].sub_register[sub_reg_idx].register_addr = temp;
+					has_new_cfg++;
+					DEBUG_INFO("Reg addr %u\r\n", temp);
+				}
+				
+				// Unit
+				if (rs485_unit == NULL)
+				{
+					config->rs485[slave_count].sub_register[sub_reg_idx].unit[0] = 0;
+				}
+				else
+				{
+					// strlen("\"Unit_%u_%u\":\"") = 11
+					rs485_unit += 11;
+					uint32_t copy_len = APP_EEPROM_MAX_UNIT_NAME_LENGTH - 1;
+					char *p = strstr(rs485_unit, "\"");
+					if (p - rs485_unit < copy_len)
+					{
+						copy_len = p - rs485_unit;
+					}
+					if (strstr(rs485_unit, (char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit) == 0)
+					{
+						has_new_cfg++;
+					}
+					strncpy((char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit, (char*)rs485_unit, copy_len); 
+					DEBUG_INFO("Unit %s\r\n", (char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit);
 				}
 			}
-			
-			if (found_slave_addr == -1)		// slave not existed
-			{
-				has_new_cfg++;
-				found_slave_addr = 0;
-			}
-			
-			config->rs485[found_slave_addr].slave_addr = slave_id;
-			DEBUG_INFO("Modbus slave addr %u\r\n", slave_id);
-			
-			if (reg != config->rs485[found_slave_addr].register_index
-				&& reg < RS485_REGISTER_ADDR_TOP)     // modbus max register support is 50000
-			{
-				has_new_cfg++;
-				config->rs485[found_slave_addr].register_index = reg;
-				DEBUG_INFO("Modbus register addr %u\r\n", reg);
-			}
-			if (nb_register > RS485_MAX_REGISTER_SUPPORT)      // maximum 16 register
-			{
-				nb_register = RS485_MAX_REGISTER_SUPPORT;
-			}
-			if (nb_register != config->rs485[found_slave_addr].nb_of_register)
-			{
-				DEBUG_INFO("Modbus nb of register %u\r\n", nb_register);
-				config->rs485[found_slave_addr].nb_of_register = nb_register;
-				has_new_cfg++;
-			}	
 		}
 	}
 	

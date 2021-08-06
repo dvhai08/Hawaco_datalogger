@@ -212,7 +212,7 @@ void gsm_manager_tick(void)
             }
             if (enter_post)
             {
-                DEBUG_PRINTF("Post http data\r\n");
+                DEBUG_VERBOSE("Post http data\r\n");
                 GSM_ENTER_HTTP_POST();
                 enter_sleep_in_http = false;
                 gsm_change_state(GSM_STATE_HTTP_POST);
@@ -273,7 +273,7 @@ void gsm_manager_tick(void)
 
         if (gsm_manager.step == 0)
         {
-            DEBUG_PRINTF("Enter send sms cb\r\n");
+//            DEBUG_VERBOSE("Enter send sms cb\r\n");
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 100, 1, gsm_at_cb_send_sms);
         }
@@ -361,8 +361,6 @@ static void init_http_msq(void)
     if (m_is_the_first_time)
     {
         m_is_the_first_time = false;
-
-        DEBUG_VERBOSE("HTTP: init buffer\r\n");
     }
 }
 
@@ -412,12 +410,12 @@ void gsm_change_state(gsm_state_t new_state)
 		m_wake_time++;
 		app_bkup_write_nb_of_wakeup_time(m_wake_time);
         break;
-    case GSM_STATE_REOPEN_PPP:
-        DEBUG_VERBOSE("REOPENPPP\r\n");
-        break;
-    case GSM_STATE_GET_BTS_INFO:
-        DEBUG_VERBOSE("GETSIGNAL\r\n");
-        break;
+//    case GSM_STATE_REOPEN_PPP:
+//        DEBUG_VERBOSE("REOPENPPP\r\n");
+//        break;
+//    case GSM_STATE_GET_BTS_INFO:
+//        DEBUG_VERBOSE("GETSIGNAL\r\n");
+//        break;
 //    case GSM_STATE_SEND_ATC:
 //        DEBUG_RAW("Quit PPP and send AT command\r\n");
 //        break;
@@ -427,9 +425,9 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_WAKEUP:
         DEBUG_RAW("WAKEUP\r\n");
         break;
-    case GSM_STATE_AT_MODE_IDLE:
-        DEBUG_VERBOSE("IDLE\r\n");
-        break;
+//    case GSM_STATE_AT_MODE_IDLE:
+//        DEBUG_VERBOSE("IDLE\r\n");
+//        break;
     case GSM_STATE_SLEEP:
     {
         DEBUG_RAW("SLEEP\r\n");
@@ -688,7 +686,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 21:
     {
-        DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//        DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CCLK?\r\n", "+CCLK:", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
@@ -784,12 +782,12 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("Exit sleep!");
+//            DEBUG_PRINTF("Exit sleep!");
             gsm_change_state(GSM_STATE_OK);
         }
         else
         {
-            DEBUG_PRINTF("Khong phan hoi lenh, reset module...");
+//            DEBUG_PRINTF("Khong phan hoi lenh, reset module...");
             gsm_change_state(GSM_STATE_RESET);
         }
         break;
@@ -876,7 +874,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
     gsm_sms_msg_t *sms = gsm_get_sms_memory_buffer();
     uint32_t max_sms = gsm_get_max_sms_memory_buffer();
 
-    DEBUG_PRINTF("Debug SEND SMS : %u %u,%s\r\n", gsm_manager.step, event, resp_buffer);
+//    DEBUG_PRINTF("Debug SEND SMS : %u %u,%s\r\n", gsm_manager.step, event, resp_buffer);
 
     switch (gsm_manager.step)
     {
@@ -993,7 +991,7 @@ SEND_SMS_FAIL:
     {
         "Timestamp":"1626943936",
         "ID":"DTG2-860262050127815",
-        "PhoneNum":"0",
+        "Phone":"0",
         "Money":"0",
         "Inputl_J1":"0",
         "Inputl_J2":"0",
@@ -1073,11 +1071,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
     // Build ID, phone and id
 #ifdef DTG02
-    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG2-%s\",", gsm_get_module_imei());
+    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
 #else
-    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"DTG1-%s\",", gsm_get_module_imei());
+    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 #endif
-    total_length += sprintf((char *)(ptr + total_length), "\"PhoneNum\":\"%s\",", cfg->phone);
+    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", cfg->phone);
     total_length += sprintf((char *)(ptr + total_length), "\"Money\":\"%d\",", 0);
        
 #ifdef DTG02
@@ -1166,7 +1164,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
-    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
     // Temperature
     if (!measure_input->temperature_error)
@@ -1174,33 +1172,40 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
     }
     
-    // Reset reason
-    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
+//    // Reset reason
+//    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
     
-	    
+	// Register0_1:1234, Register0_2:4567, Register1_0:12345
 	for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 	{
 		// 485
-		if (cfg->io_enable.name.rs485_en
-			&& msg->rs485[index].nb_of_register)
-		{
-			total_length += sprintf((char *)(ptr + total_length), "\"MID%u\":%u,", index, msg->rs485[index].slave_addr);
-			total_length += sprintf((char *)(ptr + total_length), "\"MBI%u\":%u,", index, msg->rs485[index].register_index);
-			total_length += sprintf((char *)(ptr + total_length), "\"MBV%u\":\"(", index);
-			
-			for (uint32_t i = 0; i < msg->rs485[index].nb_of_register; i++)
+		if (cfg->io_enable.name.rs485_en)
+		{	
+			for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
 			{
-				if (msg->rs485[index].data_type == RS485_DATA_TYPE_INT16 || msg->rs485[index].data_type == RS485_DATA_TYPE_INT32)
+				if (msg->rs485[index].sub_register[sub_idx].read_ok
+					&& msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
 				{
-					total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].value[i]);
+					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":", index+1, sub_idx+1);
+					if (msg->rs485[index].sub_register[sub_idx].data_type.type == RS485_DATA_TYPE_INT16 
+						|| msg->rs485[index].sub_register[sub_idx].data_type.type == RS485_DATA_TYPE_INT32)
+					{
+						total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].sub_register[sub_idx].value);
+					}
+					else
+					{
+						total_length += sprintf((char *)(ptr + total_length), "%.4f,", (float)msg->rs485[index].sub_register[sub_idx].value);
+					}
+					if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+					{
+						total_length += sprintf((char *)(ptr + total_length), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+					}
 				}
 				else
 				{
-					total_length += sprintf((char *)(ptr + total_length), "%f,", (float)msg->rs485[index].value[i]);
-				}
+					total_length += sprintf((char *)(ptr + total_length), "\"Register%u\":%s,", index+1, "FFFF");
+				}	
 			}
-			total_length -= 1;  // delete comma ','
-			total_length += sprintf((char *)(ptr + total_length), "%s", ")\",");
 		}
 	}
     
@@ -1339,7 +1344,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             // Malloc data to http post
             DEBUG_VERBOSE("Malloc data\r\n");
 #ifdef DTG01
-            m_last_http_msg = (char*)umm_malloc(512);
+            m_last_http_msg = (char*)umm_malloc(512+128);
 #else
             m_last_http_msg = (char*)umm_malloc(736);
 #endif

@@ -16,7 +16,7 @@ app_eeprom_config_data_t m_cfg;
 void app_eeprom_init(void)
 {
     app_eeprom_config_data_t *tmp = (app_eeprom_config_data_t*)EEPROM_STORE_DATA_ADDR;
-    uint16_t crc = utilities_calculate_crc32((uint8_t*)tmp, sizeof(app_eeprom_config_data_t) - 2);        // last 2 bytes old is crc
+    uint32_t crc = utilities_calculate_crc32((uint8_t*)tmp, sizeof(app_eeprom_config_data_t) - CRC32_SIZE);        // last 2 bytes old is crc
 	if (tmp->valid_flag != APP_EEPROM_VALID_FLAG
         || tmp->crc != crc)
 	{
@@ -40,7 +40,7 @@ void app_eeprom_init(void)
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
         sprintf((char*)&m_cfg.server_addr[0][0], "%s", DEFAULT_SERVER_ADDR);
 		m_cfg.server_addr[1][0] = '\0'; 
-        m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - 4);        // last 4 bytes old is crc
+        m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
         app_eeprom_save_config();
 	}
     else
@@ -67,7 +67,7 @@ void app_eeprom_save_config(void)
 {	
 	uint32_t err;
 	uint8_t *tmp = (uint8_t*)&m_cfg;
-    m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - 4);        // last 4 bytes old is crc
+    m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
     
     flash_if_init();
     

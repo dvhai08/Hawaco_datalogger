@@ -74,13 +74,9 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 		valid = 0;
 	}
 #endif
-	if (valid)
+	if (valid == 0)
     {
         DEBUG_ERROR("Write backup data error\r\n");
-    }
-    else
-    {
-        DEBUG_VERBOSE("Write backup data success\r\n");
     }
 #else
     m_counter[0].forward = counter[0].forward;

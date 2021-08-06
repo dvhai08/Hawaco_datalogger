@@ -466,7 +466,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             //            (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
             //            (char*)response_buffer);
 
-            DEBUG_PRINTF("AT: %s, response %s\r\n", 
+            DEBUG_VERBOSE("AT: %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
             gsm_hw_send_at_cmd("AT+QIACT?\r\n", 

@@ -52,6 +52,7 @@
 #include "ota_update.h"
 #include "flash_if.h"
 #include "version_control.h"
+#include "utilities.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,6 +66,8 @@
 #define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 #define TEST_BACKUP_REGISTER                            0
+#define TEST_SLEEP										1
+#define TEST_CRC32										0
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -119,17 +122,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-    app_eeprom_init();
-	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-    sys_ctx_t *system = sys_ctx();
-#if TEST_OUTPUT_4_20MA
-	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
-    system->status.is_enter_test_mode = 1;
-#endif
-//#if TEST_INPUT_4_20_MA
-//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
-//    system->status.is_enter_test_mode = 1;
-//#endif
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -137,6 +129,19 @@ int main(void)
 
   /* USER CODE BEGIN SysInit */
     __enable_irq();
+	MX_CRC_Init();
+	app_eeprom_init();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    sys_ctx_t *system = sys_ctx();
+#if TEST_OUTPUT_4_20MA || TEST_RS485
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
+//#if TEST_INPUT_4_20_MA
+//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+//    system->status.is_enter_test_mode = 1;
+//#endif
+
 #if 1
   /* USER CODE END SysInit */
 
@@ -150,7 +155,6 @@ int main(void)
   MX_TIM2_Init();
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
-  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
@@ -312,7 +316,10 @@ int main(void)
         adc_stop();
         if (system->status.is_enter_test_mode == 0)
         {
-            sys_config_low_power_mode();
+			if (TEST_SLEEP == 0)
+			{
+				sys_config_low_power_mode();
+			}
         }
     }
     BUZZER(0);
@@ -462,24 +469,27 @@ static void info_task(void *arg)
 	if (system->status.is_enter_test_mode)
 	{
 #if TEST_RS485
-            uint8_t result;
-            uint8_t input_result[2];
-            
-            modbus_master_reset(1000);
+		RS485_POWER_EN(1);
+		uint8_t result;
+		uint16_t input_result[4];
+		
+		modbus_master_reset(1000);
 
-             // read input registers function test
-             // slave address 0x01, two consecutive addresses are register 0x2
-            result = modbus_master_read_input_register(0x01,0x02, 2);
-            if (result == 0x00)
-            {
-                input_result[0] = modbus_master_get_response_buffer(0x00);
-                input_result[1] = modbus_master_get_response_buffer(0x01);
-                DEBUG_INFO("Modbus rx %02X-%02X\r\n", input_result[0], input_result[1]);
-            }
-            else
-            {
-                DEBUG_ERROR("Modbus failed\r\n");
-            }
+		 // read input registers function test
+		 // slave address 0x01, two consecutive addresses are register 0x2
+		result = modbus_master_read_input_register(8,2, 4);
+		if (result == 0x00)
+		{
+			input_result[0] = modbus_master_get_response_buffer(0x00);
+			input_result[1] = modbus_master_get_response_buffer(0x01);
+			input_result[2] = modbus_master_get_response_buffer(0x02);
+			input_result[3] = modbus_master_get_response_buffer(0x03);
+			DEBUG_INFO("Modbus rx %02X-%02X\r\n", input_result[0], input_result[1]);
+		}
+		else
+		{
+			DEBUG_ERROR("Modbus failed\r\n");
+		}
 #endif
         i = 5;
 	}
@@ -509,6 +519,15 @@ static void info_task(void *arg)
 						tmp,
 						adc->temp);
 		}
+#if TEST_CRC32
+		uint32_t crc;
+		static const char *feed_str0 ="12345";
+		static const char *feed_str1 ="12349876";
+		crc = utilities_calculate_crc32((uint8_t*)feed_str0, strlen(feed_str0));
+		DEBUG_INFO("CRC0 0x%08X\r\n", crc);
+		crc = utilities_calculate_crc32((uint8_t*)feed_str1, strlen(feed_str1));
+		DEBUG_INFO("CRC1 0x%08X\r\n", crc);
+#endif
 	}
 }
 
@@ -603,7 +622,6 @@ void sys_config_low_power_mode(void)
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
 {
     m_wakeup_timer_run = false;
-    DEBUG_VERBOSE("Wakeup timer event callback\r\n");
     HAL_RTCEx_DeactivateWakeUpTimer(hrtc);
     __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }

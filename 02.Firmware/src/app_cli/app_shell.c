@@ -85,9 +85,9 @@ int32_t app_shell_task()
     if (printed == false)
     {
         m_context->exit = false;
-        m_context->printf_data_func("\r\nSHELL (build: %s)\r\n", __DATE__);
-        m_context->printf_data_func("Copyright (c) xxxxx JSC\r\n");
-        m_context->printf_data_func(m_context->prompt);
+//        m_context->printf_data_func("\r\nSHELL (build: %s)\r\n", __DATE__);
+//        m_context->printf_data_func("Copyright (c) xxxxx JSC\r\n");
+//        m_context->printf_data_func(m_context->prompt);
         printed = true;
     }
 

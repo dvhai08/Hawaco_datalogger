@@ -82,83 +82,93 @@ measure_input_perpheral_data_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
 
 static void process_rs485(measure_input_modbus_register_t *register_value)
-{
+{	
     app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
     sys_ctx_t *ctx = sys_ctx();
     bool do_stop = true;
     
+	// If rs485 enable =>> Start measure data
     if (eeprom_cfg->io_enable.name.rs485_en)
     {
         ctx->peripheral_running.name.rs485_running = 1;
         usart_lpusart_485_control(1);
         sys_delay_ms(50);   // ensure rs485 transmister ic power on
         
-		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+		for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
 		{
-			if (eeprom_cfg->rs485[i].nb_of_register == 0)
+			for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
 			{
-				continue;
-			}
-			// convert register to function code and offset
-			// ex : 30001 =>> function code = 04, offset = 01
-			uint32_t function_code = eeprom_cfg->rs485[i].register_index / 10000;
-			uint32_t register_offset = eeprom_cfg->rs485[i].register_index - function_code * 10000;
-			function_code += 1;     // 30001 =>> function code = 04 read input register
-			uint32_t slave_addr = eeprom_cfg->rs485[i].slave_addr;
-			switch (function_code)
-			{
-				case MODBUS_MASTER_FUNCTION_READ_COILS:
-					break;
-				
-				case MODBUS_MASTER_FUNCTION_READ_DISCRETE_INPUT:
-					break;
-
-				case MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER:
-					break;
-				
-				case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
+				if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
 				{
-					uint8_t result;
+					uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].read_ok = 0;
+					continue;
+				}
+				// convert register to function code and offset
+				// ex : 30001 =>> function code = 04, offset = 01
+				uint32_t function_code = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr / 10000;
+				uint32_t register_offset = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr - function_code * 10000;
+				function_code += 1;     // 30001 =>> function code = 04 read input register
+				uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].slave_addr;
+				switch (function_code)
+				{
+					case MODBUS_MASTER_FUNCTION_READ_COILS:
+						break;
 					
-					modbus_master_reset(1000);
-					uint32_t halfword_quality = 1;
-					if (eeprom_cfg->rs485[i].data_type == RS485_DATA_TYPE_FLOAT
-						|| eeprom_cfg->rs485[i].data_type == RS485_DATA_TYPE_FLOAT)
-					{
-						halfword_quality = 2;
-					}
+					case MODBUS_MASTER_FUNCTION_READ_DISCRETE_INPUT:
+						break;
+
+					case MODBUS_MASTER_FUNCTION_READ_HOLDING_REGISTER:
+						break;
 					
-					DEBUG_INFO("Modbus slave id %u, offset %u, size %u\r\n", slave_addr, register_offset, eeprom_cfg->rs485[i].nb_of_register);
-					result = modbus_master_read_input_register(slave_addr, 
-																register_offset, 
-																eeprom_cfg->rs485[i].nb_of_register*halfword_quality);
-					register_value[i].slave_addr = slave_addr;
-					if (result != MODBUS_MASTER_OK)
+					case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
 					{
-						DEBUG_ERROR("Modbus read input register failed\r\n");
-						register_value[i].nb_of_register = -1;
-						modbus_master_clear_response_buffer();
-					}
-					else
-					{
-						DEBUG_INFO("Read modbus success\r\n");
-						register_value[i].nb_of_register = eeprom_cfg->rs485[i].nb_of_register;
-						for (uint32_t j = 0; j < eeprom_cfg->rs485[i].nb_of_register; j++)
+						uint8_t result;
+						
+						modbus_master_reset(1000);
+						uint32_t halfword_quality = 1;
+						if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type == RS485_DATA_TYPE_FLOAT
+							|| eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type == RS485_DATA_TYPE_FLOAT)
 						{
-							register_value[j].value[j] = modbus_master_get_response_buffer(halfword_quality*j) << 16;
+							halfword_quality = 2;
+						}
+						
+						DEBUG_INFO("Modbus slave id %u, offset %u, size %u\r\n", slave_addr, register_offset, halfword_quality);
+						result = modbus_master_read_input_register(slave_addr, 
+																	register_offset, 
+																	halfword_quality);
+						register_value[slave_idx].slave_addr = slave_addr;
+						
+						if (result != MODBUS_MASTER_OK)		// Read data error
+						{
+							DEBUG_ERROR("Modbus read input register failed\r\n");
+							register_value[slave_idx].sub_register[sub_register_index].read_ok = 0;
+							modbus_master_clear_response_buffer();
+						}
+						else		// Read data ok
+						{
+	//						DEBUG_INFO("Read modbus success\r\n");
+							// Read ok, copy result to buffer
+							register_value[slave_idx].sub_register[sub_register_index].read_ok = 1;
+							register_value[slave_idx].sub_register[sub_register_index].value = modbus_master_get_response_buffer(0);
 							if (halfword_quality == 2)
 							{	
-								register_value[j].value[j] |= modbus_master_get_response_buffer(halfword_quality*j+1);
+								register_value[slave_idx].sub_register[sub_register_index].value <<= 16;
+								register_value[slave_idx].sub_register[sub_register_index].value |= modbus_master_get_response_buffer(1);
 							}
+							strncpy((char*)register_value[slave_idx].sub_register[sub_register_index].unit,
+									(char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit,
+									6);
+							register_value[slave_idx].sub_register[sub_register_index].data_type.name.valid = 1;
+							register_value[slave_idx].sub_register[sub_register_index].data_type.name.type = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type;
+							register_value[slave_idx].sub_register[sub_register_index].register_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr;
 						}
-						register_value[i].register_index = eeprom_cfg->rs485[i].register_index;
 					}
+						break;
+					
+					default:
+						DEBUG_WARN("Unsupported function code %u\r\n", function_code);
+						break;
 				}
-					break;
-				
-				default:
-					DEBUG_WARN("Unsupported function code %u\r\n", function_code);
-					break;
 			}
 		}
         RS485_POWER_EN(0);        
@@ -367,7 +377,6 @@ void measure_input_task(void)
         {
             // Process rs485
             process_rs485(&m_measure_data.rs485[0]);
-            DEBUG_VERBOSE("Process modbus done\r\n");
             
             // ADC conversion
             adc_start();
@@ -539,7 +548,7 @@ void measure_input_initialize(void)
         
         if (save)
         {
-            DEBUG_WARN("Save new data from flash\r\n");
+            DEBUG_VERBOSE("Save new data from flash\r\n");
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
 		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 

@@ -106,7 +106,7 @@
 #define RS485_POWER_EN(x)				{	if (x) \
 												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 											else	\
-												LL_GPIO_SetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
+												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 										}	
 #define RS485_DIR_TX()                  {   \
                                             LL_GPIO_SetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);     \
@@ -177,7 +177,7 @@
 #endif
 #define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
 #define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
-#define MEASUREMENT_MAX_MSQ_IN_RAM                  24
+#define MEASUREMENT_MAX_MSQ_IN_RAM                  12
 
 #define MEASUREMENT_QUEUE_STATE_IDLE                0
 #define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
@@ -187,7 +187,8 @@
 #define RS485_DATA_TYPE_INT32						1
 #define RS485_DATA_TYPE_FLOAT						2
 #define RS485_MAX_SLAVE_ON_BUS						2
-#define RS485_MAX_REGISTER_SUPPORT					16
+#define RS485_MAX_REGISTER_SUPPORT					3
+#define RS485_MAX_SUB_REGISTER						4
 #define RS485_REGISTER_ADDR_TOP						50000
 
 #define APP_EEPROM_VALID_FLAG		0x15234519
@@ -205,7 +206,7 @@
 #else
 #define APP_EEPROM_NB_OF_INPUT_4_20MA               1
 #endif
-#define APP_EEPROM_MAX_SYMBOL_LENGTH				6
+#define APP_EEPROM_MAX_UNIT_NAME_LENGTH				6
 
 #define APP_FLASH_VALID_DATA_KEY                    0x12345678               
 #ifdef DTG01
@@ -220,15 +221,31 @@
 #define APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG  0xA5A5A5A5
 #define APP_FLASH_DATA_HEADER_KEY                   0x9813567A
 
+#define CRC32_SIZE		4
+
+typedef union
+{
+	struct
+	{
+		uint8_t valid : 1;
+		uint8_t type : 7;
+	} __attribute__((packed)) name;
+	uint8_t type;
+} __attribute__((packed)) measure_input_rs485_data_type_t;
 
 typedef struct
 {
-    uint32_t value[RS485_MAX_REGISTER_SUPPORT];
-	uint8_t unit[APP_EEPROM_MAX_SYMBOL_LENGTH];
-    uint16_t register_index;
-    int8_t nb_of_register;
+	uint16_t register_addr;
+	uint32_t value;
+	measure_input_rs485_data_type_t data_type;
+	uint8_t unit[APP_EEPROM_MAX_UNIT_NAME_LENGTH];
+	int8_t read_ok;
+} __attribute__((packed)) measure_input_rs485_sub_register_t;
+
+typedef struct
+{
+	measure_input_rs485_sub_register_t sub_register[RS485_MAX_SUB_REGISTER];
     uint8_t slave_addr;
-	uint8_t data_type;
 } __attribute__((packed)) measure_input_modbus_register_t;
 
 typedef struct
