@@ -23,10 +23,10 @@ typedef union
 		uint32_t sos : 1;
 		uint32_t input_4_20ma_enable : 1;
 		uint32_t output_4_20ma_enable : 1;
-		
-		uint32_t output_4_20ma_timeout_100ms : 8;   
 		uint32_t alarm_sensor_value_high : 1;
 		uint32_t alarm_sensor_value_low : 1;
+		
+		uint32_t output_4_20ma_timeout_100ms : 8;   
 		uint32_t reserve : 9;
 	} __attribute__((packed)) name;
 	uint32_t value;
@@ -57,6 +57,8 @@ typedef struct
 	// Cai dat nguong canh bao cam bien xung
 	uint32_t qmin;
 	uint32_t qmax;
+	
+	uint32_t poll_config_interval_hour;		// Poll configuration from default link in second
 	
     uint32_t crc;
 } __attribute__((packed))  app_eeprom_config_data_t;

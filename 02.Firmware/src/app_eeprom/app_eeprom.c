@@ -21,12 +21,14 @@ void app_eeprom_init(void)
         || tmp->crc != crc)
 	{
 		memset(&m_cfg, 0, sizeof(m_cfg));
-        // for low power application, set transoutput to 1
+        // for low power application, set transistor output to 1
         m_cfg.io_enable.name.output0 = 1;
         m_cfg.io_enable.name.output1 = 1;
         m_cfg.io_enable.name.output2 = 1;
         m_cfg.io_enable.name.output3 = 1;
-        
+		m_cfg.poll_config_interval_hour = 24;
+		
+       
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
 			m_cfg.k[i] = 1;
@@ -40,6 +42,7 @@ void app_eeprom_init(void)
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
         sprintf((char*)&m_cfg.server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX][0], "%s", DEFAULT_SERVER_ADDR);
 		m_cfg.server_addr[1][0] = '\0'; 
+		
        
         app_eeprom_save_config();
 	}

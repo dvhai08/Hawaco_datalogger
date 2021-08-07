@@ -47,9 +47,9 @@
 #define GSM_DONT_NEED_HTTP_POST() (m_enter_http_post = false)
 #define GSM_ENTER_HTTP_POST()       (m_enter_http_post = true)
 
-#define POST_URL        "%s/api/v1/%s/telemetry"
-#define GET_URL         "%s/api/v1/%s/attributes"
-      
+#define POST_URL        		"%s/api/v1/%s/telemetry"
+#define GET_URL         		"%s/api/v1/%s/attributes"
+#define POLL_CONFIG_URL      	"%s/api/v1/default_imei/attributes"
 
 extern gsm_manager_t gsm_manager;
 static char m_at_cmd_buffer[128];
@@ -194,6 +194,7 @@ void gsm_manager_tick(void)
         }
 #endif
         gsm_wakeup_periodically();
+		
 #if GSM_READ_SMS_ENABLE
         if (gsm_manager.state == GSM_STATE_OK)
         {
@@ -202,22 +203,24 @@ void gsm_manager_tick(void)
 #endif
         if (gsm_manager.state == GSM_STATE_OK)      // gsm state maybe changed in gsm_query_sms_buffer task
         {
-            bool enter_sleep_in_http = true;
+            bool ready_to_sleep = true;
             bool enter_post = false;
+			
+			// If sensor data avaible =>> Enter http post
             if ((measure_input_sensor_data_availble()
                 || m_retransmision_data_in_flash)
                 && !ctx->status.enter_ota_update)
             {
                 enter_post = true;
             }
+			
             if (enter_post)
             {
-//                DEBUG_VERBOSE("Post http data\r\n");
                 GSM_ENTER_HTTP_POST();
-                enter_sleep_in_http = false;
+                ready_to_sleep = false;
                 gsm_change_state(GSM_STATE_HTTP_POST);
             }
-            else
+            else	// Enter http get
             {
                 DEBUG_INFO("Queue empty\r\n");
                 if (gsm_manager.state == GSM_STATE_OK)
@@ -229,7 +232,7 @@ void gsm_manager_tick(void)
                     {
                         ctx->status.delay_ota_update = 0;
                         gsm_change_state(GSM_STATE_HTTP_GET);
-                        enter_sleep_in_http = false;
+                        ready_to_sleep = false;
                         m_enter_http_get = true;
                     }
                 }
@@ -242,14 +245,27 @@ void gsm_manager_tick(void)
                     if (measure_input_sensor_data_availble())
                         m_delay_wait_for_measurement_again_s = 0;       
                 }
-                enter_sleep_in_http = false;
+                ready_to_sleep = false;
             }
-			//#warning "Sleep in http mode is not enabled"
-			if (enter_sleep_in_http)
+			
+			
+			if (ready_to_sleep)
 			{
-//                DEBUG_VERBOSE("Sleep in http\r\n");
-                gsm_hw_layer_reset_rx_buffer();
-				gsm_change_state(GSM_STATE_SLEEP);
+				uint32_t current_sec = app_rtc_get_counter();
+				if (current_sec >= ctx->status.next_time_get_data_from_server)
+				{
+					ctx->status.next_time_get_data_from_server = current_sec + app_eeprom_read_config_data()->poll_config_interval_hour*3600;
+					ctx->status.poll_broadcast_msg_from_server = 1;
+					DEBUG_INFO("Poll server config\r\n");
+					gsm_change_state(GSM_STATE_HTTP_GET);
+					m_enter_http_get = 1;
+				}
+				else
+				{
+					ctx->status.poll_broadcast_msg_from_server = 0;
+					gsm_hw_layer_reset_rx_buffer();
+					gsm_change_state(GSM_STATE_SLEEP);
+				}
 			}
         }
     }
@@ -314,24 +330,32 @@ void gsm_manager_tick(void)
 
     case GSM_STATE_HTTP_GET:
     {
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
         if (GSM_NEED_ENTER_HTTP_GET())
         {
             static gsm_http_config_t cfg;
-			
+			char *server_addr = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
+			if (strlen(server_addr) == 0)
+			{
+				DEBUG_INFO("We use alternative server\r\n");
+				server_addr = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
+			}
+			// Peridic update config data from server
+			if (sys_ctx()->status.poll_broadcast_msg_from_server)
+			{	
+                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
+                        POLL_CONFIG_URL, 
+                        server_addr);
+                cfg.on_event_cb = gsm_http_event_cb;
+                cfg.action = GSM_HTTP_ACTION_GET;
+                cfg.big_file_for_ota = 0;
+                gsm_http_start(&cfg);
+                GSM_DONT_NEED_HTTP_GET();
+			}
 			// If device not need to ota update =>> Enter mode get data from server
-            if (!sys_ctx()->status.enter_ota_update
+			else if (!sys_ctx()->status.enter_ota_update
 				&& !ctx->status.try_new_server)
             {
-				char *server_addr = (char*)app_eeprom_read_config_data()->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
-				// If main server addr is not valid =>> switch to new server addr
-				// TODO check new server
-				// But device has limited memory size
-				if (strlen(server_addr) == 0)
-				{
-					DEBUG_INFO("We use alternative server\r\n");
-					server_addr = (char*)app_eeprom_read_config_data()->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
-				}
-			
                 snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
                         GET_URL, 
                         server_addr,
@@ -1336,17 +1360,25 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         LED1(1);
         sys_delay_ms(4);
         gsm_http_data_t *get_data = (gsm_http_data_t *)data;
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
         if (!ctx->status.enter_ota_update)
         {
-            DEBUG_VERBOSE("DATA %u bytes: %s\r\n", get_data->data_length, get_data->data);
-            uint8_t new_cfg = 0;
-            server_msg_process_cmd((char *)get_data->data, &new_cfg);
-            if (new_cfg)
-            {
-                measure_input_measure_wakeup_to_get_data();
-                app_eeprom_save_config();
-                m_delay_wait_for_measurement_again_s = 10;
-            }
+			if (sys_ctx()->status.poll_broadcast_msg_from_server)
+			{
+				sys_ctx()->status.poll_broadcast_msg_from_server = 0;
+				server_msg_process_boardcast_cmd((char *)get_data->data);
+			}
+			else
+			{
+				uint8_t new_cfg = 0;
+				server_msg_process_cmd((char *)get_data->data, &new_cfg);
+				if (new_cfg)
+				{
+					measure_input_measure_wakeup_to_get_data();
+					app_eeprom_save_config();
+					m_delay_wait_for_measurement_again_s = 10;
+				}
+			}
         }
         else
         {
@@ -1460,7 +1492,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             ota_update_finish(true);
         }
 		
-		// If device in mode test new server =>> Store new server to flash
+		// If device in mode test connection with new server =>> Store new server to flash
 		if (ctx->status.try_new_server && ctx->status.new_server)
 		{
 			// Delete old server and copy new server addr
@@ -1553,12 +1585,19 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 GSM_ENTER_HTTP_POST();
             }
         }
+		else if (sys_ctx()->status.poll_broadcast_msg_from_server)
+		{
+			sys_ctx()->status.poll_broadcast_msg_from_server = 0;
+			gsm_change_state(GSM_STATE_OK);
+		}
         else
         {
             gsm_change_state(GSM_STATE_OK);
             DEBUG_PRINTF("No more data need to re-send to server\r\n");
             m_retransmision_data_in_flash = NULL;
         }
+		
+		
         
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);

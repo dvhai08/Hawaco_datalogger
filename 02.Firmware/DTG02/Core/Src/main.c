@@ -303,12 +303,7 @@ int main(void)
         system->status.disconnect_timeout_s = 0;
     }
     
-	
-	if (eeprom_cfg->io_enable.name.rs485_en)
-	{
-		RS485_POWER_EN(eeprom_cfg->io_enable.name.rs485_en);
-	}
-    
+	    
     if (system->peripheral_running.value == 0)
     {
         adc_stop();
@@ -316,6 +311,7 @@ int main(void)
         {
 			if (TEST_DEVICE_NEVER_SLEEP == 0)
 			{
+				RS485_POWER_EN(0);
 				sys_config_low_power_mode();
 			}
         }

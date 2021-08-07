@@ -28,6 +28,8 @@ typedef struct
     uint8_t ota_url[128+48];
 	uint8_t try_new_server;
 	char *new_server;
+	uint8_t poll_broadcast_msg_from_server;
+	uint32_t next_time_get_data_from_server;
 } sys_ctx_status_t;
 
 typedef union

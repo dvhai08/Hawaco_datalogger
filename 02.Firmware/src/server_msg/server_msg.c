@@ -15,85 +15,72 @@
 
 #define RS485_STRCAT_ID(str,id)				str##id##"\":"		
 
-/**
-	 {
-		"shared": {
-			"CycleSendWeb": 60,
-			"Cyclewakeup": 15,
-			"ID485_1": 8,
-			"ID485_2": 8,
-			"IMEI": "860262050125777",
-			"Input_J1": 1,
-			"Input_J2": 0,
-			"K_J1": 1,
-			"K_J2": 1,
-			"Link": "https://iot.wilad.vn/login",
-			"MeterIndicator_J1": 7649,
-			"MeterIndicator_J2": 7649,
-			"Output1": 0,
-			"Output2": 0,
-			"Output3": 0,
-			"Output4": 0,
-			"Output4_20": 0,
-			"Register_1_1": 30108,			// upto 4 register * 2 device
-			"Register_1_2": 30110,
-			"Register_2_1": 30112,
-			"Register_2_2": 30113,
-			"RS485": 1,
-			"SOS": "0916883454",
-			"Type": "G2",
-			"Type_1_1": "int32",		// int32, int16, float
-			"Type_1_2": "int32",
-			"Type_2_1": "float",
-			"Type_2_2": "int16",
-			"Unit_1_1": "m3/s",
-			"Unit_1_2": "jun",
-			"Unit_2_1": "kg",
-			"Unit_2_2": "lit",
-			"Update": 0,
-			"Version": "0.0.1",
-			"Warning": 1
-		}
-	}
- */
-void server_msg_process_cmd(char *buffer, uint8_t *new_config)
-{
-    uint8_t has_new_cfg = 0;
-    uint8_t rewrite_data_to_flash = 0;	
-	app_eeprom_config_data_t *config = app_eeprom_read_config_data();
-    sys_ctx_t *ctx = sys_ctx();
-    ctx->status.disconnected_count = 0;
+static app_eeprom_config_data_t *m_eeprom_config = NULL; //app_eeprom_read_config_data();
+static sys_ctx_t *m_ctx = NULL;// sys_ctx();
 	
-    char *cycle_wakeup = strstr(buffer, "Cyclewakeup\":");
-    if (cycle_wakeup != NULL)
+// "Server":"https://123.com" 
+static void process_server_addr_change(char *buffer)
+{
+	buffer = strstr(buffer, "Server\":");
+	if (buffer == NULL)
+	{
+		return;
+	}
+	
+    buffer += strlen("Server\":");
+    uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
+    if (gsm_utilities_copy_parameters(buffer, (char*)tmp, '"', '"')
+        && (strstr((char*)tmp, "http://") || strstr((char*)tmp, "https://")))
     {
-        uint32_t wake_time_measure_data_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("Cyclewakeup\":"), cycle_wakeup);
-        if (config->measure_interval_ms != wake_time_measure_data_ms)
+        uint32_t server_addr_len = strlen((char*)tmp);
+        --server_addr_len;
+        if (tmp[server_addr_len] == '/')		// Change https://acb.com/ to https://acb.com
         {
-            config->measure_interval_ms = wake_time_measure_data_ms;
-            has_new_cfg++;
+            tmp[server_addr_len] = '\0';
+        }
+        
+        if (strcmp((char*)tmp, (char*)m_eeprom_config->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]))
+        {
+            if (m_ctx->status.new_server)
+            {
+                umm_free(m_ctx->status.new_server);
+                m_ctx->status.new_server = NULL;
+            }
+            m_ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+            if (m_ctx->status.new_server)
+            {
+                m_ctx->status.try_new_server = 1;
+                snprintf((char*)m_ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
+                DEBUG_INFO("Server changed to %s\r\n", m_eeprom_config->server_addr);
+            }
+            else
+            {
+                m_ctx->status.try_new_server = 0;
+                DEBUG_ERROR("Server changed : No memory\r\n");
+            }
+        }
+        else
+        {
+            DEBUG_INFO("New server is the same with old server\r\n");
         }
     }
+    else
+    {
+        DEBUG_ERROR("Server is not http or https\r\n");
+    }
+}
 
-    char *cycle_send_web = strstr(buffer, "CycleSendWeb\":");
-    if (cycle_send_web != NULL)
-    {
-        uint32_t send_time_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CycleSendWeb\":"), cycle_send_web);
-        if (config->send_to_server_interval_ms != send_time_ms)
-        {
-            DEBUG_INFO("CycleSendWeb changed\r\n");
-            config->send_to_server_interval_ms = send_time_ms;
-            has_new_cfg++;
-        }
-    }
-    char *output1 = strstr(buffer, "Output1\":");
+static uint8_t process_output_config(char *buffer)
+{
+	uint8_t new_cfg = 0;
+	char *output1 = strstr(buffer, "Output1\":");
     if (output1 != NULL)
     {
         uint8_t out1 = gsm_utilities_get_number_from_string(strlen("Output1\":"), output1) & 0x1;
-        if (config->io_enable.name.output0 != out1)
+        if (m_eeprom_config->io_enable.name.output0 != out1)
         {
-            config->io_enable.name.output0 = out1;
-            has_new_cfg++;
+            m_eeprom_config->io_enable.name.output0 = out1;
+            new_cfg++;
             DEBUG_PRINTF("4-20MA output1 1 changed\r\n");
         }
     }
@@ -102,10 +89,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (output2 != NULL)
     {
         uint8_t out2 = gsm_utilities_get_number_from_string(strlen("Output2\":"), output2) ? 1 : 0;
-        if (config->io_enable.name.output1 != out2)
+        if (m_eeprom_config->io_enable.name.output1 != out2)
         {
-            config->io_enable.name.output1 = out2;
-            has_new_cfg++;
+            m_eeprom_config->io_enable.name.output1 = out2;
+			new_cfg++;
             DEBUG_PRINTF("Output 2 changed\r\n");
 			TRANS_2_OUTPUT(out2);
         }
@@ -116,10 +103,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (output3 != NULL)
     {
         uint8_t out3 = gsm_utilities_get_number_from_string(strlen("Output3\":"), output3) ? 1 : 0;
-        if (config->io_enable.name.output2 != out3)
+        if (m_eeprom_config->io_enable.name.output2 != out3)
         {
-            config->io_enable.name.output2 = out3;
-            has_new_cfg++;
+            m_eeprom_config->io_enable.name.output2 = out3;
+            new_cfg++;
             DEBUG_PRINTF("Output 3 changed\r\n");
 			TRANS_3_OUTPUT(out3);
         }
@@ -129,10 +116,10 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (output4 != NULL)
     {
         uint8_t out4 = gsm_utilities_get_number_from_string(strlen("Output4\":"), output4) ? 1 : 0;
-        if (config->io_enable.name.output3 != out4)
+        if (m_eeprom_config->io_enable.name.output3 != out4)
         {
-            config->io_enable.name.output3 = out4;
-            has_new_cfg++;
+            m_eeprom_config->io_enable.name.output3 = out4;
+            new_cfg++;
             DEBUG_PRINTF("Output 4 changed\r\n");
 			TRANS_4_OUTPUT(out4);
         }
@@ -151,32 +138,37 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 //        uint32_t dec = (uint32_t)((new_value-interger)/10);
 //        uint8_t out_4_20 = gsm_utilities_get_number_from_string(strlen("Output4_20\":"), output4_20mA);
         
-        if (config->output_4_20ma != new_value)
+        if (m_eeprom_config->output_4_20ma != new_value)
         {
-            config->io_enable.name.output_4_20ma_enable = 1;
-            config->output_4_20ma = new_value;
-            has_new_cfg++;
-            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", config->output_4_20ma);
+            m_eeprom_config->io_enable.name.output_4_20ma_enable = 1;
+            m_eeprom_config->output_4_20ma = new_value;
+            new_cfg++;
+            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", m_eeprom_config->output_4_20ma);
         }
         
-        if (config->output_4_20ma < 4.0f
-            || config->output_4_20ma > 20.0f)
+        if (m_eeprom_config->output_4_20ma < 4.0f
+            || m_eeprom_config->output_4_20ma > 20.0f)
         {
-            config->io_enable.name.output_4_20ma_enable = 0;
+            m_eeprom_config->io_enable.name.output_4_20ma_enable = 0;
         }
     }
 #endif
-	
+	return new_cfg;
+}
+
+uint8_t process_input_config(char *buffer)
+{
+	uint8_t new_cfg = 0;
 #ifdef DTG01
     char *mode_j1 = strstr(buffer, "InputMode0\":");		// mode
     if (mode_j1 != NULL)
     {
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("InputMode0\":"), mode_j1);
-        if (config->meter_mode[0] != mode)
+        if (m_eeprom_config->meter_mode[0] != mode)
         {
             DEBUG_PRINTF("PWM1 mode changed\r\n");
-            config->meter_mode[0] = mode;
-            has_new_cfg++;
+            m_eeprom_config->meter_mode[0] = mode;
+            new_cfg++;
         }
     }
     
@@ -189,18 +181,18 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         gsm_utilities_copy_parameters(output2+strlen("Output2\""), output_value, ':', ',');
         DEBUG_INFO("Output 4-20ma %s\r\n", output_value);
         float new_value = atof(output_value);
-        if (config->output_4_20ma != new_value)
+        if (m_eeprom_config->output_4_20ma != new_value)
         {
-            config->io_enable.name.output_4_20ma_enable = 1;
-            config->output_4_20ma = new_value;
-            has_new_cfg++;
-            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", config->output_4_20ma);
+            m_eeprom_config->io_enable.name.output_4_20ma_enable = 1;
+            m_eeprom_config->output_4_20ma = new_value;
+            new_cfg++;
+            DEBUG_INFO("Output 4-20ma changed to %.2f\r\n", m_eeprom_config->output_4_20ma);
         }
         
-        if (config->output_4_20ma < 4.0f
-            || config->output_4_20ma > 20.0f)
+        if (m_eeprom_config->output_4_20ma < 4.0f
+            || m_eeprom_config->output_4_20ma > 20.0f)
         {
-            config->io_enable.name.output_4_20ma_enable = 0;
+            m_eeprom_config->io_enable.name.output_4_20ma_enable = 0;
         }
     }
 #else
@@ -208,11 +200,11 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (mode_j1 != NULL)
     {
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J1\":"), mode_j1);
-        if (config->meter_mode[0] != mode)
+        if (m_eeprom_config->meter_mode[0] != mode)
         {
             DEBUG_PRINTF("PWM1 mode changed\r\n");
-            config->meter_mode[0] = mode;
-            has_new_cfg++;
+            m_eeprom_config->meter_mode[0] = mode;
+            new_cfg++;
         }
     }
     
@@ -220,83 +212,29 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (mode_j2 != NULL)
     {
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J2\":"), mode_j2);
-        if (config->meter_mode[1] != mode)
+        if (m_eeprom_config->meter_mode[1] != mode)
         {
             DEBUG_PRINTF("PWM2 mode changed\r\n");
-            config->meter_mode[1] = mode;
-            has_new_cfg++;
+            m_eeprom_config->meter_mode[1] = mode;
+            new_cfg++;
         }
     }
 #endif
-    
-    char *rs485_ptr = strstr(buffer, "RS485\":");
-    if (rs485_ptr != NULL)
-    {
-        uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485_ptr) ? 1 : 0;
-        if (config->io_enable.name.rs485_en != in485)
-        {
-            DEBUG_PRINTF("in485 changed\r\n");
-            config->io_enable.name.rs485_en = in485;
-            has_new_cfg++;
-        }
-    }
+    return new_cfg;
+}
 
-    char *alarm = strstr(buffer, "Warning\":");
-    if (alarm != NULL)
-    {
-        uint8_t alrm = gsm_utilities_get_number_from_string(strlen("Warning\":"), alarm) ? 1 : 0;
-        if (config->io_enable.name.warning != alrm)
-        {
-            DEBUG_PRINTF("Warning changed\r\n");
-            config->io_enable.name.warning = alrm;
-            has_new_cfg++;
-        }
-    }
-
-
-    char *phone_num = strstr(buffer, "SOS\":");
-    if (phone_num != NULL)
-    {
-        phone_num += strlen("SOS\":");
-        char tmp_phone[30] = {0};
-        if (gsm_utilities_copy_parameters(phone_num, tmp_phone, '"', '"'))
-        {
-#if 1
-            uint8_t changed = 0;
-			int len = strlen(tmp_phone);
-			if (len > 15)
-			{
-				len = 15;
-			}
-			
-            for(uint8_t i = 0; i < len; i++)
-            {
-                if(tmp_phone[i] != config->phone[i]
-                    && changed == 0) 
-                {
-                    changed = 1;
-                    has_new_cfg++;
-                }
-                config->phone[i] = tmp_phone[i];
-            }
-			
-			config->phone[15] = 0;
-            if (changed)
-            {
-                DEBUG_PRINTF("Phone changed to %s\r\n", config->phone);
-            }
-#endif
-        }
-    }
+static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
+{
+	uint8_t new_cfg = 0;
 #ifdef DTG02
     char *counter_offset = strstr(buffer, "MeterIndicator_J1\":");
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J1\":"), counter_offset);
-        if (config->offset[0] != offset)
+        if (m_eeprom_config->offset[0] != offset)
         {
-            has_new_cfg++;   
-            config->offset[0] = offset;
+            new_cfg++;   
+            m_eeprom_config->offset[0] = offset;
             DEBUG_WARN("PWM 1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(0);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
@@ -304,7 +242,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			counter[0].forward = 0;
 			counter[0].reserve = 0;
             app_bkup_write_pulse_counter(&counter[0]);
-			rewrite_data_to_flash |= (1 << 0);
+			(*factor_change) |= (1 << 0);
         }
     }
 
@@ -312,17 +250,17 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator_J2\":"), counter_offset);
-        if (config->offset[1] != offset)
+        if (m_eeprom_config->offset[1] != offset)
         {
-            has_new_cfg++;   
-            config->offset[1] = offset;
+            new_cfg++;   
+            m_eeprom_config->offset[1] = offset;
             DEBUG_PRINTF("PWM2 offset changed to %u\r\n", offset);
             measure_input_reset_counter(1);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			counter[1].forward = 0;
 			counter[1].reserve = 0;
             app_bkup_write_pulse_counter(&counter[0]);
-			rewrite_data_to_flash |= (1 << 0);
+			(*factor_change) |= (1 << 1);
         }
     }
 	
@@ -335,12 +273,11 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             k = 1;
         }
 
-        if (config->k[0] != k)
+        if (m_eeprom_config->k[0] != k)
         {
-            config->k[0] = k;
+            m_eeprom_config->k[0] = k;
             DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
-//            measure_input_reset_all_counter();
-            has_new_cfg++; 
+            new_cfg++; 
         }
     }
 
@@ -353,12 +290,11 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             k = 1;
         }
 
-        if (config->k[1] != k)
+        if (m_eeprom_config->k[1] != k)
         {
-            config->k[1] = k;
+            m_eeprom_config->k[1] = k;
             DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
-//            measure_input_reset_all_counter();
-            has_new_cfg++; 
+            new_cfg++; 
         }
     }
 #else
@@ -366,15 +302,15 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator\":"), counter_offset);
-        if (config->offset0 != offset)
+        if (m_eeprom_config->offset0 != offset)
         {
-            has_new_cfg++;   
-            config->offset0 = offset;
+            new_cfg++;   
+            m_eeprom_config->offset0 = offset;
             DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
 			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
 			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
             app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
-            rewrite_data_to_flash |= (1 << 0);
+            (*factor_change) |= (1 << 0);
         }
     }
 	
@@ -387,70 +323,19 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             k = 1;
         }
 
-        if (config->k0 != k)
+        if (m_eeprom_config->k0 != k)
         {
-            config->k0 = k;
+            m_eeprom_config->k0 = k;
             DEBUG_PRINTF("K0 changed to %u\r\n", k);
-            has_new_cfg++; 
+            new_cfg++; 
         }
     }
 #endif
-	
-    char *p_delay = strstr(buffer, "Delay\":");
-    if (p_delay)
-    {
-        uint32_t delay = gsm_utilities_get_number_from_string(strlen("Delay\":"), p_delay);
-        config->send_to_server_delay_s = delay;
-        DEBUG_INFO("Delay changed to %us\r\n", delay);
-        has_new_cfg++;
-    }
-    
-    char *server = strstr(buffer, "Server\":");
-    if (server)
-    {
-        server += strlen("Server\":");
-        uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
-        if (gsm_utilities_copy_parameters(server, (char*)tmp, '"', '"')
-			&& (strstr((char*)tmp, "http://") || strstr((char*)tmp, "https://")))
-        {
-			uint32_t server_addr_len = strlen((char*)tmp);
-			--server_addr_len;
-			if (tmp[server_addr_len] == '/')		// Change https://acb.com/ to https://acb.com
-			{
-				tmp[server_addr_len] = '\0';
-			}
-			
-			if (strcmp((char*)tmp, (char*)config->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]))
-			{
-				if (ctx->status.new_server)
-				{
-					umm_free(ctx->status.new_server);
-					ctx->status.new_server = NULL;
-				}
-				ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
-				if (ctx->status.new_server)
-				{
-					ctx->status.try_new_server = 1;
-					snprintf((char*)ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
-					DEBUG_INFO("Server changed to %s\r\n", config->server_addr);
-				}
-				else
-				{
-					ctx->status.try_new_server = 0;
-					DEBUG_ERROR("Server changed : No memory\r\n");
-				}
-			}
-			else
-			{
-				DEBUG_INFO("New server is the same with old server\r\n");
-			}
-        }
-		else
-		{
-			server = NULL;
-			DEBUG_ERROR("Server is not http or https\r\n");
-		}
-    }
+	return new_cfg;
+}
+
+static void process_ota_update(char *buffer)
+{
 	bool same_hardware = false;
     char *hardware = strstr(buffer, "Hardware\":");  
 	if (hardware)
@@ -494,9 +379,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 				link = strtok(link, "\"");
 				if (link && strlen(link) && strstr(link, "http"))
 				{
-                    ctx->status.delay_ota_update = 5;
-                    ctx->status.enter_ota_update = true;
-                    sprintf((char*)ctx->status.ota_url, "%s", strstr(link, "http"));
+                    m_ctx->status.delay_ota_update = 5;
+                    m_ctx->status.enter_ota_update = true;
+                    sprintf((char*)m_ctx->status.ota_url, "%s", strstr(link, "http"));
 				}
 			}
 			else
@@ -505,8 +390,29 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			}
         }
     }
-    
-    // Process RS485
+}
+
+
+static uint8_t process_auto_get_config_interval(char *buffer)
+{
+	uint8_t has_new_cfg = 0;
+    char *auto_config_interval = strstr(buffer, "Auto_config\":");  
+	if (auto_config_interval)
+	{
+		auto_config_interval += strlen("Auto_config\":");  
+		uint32_t tmp = gsm_utilities_get_number_from_string(0, auto_config_interval);
+		if (tmp && tmp != m_eeprom_config->poll_config_interval_hour)
+		{
+			m_eeprom_config->poll_config_interval_hour = tmp;		// 24hour
+			has_new_cfg++;
+		}
+	}
+	return has_new_cfg;
+}
+
+static uint8_t process_modbus_register_config(char *buffer)
+{
+	    // Process RS485
     // Total 2 device
     // "ID485_0":1,
 	// Register_1_1:30001
@@ -517,8 +423,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 	//"ID485_1":1,
 	// Register_2_1:40001
 	//  Register_2_3:40003
-	
-	for (uint32_t slave_count = 0; slave_count < RS485_MAX_SLAVE_ON_BUS && config->io_enable.name.rs485_en; slave_count++)
+	uint8_t new_cfg = 0;
+	for (uint32_t slave_count = 0; slave_count < RS485_MAX_SLAVE_ON_BUS && m_eeprom_config->io_enable.name.rs485_en; slave_count++)
 	{
 		char search_str[16];
 		sprintf(search_str, "ID485_%u\":", slave_count+1);
@@ -540,15 +446,15 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 				uint32_t temp;
 				// Get rs485 slave id
 				temp = gsm_utilities_get_number_from_string(9, rs485_id_str);  //7 = strlen(ID485_1":)
-				if (temp != config->rs485[slave_count].slave_addr)
+				if (temp != m_eeprom_config->rs485[slave_count].slave_addr)
 				{
-					config->rs485[slave_count].slave_addr = temp;
-					has_new_cfg++;
+					m_eeprom_config->rs485[slave_count].slave_addr = temp;
+					new_cfg++;
 				}
 				DEBUG_INFO("Slave addr %u\r\n", temp);
 				// Get RS485 data type
 				temp = RS485_DATA_TYPE_INT16;
-				config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
+				m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
 				if (strstr(rs485_type_str, "\"int32\","))
 				{
 					temp = RS485_DATA_TYPE_INT32;
@@ -558,26 +464,26 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 					temp = RS485_DATA_TYPE_FLOAT;
 				}
 				
-				if (temp != config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type)
+				if (temp != m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type)
 				{
-					config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type = temp;
-					has_new_cfg++;
+					m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type = temp;
+					new_cfg++;
 					DEBUG_INFO("Type %u\r\n", temp);
 				}
 				
 				// Get RS485 data addr 
 				temp = gsm_utilities_get_number_from_string(14, rs485_reg_str);  //14 = strlen(Register_2_1":)
-				if (temp != config->rs485[slave_count].sub_register[sub_reg_idx].register_addr)
+				if (temp != m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].register_addr)
 				{
-					config->rs485[slave_count].sub_register[sub_reg_idx].register_addr = temp;
-					has_new_cfg++;
+					m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].register_addr = temp;
+					new_cfg++;
 					DEBUG_INFO("Reg addr %u\r\n", temp);
 				}
 				
 				// Unit
 				if (rs485_unit == NULL)
 				{
-					config->rs485[slave_count].sub_register[sub_reg_idx].unit[0] = 0;
+					m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit[0] = 0;
 				}
 				else
 				{
@@ -589,21 +495,196 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 					{
 						copy_len = p - rs485_unit;
 					}
-					if (strstr(rs485_unit, (char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit) == 0)
+					if (strstr(rs485_unit, (char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit) == 0)
 					{
-						has_new_cfg++;
+						new_cfg++;
 					}
-					strncpy((char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit, (char*)rs485_unit, copy_len); 
-					DEBUG_INFO("Unit %s\r\n", (char*)config->rs485[slave_count].sub_register[sub_reg_idx].unit);
+					strncpy((char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit, (char*)rs485_unit, copy_len); 
+					DEBUG_INFO("Unit %s\r\n", (char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit);
 				}
 			}
 			else
 			{
-				config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 0;
-				config->rs485[slave_count].sub_register[sub_reg_idx].read_ok = 0;
+				m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 0;
+				m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 			}
 		}
 	}
+	return new_cfg;
+}
+
+/**
+	 {
+		"shared": {
+			"CycleSendWeb": 60,
+			"Cyclewakeup": 15,
+			"ID485_1": 8,
+			"ID485_2": 8,
+			"IMEI": "860262050125777",
+			"Input_J1": 1,
+			"Input_J2": 0,
+			"K_J1": 1,
+			"K_J2": 1,
+			"Link": "https://iot.wilad.vn/login",
+			"MeterIndicator_J1": 7649,
+			"MeterIndicator_J2": 7649,
+			"Output1": 0,
+			"Output2": 0,
+			"Output3": 0,
+			"Output4": 0,
+			"Output4_20": 0,
+			"Register_1_1": 30108,			// upto 4 register * 2 device
+			"Register_1_2": 30110,
+			"Register_2_1": 30112,
+			"Register_2_2": 30113,
+			"RS485": 1,
+			"SOS": "0916883454",
+			"Type": "G2",
+			"Type_1_1": "int32",		// int32, int16, float
+			"Type_1_2": "int32",
+			"Type_2_1": "float",
+			"Type_2_2": "int16",
+			"Unit_1_1": "m3/s",
+			"Unit_1_2": "jun",
+			"Unit_2_1": "kg",
+			"Unit_2_2": "lit",
+			"Update": 0,
+			"Version": "0.0.1",
+			"Warning": 1,
+			"Server":"http://123.com",
+			"Auto_config":12,		// hour
+		}
+	}
+ */
+void server_msg_process_cmd(char *buffer, uint8_t *new_config)
+{
+    uint8_t has_new_cfg = 0;
+    uint8_t factor_change = 0;	
+	
+	if (m_eeprom_config == NULL)
+	{
+		m_eeprom_config = app_eeprom_read_config_data();
+	}
+	
+	if (m_ctx == NULL)
+	{
+		m_ctx = sys_ctx();
+	}
+	
+    m_ctx->status.disconnected_count = 0;
+	
+    char *cycle_wakeup = strstr(buffer, "Cyclewakeup\":");
+    if (cycle_wakeup != NULL)
+    {
+        uint32_t wake_time_measure_data_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("Cyclewakeup\":"), cycle_wakeup);
+        if (m_eeprom_config->measure_interval_ms != wake_time_measure_data_ms)
+        {
+            m_eeprom_config->measure_interval_ms = wake_time_measure_data_ms;
+            has_new_cfg++;
+        }
+    }
+
+    char *cycle_send_web = strstr(buffer, "CycleSendWeb\":");
+    if (cycle_send_web != NULL)
+    {
+        uint32_t send_time_ms = 1000*60*gsm_utilities_get_number_from_string(strlen("CycleSendWeb\":"), cycle_send_web);
+        if (m_eeprom_config->send_to_server_interval_ms != send_time_ms)
+        {
+            DEBUG_INFO("CycleSendWeb changed\r\n");
+            m_eeprom_config->send_to_server_interval_ms = send_time_ms;
+            has_new_cfg++;
+        }
+    }
+    
+	// Process output config
+	has_new_cfg += process_output_config(buffer);
+	
+	// Process input
+	has_new_cfg += process_input_config(buffer);
+
+	// Process RS485
+    char *rs485_ptr = strstr(buffer, "RS485\":");
+    if (rs485_ptr != NULL)
+    {
+        uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485_ptr) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.rs485_en != in485)
+        {
+            DEBUG_PRINTF("in485 changed\r\n");
+            m_eeprom_config->io_enable.name.rs485_en = in485;
+            has_new_cfg++;
+        }
+    }
+
+    char *alarm = strstr(buffer, "Warning\":");
+    if (alarm != NULL)
+    {
+        uint8_t alrm = gsm_utilities_get_number_from_string(strlen("Warning\":"), alarm) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.warning != alrm)
+        {
+            DEBUG_PRINTF("Warning changed\r\n");
+            m_eeprom_config->io_enable.name.warning = alrm;
+            has_new_cfg++;
+        }
+    }
+
+	// SOS phone number
+    char *phone_num = strstr(buffer, "SOS\":");
+    if (phone_num != NULL)
+    {
+        phone_num += strlen("SOS\":");
+        char tmp_phone[30] = {0};
+        if (gsm_utilities_copy_parameters(phone_num, tmp_phone, '"', '"'))
+        {
+#if 1
+            uint8_t changed = 0;
+			int len = strlen(tmp_phone);
+			if (len > 15)
+			{
+				len = 15;
+			}
+			
+            for(uint8_t i = 0; i < len; i++)
+            {
+                if(tmp_phone[i] != m_eeprom_config->phone[i]
+                    && changed == 0) 
+                {
+                    changed = 1;
+                    has_new_cfg++;
+                }
+                m_eeprom_config->phone[i] = tmp_phone[i];
+            }
+			
+			m_eeprom_config->phone[15] = 0;
+            if (changed)
+            {
+                DEBUG_PRINTF("Phone changed to %s\r\n", m_eeprom_config->phone);
+            }
+#endif
+        }
+    }
+	
+	// process meter indicator
+	has_new_cfg += process_meter_indicator(buffer, &factor_change);
+	
+	// Delay send message
+    char *p_delay = strstr(buffer, "Delay\":");
+    if (p_delay)
+    {
+        uint32_t delay = gsm_utilities_get_number_from_string(strlen("Delay\":"), p_delay);
+        m_eeprom_config->send_to_server_delay_s = delay;
+        DEBUG_INFO("Delay changed to %us\r\n", delay);
+        has_new_cfg++;
+    }
+	
+	// Server addr changed
+	process_server_addr_change(buffer);
+	
+	
+	// OTA update
+	process_ota_update(buffer);
+    
+	// Modbus register configuration
+	has_new_cfg += process_modbus_register_config(buffer);
 	
     //Luu config moi
     if (has_new_cfg)
@@ -615,19 +696,22 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     {
         DEBUG_INFO("CFG: has no new config\r\n");
     }
+	
+	// process auto config interval setup
+	has_new_cfg += process_auto_get_config_interval(buffer);
     
-    if (rewrite_data_to_flash)
+    if (factor_change)
     {
         app_spi_flash_data_t data;
         if (app_spi_flash_get_lastest_data(&data))
         {
-            if (rewrite_data_to_flash & 0x01)		// 0x01 mean we need to store new data of pulse counter[0] to eeprom
+            if (factor_change & 0x01)		// 0x01 mean we need to store new data of pulse counter[0] to eeprom
             {
                 data.meter_input[0].forward = 0;
                 data.meter_input[0].reserve = 0;
             }
 #ifdef DTG02
-            if (rewrite_data_to_flash & 0x02)		// 0x01 mean we need to store new data of pulse counter[1] to eeprom
+            if (factor_change & 0x02)		// 0x02 mean we need to store new data of pulse counter[1] to eeprom
             {
                 data.meter_input[1].forward = 0;
                 data.meter_input[1].reserve = 0;
@@ -640,4 +724,20 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     }
 
     *new_config = has_new_cfg;
+}
+
+void server_msg_process_boardcast_cmd(char *buffer)
+{
+	// Server addr changed
+	process_server_addr_change(buffer);
+	
+	
+	// OTA update
+	process_ota_update(buffer);
+	
+	// Process auto config interval
+	if (process_auto_get_config_interval(buffer))
+	{
+		app_eeprom_save_config();
+	}
 }

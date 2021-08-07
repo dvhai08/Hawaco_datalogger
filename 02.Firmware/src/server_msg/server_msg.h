@@ -10,4 +10,9 @@
  */
 void server_msg_process_cmd(char *cmd, uint8_t *new_cfg);
 
+/**
+ * @brief       Process broadcast from serve
+ */
+void server_msg_process_boardcast_cmd(char *cmd);
+
 #endif /* SERVER_MSG_H */
