@@ -385,20 +385,20 @@ void AES_RNG_LPUART1_IRQHandler(void)
   /* USER CODE BEGIN AES_RNG_LPUART1_IRQn 0 */
     if (LL_USART_IsActiveFlag_ORE(LPUART1))
     {
-        DEBUG_PRINTF("LPUART1 Over run\r\n");
+        DEBUG_PRINTF("LPUART1 OVR\r\n");
         uint32_t tmp = LPUART1->RDR;
         LL_USART_ClearFlag_ORE(USART1);
     }
     
     if (LL_USART_IsActiveFlag_FE(LPUART1))
     {
-        DEBUG_PRINTF("Frame error\r\n");
+        DEBUG_PRINTF("FE\r\n");
         LL_USART_ClearFlag_FE(LPUART1);
     }
     
     if (LL_USART_IsActiveFlag_NE(LPUART1))
     {
-        DEBUG_PRINTF("Noise error\r\n");
+        DEBUG_PRINTF("NE\r\n");
         LL_USART_ClearFlag_NE(LPUART1);
     }
 	

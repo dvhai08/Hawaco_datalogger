@@ -209,7 +209,7 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
 	cfg->output_4_20ma = value;
 	cfg->io_enable.name.output_4_20ma_timeout_100ms = atoi(argv[2])/100;
 	control_output_dac_enable(atoi(argv[2]));
-	DEBUG_PRINTF("Control DAC output %.2fma in ms %ums\r\n", cfg->output_4_20ma,
+	DEBUG_PRINTF("DAC output %.2fma in ms %ums\r\n", cfg->output_4_20ma,
                                                                 atoi(argv[2]));
 	return 0;
 }

@@ -58,7 +58,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            28000    // ( ~16s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
@@ -66,7 +66,7 @@
 #define TEST_INPUT_4_20_MA                              0
 #define MAX_DISCONNECTED_TIMEOUT_S                      60
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							1
+#define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
 /* USER CODE END PTD */
 
@@ -309,11 +309,12 @@ int main(void)
         adc_stop();
         if (system->status.is_enter_test_mode == 0)
         {
-			if (TEST_DEVICE_NEVER_SLEEP == 0)
+			#if TEST_DEVICE_NEVER_SLEEP == 0
 			{
 				RS485_POWER_EN(0);
 				sys_config_low_power_mode();
 			}
+			#endif
         }
     }
     BUZZER(0);
@@ -588,6 +589,7 @@ void sys_config_low_power_mode(void)
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
+		
         DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)

@@ -164,8 +164,8 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 								// int16 2 - 1
 								register_value[slave_idx].sub_register[sub_register_index].value |= (modbus_master_get_response_buffer(1) << 16);
 							}
-							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr, 
-													register_value[slave_idx].sub_register[sub_register_index].value);
+//							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr, 
+//													register_value[slave_idx].sub_register[sub_register_index].value);
 							
 							strncpy((char*)register_value[slave_idx].sub_register[sub_register_index].unit,
 									(char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit,
@@ -178,7 +178,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 						break;
 					
 					default:
-						DEBUG_WARN("Unsupported function code %u\r\n", function_code);
+//						DEBUG_WARN("Unsupported function code %u\r\n", function_code);
 						break;
 				}
 			}
@@ -674,20 +674,20 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 					m_is_pulse_trigger = 1;
 					if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
 					{
-						if (input->dir_level == 0)
-						{
-							DEBUG_VERBOSE("Reserve\r\n");
-						}
+//						if (input->dir_level == 0)
+//						{
+////							DEBUG_VERBOSE("Reserve\r\n");
+//						}
 						if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
 						{
-							DEBUG_VERBOSE("[PWM%u] +++++++ in %ums\r\n", input->port, m_pull_diff[input->port]);
+							DEBUG_VERBOSE("[PWM%u]+++ %ums\r\n", input->port, m_pull_diff[input->port]);
 							m_pulse_counter_in_backup[input->port].forward++;
 						}
 						else
 						{
 							if (m_pulse_counter_in_backup[input->port].forward > 0)
 							{
-								DEBUG_WARN("[PWM] ----- in %ums\r\n", m_pull_diff[input->port]);
+								DEBUG_WARN("[PWM] --- %ums\r\n", m_pull_diff[input->port]);
 								m_pulse_counter_in_backup[input->port].forward--;
 							}
 						}
@@ -706,7 +706,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 				}
 				else
 				{
-					DEBUG_WARN("PWM Noise, diff time %ums\r\n", m_pull_diff[input->port]);
+					DEBUG_WARN("PWM Noise\r\n");
 				}
 			}
 #if CHECK_BOTH_INPUT_EDGE
@@ -757,7 +757,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 #endif
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
-                    DEBUG_VERBOSE("[DIR] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+                    DEBUG_VERBOSE("[DIR]++++ in %ums\r\n", m_pull_diff[input->port]);
                     m_pulse_counter_in_backup[input->port].reserve++;
                 }
             }
