@@ -45,11 +45,11 @@ static shell_context_struct m_user_context;
 static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char **argv);
 //static int32_t cli_sleep(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_send_sms(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 
@@ -190,15 +190,15 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
 //    return  0;
 //}
 
-//extern System_t xSystem;
-static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)
-{
-    DEBUG_PRINTF("Begin ota update\r\n");
-    sys_ctx()->status.enter_ota_update = true;
-    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
-    gsm_set_wakeup_now();
-    return 0;
-}
+////extern System_t xSystem;
+//static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    DEBUG_PRINTF("Begin ota update\r\n");
+//    sys_ctx()->status.enter_ota_update = true;
+//    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
+//    gsm_set_wakeup_now();
+//    return 0;
+//}
 
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv)
 {
@@ -230,47 +230,47 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
     return 0;
 }
 
-static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv)
-{
-    if (strstr(argv[1], "erase"))
-	{
-		DEBUG_PRINTF("Erase flash\r\n");
-        app_spi_flash_erase_all();
-	}
-	else if (strstr(argv[1], "stress"))
-	{
-		DEBUG_PRINTF("Write flash\r\n");
-        app_spi_flash_stress_test(atoi(argv[2]));
-	}
-    else if (strstr(argv[1], "rdall"))
-	{
-//		DEBUG_PRINTF("Read flash\r\n");
-        app_spi_flash_retransmission_data_test();
-	}
-    else if (strstr(argv[1], "pageerase"))
-	{
-		DEBUG_PRINTF("Erase page flash\r\n");
-//        app_spi_flash_erase_all_page(atoi(argv[2]);
-	}
-    else if (strstr(argv[1], "empty"))
-	{
-//		DEBUG_PRINTF("Check empty sector\r\n");
-        if (app_spi_flash_check_empty_sector(atoi(argv[2])))
-        {
-            DEBUG_PRINTF("Empty sector\r\n");
-        }
-        else
-        {
-            DEBUG_PRINTF("Full sector\r\n");
-        }
-	}
-    else if (strstr(argv[1], "writetoend"))
-	{
-		DEBUG_PRINTF("Skip write to end sector\r\n");
-        app_spi_flash_skip_to_end_flash_test();
-	}
-    return 0;
-}
+//static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    if (strstr(argv[1], "erase"))
+//	{
+//		DEBUG_PRINTF("Erase flash\r\n");
+//        app_spi_flash_erase_all();
+//	}
+//	else if (strstr(argv[1], "stress"))
+//	{
+//		DEBUG_PRINTF("Write flash\r\n");
+//        app_spi_flash_stress_test(atoi(argv[2]));
+//	}
+//    else if (strstr(argv[1], "rdall"))
+//	{
+////		DEBUG_PRINTF("Read flash\r\n");
+//        app_spi_flash_retransmission_data_test();
+//	}
+//    else if (strstr(argv[1], "pageerase"))
+//	{
+//		DEBUG_PRINTF("Erase page flash\r\n");
+////        app_spi_flash_erase_all_page(atoi(argv[2]);
+//	}
+//    else if (strstr(argv[1], "empty"))
+//	{
+////		DEBUG_PRINTF("Check empty sector\r\n");
+//        if (app_spi_flash_check_empty_sector(atoi(argv[2])))
+//        {
+//            DEBUG_PRINTF("Empty sector\r\n");
+//        }
+//        else
+//        {
+//            DEBUG_PRINTF("Full sector\r\n");
+//        }
+//	}
+//    else if (strstr(argv[1], "writetoend"))
+//	{
+//		DEBUG_PRINTF("Skip write to end sector\r\n");
+//        app_spi_flash_skip_to_end_flash_test();
+//	}
+//    return 0;
+//}
 
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv)
 //{

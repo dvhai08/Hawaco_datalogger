@@ -1539,7 +1539,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
         }
-        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition);
+        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
         if (retransmition)
         {
             if (!app_spi_flash_get_retransmission_data(addr, &rd_data))

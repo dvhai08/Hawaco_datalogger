@@ -182,6 +182,7 @@ void modbus_master_clear_transmit_buffer()
     }
 }
 
+
 /* _____PRIVATE FUNCTIONS____________________________________________________ */
 /**
 Modbus transaction engine.

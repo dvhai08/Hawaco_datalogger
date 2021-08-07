@@ -162,7 +162,7 @@ void app_spi_flash_initialize(void)
         uint32_t addr = app_flash_estimate_next_write_addr(&flash_status);
         DEBUG_PRINTF("Estimate write addr 0x%08X\r\n", addr);
         
-        app_spi_flash_estimate_current_read_addr(&flash_status);
+        app_spi_flash_estimate_current_read_addr(&flash_status, true);
         if (flash_status)
         {
             DEBUG_PRINTF("Flash : need retransmission data to server\r\n");
@@ -794,7 +794,7 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
     return m_wr_addr;
 }
 
-uint32_t find_retransmition_messgae(uint32_t begin_addr, uint32_t end_addr)
+uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
 {
     app_spi_flash_data_t tmp;
     memset(&tmp, 0, sizeof(tmp));
@@ -825,7 +825,7 @@ uint32_t find_retransmition_messgae(uint32_t begin_addr, uint32_t end_addr)
     }
 }
 
-uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
+uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_all_flash)
 {
     uint32_t tmp_addr;
     app_spi_flash_data_t tmp;
@@ -847,18 +847,34 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
     }
     else if (m_wr_addr > m_resend_data_in_flash_addr) // Neu write address > read address =>> Scan from read_addr to write_addr
     {
-        tmp_addr = find_retransmition_messgae(m_resend_data_in_flash_addr, m_wr_addr);
-        if (tmp_addr != 0)
-        {
-            m_resend_data_in_flash_addr = tmp_addr;
-            *found_error = true;
-        }
+		
+		tmp_addr = find_retransmission_message(m_resend_data_in_flash_addr, m_wr_addr);
+		if (tmp_addr != 0)
+		{
+			m_resend_data_in_flash_addr = tmp_addr;
+			*found_error = true;
+		}
+		else if (scan_all_flash == false)
+		{
+			// If we didnot seen error message from m_resend_data_in_flash_addr to m_wr_addr
+			// Scan once more 2 page
+			// =>> if scan data from 0 -> write pointer 
+			// -> we not found anythings
+			// Use full when flash overflow
+			tmp_addr = find_retransmission_message(m_wr_addr, m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE);
+			if (tmp_addr != 0)
+			{
+				DEBUG_INFO("Found flash overflow\r\n");
+				m_resend_data_in_flash_addr = tmp_addr;
+				*found_error = true;
+			}
+		}
     }
     else // Write addr < read addr =>> buffer full =>> Scan 2 step
          // Step 1 : scan from read addr to max addr
          // Step 2 : scan from SPI_FLASH_PAGE_SIZE to write addr
     {
-        tmp_addr = find_retransmition_messgae(m_resend_data_in_flash_addr, m_wr_addr);
+        tmp_addr = find_retransmission_message(m_resend_data_in_flash_addr, m_wr_addr);
         if (tmp_addr != 0)
         {
             m_resend_data_in_flash_addr = tmp_addr;
@@ -866,7 +882,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error)
         }
         else
         {
-            tmp_addr = find_retransmition_messgae(SPI_FLASH_PAGE_SIZE, m_wr_addr);
+            tmp_addr = find_retransmission_message(SPI_FLASH_PAGE_SIZE, m_wr_addr);
             if (tmp_addr != 0)
             {
                 *found_error = true;
@@ -1133,14 +1149,14 @@ void app_spi_flash_stress_test(uint32_t nb_of_write_times)
 
 void app_spi_flash_retransmission_data_test(void)
 {
-    bool retransmition = true;
-    while (retransmition)
+    bool retransmission = true;
+    while (retransmission)
     {
-        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition);
+        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmission, false);
         app_spi_flash_data_t rd_data;
-        if (retransmition)
+        if (retransmission)
         {
-            DEBUG_VERBOSE("Retransmition addr 0x%08X\r\n", addr);
+            DEBUG_VERBOSE("Retransmission addr 0x%08X\r\n", addr);
             app_flash_mask_retransmiton_is_valid(addr, &rd_data);
         }
 //        else

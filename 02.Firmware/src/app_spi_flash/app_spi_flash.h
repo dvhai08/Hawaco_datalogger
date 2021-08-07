@@ -69,8 +69,10 @@ void app_spi_flash_shutdown(void);
 /**
  * @brief       Estimate current read address
  * @param[out]  found_error : Found error status
+ * @param[in]	scan_all_flash TRUE Scan all flash
+ *							   FALSE Only scan from read_pointer to write_pointer
  */
-uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error);
+uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_all_flash);
 
 /**
  * @brief       Write data to flash
