@@ -1143,10 +1143,10 @@ void app_spi_flash_retransmission_data_test(void)
             DEBUG_VERBOSE("Retransmition addr 0x%08X\r\n", addr);
             app_flash_mask_retransmiton_is_valid(addr, &rd_data);
         }
-        else
-        {
-            DEBUG_VERBOSE("No retransmission data found\r\n");
-        }
+//        else
+//        {
+//            DEBUG_VERBOSE("No retransmission data found\r\n");
+//        }
     }
 }
 

@@ -101,11 +101,12 @@ int main(void)
     if (cfg.flag == OTA_FLAG_UPDATE_NEW_FW)
 	{
 		cfg.flag = OTA_FLAG_NO_NEW_FIRMWARE;
-        sprintf((char*)&cfg.reserve[0], "%s", "OTA success");
+//        sprintf((char*)&cfg.reserve[0], "%s", "OTA success");
         
         LL_IWDG_ReloadCounter(IWDG);
 		if (flash_if_erase(APPLICATION_START_ADDR, APPLICATION_END_ADDR) != FLASH_IF_OK)
         {
+			NVIC_SystemReset();
             while (1);
         }	
         
@@ -199,26 +200,6 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
-//uint32_t sys_get_ms()
-//{
-//	return HAL_GetTick();
-//}
-
-//void sys_delay_ms(uint32_t ms)
-//{
-//	uint32_t current_tick = HAL_GetTick();
-//	
-//	while (1)
-//	{
-//		__WFI();
-//		if (HAL_GetTick() - current_tick >= ms)
-//		{
-//			break;
-//		}
-//	}
-//}
-
 
 /* USER CODE END 4 */
 

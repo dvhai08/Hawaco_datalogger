@@ -282,7 +282,6 @@ void EXTI4_15_IRQHandler(void)
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
     if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_4) != RESET)
     {
-        DEBUG_VERBOSE("Wakeup\r\n");
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
         LED1(1);
         led_blink_delay = 10;

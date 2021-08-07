@@ -502,7 +502,7 @@ void adc_convert(void)
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
-    DEBUG_VERBOSE("VDDA %umv\r\n", m_adc_input.vdda_mv);
+//    DEBUG_VERBOSE("VDDA %umv\r\n", m_adc_input.vdda_mv);
     
 	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
@@ -528,7 +528,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_VERBOSE("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
+//    DEBUG_VERBOSE("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
     
 #ifdef DTG02
     // Channel 1
@@ -547,7 +547,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_VERBOSE("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
+//    DEBUG_VERBOSE("[IN1 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[1]); 
     
     
     // Channel 2
@@ -566,7 +566,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_VERBOSE("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
+//    DEBUG_VERBOSE("[IN2 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_2_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[2]); 
     
     // 4-20ma channel 3
     m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
@@ -585,7 +585,7 @@ void adc_convert(void)
     {
         m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX] = 0;
     }
-    DEBUG_VERBOSE("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
+//    DEBUG_VERBOSE("[IN3 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_3_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[3]); 
     
 #endif
     

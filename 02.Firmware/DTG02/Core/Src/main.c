@@ -207,9 +207,7 @@ int main(void)
     system->status.is_enter_test_mode = 1;
 #endif
 //    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
-    DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
-                                                                            VERSION_CONTROL_FW,
-                                                                            ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
+    DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
 #if TEST_BACKUP_REGISTER
     for(uint32_t i = 0; i < 4; i++)
     {

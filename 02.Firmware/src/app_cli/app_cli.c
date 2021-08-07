@@ -148,6 +148,7 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
     DEBUG_INFO("Erase all data in eeprom and ext flash\r\n");
     app_eeprom_erase();
     app_spi_flash_erase_all();
+	NVIC_SystemReset();
     return 0;
 }
 

@@ -11,6 +11,7 @@
 #include "app_spi_flash.h"
 #include "app_rtc.h"
 #include "measure_input.h"
+#include "umm_malloc.h"
 
 #define RS485_STRCAT_ID(str,id)				str##id##"\":"		
 
@@ -408,13 +409,47 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
     if (server)
     {
         server += strlen("Server\":");
-        uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
-        if (gsm_utilities_copy_parameters(server, (char*)tmp, '"', '"'))
+        uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
+        if (gsm_utilities_copy_parameters(server, (char*)tmp, '"', '"')
+			&& (strstr((char*)tmp, "http://") || strstr((char*)tmp, "https://")))
         {
-            has_new_cfg++;
-            snprintf((char*)config->server_addr, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
-            DEBUG_INFO("Server changed to %s\r\n", config->server_addr);
+			uint32_t server_addr_len = strlen((char*)tmp);
+			--server_addr_len;
+			if (tmp[server_addr_len] == '/')		// Change https://acb.com/ to https://acb.com
+			{
+				tmp[server_addr_len] = '\0';
+			}
+			
+			if (strcmp((char*)tmp, (char*)config->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]))
+			{
+				if (ctx->status.new_server)
+				{
+					umm_free(ctx->status.new_server);
+					ctx->status.new_server = NULL;
+				}
+				ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+				if (ctx->status.new_server)
+				{
+					ctx->status.try_new_server = 1;
+					snprintf((char*)ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
+					DEBUG_INFO("Server changed to %s\r\n", config->server_addr);
+				}
+				else
+				{
+					ctx->status.try_new_server = 0;
+					DEBUG_ERROR("Server changed : No memory\r\n");
+				}
+			}
+			else
+			{
+				DEBUG_INFO("New server is the same with old server\r\n");
+			}
         }
+		else
+		{
+			server = NULL;
+			DEBUG_ERROR("Server is not http or https\r\n");
+		}
     }
 	bool same_hardware = false;
     char *hardware = strstr(buffer, "Hardware\":");  
@@ -450,7 +485,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint32_t update = gsm_utilities_get_number_from_string(strlen("Update\":"), do_ota);
         if (update)
         {
-			DEBUG_VERBOSE("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
+//			DEBUG_VERBOSE("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
 			uint8_t version_compare;
 			version = strtok(version, "\"");
 			version_compare = version_control_compare(version);

@@ -7,8 +7,8 @@
 #define OTA_FLAG_UPDATE_NEW_FW		0x12345678
 #define OTA_FLAG_NO_NEW_FIRMWARE	0x19785384
 
-#define BOOTLOADER_SIZE				(8*1024)
-#define APPLICATION_SIZE			(86*1024)
+#define BOOTLOADER_SIZE				(6*1024)
+#define APPLICATION_SIZE			(93184)
 #define OTA_INFO_SIZE               (128)
 #define DOWNLOAD_SIZE				APPLICATION_SIZE
 
@@ -50,42 +50,42 @@ typedef struct
 	uint32_t reserve[30];
 } ota_flash_cfg_t;
 
-///**
-// * @brief		Start ota update process
-// * @param[in]	expected_size : Firmware size, included header signature
-// * @retval 		TRUE : Operation success
-// *         		FALSE : Operation failed
-// */
-//bool ota_update_start(uint32_t expected_size);
+/**
+ * @brief		Start ota update process
+ * @param[in]	expected_size : Firmware size, included header signature
+ * @retval 		TRUE : Operation success
+ *         		FALSE : Operation failed
+ */
+bool ota_update_start(uint32_t expected_size);
 
-///**
-// * @brief		Write data to flash
-// * @param[in]	data : Data write to flash
-// * @param[in]	length : Size of data in bytes
-// * @note 		Flash write address will automatic increase inside function
-// * @retval		TRUE : Operation success
-// *				FALSE : Operation failed
-// */
-//bool ota_update_write_next(uint8_t *data, uint32_t length);
+/**
+ * @brief		Write data to flash
+ * @param[in]	data : Data write to flash
+ * @param[in]	length : Size of data in bytes
+ * @note 		Flash write address will automatic increase inside function
+ * @retval		TRUE : Operation success
+ *				FALSE : Operation failed
+ */
+bool ota_update_write_next(uint8_t *data, uint32_t length);
 
-///**
-// * @brief Finish ota process
-// * @param[in] status TRUE : All data downloaded success
-// *                   FALSE : A problem occurs
-// */
-//void ota_update_finish(bool status);
+/**
+ * @brief Finish ota process
+ * @param[in] status TRUE : All data downloaded success
+ *                   FALSE : A problem occurs
+ */
+void ota_update_finish(bool status);
 
-///**
-// * @brief		Check ota update status
-// * @retval		TRUE : OTA is running
-// * 				FALSE : OTA is not running
-// */
-//bool ota_update_is_running(void);
+/**
+ * @brief		Check ota update status
+ * @retval		TRUE : OTA is running
+ * 				FALSE : OTA is not running
+ */
+bool ota_update_is_running(void);
 
-///**
-// * @brief		Get current ota update
-// * @retval		OTA config in flash
-// */
-//ota_flash_cfg_t *ota_update_get_config(void);
+/**
+ * @brief		Get current ota update
+ * @retval		OTA config in flash
+ */
+ota_flash_cfg_t *ota_update_get_config(void);
 
 #endif /* OTA_UPDATE_H */

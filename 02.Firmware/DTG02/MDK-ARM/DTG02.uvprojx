@@ -275,8 +275,8 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8002000</StartAddress>
-                <Size>0x16800</Size>
+                <StartAddress>0x8001800</StartAddress>
+                <Size>0x16c00</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -1270,9 +1270,6 @@
               <FilePath>..\..\src\app_queue\app_queue.h</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>fault</GroupName>
         </Group>
         <Group>
           <GroupName>app_debug</GroupName>

@@ -38,9 +38,9 @@ void app_eeprom_init(void)
         memcpy(m_cfg.phone, "0", 1);
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         m_cfg.valid_flag = APP_EEPROM_VALID_FLAG;
-        sprintf((char*)&m_cfg.server_addr[0][0], "%s", DEFAULT_SERVER_ADDR);
+        sprintf((char*)&m_cfg.server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX][0], "%s", DEFAULT_SERVER_ADDR);
 		m_cfg.server_addr[1][0] = '\0'; 
-        m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
+       
         app_eeprom_save_config();
 	}
     else
@@ -50,17 +50,29 @@ void app_eeprom_init(void)
         {
             m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
         }
-        if (strlen((char*)m_cfg.server_addr) < 12)
+        if (strlen((char*)m_cfg.server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX]) < 12
+			&& strlen((char*)m_cfg.server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]) < 12)
         {
-            sprintf((char*)&m_cfg.server_addr[0], "%s", DEFAULT_SERVER_ADDR); 
+            sprintf((char*)&m_cfg.server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], "%s", DEFAULT_SERVER_ADDR); 
         }
     }
 }
 
 void app_eeprom_erase(void)
 {
-    memset(&m_cfg, 0, sizeof(m_cfg));
-    app_eeprom_save_config();
+    flash_if_init();
+	uint32_t err;
+	HAL_FLASHEx_DATAEEPROM_Unlock();
+	for (uint32_t i = 0; (i < sizeof(app_eeprom_config_data_t)+3)/4; i++)
+	{
+		err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i*4);
+		if (HAL_OK != err)
+		{
+			DEBUG_ERROR("Erase eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i*4, err);
+			break;
+		}
+	}
+	HAL_FLASHEx_DATAEEPROM_Lock();
 }
 
 void app_eeprom_save_config(void)
@@ -69,19 +81,12 @@ void app_eeprom_save_config(void)
 	uint8_t *tmp = (uint8_t*)&m_cfg;
     m_cfg.crc = utilities_calculate_crc32((uint8_t*)&m_cfg, sizeof(app_eeprom_config_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
     
+	app_eeprom_erase();
     flash_if_init();
     
-	HAL_FLASHEx_DATAEEPROM_Unlock();
 	
-//    for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t)/sizeof(uint32_t); i++)
-////    {
-////        err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i);
-////        if (HAL_OK != err)
-////        {
-////            DEBUG_PRINTF("Erase eeprom failed code %08X\r\n", err);
-////        }
-////        i += 4;
-////    }
+	HAL_FLASHEx_DATAEEPROM_Unlock();
+
 
 	for (uint32_t i = 0; i < sizeof(app_eeprom_config_data_t); i++)
 	{
@@ -93,10 +98,10 @@ void app_eeprom_save_config(void)
 		}
 	}
 	
-    if (err == HAL_OK)
-    {
-        DEBUG_VERBOSE("Store data success\r\n");
-    }
+//    if (err == HAL_OK)
+//    {
+//        DEBUG_VERBOSE("Store data success\r\n");
+//    }
 	HAL_FLASHEx_DATAEEPROM_Lock();
 }
 

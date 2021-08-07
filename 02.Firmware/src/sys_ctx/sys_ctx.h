@@ -26,6 +26,8 @@ typedef struct
     uint8_t delay_ota_update;
     uint8_t delay_store_data_to_ext_flash;
     uint8_t ota_url[128+48];
+	uint8_t try_new_server;
+	char *new_server;
 } sys_ctx_status_t;
 
 typedef union

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "hardware.h"
 
+
 typedef union
 {
 	struct
@@ -24,7 +25,9 @@ typedef union
 		uint32_t output_4_20ma_enable : 1;
 		
 		uint32_t output_4_20ma_timeout_100ms : 8;   
-		uint32_t reserve : 11;
+		uint32_t alarm_sensor_value_high : 1;
+		uint32_t alarm_sensor_value_low : 1;
+		uint32_t reserve : 9;
 	} __attribute__((packed)) name;
 	uint32_t value;
 } __attribute__((packed)) app_eeprom_io_enable_t;
@@ -50,6 +53,11 @@ typedef struct
 	measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
 	
     float output_4_20ma;
+	
+	// Cai dat nguong canh bao cam bien xung
+	uint32_t qmin;
+	uint32_t qmax;
+	
     uint32_t crc;
 } __attribute__((packed))  app_eeprom_config_data_t;
 

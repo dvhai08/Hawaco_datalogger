@@ -201,6 +201,8 @@
 #define APP_EEPROM_MAX_PHONE_LENGTH                 16
 #define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           64
 #define APP_EEPROM_MAX_NUMBER_OF_SERVER				2
+#define APP_EEPROM_MAIN_SERVER_ADDR_INDEX			0
+#define APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX	(APP_EEPROM_MAX_NUMBER_OF_SERVER-1)
 #ifdef DTG02
 #define APP_EEPROM_NB_OF_INPUT_4_20MA               4
 #else
@@ -259,6 +261,12 @@ typedef struct
     uint32_t current_ma_mil_10;		// 4ma =>> 400
     int32_t adc_mv;					    // adc voltage
 } input_4_20ma_lookup_t;
+
+typedef struct
+{
+	uint32_t round_per_sec_max;
+	uint32_t round_per_sec_min;
+} __attribute__((packed)) speed_limit_t;
 
 static const input_4_20ma_lookup_t lookup_table_4_20ma_input[] =
 {

@@ -5,7 +5,7 @@
 #include "stm32l0xx_hal.h"
 #include "flash_if.h"
 
-#define OTA_MAX_SIZE (86*1024)
+#define OTA_MAX_SIZE (APPLICATION_SIZE)
 #define MD5_LEN 16
 #define OTA_REMAIN_MAX_LENGTH   (WORDS_IN_HALF_PAGE*4)
 
