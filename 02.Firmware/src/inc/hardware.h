@@ -225,6 +225,12 @@
 
 #define CRC32_SIZE		4
 
+#define INPUT_ON_OFF_0()			(LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0)
+#define INPUT_ON_OFF_1()			(LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0)
+#define INPUT_ON_OFF_2()			(LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0)
+#define INPUT_ON_OFF_3()			(LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0)
+
+
 typedef union
 {
 	struct

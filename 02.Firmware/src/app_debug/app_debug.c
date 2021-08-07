@@ -1,9 +1,9 @@
 #include "app_debug.h"
-#include "stdarg.h"
+#include <stdarg.h>
 #include "stdio.h"
-#include "main.h"
 #include <string.h>
-#include "ctype.h"
+#include <ctype.h>
+#include "main.h"
 
 //#include "gd32e10x.h"
 

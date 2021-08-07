@@ -313,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_FULL_LL_DRIVER,USE_HAL_DRIVER,STM32L083xx,RTC_BACKUP_VALID_DATA=0x12345613,DEBUG_MODE,UMM_MALLOC_CFG_HEAP_SIZE=6144,USER_VECT_TAB_ADDRESS,WDT_ENABLE,DTG02,BUFFER_SIZE_UP=512</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;                               ../Drivers/STM32L0xx_HAL_Driver/Inc;                               ../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;                               ../Drivers/CMSIS/Device/ST/STM32L0xx/Include;                               ../Drivers/CMSIS/Include;                               ..\..\src\SEGGER_RTT_V698b\RTT;                               ..\..\src\app_cli;                               ..\..\src\app_queue;                               ..\..\src\fault;                               ..\..\src\app_debug;                               ..\..\src\gsm;                               ..\..\src\inc;                               ..\..\src\umm_malloc-1.0.1\src;                               ..\..\src\lwrb\lwrb\src\include\lwrb;                               ..\..\src\utilities;                               ..\..\src\measurement;                               ..\..\src\app_rtc;                               ..\..\src\server_msg;                               ..\..\src\app_spi_flash;                               ..\..\src\app_eeprom;                               ..\..\src\lowpass_filter;                               ..\..\src\umm_malloc-1.0.1\src;                               ..\..\src\sys_ctx;                               ..\..\src\ota_update;                               ..\..\src\app_md5;                               ..\..\src\app_sync;                               ..\..\src\app_bkup;                               ..\..\src\modbus_master</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\app_cli;..\..\src\app_queue;..\..\src\fault;..\..\src\app_debug;..\..\src\gsm;..\..\src\inc;..\..\src\umm_malloc-1.0.1\src;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\utilities;..\..\src\measurement;..\..\src\app_rtc;..\..\src\server_msg;..\..\src\app_spi_flash;..\..\src\app_eeprom;..\..\src\lowpass_filter;..\..\src\umm_malloc-1.0.1\src;..\..\src\sys_ctx;..\..\src\ota_update;..\..\src\app_md5;..\..\src\app_sync;..\..\src\app_bkup;..\..\src\modbus_master;..\..\src\Jig</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1755,6 +1755,21 @@
               <FileName>flash_if.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\ota_update\flash_if.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>jig</GroupName>
+          <Files>
+            <File>
+              <FileName>jig.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\Jig\jig.c</FilePath>
+            </File>
+            <File>
+              <FileName>jig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\Jig\jig.h</FilePath>
             </File>
           </Files>
         </Group>

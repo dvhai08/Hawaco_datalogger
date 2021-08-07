@@ -505,6 +505,31 @@ void usart_lpusart_485_control(bool enable)
     m_lpusart_rs485_is_enabled = enable;
 }
 
+
+void usart_lpusart_485_send(uint8_t *data, uint32_t length)
+{
+	volatile uint32_t i;
+    if (!RS485_GET_DIRECTION())
+    {
+        RS485_DIR_TX();     // Set TX mode
+        i = 32;     // clock = 16Mhz =>> 1us = 16, delay at least 1.3us
+        while (i--);        
+    }
+
+	for (uint32_t i = 0; i < length; i++)
+	{
+		LL_LPUART_TransmitData8(LPUART1, data[i]);
+		while (0 == LL_LPUART_IsActiveFlag_TXE(LPUART1));
+	}
+	
+	while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1))
+    {
+        
+    }
+	
+	RS485_DIR_RX();
+}
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

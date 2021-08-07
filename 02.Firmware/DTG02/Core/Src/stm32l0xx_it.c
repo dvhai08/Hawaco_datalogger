@@ -32,6 +32,7 @@
 #include "adc.h"
 #include "sys_ctx.h"
 #include "rtc.h"
+#include "jig.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -72,6 +73,8 @@ extern void uart1_rx_complete_callback(bool status);
 extern volatile uint32_t led_blink_delay;
 volatile uint32_t m_last_exti0_timestamp;
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
+extern volatile uint32_t jig_timeout_ms;
+extern volatile uint8_t *jig_rs485_rx_buffer;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -184,6 +187,11 @@ void SysTick_Handler(void)
     {
         --measure_input_turn_on_in_4_20ma_power;
     }
+	
+	if (jig_timeout_ms)
+	{
+		jig_timeout_ms--;
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -280,11 +288,11 @@ void EXTI4_15_IRQHandler(void)
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
-    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_4) != RESET)
+    if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_4) != RESET)		// EXTI wakeup interrut
     {
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
         LED1(1);
-        led_blink_delay = 10;
+        led_blink_delay = 5;
 		if (gsm_data_layer_is_module_sleeping())
         {
             measure_input_measure_wakeup_to_get_data();
@@ -404,7 +412,15 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	
 	if (LL_USART_IsActiveFlag_RXNE(LPUART1))
 	{
-		measure_input_rs485_uart_handler(LPUART1->RDR);
+		uint32_t data = LPUART1->RDR;
+		if (jig_timeout_ms == 0)
+		{
+			measure_input_rs485_uart_handler(data);
+		}
+		else
+		{
+			jig_uart_insert(data);
+		}
 	}
 	
 	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 
