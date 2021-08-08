@@ -41,7 +41,7 @@
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
 #define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 #define ADC_OFFSET_MA                           0      // 0.6mA, mul by 10
-#define DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT     7000
+#define DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT     2000
 #define CHECK_BOTH_INPUT_EDGE					0
 
 #if CHECK_BOTH_INPUT_EDGE
