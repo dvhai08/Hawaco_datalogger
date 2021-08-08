@@ -444,17 +444,29 @@ static void gsm_mnr_task(void *arg)
     {
         if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
         {
-            DEBUG_ERROR("GSM disconnected for a longtime\r\n");
+            DEBUG_ERROR("GSM disconnected for a long time\r\n");
             app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
             measure_input_save_all_data_to_flash();
             ctx->status.disconnect_timeout_s = 0;
             if (ctx->status.disconnected_count++ > 24)
-            {
+            {				
                 ctx->status.disconnected_count = 0;
                 if (strlen((char*)eeprom_cfg->phone) > 9
                     && eeprom_cfg->io_enable.name.warning)
                 {
-                    gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
+					char msg[128];
+					char *p = msg;
+					rtc_date_time_t time;
+					app_rtc_get_time(&time);
+					
+					p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] : ",
+									time.year + 2000,
+									time.month,
+									time.day,
+									time.hour,
+									time.minute);
+					p += sprintf(p, "%s", "Mat ket noi server");
+					gsm_send_sms((char*)eeprom_cfg->phone, msg);
                 }
                 else
                 {

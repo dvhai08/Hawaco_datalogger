@@ -49,7 +49,7 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
 //static int32_t cli_ota_update(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv);
-//static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 
@@ -62,7 +62,7 @@ static const shell_command_context_t cli_command_table[] =
 //    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
-//    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
+    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
 };
@@ -230,47 +230,47 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
     return 0;
 }
 
-//static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv)
-//{
-//    if (strstr(argv[1], "erase"))
-//	{
-//		DEBUG_PRINTF("Erase flash\r\n");
-//        app_spi_flash_erase_all();
-//	}
-//	else if (strstr(argv[1], "stress"))
-//	{
-//		DEBUG_PRINTF("Write flash\r\n");
-//        app_spi_flash_stress_test(atoi(argv[2]));
-//	}
-//    else if (strstr(argv[1], "rdall"))
-//	{
-////		DEBUG_PRINTF("Read flash\r\n");
-//        app_spi_flash_retransmission_data_test();
-//	}
-//    else if (strstr(argv[1], "pageerase"))
-//	{
-//		DEBUG_PRINTF("Erase page flash\r\n");
-////        app_spi_flash_erase_all_page(atoi(argv[2]);
-//	}
-//    else if (strstr(argv[1], "empty"))
-//	{
-////		DEBUG_PRINTF("Check empty sector\r\n");
-//        if (app_spi_flash_check_empty_sector(atoi(argv[2])))
-//        {
-//            DEBUG_PRINTF("Empty sector\r\n");
-//        }
-//        else
-//        {
-//            DEBUG_PRINTF("Full sector\r\n");
-//        }
-//	}
-//    else if (strstr(argv[1], "writetoend"))
-//	{
-//		DEBUG_PRINTF("Skip write to end sector\r\n");
-//        app_spi_flash_skip_to_end_flash_test();
-//	}
-//    return 0;
-//}
+static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv)
+{
+    if (strstr(argv[1], "erase"))
+	{
+		DEBUG_PRINTF("Erase flash\r\n");
+        app_spi_flash_erase_all();
+	}
+	else if (strstr(argv[1], "stress"))
+	{
+		DEBUG_PRINTF("Write flash\r\n");
+        app_spi_flash_stress_test(atoi(argv[2]));
+	}
+    else if (strstr(argv[1], "rdall"))
+	{
+//		DEBUG_PRINTF("Read flash\r\n");
+        app_spi_flash_retransmission_data_test();
+	}
+    else if (strstr(argv[1], "pageerase"))
+	{
+		DEBUG_PRINTF("Erase page flash\r\n");
+//        app_spi_flash_erase_all_page(atoi(argv[2]);
+	}
+    else if (strstr(argv[1], "empty"))
+	{
+//		DEBUG_PRINTF("Check empty sector\r\n");
+        if (app_spi_flash_check_empty_sector(atoi(argv[2])))
+        {
+            DEBUG_PRINTF("Empty sector\r\n");
+        }
+        else
+        {
+            DEBUG_PRINTF("Full sector\r\n");
+        }
+	}
+    else if (strstr(argv[1], "writetoend"))
+	{
+		DEBUG_PRINTF("Skip write to end sector\r\n");
+        app_spi_flash_skip_to_end_flash_test();
+	}
+    return 0;
+}
 
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv)
 //{

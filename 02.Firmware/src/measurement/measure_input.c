@@ -270,33 +270,35 @@ void measure_input_save_all_data_to_flash(void)
     sys_ctx_t *ctx = sys_ctx();
     wr_data.resend_to_server_flag = 0;
 
-    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
+    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM ; j++)
     {
-        for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
-        {
-            wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20mA[i];
-        }
-		
-		for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
+		if (m_sensor_msq[j].state != MEASUREMENT_QUEUE_STATE_IDLE)
 		{
-			memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
-		}			
-		
-        wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
-        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-        wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
-        wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
-        wr_data.temp = m_sensor_msq[j].temperature;
-        
-        if (!ctx->peripheral_running.name.flash_running)
-        {
-//            DEBUG_VERBOSE("Wakup flash\r\n");
-            spi_init();
-            app_spi_flash_wakeup();
-            ctx->peripheral_running.name.flash_running = 1;
-        }
-        app_spi_flash_write_data(&wr_data);
-        m_sensor_msq[j].state = MEASUREMENT_QUEUE_STATE_IDLE;
+			for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
+			{
+				wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20mA[i];
+			}
+			
+			for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
+			{
+				memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
+			}			
+			
+			wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
+			wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
+			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
+			wr_data.temp = m_sensor_msq[j].temperature;
+			
+			if (!ctx->peripheral_running.name.flash_running)
+			{
+				spi_init();
+				app_spi_flash_wakeup();
+				ctx->peripheral_running.name.flash_running = 1;
+			}
+			app_spi_flash_write_data(&wr_data);
+			m_sensor_msq[j].state = MEASUREMENT_QUEUE_STATE_IDLE;
+		}
     }   
 }
 

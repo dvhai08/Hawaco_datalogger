@@ -28,6 +28,7 @@
 #define GSM_READ_SMS_ENABLE     1
 #define GSM_MAX_SMS_CONTENT_LENGTH   160
 #define GSM_MAX_SMS_PHONE_LENGTH     16
+#define GSM_MIN_SMS_PHONE_LENGTH     9
 
 typedef enum
 {

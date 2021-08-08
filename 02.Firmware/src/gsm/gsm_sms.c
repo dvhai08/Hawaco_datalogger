@@ -114,7 +114,9 @@ bool gsm_send_sms(char *phone_number, char *message)
         return false;
     }
 
-    if ((strlen(phone_number) >= GSM_MAX_SMS_PHONE_LENGTH) || (strlen(phone_number) == 0))
+	uint32_t phone_len = strlen(phone_number) ;
+    if ((phone_len >= GSM_MAX_SMS_PHONE_LENGTH) || (phone_len == 0)
+		|| (phone_len <= GSM_MIN_SMS_PHONE_LENGTH))
     {
         DEBUG_VERBOSE("SMS phone number [%s] is invalid\r\n", phone_number);
         return false;
