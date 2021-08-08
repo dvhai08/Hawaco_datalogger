@@ -197,7 +197,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
     }
 }
 
-static void measure_input_pulse_counter_poll(void)
+void measure_input_pulse_counter_poll(void)
 {
     if (m_is_pulse_trigger)
     {
@@ -318,14 +318,7 @@ void measure_input_task(void)
     
     if (ctx->status.is_enter_test_mode)
     {
-        if (eeprom_cfg->io_enable.name.input_4_20ma_enable)
-        {
-            ENABLE_INPUT_4_20MA_POWER(1);
-        }
-        else
-        {
-            measure_input_turn_on_in_4_20ma_power = 0;
-        }
+        ENABLE_INPUT_4_20MA_POWER(1);
         estimate_measure_timestamp = current_sec;
     }
     
@@ -376,10 +369,18 @@ void measure_input_task(void)
 	if ((m_this_is_the_first_time || (current_sec >= estimate_measure_timestamp))
         && (measure_input_turn_on_in_4_20ma_power == 0))
 	{
-        if (eeprom_cfg->io_enable.name.input_4_20ma_enable)
+#ifdef DTG01
+        if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
+#else
+		if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable
+			|| eeprom_cfg->io_enable.name.input_4_20ma_1_enable
+			|| eeprom_cfg->io_enable.name.input_4_20ma_2_enable
+			|| eeprom_cfg->io_enable.name.input_4_20ma_3_enable)
+#endif
         {
             if (!INPUT_POWER_4_20_MA_IS_ENABLE())
             {
+				ENABLE_INPUT_4_20MA_POWER(1);
                 measure_input_turn_on_in_4_20ma_power = DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT;
                 ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 1;
             }
@@ -422,7 +423,7 @@ void measure_input_task(void)
                 m_measure_data.csq_percent = gsm_get_csq_in_percent();
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
-                    m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i]/10;
+                    m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i];
                 }
                 
                 DEBUG_INFO("PWM0 %u\r\n", m_measure_data.counter[0].forward);

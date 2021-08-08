@@ -195,6 +195,20 @@ uint8_t process_input_config(char *buffer)
             m_eeprom_config->io_enable.name.output_4_20ma_enable = 0;
         }
     }
+	
+	// 4-20mA
+	char *input_4_20mA = strstr(buffer, "Input2\":");		// mode
+    if (input_4_20mA != NULL)
+    {
+        uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input2\":"), input_4_20mA);
+        if (m_eeprom_config->io_enable.name.input_4_20ma_0_enable != enable)
+        {
+            DEBUG_PRINTF("Input4_20mA 1 changed to %u\r\n", enable);
+            m_eeprom_config->io_enable.name.input_4_20ma_0_enable = enable;
+            new_cfg++;
+        }
+    }
+	
 #else
     char *mode_j1 = strstr(buffer, "Input_J1\":");		// mode
     if (mode_j1 != NULL)
@@ -219,6 +233,55 @@ uint8_t process_input_config(char *buffer)
             new_cfg++;
         }
     }
+	
+	// Input 4-20mA
+    char *input_4_20ma = strstr(buffer, "Input_J3_1\":");
+    if (input_4_20ma != NULL)
+    {
+        uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_1\":"), input_4_20ma) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.input_4_20ma_0_enable != enable)
+        {
+            DEBUG_PRINTF("Input4_20mA 1 changed to %u\r\n", enable);
+            m_eeprom_config->io_enable.name.input_4_20ma_0_enable = enable;
+            new_cfg++;
+        }
+    }
+	input_4_20ma = strstr(buffer, "Input_J3_2\":");
+    if (input_4_20ma != NULL)
+    {
+        uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_2\":"), input_4_20ma) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.input_4_20ma_1_enable != enable)
+        {
+            DEBUG_PRINTF("Input4_20mA 2 changed to %u\r\n", enable);
+            m_eeprom_config->io_enable.name.input_4_20ma_1_enable = enable;
+            new_cfg++;
+        }
+    }
+	
+	input_4_20ma = strstr(buffer, "Input_J3_3\":");
+    if (input_4_20ma != NULL)
+    {
+        uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_3\":"), input_4_20ma) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.input_4_20ma_2_enable != enable)
+        {
+            DEBUG_PRINTF("Input4_20mA 3 changed to %u\r\n", enable);
+            m_eeprom_config->io_enable.name.input_4_20ma_2_enable = enable;
+            new_cfg++;
+        }
+    }
+	
+	input_4_20ma = strstr(buffer, "Input_J3_4\":");
+    if (input_4_20ma != NULL)
+    {
+        uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_4\":"), input_4_20ma) ? 1 : 0;
+        if (m_eeprom_config->io_enable.name.input_4_20ma_3_enable != enable)
+        {
+            DEBUG_PRINTF("Input4_20mA 4 changed to %u\r\n", enable);
+            m_eeprom_config->io_enable.name.input_4_20ma_3_enable = enable;
+            new_cfg++;
+        }
+    }
+	
 #endif
     return new_cfg;
 }

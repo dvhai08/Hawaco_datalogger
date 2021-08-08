@@ -180,7 +180,7 @@ int main(void)
     app_spi_flash_initialize();
 	measure_input_initialize();
 	control_ouput_init();
-	adc_start();
+//	adc_start();
 	gsm_init_hw();
 	BUZZER(0);
 	app_sync_config_t config;
@@ -272,7 +272,14 @@ int main(void)
     }
 
     
+#ifdef DTG01
     if (!eeprom_cfg->io_enable.name.input_4_20ma_enable)
+#else
+	    if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_1_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_2_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_3_enable == 0)
+#endif
     {
         ENABLE_INPUT_4_20MA_POWER(0);
         system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
@@ -314,6 +321,10 @@ int main(void)
 			#if TEST_DEVICE_NEVER_SLEEP == 0
 			{
 				RS485_POWER_EN(0);
+				ENABLE_INPUT_4_20MA_POWER(0);
+				system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+				measure_input_turn_on_in_4_20ma_power = 0;
+				
 				sys_config_low_power_mode();
 			}
 			#endif

@@ -29,6 +29,8 @@
 #include "math.h"
 #include "sys_ctx.h"
 #include <string.h>
+#include "jig.h"
+
 #define ADC_INPUT_4_20MA_MIN_OFFSET_MV  27
 #define ADC_INPUT_4_20MA_MAX_OFFSET_MV  150
 
@@ -270,25 +272,38 @@ void adc_isr_cb(void)
     }
 }
 
-void adc_start(void)
+void adc_start()
 {
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
-    if (cfg->io_enable.name.input_4_20ma_enable || m_is_the_first_time)
+	
+#ifdef DTG01
+    if (cfg->io_enable.name.input_4_20ma_0_enable || m_is_the_first_time)
+#else
+	if (cfg->io_enable.name.input_4_20ma_0_enable
+		|| cfg->io_enable.name.input_4_20ma_1_enable
+		|| cfg->io_enable.name.input_4_20ma_2_enable
+		|| cfg->io_enable.name.input_4_20ma_3_enable
+		|| m_is_the_first_time)
+#endif
     {
-        ENABLE_INPUT_4_20MA_POWER(1);
-        if (m_is_the_first_time)
-        {
-            sys_delay_ms(2000);     // time for input 4-20ma stable
-        }
-        else
-        {
-            sys_delay_ms(2);
-        }
+//        ENABLE_INPUT_4_20MA_POWER(1);
+//        if (m_is_the_first_time)
+//        {
+//            sys_delay_ms(2000);     // time for input 4-20ma stable
+//        }
+//        else
+//        {
+//            sys_delay_ms(2);
+//        }
     }
-    else
+    else if (jig_is_in_test_mode())
     {
-        ENABLE_INPUT_4_20MA_POWER(0);
+		ENABLE_INPUT_4_20MA_POWER(1);
     }
+	else
+	{
+		ENABLE_INPUT_4_20MA_POWER(0);
+	}
 #ifndef USE_INTERNAL_VREF    
     if (!NTC_IS_POWERED())
     {
@@ -398,7 +413,7 @@ void adc_start(void)
     }
     
     // If in test mode =>> always turn on input 4-20ma power
-    if (sys_ctx()->status.is_enter_test_mode)
+    if (sys_ctx()->status.is_enter_test_mode || jig_is_in_test_mode())
     {
         ENABLE_INPUT_4_20MA_POWER(1);   
     }

@@ -78,11 +78,11 @@ int main(int argc, char **argv)
                 fflush(stdout);
                 write (serial_port, "test_enter\r\n", strlen((char*)"test_enter\r\n"));
                 usleep(1);
-                system("clear"); /*clear output screen*/
+                printf("\r\n");
             }
             memset(buffer, 0, 256);
         }
-        usleep(10);
+        usleep(1);
     }
 
     close(serial_port);

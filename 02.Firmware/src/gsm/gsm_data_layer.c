@@ -1093,7 +1093,7 @@ SEND_SMS_FAIL:
  */
 static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *msg)
 {
-    app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
 	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
 //    DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
 	sys_ctx_t *ctx = sys_ctx();
@@ -1171,37 +1171,52 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #else
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 #endif
-    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", cfg->phone);
+    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
     total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
        
 #ifdef DTG02
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
-		temp_counter = msg->counter[i].forward / cfg->k[i] + cfg->offset[i];
+		temp_counter = msg->counter[i].forward / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
 									i,
 								  temp_counter);
-		if (cfg->meter_mode[i] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+		if (eeprom_cfg->meter_mode[i] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 		{
-			temp_counter = msg->counter[i].reserve / cfg->k[i] + cfg->offset[i];
+			temp_counter = msg->counter[i].reserve / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
 										i,
 											temp_counter);
 			// K : he so chia cua dong ho nuoc, input 1
 			// Offset: Gia tri offset cua dong ho nuoc
 			// Mode : che do hoat dong
-			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i, cfg->k[i]);
-			total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i, cfg->offset[i]);
-			total_length += sprintf((char *)(ptr + total_length), "\"Mode%u\":%u,", i, cfg->meter_mode[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i, eeprom_cfg->k[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i, eeprom_cfg->offset[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"Mode%u\":%u,", i, eeprom_cfg->meter_mode[i]);
 		}
 	}
+	
     // Build input 4-20ma
-	for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_%u\":%.2f,", 
-																			i+1,
-																			msg->input_4_20mA[i]); // dau vao 4-20mA 0
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_1\":%.3f,", 
+																			msg->input_4_20mA[0]); // dau vao 4-20mA 0
+	}
+	if (eeprom_cfg->io_enable.name.input_4_20ma_1_enable)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_2\":%.3f,", 
+																			msg->input_4_20mA[1]); // dau vao 4-20mA 0
+	}
+	if (eeprom_cfg->io_enable.name.input_4_20ma_2_enable)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_3\":%.3f,", 
+																			msg->input_4_20mA[2]); // dau vao 4-20mA 0
+	}
+		if (eeprom_cfg->io_enable.name.input_4_20ma_3_enable)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_4\":%.3f,", 
+																			msg->input_4_20mA[3]); // dau vao 4-20mA 0
 	}
     
     // Build input on/off
@@ -1221,7 +1236,12 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	}
     
     // Build output 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", measure_input->output_4_20mA);   // dau ra 4-20mA 0
+	if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
+	{
+		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.3f,", measure_input->output_4_20mA);   // dau ra 4-20mA 0
+	}
+	
+		
 #else	
     // Build pulse counter
     temp_counter = msg->counter[0].forward / cfg->k[0]+ cfg->offset[0];
@@ -1236,12 +1256,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	}
 	
     // Build input on/off
-    total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%u,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
                                                                         measure_input->output_on_off[0]); // dau vao on/off
-    
-    // Build input 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%.2f,", 
-                                                                        msg->input_4_20mA[0]); // dau vao 4-20mA 0
+	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
+	{
+		// Build input 4-20ma
+		total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%.2f,", 
+																			msg->input_4_20mA[0]); // dau vao 4-20mA 0
+	}
 
     // Build ouput 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%.2f,", 
@@ -1275,7 +1297,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 	{
 		// 485
-		if (cfg->io_enable.name.rs485_en)
+		if (eeprom_cfg->io_enable.name.rs485_en)
 		{	
 			for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
 			{

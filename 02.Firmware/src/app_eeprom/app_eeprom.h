@@ -21,13 +21,18 @@ typedef union
 		uint32_t rs485_en : 1;
 		uint32_t warning : 1;
 		uint32_t sos : 1;
-		uint32_t input_4_20ma_enable : 1;
+		uint32_t input_4_20ma_0_enable : 1;
+		uint32_t input_4_20ma_1_enable : 1;
+		uint32_t input_4_20ma_2_enable : 1;
+		uint32_t input_4_20ma_3_enable : 1;
 		uint32_t output_4_20ma_enable : 1;
+		
 		uint32_t alarm_sensor_value_high : 1;
 		uint32_t alarm_sensor_value_low : 1;
 		
 		uint32_t output_4_20ma_timeout_100ms : 8;   
-		uint32_t reserve : 9;
+		uint32_t reserve : 6;
+				
 	} __attribute__((packed)) name;
 	uint32_t value;
 } __attribute__((packed)) app_eeprom_io_enable_t;

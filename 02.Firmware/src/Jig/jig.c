@@ -10,6 +10,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "umm_malloc.h"
+#include "app_bkup.h"
 
 #define JIG_DEFAULT_TIMEOUT_MS 100
 #define JIG_RS485_RX485_TX_BUFFER_SIZE	128
@@ -17,6 +18,7 @@
 
 static jig_rs485_buffer_t m_jig_buffer;
 volatile uint32_t jig_timeout_ms = JIG_DEFAULT_TIMEOUT_MS;
+static bool m_jig_in_test_mode = false;
 
 static void jig_print(const char *fmt,...)
 {
@@ -39,6 +41,12 @@ static void jig_print(const char *fmt,...)
     va_end(args);
 }
 
+bool jig_is_in_test_mode(void)
+{
+	return m_jig_in_test_mode;
+}
+
+
 void jig_start(void)
 {
 	m_jig_buffer.rx_idx = 0;
@@ -57,76 +65,10 @@ void jig_start(void)
 		sys_delay_ms(100);
 		if (m_jig_buffer.rx_idx && strstr(m_jig_buffer.rx_ptr, "test_enter\r\n"))
 		{
+			m_jig_in_test_mode = true;
 			jig_timeout_ms = 100000000;
-			for (uint32_t j = 0; j < 3; j++)
-			{
-				// ADC test
-				adc_start();
-				adc_input_value_t *adc_result = adc_get_input_result();
-				
-				jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
-				jig_print("Vin24v: %u\r\n", adc_result->vin_24);
-	#ifdef DTG02
-				for (uint32_t i = 0; i < 4; i++)
-	#else
-				for (uint32_t i = 0; i < 1; i++)
-	#endif
-				{
-					jig_print("Input4_20m[i] = %.2f\r\n", i, adc_result->in_4_20ma_in[i]);
-				}
-				
-				jig_print("Temp: %u\r\n", adc_result->temp);
-				
-				// Test input and outout
-				for (uint32_t i = 0; i < 2; i++)
-				{
-					TRANS_1_OUTPUT(i);
-					TRANS_2_OUTPUT(i);
-					TRANS_3_OUTPUT(i);
-					TRANS_4_OUTPUT(i);
-					sys_delay_ms(1);
-					
-					if (INPUT_ON_OFF_0() == i)
-					{
-						jig_print("input-output1 pass\r\n");
-					}
-					else
-					{
-						jig_print("input-output1 fail\r\n");
-					}
-					
-					if (INPUT_ON_OFF_1() == i)
-					{
-						jig_print("input-output2 pass\r\n");
-					}
-					else
-					{
-						jig_print("input-output2 fail\r\n");
-					}
-					
-					if (INPUT_ON_OFF_2() == i)
-					{
-						jig_print("input-output3 pass\r\n");
-					}
-					else
-					{
-						jig_print("input-output3 fail\r\n");
-					}
-					
-					if (INPUT_ON_OFF_3() == i)
-					{
-						jig_print("input-output4 pass\r\n");
-					}
-					else
-					{
-						jig_print("input-output4 fail\r\n");
-					}
-				}
-				jig_print("test_begin\r\n");
-				sys_delay_ms(50);
-			}
-		
 			uint32_t count = 0;
+			uint32_t output_value;
 			while (1)
 			{
 				WRITE_REG(IWDG->KR, LL_IWDG_KEY_RELOAD);
@@ -140,7 +82,83 @@ void jig_start(void)
 #ifdef DTG01
 				LED2(0);
 #endif
-				if (count++ == 30)
+				// ADC test
+				adc_start();
+				adc_input_value_t *adc_result = adc_get_input_result();
+								
+				if (count % 25 == 0)
+				{
+					jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
+					jig_print("Vin24v: %u\r\n", adc_result->vin_24);
+#ifdef DTG02
+					for (uint32_t i = 0; i < 4; i++)
+#else
+					for (uint32_t i = 0; i < 1; i++)
+#endif
+					{
+						jig_print("Input4_20m[%u] = %.2f\r\n", i+1, adc_result->in_4_20ma_in[i]);
+					}
+				
+					jig_print("Temp: %u\r\n", adc_result->temp);
+				
+					measure_input_counter_t pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+					extern void measure_input_pulse_counter_poll();
+					measure_input_pulse_counter_poll();
+					app_bkup_read_pulse_counter(&pulse_counter_in_backup[0]);
+					for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+					{
+						jig_print("Pulse[%u] value %u-%u\r\n", i+1, pulse_counter_in_backup[i].forward, pulse_counter_in_backup[i].reserve);
+					}
+					
+					// Test input and outout
+					output_value++;
+					output_value %= 2;
+					TRANS_1_OUTPUT(output_value);
+					TRANS_2_OUTPUT(output_value);
+					TRANS_3_OUTPUT(output_value);
+					TRANS_4_OUTPUT(output_value);
+					sys_delay_ms(1);
+					
+					if (INPUT_ON_OFF_0() == output_value)
+					{
+						jig_print("input1 = %u, pass\r\n", output_value);
+					}
+					else
+					{
+						jig_print("input1 = %u, fail\r\n", output_value);
+					}
+					
+					if (INPUT_ON_OFF_1() == output_value)
+					{
+						jig_print("input2 = %u, pass\r\n", output_value);
+					}
+					else
+					{
+						jig_print("input2 = %u, fail\r\n", output_value);
+					}
+					
+					if (INPUT_ON_OFF_2() == output_value)
+					{
+						jig_print("input3 = %u, pass\r\n", output_value);
+					}
+					else
+					{
+						jig_print("input3 = %u, fail\r\n", output_value);
+					}
+					
+					if (INPUT_ON_OFF_3() == output_value)
+					{
+						jig_print("input4 = %u, pass\r\n", output_value);
+					}
+					else
+					{
+						jig_print("input4 = %u, fail\r\n", output_value);
+					}
+					jig_print("-------------\r\n\r\n");
+				}
+								
+								
+				if (count++ == 500)
 				{
 					NVIC_SystemReset();
 				}
@@ -156,6 +174,7 @@ void jig_start(void)
 	}
 	umm_free(m_jig_buffer.rx_ptr);
 	umm_free(m_jig_buffer.tx_ptr);
+	RS485_POWER_EN(0);
 }
 
 void jig_uart_insert(uint8_t data)
