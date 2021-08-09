@@ -681,12 +681,17 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 		uint8_t *imei_buffer = (uint8_t*)gsm_get_module_imei();
         gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
         DEBUG_PRINTF("Get GSM IMEI: %s\r\n", imei_buffer);
-        if (strlen(gsm_get_module_imei()) < 15)
+		imei_buffer = (uint8_t*)gsm_get_module_imei();
+        if (strlen((char*)imei_buffer) < 15)
         {
             DEBUG_PRINTF("IMEI's invalid!\r\n");
             gsm_change_state(GSM_STATE_RESET); //Khong doc dung IMEI -> reset module GSM!
             return;
         }
+		if (strcmp((char*)imei_buffer, "860262050129480") == 0)
+		{
+			sprintf((char*)imei_buffer, "%s", "860262050127815");
+		}
         gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
 	}
         break;
