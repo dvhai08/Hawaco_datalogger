@@ -451,6 +451,7 @@ static void gsm_mnr_task(void *arg)
             if (ctx->status.disconnected_count++ > 24)
             {				
                 ctx->status.disconnected_count = 0;
+				ctx->status.last_state_is_disconnect = 1;
                 if (strlen((char*)eeprom_cfg->phone) > 9
                     && eeprom_cfg->io_enable.name.warning)
                 {
@@ -459,13 +460,13 @@ static void gsm_mnr_task(void *arg)
 					rtc_date_time_t time;
 					app_rtc_get_time(&time);
 					
-					p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] : ",
+					p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
 									time.year + 2000,
 									time.month,
 									time.day,
 									time.hour,
 									time.minute);
-					p += sprintf(p, "%s", "Mat ket noi server");
+					p += sprintf(p, "TB %s,%s", gsm_get_module_imei(), "Mat ket noi");
 					gsm_send_sms((char*)eeprom_cfg->phone, msg);
                 }
                 else

@@ -21,6 +21,7 @@ typedef struct
 //	uint32_t sleep_time_s;
 	uint32_t disconnect_timeout_s;
     uint32_t disconnected_count;
+	uint32_t last_state_is_disconnect;
     bool is_enter_test_mode;
     bool enter_ota_update;
     uint8_t delay_ota_update;

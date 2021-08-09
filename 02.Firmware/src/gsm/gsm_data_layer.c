@@ -172,6 +172,7 @@ volatile uint32_t m_delay_wait_for_measurement_again_s = 0;
 void gsm_manager_tick(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
 
     /* GSM state machine */
     switch (gsm_manager.state)
@@ -192,6 +193,50 @@ void gsm_manager_tick(void)
             m_do_read_sms = false;
             gsm_change_state(GSM_STATE_READ_SMS);
         }
+		
+		if (ctx->status.last_state_is_disconnect)
+		{				
+			ctx->status.last_state_is_disconnect = 0;
+			if (strlen((char*)eeprom_cfg->phone) > 9
+				&& eeprom_cfg->io_enable.name.warning)
+			{
+				char msg[128];
+				char *p = msg;
+				rtc_date_time_t time;
+				app_rtc_get_time(&time);
+				
+				p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
+								time.year + 2000,
+								time.month,
+								time.day,
+								time.hour,
+								time.minute);
+				p += sprintf(p, "Thiet bi %s, %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "da ket noi tro lai");
+				gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			}
+		}
+		
+		if (eeprom_cfg->io_enable.name.register_sim_number == 0
+			&& strlen((char*)eeprom_cfg->phone) > 9
+			&& eeprom_cfg->io_enable.name.warning)
+		{				
+			char msg[128];
+			char *p = msg;
+			rtc_date_time_t time;
+			app_rtc_get_time(&time);
+			
+			p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
+							time.year + 2000,
+							time.month,
+							time.day,
+							time.hour,
+							time.minute);
+			p += sprintf(p, "Thiet bi %s %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "dang ki hoa mang");
+			gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			eeprom_cfg->io_enable.name.register_sim_number = 1;
+			app_eeprom_save_config();
+		}
+				
 #endif
         gsm_wakeup_periodically();
 		
@@ -620,12 +665,13 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 8:
         DEBUG_INFO("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        //gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
-        gsm_hw_send_at_cmd("AT\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
+        //gsm_hw_send_at_cmd("AT+CNUM\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 9:
-        DEBUG_INFO("AT cmd: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("AT CNUM: %s, %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
+										(char*)resp_buffer);
 //        DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;

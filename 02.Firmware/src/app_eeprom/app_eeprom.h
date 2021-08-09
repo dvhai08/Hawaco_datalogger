@@ -30,8 +30,9 @@ typedef union
 		uint32_t alarm_sensor_value_high : 1;
 		uint32_t alarm_sensor_value_low : 1;
 		
-		uint32_t output_4_20ma_timeout_100ms : 8;   
-		uint32_t reserve : 6;
+		uint32_t output_4_20ma_timeout_100ms : 8;  
+	    uint32_t register_sim_number : 1;
+		uint32_t reserve : 5;
 				
 	} __attribute__((packed)) name;
 	uint32_t value;
