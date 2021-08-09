@@ -58,6 +58,11 @@ void app_eeprom_init(void)
         {
             sprintf((char*)&m_cfg.server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], "%s", DEFAULT_SERVER_ADDR); 
         }
+		
+		if (m_cfg.poll_config_interval_hour == 0)
+		{
+			m_cfg.poll_config_interval_hour = 24;
+		}
     }
 }
 
