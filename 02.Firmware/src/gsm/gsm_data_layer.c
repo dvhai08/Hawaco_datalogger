@@ -51,6 +51,8 @@
 #define GET_URL         		"%s/api/v1/%s/attributes"
 #define POLL_CONFIG_URL      	"%s/api/v1/default_imei/attributes"
 
+#define MAX_DISCONNECTED_TIMEOUT_S		60
+
 extern gsm_manager_t gsm_manager;
 static char m_at_cmd_buffer[128];
 
@@ -224,7 +226,6 @@ void gsm_manager_tick(void)
 			char *p = msg;
 			rtc_date_time_t time;
 			app_rtc_get_time(&time);
-			
 			p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
 							time.year + 2000,
 							time.month,
@@ -1000,7 +1001,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
         {
             if (sms[count].need_to_send == 2)
             {
-                DEBUG_ERROR("Sms to %s. Content : %s\r\n",
+                DEBUG_INFO("Sms to %s. Content : %s\r\n",
                            sms[count].phone_number, sms[count].message);
 
                 sprintf(m_at_cmd_buffer, "AT+CMGS=\"%s\"\r\n", sms[count].phone_number);
@@ -1149,8 +1150,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
 	sys_ctx_t *ctx = sys_ctx();
 	bool found_break_pulse_input = false;
-	char alarm_str[128];
-    char *p = alarm_str;
+//	char alarm_str[128];
+//    char *p = alarm_str;
     uint16_t total_length = 0;
 	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
@@ -1206,7 +1207,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		total_length += sprintf((char *)(ptr + total_length), "%s", "qua_nguong,");
 	}
 	
-	p[total_length - 1] = 0;
+	ptr[total_length - 1] = 0;
 	total_length--;		// remove char ','
 	
 	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
@@ -1222,8 +1223,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #else
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 #endif
-    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
-    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
+//    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
+//    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
        
 #ifdef DTG02
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
@@ -1328,7 +1329,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     }
     
     // Warning level
-    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
+//    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
 #ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
@@ -1761,3 +1762,53 @@ uint32_t gsm_get_current_tick(void)
     return sys_get_ms();
 }
 
+void gsm_mnr_task(void *arg)
+{
+	gsm_manager_tick();
+    sys_ctx_t *ctx = sys_ctx();
+    if (gsm_data_layer_is_module_sleeping())
+    {
+//        ctx->status.sleep_time_s++;
+        ctx->status.disconnect_timeout_s = 0;
+    }
+    else
+    {
+        if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
+        {
+            DEBUG_ERROR("GSM disconnected for a long time\r\n");
+            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+            measure_input_save_all_data_to_flash();
+            ctx->status.disconnect_timeout_s = 0;
+            if (ctx->status.disconnected_count++ > 24)
+            {				
+                ctx->status.disconnected_count = 0;
+				ctx->status.last_state_is_disconnect = 1;
+                if (strlen((char*)eeprom_cfg->phone) > 9
+                    && eeprom_cfg->io_enable.name.warning)
+                {
+					char msg[128];
+					char *p = msg;
+					rtc_date_time_t time;
+					app_rtc_get_time(&time);
+					
+					p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
+									time.year + 2000,
+									time.month,
+									time.day,
+									time.hour,
+									time.minute);
+					p += sprintf(p, "TB %s,%s", gsm_get_module_imei(), "Mat ket noi");
+					gsm_send_sms((char*)eeprom_cfg->phone, msg);
+                }
+                else
+                {
+                    gsm_change_state(GSM_STATE_SLEEP);
+                }
+            }
+            else
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
+        }
+    }
+}

@@ -52,6 +52,7 @@
 #include "ota_update.h"
 #include "flash_if.h"
 #include "version_control.h"
+#include "jig.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,7 +96,6 @@ void SystemClock_Config(void);
 uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 static void task_feed_wdt(void *arg);
-static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
@@ -120,7 +120,17 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+	
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+    __enable_irq();
+#if 1
     app_eeprom_init();
+	MX_CRC_Init();
 	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
     sys_ctx_t *system = sys_ctx();
 #if TEST_OUTPUT_4_20MA
@@ -131,14 +141,7 @@ int main(void)
 //    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
 //    system->status.is_enter_test_mode = 1;
 //#endif
-  /* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-    __enable_irq();
-#if 1
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -151,14 +154,21 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   MX_TIM2_Init();
-  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC
-    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+//    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_POWER_EN(0);
-//	DEBUG_RAW(RTT_CTRL_CLEAR);
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        LED1(1);
+        sys_delay_ms(20);
+        LED1(0);
+        sys_delay_ms(20);
+    }
+    LED1(0);
+	
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
@@ -167,7 +177,7 @@ int main(void)
     app_spi_flash_initialize();
 	measure_input_initialize();
 	control_ouput_init();
-	adc_start();
+//	adc_start();
 	gsm_init_hw();
 	
 	app_sync_config_t config;
@@ -193,17 +203,8 @@ int main(void)
     cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-//    DEBUG_PRINTF("Build %s %s, version %s\r\nOTA flag 0x%08X, info %s\r\n", __DATE__, __TIME__, 
-//                                                                            VERSION_CONTROL_FW,
-//                                                                            ota_cfg->flag, (uint8_t*)ota_cfg->reserve);
-    LED1(1);
-#if TEST_BACKUP_REGISTER
-    for(uint32_t i = 0; i < 4; i++)
-    {
-        app_bkup_write_pulse_counter(i, i*2, i*3, i*4);
-    }
-    app_bkup_write_pulse_counter(0, 0, 0, 0);
-#endif
+    DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
+	jig_start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -284,15 +285,9 @@ int main(void)
         
     if (ota_update_is_running())
     {
-//        system->status.sleep_time_s = 0;
         system->status.disconnect_timeout_s = 0;
     }
     
-	
-	if (cfg->io_enable.name.rs485_en)
-	{
-		RS485_POWER_EN(cfg->io_enable.name.rs485_en);
-	}
     
     if (system->peripheral_running.value == 0)
     {
@@ -301,7 +296,10 @@ int main(void)
             && m_delay_consider_wakeup == 0
             && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0))
         {
+			RS485_POWER_EN(0);
 			ENABLE_INPUT_4_20MA_POWER(0);
+			system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+			measure_input_turn_on_in_4_20ma_power = 0;
             sys_config_low_power_mode();
         }
     }
@@ -405,80 +403,115 @@ static void task_feed_wdt(void *arg)
 #endif
 }
 
-static void gsm_mnr_task(void *arg)
-{
-	gsm_manager_tick();
-    sys_ctx_t *ctx = sys_ctx();
-    if (gsm_data_layer_is_module_sleeping())
-    {
-//        ctx->status.sleep_time_s++;
-        ctx->status.disconnect_timeout_s = 0;
-    }
-    else
-    {
-        if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
-        {
-            DEBUG_ERROR("GSM disconnected for a longtime\r\n");
-            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-            measure_input_save_all_data_to_flash();
-            ctx->status.disconnect_timeout_s = 0;
-            if (ctx->status.disconnected_count++ > 24)
-            {
-                ctx->status.disconnected_count = 0;
-                if (strlen((char*)eeprom_cfg->phone) > 9
-                    && eeprom_cfg->io_enable.name.warning)
-                {
-                    gsm_send_sms((char*)eeprom_cfg->phone, "Server lost");
-                }
-                else
-                {
-                    gsm_change_state(GSM_STATE_SLEEP);
-                }
-            }
-            else
-            {
-                gsm_change_state(GSM_STATE_SLEEP);
-            }
-        }
-    }
-}
 
 static void info_task(void *arg)
 {	
 	static uint32_t i = 0;
     sys_ctx_t *system = sys_ctx();
     
-//	if (system->status.is_enter_test_mode)
-//	{
-//		char buf[48];
-//		sprintf(buf, "%u\r\n", sys_get_ms());
-//		RS485_EN(1);
-//        RS485_DIR_RX();
-//        i = 5;
-////		Modbus_Master_Write((uint8_t*)buf, strlen(buf));
-//	}
-    if (i++ >= 5)
+	if (system->status.is_enter_test_mode)
+	{
+#if TEST_RS485
+		usart_lpusart_485_control(1);
+		sys_delay_ms(100);
+		uint8_t result;
+		uint16_t input_result[8];
+		
+		modbus_master_reset(1000);
+		uint32_t before = sys_get_ms();
+		 // read input registers function test
+		 // slave address 0x01, two consecutive addresses are register 0x2
+		result = modbus_master_read_input_register(8, 106, 8);
+		if (result == 0x00)
+		{
+			DEBUG_INFO("Modbus read success in %ums\r\n", sys_get_ms() - before);
+		
+			for (uint32_t i = 0; i < 8; i++)
+			{
+				input_result[i] = modbus_master_get_response_buffer(i);
+				DEBUG_RAW("(30%u-%u),", 106 + i, input_result[i]);
+			}
+			DEBUG_RAW("\r\n");
+		}
+		else
+		{
+			DEBUG_ERROR("Modbus failed\r\n");
+		}
+		usart_lpusart_485_control(0);
+#endif
+        i = 5;
+	}
+    if (i++ > 4)
 	{
 		i = 0;
 		adc_input_value_t *adc = adc_get_input_result();
         rtc_date_time_t time;
         app_rtc_get_time(&time);
-        char tmp[24];
+        char tmp[48];
         char *p = tmp;
-        for (uint32_t i = 0; i < 1; i++)
+        for (uint32_t i = 0; i < 4; i++)
         {
             p += sprintf(p, "(%.2f),", adc->in_4_20ma_in[i]);
         }
-        
-		if (!gsm_data_layer_is_module_sleeping())
+#ifdef DTG02
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            p += sprintf(p, "IN%u-%u,", i+1, measure_input_current_data()->input_on_off[i]);
+        }
+#endif
+		if (gsm_data_layer_is_module_sleeping())
 		{
-			DEBUG_PRINTF("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
 						adc->vdda_mv,
 						adc->bat_mv, adc->bat_percent, 
 						adc->vin_24,
 						tmp,
 						adc->temp);
 		}
+#if TEST_CRC32
+		uint32_t crc;
+		static const char *feed_str0 ="12345";
+		static const char *feed_str1 ="12349876";
+		crc = utilities_calculate_crc32((uint8_t*)feed_str0, strlen(feed_str0));
+		DEBUG_INFO("CRC0 0x%08X\r\n", crc);
+		crc = utilities_calculate_crc32((uint8_t*)feed_str1, strlen(feed_str1));
+		DEBUG_INFO("CRC1 0x%08X\r\n", crc);
+#endif
+		static sys_ctx_error_critical_t m_last_critical_err;
+		sys_ctx_t *ctx = sys_ctx();
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+		
+		// If rs485 was not enable =>> clear rs485 error code
+		if (!eeprom_cfg->io_enable.name.rs485_en)
+		{
+			ctx->error_not_critical.detail.rs485_err = 0;
+		}
+		if (m_last_critical_err.value != ctx->error_critical.value)
+		{
+			m_last_critical_err.value = ctx->error_critical.value;
+			
+			if (!eeprom_cfg->io_enable.name.warning
+				&& (strlen((char*)eeprom_cfg->phone) > 8)
+				&& m_last_critical_err.value)
+			{
+				char msg[156];
+				char *p = msg;
+				rtc_date_time_t time;
+				app_rtc_get_time(&time);
+				
+				p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] ",
+								time.year + 2000,
+								time.month,
+								time.day,
+								time.hour,
+								time.minute);
+				if (m_last_critical_err.detail.sensor_out_of_range)
+				{
+					p += sprintf(p, "%s", "He thong bi loi luu luong");
+				}
+				gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			}
+		}			
 	}
 }
 

@@ -1,28 +1,21 @@
 1. DTG01
 a. Bản tin gửi
 {
-	"BatteryLevel":91,
-	"FW":"0.0.2",
-	"HW":"0.0.2",
-	"ID":"DTG1-860262050125868",		// ID của thiết bị, format DTG1(2)-IMEI
-	"Input1":0,
-	"Input1_J2_D":0,		// xung chân DIR trong trường hợp cấu hình mode gửi cả xung thuận và ngược lên
-	"Input2":2,			// Đầu vào 4-20mA, min 0, max 20,
-	"K0":1,				// Thông tin để debug hệ số K hiện tại ở thiết bị
-	"Mode0":0,			// thông tin để debug chế độ hoạt động của input, 0 =  chế độ xung (pwm++, chân dir = 1 thì số nước --)
-						// 												  1 =  chế độ xung (pwm++, chân dir không quan tâm)
-						//												  2 =  chế độ xung thuận và ngược (pwm++, dir++), gửi cả 2 thống số thuận và ngược lên server
-	"Offset0":0,		// thông tin để debug giá trị Meterindicator offset
-	"Output1":0,		// Tín hiệu on/off đầu ra
-	"Output2":0,		// Tín hiệu 4-20mA out
-	"Money":"0",
-	"PhoneNum":"0",
-	"RST":40,				// thông tin để debug nguyên nhân Reset của thiết bị
-	"SignalStrength":40,
-	"Temperature":30,
-	"Timestamp":1625556610,
-	"Vbat_mv":4155,			// thông tin để debug giá trị pin đơn vị Milis vol
-	"WarningLevel":"0,0,0,0,1,0,1"			// lần lượt là <pin thấp>,<4G hỏng>,<sensor lỗi>,<sensor ngoài ngưỡng>,<Đứt dây xung CIR đồng hồ>,<Lỗi flash>,<Lỗi cảm biến nhiệt>
+	"Error": "cam bien_xung_dut",
+	"Timestamp": 1628677218,
+	"ID": "G1-860262050125363",
+	"Phone": "0916883454",
+	"Money": 0,
+	"Inputl": 123461,
+	"Outputl": 0,
+	"Output2": 0.00,
+	"BatteryLevel": 80,
+	"Vbat": 4.101,
+	"Temperature": 29,
+	"SIM": 42018100001935,
+	"Uptime": 6,
+	"FW": "0.0.5",
+	"HW": "0.0.1"
 }
 
 b. DTG01 Bản tin nhận

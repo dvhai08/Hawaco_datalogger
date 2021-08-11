@@ -33,6 +33,7 @@
 #include "sys_ctx.h"
 #include "rtc.h"
 #include "app_eeprom.h"
+#include "jig.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -73,6 +74,7 @@ extern volatile uint32_t led_blink_delay;
 //volatile uint32_t m_last_exti0_timestamp;
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 extern volatile uint32_t m_delay_consider_wakeup;
+extern volatile uint32_t jig_timeout_ms;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -195,7 +197,10 @@ void SysTick_Handler(void)
             }
         }
     }
-    
+	if (jig_timeout_ms)
+	{
+		jig_timeout_ms--;
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -212,7 +217,7 @@ void SysTick_Handler(void)
 void RTC_IRQHandler(void)
 {
   /* USER CODE BEGIN RTC_IRQn 0 */
-    DEBUG_VERBOSE("RTC IRQ\r\n");
+//    DEBUG_VERBOSE("RTC IRQ\r\n");
   /* USER CODE END RTC_IRQn 0 */
   HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
   /* USER CODE BEGIN RTC_IRQn 1 */
@@ -417,7 +422,15 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	
 	if (LL_USART_IsActiveFlag_RXNE(LPUART1))
 	{
-		measure_input_rs485_uart_handler(LPUART1->RDR);
+		uint32_t data = LPUART1->RDR;
+		if (jig_timeout_ms == 0)
+		{
+			measure_input_rs485_uart_handler(data);
+		}
+		else
+		{
+			jig_uart_insert(data);
+		}
 	}
 	
 	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 

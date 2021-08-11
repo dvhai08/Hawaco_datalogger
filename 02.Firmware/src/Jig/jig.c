@@ -115,7 +115,7 @@ void jig_start(void)
 					output_value %= 2;
 #ifdef DTG01
 					TRANS_OUTPUT(0);
-					sys_delay_ms(20);
+					sys_delay_ms(200);
 					TRANS_OUTPUT(1);
 					sys_delay_ms(200);
 #else

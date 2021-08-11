@@ -137,7 +137,7 @@ bool gsm_send_sms(char *phone_number, char *message)
         m_sms_memory[cnt].need_to_send = 1;
         m_sms_memory[cnt].retry_count = 0;
 
-        DEBUG_ERROR("Add sms message into buffer %u : %s, phone : %s\r\n", cnt, message, phone_number);
+        DEBUG_INFO("Add sms message into buffer %u : %s, phone : %s\r\n", cnt, message, phone_number);
 
         return true;
     }

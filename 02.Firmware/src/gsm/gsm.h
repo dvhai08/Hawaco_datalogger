@@ -293,4 +293,9 @@ void gsm_set_wakeup_now(void);
  */
 void gsm_hw_layer_reset_rx_buffer(void);
 
+/**
+ * @brief		GSM mnr task
+ */
+void gsm_mnr_task(void *arg);
+
 #endif // GSM_H

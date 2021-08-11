@@ -45,6 +45,8 @@ void MX_IWDG_Init(void)
 
   LL_IWDG_ReloadCounter(IWDG);
   /* USER CODE BEGIN IWDG_Init 2 */
+#else
+  #error "Watchdog not enabled"
 #endif
   /* USER CODE END IWDG_Init 2 */
 

@@ -99,7 +99,6 @@ void SystemClock_Config(void);
 uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
 static void task_feed_wdt(void *arg);
-static void gsm_mnr_task(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
@@ -192,9 +191,6 @@ int main(void)
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 
-
-    ota_flash_cfg_t *ota_cfg = ota_update_get_config();
-
 #if TEST_OUTPUT_4_20MA
 	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
 	eeprom_cfg->output_4_20ma = 10;
@@ -209,13 +205,6 @@ int main(void)
 #endif
 //    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
     DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
-#if TEST_BACKUP_REGISTER
-    for(uint32_t i = 0; i < 4; i++)
-    {
-        app_bkup_write_pulse_counter(i, i*2, i*3, i*4);
-    }
-    app_bkup_write_pulse_counter(0, 0, 0, 0);
-#endif
 	jig_start();
   /* USER CODE END 2 */
 
@@ -308,7 +297,6 @@ int main(void)
         
     if (ota_update_is_running())
     {
-//        system->status.sleep_time_s = 0;
         system->status.disconnect_timeout_s = 0;
     }
     
@@ -429,57 +417,6 @@ static void task_feed_wdt(void *arg)
 #ifdef WDT_ENABLE
 	LL_IWDG_ReloadCounter(IWDG);
 #endif
-}
-
-static void gsm_mnr_task(void *arg)
-{
-	gsm_manager_tick();
-    sys_ctx_t *ctx = sys_ctx();
-    if (gsm_data_layer_is_module_sleeping())
-    {
-//        ctx->status.sleep_time_s++;
-        ctx->status.disconnect_timeout_s = 0;
-    }
-    else
-    {
-        if (ctx->status.disconnect_timeout_s++ > MAX_DISCONNECTED_TIMEOUT_S)
-        {
-            DEBUG_ERROR("GSM disconnected for a long time\r\n");
-            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-            measure_input_save_all_data_to_flash();
-            ctx->status.disconnect_timeout_s = 0;
-            if (ctx->status.disconnected_count++ > 24)
-            {				
-                ctx->status.disconnected_count = 0;
-				ctx->status.last_state_is_disconnect = 1;
-                if (strlen((char*)eeprom_cfg->phone) > 9
-                    && eeprom_cfg->io_enable.name.warning)
-                {
-					char msg[128];
-					char *p = msg;
-					rtc_date_time_t time;
-					app_rtc_get_time(&time);
-					
-					p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
-									time.year + 2000,
-									time.month,
-									time.day,
-									time.hour,
-									time.minute);
-					p += sprintf(p, "TB %s,%s", gsm_get_module_imei(), "Mat ket noi");
-					gsm_send_sms((char*)eeprom_cfg->phone, msg);
-                }
-                else
-                {
-                    gsm_change_state(GSM_STATE_SLEEP);
-                }
-            }
-            else
-            {
-                gsm_change_state(GSM_STATE_SLEEP);
-            }
-        }
-    }
 }
 
 static void info_task(void *arg)
