@@ -365,14 +365,17 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
     if (counter_offset)
     {
         uint32_t offset = gsm_utilities_get_number_from_string(strlen("MeterIndicator\":"), counter_offset);
-        if (m_eeprom_config->offset0 != offset)
+        if (m_eeprom_config->offset[0] != offset)
         {
             new_cfg++;   
-            m_eeprom_config->offset0 = offset;
+            m_eeprom_config->offset[0] = offset;
             DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
-			uint32_t counter0_f, counter1_f, counter0_r, counter1_r;
-			app_bkup_read_pulse_counter(&counter0_f, &counter1_f, &counter0_r, &counter1_r);
-            app_bkup_write_pulse_counter(0, 0, counter0_r, counter1_r);
+			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+			app_bkup_read_pulse_counter(&counter[0]);
+			counter[0].forward = 0;
+			counter[0].reserve = 0;
+			
+            app_bkup_write_pulse_counter(&counter[0]);
             (*factor_change) |= (1 << 0);
         }
     }
@@ -386,9 +389,9 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             k = 1;
         }
 
-        if (m_eeprom_config->k0 != k)
+        if (m_eeprom_config->k[0] != k)
         {
-            m_eeprom_config->k0 = k;
+            m_eeprom_config->k[0] = k;
             DEBUG_PRINTF("K0 changed to %u\r\n", k);
             new_cfg++; 
         }

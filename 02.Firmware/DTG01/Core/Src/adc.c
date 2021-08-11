@@ -257,7 +257,7 @@ void adc_isr_cb(void)
 void adc_start(void)
 {
     app_eeprom_config_data_t * cfg = app_eeprom_read_config_data();
-    if (cfg->io_enable.name.input_4_20ma_enable || m_is_the_first_time)
+    if (cfg->io_enable.name.input_4_20ma_0_enable || m_is_the_first_time)
     {
         ENABLE_INPUT_4_20MA_POWER(1);
         if (m_is_the_first_time)

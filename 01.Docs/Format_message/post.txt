@@ -63,7 +63,7 @@ DTG02
 	"Input1_J3_3": 0.01,
 	"Input1_J3_4 ": 0.01,
 	"Input1_J9_1 ": 1,
-	"Input1_g9_2 ": 1,
+	"Input1_J9_2 ": 1,
 	"Inputl_J9_3 ": 1,
 	"Input_J9_4 ": 71,
 	"Output1 ": 0,

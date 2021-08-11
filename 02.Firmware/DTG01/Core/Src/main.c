@@ -253,7 +253,7 @@ int main(void)
         usart_lpusart_485_control(0);
     }
     
-    if (!cfg->io_enable.name.input_4_20ma_enable)
+    if (!cfg->io_enable.name.input_4_20ma_0_enable)
     {
         ENABLE_INPUT_4_20MA_POWER(0);
         system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
@@ -299,6 +299,7 @@ int main(void)
             && m_delay_consider_wakeup == 0
             && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0))
         {
+			ENABLE_INPUT_4_20MA_POWER(0);
             sys_config_low_power_mode();
         }
     }

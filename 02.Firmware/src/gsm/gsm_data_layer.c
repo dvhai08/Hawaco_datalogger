@@ -1212,7 +1212,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
 	
     // Build timestamp
-    total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":\"%u\",", msg->measure_timestamp); //second since 1970
+    total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":%u,", msg->measure_timestamp); //second since 1970
     
     uint32_t temp_counter;
 
@@ -1295,13 +1295,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		
 #else	
     // Build pulse counter
-    temp_counter = msg->counter[0].forward / cfg->k[0]+ cfg->offset[0];
+    temp_counter = msg->counter[0].forward / eeprom_cfg->k[0]+ eeprom_cfg->offset[0];
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
     
-    if (cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+    if (eeprom_cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-        temp_counter = msg->counter[0].reserve / cfg->k[0]+ cfg->offset[0];
+        temp_counter = msg->counter[0].reserve / eeprom_cfg->k[0]+ eeprom_cfg->offset[0];
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
@@ -1331,7 +1331,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
 #ifdef DTG01    // Battery
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%.2f,", msg->vbat_mv/1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
@@ -1350,6 +1350,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		// 485
 		if (eeprom_cfg->io_enable.name.rs485_en)
 		{	
+			total_length += sprintf((char *)(ptr + total_length), "\"SlaveID%u\":%u,", index+1, msg->rs485[index].slave_addr);
 			for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
 			{
 				if (msg->rs485[index].sub_register[sub_idx].read_ok

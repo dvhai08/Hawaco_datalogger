@@ -185,7 +185,7 @@ void SysTick_Handler(void)
                     gsm_set_wakeup_now();
                     sys_ctx_t *ctx = sys_ctx();
                     ctx->peripheral_running.name.gsm_running = 1;
-                    if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_enable)
+                    if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_0_enable)
                     {
                         DEBUG_VERBOSE("Enable input 4-20ma\r\n");
                         ENABLE_INPUT_4_20MA_POWER(1);

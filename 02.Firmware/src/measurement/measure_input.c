@@ -573,10 +573,7 @@ void measure_input_initialize(void)
         
         if (save)
         {
-            app_bkup_write_pulse_counter(m_pulse_counter_in_backup[0].forward, 
-                                        m_pulse_counter_in_backup[0].reserve, 
-                                        0, 
-                                        0);
+            app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
 		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
                     m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
