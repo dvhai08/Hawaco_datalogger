@@ -113,6 +113,12 @@ void jig_start(void)
 					// Test input and outout
 					output_value++;
 					output_value %= 2;
+#ifdef DTG01
+					TRANS_OUTPUT(0);
+					sys_delay_ms(20);
+					TRANS_OUTPUT(1);
+					sys_delay_ms(200);
+#else
 					TRANS_1_OUTPUT(output_value);
 					TRANS_2_OUTPUT(output_value);
 					TRANS_3_OUTPUT(output_value);
@@ -155,6 +161,7 @@ void jig_start(void)
 						jig_print("input4 = %u, fail\r\n", output_value);
 					}
 					jig_print("-------------\r\n\r\n");
+#endif
 				}
 								
 								

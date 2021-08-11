@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "crc.h"
 #include "dma.h"
 #include "iwdg.h"
 #include "usart.h"
@@ -150,6 +151,7 @@ int main(void)
   MX_LPUART1_UART_Init();
   MX_SPI2_Init();
   MX_TIM2_Init();
+  MX_CRC_Init();
   /* USER CODE BEGIN 2 */
 #endif
 //	HAL_ADC

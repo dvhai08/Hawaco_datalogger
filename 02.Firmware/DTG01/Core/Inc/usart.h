@@ -82,6 +82,13 @@ void usart1_start_dma_rx(void);
  */
 void usart_lpusart_485_control(bool enable);
 
+/**
+ * @brief       Send data to rs485 port
+ * @param[in]   data RS485 tx data
+ * @param[in]   length RS485 data size
+ */
+void usart_lpusart_485_send(uint8_t *data, uint32_t length);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
