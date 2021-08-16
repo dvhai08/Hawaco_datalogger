@@ -205,6 +205,9 @@ int main(void)
 #endif
     DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
 	jig_start();
+//uint32_t spi_flash_packet_size = sizeof(app_spi_flash_data_t);
+//DEBUG_INFO("Size of spi flash %u\r\n", spi_flash_packet_size);
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -294,7 +297,8 @@ int main(void)
         adc_stop();
         if (system->status.is_enter_test_mode == 0 
             && m_delay_consider_wakeup == 0
-            && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0))
+            && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0)
+			&& system->status.timeout_wait_message_sync_data == 0)
         {
 			RS485_POWER_EN(0);
 			ENABLE_INPUT_4_20MA_POWER(0);
@@ -303,6 +307,16 @@ int main(void)
             sys_config_low_power_mode();
         }
     }
+	
+	if (system->status.timeout_wait_message_sync_data)
+	{
+		usart_lpusart_485_control(1);
+	}
+	else
+	{
+		usart_lpusart_485_control(0);
+	}
+	
 	
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);

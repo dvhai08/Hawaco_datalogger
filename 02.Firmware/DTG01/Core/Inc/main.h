@@ -138,6 +138,7 @@ void Error_Handler(void);
 #define VNTC_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
+extern volatile uint32_t led_blink_delay;
 /**
  * @brief	Get systick in ms
  * @retval	System tick

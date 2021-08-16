@@ -847,7 +847,6 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
     }
     else if (m_wr_addr > m_resend_data_in_flash_addr) // Neu write address > read address =>> Scan from read_addr to write_addr
     {
-		
 		tmp_addr = find_retransmission_message(m_resend_data_in_flash_addr, m_wr_addr);
 		if (tmp_addr != 0)
 		{

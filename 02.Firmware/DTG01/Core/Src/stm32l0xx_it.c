@@ -201,6 +201,11 @@ void SysTick_Handler(void)
 	{
 		jig_timeout_ms--;
 	}
+	
+	if (sys_ctx()->status.timeout_wait_message_sync_data)
+	{
+		sys_ctx()->status.timeout_wait_message_sync_data--;
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -234,7 +239,8 @@ void EXTI0_1_IRQHandler(void)
   /* USER CODE END EXTI0_1_IRQn 0 */
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0) != RESET)
   {
-    LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
+		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
+		sys_ctx()->status.timeout_wait_message_sync_data = sys_get_ms();
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
         LED1(1);
         led_blink_delay = 5;
@@ -280,7 +286,7 @@ void EXTI0_1_IRQHandler(void)
 void EXTI2_3_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI2_3_IRQn 0 */
-    DEBUG_VERBOSE("EXT2-3 irq\r\n");
+//    DEBUG_VERBOSE("EXT2-3 irq\r\n");
   /* USER CODE END EXTI2_3_IRQn 0 */
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_3) != RESET)
   {
@@ -455,7 +461,7 @@ void EXTI4_15_IRQHandler(void)
         if (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin))
         {
             DEBUG_INFO("Power up\r\n");
-            m_delay_consider_wakeup = 2000;
+            m_delay_consider_wakeup = 2000;		// When power off from 24V =>> 1 interrupt generated from EXT6 =>> We add delay and read 24V in again
         }
         else
         {
