@@ -253,7 +253,8 @@ int main(void)
         usart_lpusart_485_control(1);
 	}
     
-    if (!cfg->io_enable.name.rs485_en)
+    if (!cfg->io_enable.name.rs485_en
+		&& system->status.timeout_wait_message_sync_data == 0)
     {
         system->peripheral_running.name.rs485_running = 0;
         usart_lpusart_485_control(0);
@@ -268,6 +269,7 @@ int main(void)
     
     if (gsm_data_layer_is_module_sleeping())
     {
+		system->status.disconnect_timeout_s = 0;
         system->peripheral_running.name.gsm_running = 0;
         if (system->peripheral_running.name.flash_running)
         {
@@ -310,13 +312,30 @@ int main(void)
 	
 	if (system->status.timeout_wait_message_sync_data)
 	{
+		RS485_POWER_EN(1);
 		usart_lpusart_485_control(1);
+		if (jig_found_cmd_sync_data_to_host())
+		{
+			// Step 1 : Wakeup spi
+			if (!system->peripheral_running.name.flash_running)
+			{
+				spi_init();
+				app_spi_flash_wakeup();
+				system->peripheral_running.name.flash_running = 1;
+			}
+		
+			app_spi_flash_dump_to_485();
+			
+			// Step 2 : Shutdown spi
+			app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+		}
 	}
 	else
 	{
 		usart_lpusart_485_control(0);
 	}
-	
 	
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);

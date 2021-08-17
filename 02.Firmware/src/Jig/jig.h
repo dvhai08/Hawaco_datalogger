@@ -29,4 +29,10 @@ void jig_uart_insert(uint8_t data);
  */
 bool jig_is_in_test_mode(void);
 
+/**
+ * @brief		Check cmd sync data from host
+ * @retval		TRUE	jig cmd update data found, device need to send data to server
+ */
+bool jig_found_cmd_sync_data_to_host(void);
+
 #endif /* ZIG_H */

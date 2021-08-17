@@ -47,6 +47,7 @@ bool jig_is_in_test_mode(void)
 }
 
 
+
 void jig_start(void)
 {
 	m_jig_buffer.rx_idx = 0;
@@ -181,10 +182,39 @@ void jig_start(void)
 	}
 	umm_free(m_jig_buffer.rx_ptr);
 	umm_free(m_jig_buffer.tx_ptr);
+	m_jig_buffer.rx_ptr = NULL;
+	m_jig_buffer.tx_ptr = NULL;
+	
 	RS485_POWER_EN(0);
 }
 
 void jig_uart_insert(uint8_t data)
 {
-	m_jig_buffer.rx_ptr[m_jig_buffer.rx_idx++] = data;
+	if (m_jig_buffer.rx_ptr && data)
+	{
+		m_jig_buffer.rx_ptr[m_jig_buffer.rx_idx++] = data;
+		if (m_jig_buffer.rx_idx >= JIG_RS485_RX485_RX_BUFFER_SIZE)
+		{
+			memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
+		}
+	}
 }
+
+bool jig_found_cmd_sync_data_to_host(void)
+{
+	if (m_jig_buffer.rx_ptr == NULL)
+	{
+		m_jig_buffer.rx_ptr = umm_calloc(JIG_RS485_RX485_RX_BUFFER_SIZE, 1);
+		m_jig_buffer.rx_ptr[0] = 0;
+	}
+	
+	if (strstr((char*)m_jig_buffer.rx_ptr, "Hawaco.Datalogger.PingMessage"))
+	{
+		umm_free(m_jig_buffer.rx_ptr); 
+		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
+		return true;
+	}
+	return false;
+}
+
+

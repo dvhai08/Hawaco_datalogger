@@ -1,0 +1,116 @@
+1. Trình tự kết nối: PC liên tục gửi chuỗi kí tự có nội dung: "Hawaco.Datalogger.PingMessage" xuống tất cả các port, 
+thiết bị nhận được sẽ response lại chuỗi "Hawaco.Datalogger.PingMessage" để PC biết và kết nối vào cổng đó, sau đó thiết bị liên tục gửi data lên cho PC
+
+2. Định dạng dữ liệu DTG02
+{
+	"TotalPacket": 12345,                   // Số dữ liệu sẽ gửi
+	"CurrentPacket": 12345,                 // Thứ tự packet đang gửi hiện tại
+	"Timestamp": 1628275184,		        // Trường này là thời gian tại điểm đo
+	"ID":"G2-860262050125777",		        // G1 =  DTG01, G2 =  DTG02
+	"Phone":"0916883454",                   // Số điện thoại cảnh bao
+	"Money": 7649,
+	"Inputl_J1": 7649,		                // Các trường này server yêu cầu thế
+	"Inputl_J3_1": 0.01,                    // Các trường này server yêu cầu thế
+	"Input1_J3_2": 0.00,                    // Các trường này server yêu cầu thế
+	"Input1_J3_3": 0.01,                    // Kiểu float
+	"Input1_J3_4": 0.01,                    // Kiểu float
+	"Input1_J9_1": 1,                       // Kiểu int
+	"Input1_J9_2": 1,                       // Kiểu int
+	"Inputl_J9_3": 1,                       // Kiểu int
+	"Input_J9_4": 71,                       // Kiểu int
+
+	"Output1": 0,	                        // Trường này là thời gian tại điểm đo
+	"Output2": 0,                           // Kiểu int
+	"Output3": 0,                           // Trường này là thời gian tại điểm đo
+	"Output4": 0,                           // Trường này là thời gian tại điểm đo
+
+	"Output4_20": 0.0,                      // Output 4.20mA, số float
+	"WarningLevel":"0,0,0,0,1,0,1",		    // Để debug, chưa cần xử lí, kiểu string
+	"BatteryLevel": 100,
+	"Vin": 23.15,				            // Không cần xử lí
+	"Temperature": 29,
+
+    /* Modbus  */
+
+    "SlaveID1" : 3,                         // Địa chỉ slave
+	"Register1_1": 64,
+	"Unit1_1":"m3/s",
+
+	"Register1_2": 339,
+	"Unit1_2":"jun",
+
+	"Register1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
+	"Unit1_3":"m3/s",
+
+	"Register1_4": 12.3,	
+	"Unit1_4":"jun",                        // Đơn vị tính 
+				
+    "SlaveID2" : 4,                         // Địa chỉ slave
+	"Register2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
+	"Unit2_1":"kg",
+
+	"Register2_2": 0,
+	"Unit2_2":"1it",
+    
+    "Register2_3": 0.0000,
+	"Unit2_3":"kg",
+	
+    "Register2_4": 0,
+    "Unit2_4":"lit",
+
+    /* Hết modbus */
+
+	"SIM":"452040700052210",		// Sim imei
+	"Uptime":"3",				    // Để debug, không cần xử lí
+	"FW":"0.0.5",				    // Firmware
+	"HW":"0.0.1"                    // Hardware version
+}
+
+3. DTG01
+{
+    "TotalPacket": 12345,               // Số dữ liệu sẽ gửi
+	"CurrentPacket": 12345,             // Thứ tự packet đang gửi hiện tại
+	"Error": "cam_bien_xung_dut",       // Để debug, không cần xử lí
+	"Timestamp": 1629200614,
+	"ID": "G1-860262050125363",
+	"Input1": 124511,                   // Kiểu int
+	"Inputl_J3_1": 0.00,                    // Kiểu float
+	"BatteryLevel": 80,
+	"Vbat": 4.101,                      // Để debug, không cần xử lí
+
+    /* Modbus  */
+
+    "SlaveID1" : 3,                         // Địa chỉ slave
+	"Register1_1": 64,
+	"Unit1_1":"m3/s",
+
+	"Register1_2": 339,
+	"Unit1_2":"jun",
+
+	"Register1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
+	"Unit1_3":"m3/s",
+
+	"Register1_4": 12.3,	
+	"Unit1_4":"jun",                        // Đơn vị tính 
+				
+    "SlaveID2" : 4,                         // Địa chỉ slave
+	"Register2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
+	"Unit2_1":"kg",
+
+	"Register2_2": 0,
+	"Unit2_2":"1it",
+    
+    "Register2_3": 0.0000,
+	"Unit2_3":"kg",
+	
+    "Register2_4": 0,
+    "Unit2_4":"lit",
+
+    /* Hết modbus */
+
+	"Temperature": 26,                  // Nhiệt độ
+	"SIM": 452018100001935,             // Sim imei
+	"Uptime": 7,                        // Để debug, không cần xử lí
+	"FW": "0.0.5",                      // Firmware version
+	"HW": "0.0.1"                       // Hardware version
+}

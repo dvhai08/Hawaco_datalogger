@@ -1104,6 +1104,23 @@ SEND_SMS_FAIL:
     retry_count = 0;
 }
 
+/* DTG01
+{
+	"Error": "cam_bien_xung_dut",
+	"Timestamp": 1629200614,
+	"ID": "G1-860262050125363",
+	"Input1": 124511,
+	"Outputl": 0,
+	"Output2": 0.00,
+	"BatteryLevel": 80,
+	"Vbat": 4.101,
+	"Temperature": 26,
+	"SIM": 452018100001935,
+	"Uptime": 7,
+	"FW": "0.0.5",
+	"HW": "0.0.1"
+}
+*/
 
 /* DTG02
 {
@@ -1332,7 +1349,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
 #ifdef DTG01    // Battery
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%02u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
@@ -1649,7 +1666,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
         if (retransmition)
         {
-            if (!app_spi_flash_get_retransmission_data(addr, &rd_data))
+            if (!app_spi_flash_get_stored_data(addr, &rd_data, true))
             {
                 gsm_change_state(GSM_STATE_OK);
                 m_retransmision_data_in_flash = NULL;

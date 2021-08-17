@@ -240,7 +240,7 @@ void EXTI0_1_IRQHandler(void)
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_0) != RESET)
   {
 		LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_0);
-		sys_ctx()->status.timeout_wait_message_sync_data = sys_get_ms();
+		sys_ctx()->status.timeout_wait_message_sync_data = 10000;		// max wait time is 1000
     /* USER CODE BEGIN LL_EXTI_LINE_0 */
         LED1(1);
         led_blink_delay = 5;
@@ -429,7 +429,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	if (LL_USART_IsActiveFlag_RXNE(LPUART1))
 	{
 		uint32_t data = LPUART1->RDR;
-		if (jig_timeout_ms == 0)
+		if (jig_timeout_ms == 0 && sys_ctx()->status.timeout_wait_message_sync_data == 0)
 		{
 			measure_input_rs485_uart_handler(data);
 		}

@@ -48,6 +48,8 @@
 									else	\
 										LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);	\
                                 }	
+#define LED1_TOGGLE()			LL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin)
+#define LED2_TOGGLE()			LL_GPIO_TogglePin(LED2_GPIO_Port, LED2_Pin)							
 #endif
 				
 #define TRANS_OUTPUT(x)      	{	if (x) \

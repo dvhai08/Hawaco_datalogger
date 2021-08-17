@@ -234,12 +234,12 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 {
     if (strstr(argv[1], "erase"))
 	{
-		DEBUG_PRINTF("Erase flash\r\n");
+		DEBUG_INFO("Erase flash\r\n");
         app_spi_flash_erase_all();
 	}
 	else if (strstr(argv[1], "stress"))
 	{
-		DEBUG_PRINTF("Write flash\r\n");
+		DEBUG_INFO("Write flash\r\n");
         app_spi_flash_stress_test(atoi(argv[2]));
 	}
     else if (strstr(argv[1], "rdall"))
@@ -249,7 +249,7 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	}
     else if (strstr(argv[1], "pageerase"))
 	{
-		DEBUG_PRINTF("Erase page flash\r\n");
+		DEBUG_INFO("Erase page flash\r\n");
 //        app_spi_flash_erase_all_page(atoi(argv[2]);
 	}
     else if (strstr(argv[1], "empty"))
@@ -257,17 +257,22 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 //		DEBUG_PRINTF("Check empty sector\r\n");
         if (app_spi_flash_check_empty_sector(atoi(argv[2])))
         {
-            DEBUG_PRINTF("Empty sector\r\n");
+            DEBUG_INFO("Empty sector\r\n");
         }
         else
         {
-            DEBUG_PRINTF("Full sector\r\n");
+            DEBUG_INFO("Full sector\r\n");
         }
 	}
     else if (strstr(argv[1], "writetoend"))
 	{
-		DEBUG_PRINTF("Skip write to end sector\r\n");
+		DEBUG_INFO("Skip write to end sector\r\n");
         app_spi_flash_skip_to_end_flash_test();
+	}
+	else if (strstr(argv[1], "dump"))
+	{
+		DEBUG_INFO("Dump all flash\r\n");
+		app_spi_flash_dump_to_485();
 	}
     return 0;
 }

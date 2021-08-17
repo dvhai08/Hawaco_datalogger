@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include "hardware.h"
 
-
 typedef struct
 {
     uint32_t valid_flag;
@@ -106,8 +105,18 @@ void app_spi_flash_skip_to_end_flash_test(void);
 /**
  * @brief       Flash read retransmission pending data
  * @param[in]   addr Address of data
- * @param[in]   rd_data Output data
+ * @param[out]  rd_data Output data
+ * @param[in]	only_error TRUE We only need message was not transmiss to server in the past
+ *						   FALSE We get all data
+ * @retval		TRUE Found message
+				FALSE Not found message
  */
-bool app_spi_flash_get_retransmission_data(uint32_t addr, app_spi_flash_data_t *rd_data);
+bool app_spi_flash_get_stored_data(uint32_t addr, app_spi_flash_data_t *rd_data, bool only_error);
+
+/**
+ * @brief       Dump all valid data to rs485 port
+ * @retval		Number of valid packet
+ */
+uint32_t app_spi_flash_dump_to_485(void);
 
 #endif /* APP_SPI_FLASH_H */
