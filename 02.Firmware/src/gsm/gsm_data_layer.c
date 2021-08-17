@@ -200,7 +200,8 @@ void gsm_manager_tick(void)
 		{				
 			ctx->status.last_state_is_disconnect = 0;
 			if (strlen((char*)eeprom_cfg->phone) > 9
-				&& eeprom_cfg->io_enable.name.warning)
+				&& eeprom_cfg->io_enable.name.warning
+				&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
 			{
 				char msg[128];
 				char *p = msg;
@@ -214,13 +215,15 @@ void gsm_manager_tick(void)
 								time.hour,
 								time.minute);
 				p += sprintf(p, "Thiet bi %s, %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "da ket noi tro lai");
+				ctx->status.total_sms_in_24_hour++;
 				gsm_send_sms((char*)eeprom_cfg->phone, msg);
 			}
 		}
 		
 		if (eeprom_cfg->io_enable.name.register_sim_number == 0
 			&& strlen((char*)eeprom_cfg->phone) > 9
-			&& eeprom_cfg->io_enable.name.warning)
+			&& eeprom_cfg->io_enable.name.warning
+			&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
 		{				
 			char msg[128];
 			char *p = msg;
@@ -233,6 +236,7 @@ void gsm_manager_tick(void)
 							time.hour,
 							time.minute);
 			p += sprintf(p, "Thiet bi %s %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "dang ki hoa mang");
+			ctx->status.total_sms_in_24_hour++;
 			gsm_send_sms((char*)eeprom_cfg->phone, msg);
 			eeprom_cfg->io_enable.name.register_sim_number = 1;
 			app_eeprom_save_config();
@@ -1194,7 +1198,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	
 
     // Build error msg
-    if (msg->vbat_percent < 10)
+    if (msg->vbat_percent < eeprom_cfg->battery_low_percent)
     {
         total_length += sprintf((char *)(ptr + total_length), "%s", "pin_yeu,");
     }
@@ -1796,14 +1800,15 @@ void gsm_mnr_task(void *arg)
             app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
             measure_input_save_all_data_to_flash();
             ctx->status.disconnect_timeout_s = 0;
-            if (ctx->status.disconnected_count++ > 24)
+            if (ctx->status.disconnected_count++ > 23)
             {				
                 ctx->status.disconnected_count = 0;
 				ctx->status.last_state_is_disconnect = 1;
                 if (strlen((char*)eeprom_cfg->phone) > 9
-                    && eeprom_cfg->io_enable.name.warning)
+                    && eeprom_cfg->io_enable.name.warning
+					&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
                 {
-					char msg[128];
+					char msg[156];
 					char *p = msg;
 					rtc_date_time_t time;
 					app_rtc_get_time(&time);
@@ -1814,7 +1819,13 @@ void gsm_mnr_task(void *arg)
 									time.day,
 									time.hour,
 									time.minute);
-					p += sprintf(p, "TB %s,%s", gsm_get_module_imei(), "Mat ket noi");
+					char *server = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
+					if (strlen((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]) > 8)
+					{
+						server = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
+					}
+					p += snprintf(p, 155, "TB %s,%s %s", gsm_get_module_imei(), "Mat ket noi toi", server);
+					ctx->status.total_sms_in_24_hour++;
 					gsm_send_sms((char*)eeprom_cfg->phone, msg);
                 }
                 else

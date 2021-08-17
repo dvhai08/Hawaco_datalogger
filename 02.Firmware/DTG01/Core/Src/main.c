@@ -525,7 +525,8 @@ static void info_task(void *arg)
 			
 			if (!eeprom_cfg->io_enable.name.warning
 				&& (strlen((char*)eeprom_cfg->phone) > 8)
-				&& m_last_critical_err.value)
+				&& m_last_critical_err.value
+				&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
 			{
 				char msg[156];
 				char *p = msg;
@@ -542,9 +543,26 @@ static void info_task(void *arg)
 				{
 					p += sprintf(p, "%s", "He thong bi loi luu luong");
 				}
+				ctx->status.total_sms_in_24_hour++;
 				gsm_send_sms((char*)eeprom_cfg->phone, msg);
 			}
-		}			
+		}
+
+		// Reset sms limit
+		static uint32_t scan;
+		if (scan++ > 10)
+		{
+			scan = 0;
+			if (ctx->status.total_sms_in_24_hour)
+			{
+				uint32_t counter = app_rtc_get_counter();
+				counter = counter % 86400;
+				if (counter < 300)
+				{
+					ctx->status.total_sms_in_24_hour = 0;
+				}
+			}
+		}
 	}
 }
 

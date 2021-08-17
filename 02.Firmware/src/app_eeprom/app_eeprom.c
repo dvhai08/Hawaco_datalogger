@@ -27,7 +27,8 @@ void app_eeprom_init(void)
         m_cfg.io_enable.name.output2 = 1;
         m_cfg.io_enable.name.output3 = 1;
 		m_cfg.poll_config_interval_hour = 24;
-		
+		m_cfg.battery_low_percent = 20;
+		m_cfg.max_sms_1_day = 10;
        
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
@@ -62,6 +63,11 @@ void app_eeprom_init(void)
 		if (m_cfg.poll_config_interval_hour == 0)
 		{
 			m_cfg.poll_config_interval_hour = 24;
+		}
+		
+		if (m_cfg.battery_low_percent == 0)
+		{
+			m_cfg.battery_low_percent = 20;
 		}
     }
 }

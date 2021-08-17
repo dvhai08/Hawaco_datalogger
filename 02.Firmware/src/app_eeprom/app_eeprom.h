@@ -66,6 +66,8 @@ typedef struct
 	
 	uint32_t poll_config_interval_hour;		// Poll configuration from default link in second
 	
+	uint8_t battery_low_percent;
+	uint8_t max_sms_1_day;
     uint32_t crc;
 } __attribute__((packed))  app_eeprom_config_data_t;
 

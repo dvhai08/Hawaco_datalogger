@@ -109,7 +109,7 @@ void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
 	DEBUG_PRINTF("Hardfault\r\n");
-//	NVIC_SystemReset();
+	NVIC_SystemReset();
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {

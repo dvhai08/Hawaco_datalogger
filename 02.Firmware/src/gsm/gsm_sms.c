@@ -7,7 +7,7 @@
 #include "app_debug.h"
 #include "main.h"
 
-#define GSM_SMS_MAX_MEMORY_BUFFER       1
+#define GSM_SMS_MAX_MEMORY_BUFFER       2
 
 static gsm_sms_msg_t m_sms_memory[GSM_SMS_MAX_MEMORY_BUFFER];
 

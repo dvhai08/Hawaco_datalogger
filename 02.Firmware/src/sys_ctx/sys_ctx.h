@@ -33,6 +33,8 @@ typedef struct
 	uint32_t next_time_get_data_from_server;
 	uint32_t timeout_wait_message_sync_data;
 	uint8_t dump_flash;
+	uint32_t total_sms_in_24_hour;
+	uint32_t reset_sms_limit_timeout;
 } sys_ctx_status_t;
 
 typedef union

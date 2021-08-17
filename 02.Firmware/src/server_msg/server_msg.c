@@ -476,6 +476,42 @@ static uint8_t process_auto_get_config_interval(char *buffer)
 	return has_new_cfg;
 }
 
+
+static uint8_t process_low_bat_config(char *buffer)
+{
+	uint8_t has_new_cfg = 0;
+    char *auto_config_interval = strstr(buffer, "BatLevel\":");  
+	if (auto_config_interval)
+	{
+		auto_config_interval += strlen("BatLevel\":");  
+		uint32_t tmp = gsm_utilities_get_number_from_string(0, auto_config_interval);
+		if (tmp && tmp != m_eeprom_config->battery_low_percent)
+		{
+			m_eeprom_config->battery_low_percent = tmp;		// 24hour
+			has_new_cfg++;
+		}
+	}
+	return has_new_cfg;
+}
+
+static uint8_t process_max_sms_one_day_config(char *buffer)
+{
+	uint8_t has_new_cfg = 0;
+    char *auto_config_interval = strstr(buffer, "MaxSms1Day\":");  
+	if (auto_config_interval)
+	{
+		auto_config_interval += strlen("MaxSms1Day\":");  
+		uint32_t tmp = gsm_utilities_get_number_from_string(0, auto_config_interval);
+		if (tmp != m_eeprom_config->max_sms_1_day)
+		{
+			m_eeprom_config->max_sms_1_day = tmp;		// 24hour
+			has_new_cfg++;
+		}
+	}
+	return has_new_cfg;
+}
+
+
 static uint8_t process_modbus_register_config(char *buffer)
 {
 	    // Process RS485
@@ -789,6 +825,18 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         }
     }
 
+	// Process low battery config
+	if (process_low_bat_config(buffer))
+	{
+		app_eeprom_save_config();
+	}
+	
+	// Process max sms in 1 day
+	if (process_max_sms_one_day_config(buffer))
+	{
+		app_eeprom_save_config();
+	}
+	
     *new_config = has_new_cfg;
 }
 
@@ -797,12 +845,23 @@ void server_msg_process_boardcast_cmd(char *buffer)
 	// Server addr changed
 	process_server_addr_change(buffer);
 	
-	
 	// OTA update
 	process_ota_update(buffer);
 	
 	// Process auto config interval
 	if (process_auto_get_config_interval(buffer))
+	{
+		app_eeprom_save_config();
+	}
+	
+	// Process low battery config
+	if (process_low_bat_config(buffer))
+	{
+		app_eeprom_save_config();
+	}
+	
+	// Process max sms in 1 day
+	if (process_max_sms_one_day_config(buffer))
 	{
 		app_eeprom_save_config();
 	}
