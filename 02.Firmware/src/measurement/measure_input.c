@@ -699,9 +699,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 						m_pulse_counter_in_backup[input->port].forward++;
 						m_pulse_counter_in_backup[input->port].reserve = 0;
 					}
-					else
+					else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE)
 					{
-						m_pulse_counter_in_backup[input->port].forward++;
+						m_pulse_counter_in_backup[input->port].forward = 0;
+						m_pulse_counter_in_backup[input->port].reserve = 0;
 					}
 				}
 				else
@@ -758,7 +759,15 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
                     DEBUG_VERBOSE("[DIR]++++ in %ums\r\n", m_pull_diff[input->port]);
-                    m_pulse_counter_in_backup[input->port].reserve++;
+					if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE
+						|| eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
+					{
+						m_pulse_counter_in_backup[input->port].reserve = 0;
+					}
+					else
+					{
+						m_pulse_counter_in_backup[input->port].reserve++;
+					}
                 }
             }
 //            else

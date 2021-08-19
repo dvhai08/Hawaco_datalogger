@@ -153,17 +153,17 @@
 #define ADC_CHANNEL_DMA_COUNT				6
 //#define ADC_VREF							3300
 
-#define VBAT_CHANNEL_INDEX					0
-#define V_INPUT_0_4_20MA_CHANNEL_INDEX		1
-#define VIN_24V_CHANNEL_INDEX				2	
+#define VBAT_CHANNEL_INDEX						0
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX			1
+#define VIN_24V_CHANNEL_INDEX					2	
 #define V_NTC_TEMP_CHANNEL_INDEX				3
-#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  4
-#define V_REF_CHANNEL_INDEX					5
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  	4
+#define V_REF_CHANNEL_INDEX						5
 #endif
-#define VREF_OFFSET_MV						80
-#define ADC_INPUT_4_20MA_GAIN               (50.0f)   
+#define VREF_OFFSET_MV							80
+#define ADC_INPUT_4_20MA_GAIN               	(50.0f)   
 
-#define MEASURE_INPUT_PORT_0		0
+#define MEASURE_INPUT_PORT_0					0
 
 #ifdef DTG02
 #define NUMBER_OF_INPUT_4_20MA						4
@@ -196,9 +196,10 @@
 #define APP_EEPROM_VALID_FLAG						0x15234519
 #define APP_EEPROM_SIZE								(6*1024)
 
-#define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		0 // Meter mode 0 : PWM++, DIR--
-#define APP_EEPROM_METER_MODE_ONLY_PWM				1 // Meter mode 1 : PWM++
-#define APP_EEPROM_METER_MODE_PWM_F_PWM_R			2 // Meter mode 2 : PWM_F & PWM_R
+#define APP_EEPROM_METER_MODE_DISABLE				0
+#define APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN		1 // Meter mode 0 : PWM++, DIR--
+#define APP_EEPROM_METER_MODE_ONLY_PWM				2 // Meter mode 1 : PWM++
+#define APP_EEPROM_METER_MODE_PWM_F_PWM_R			3 // Meter mode 2 : PWM_F & PWM_R
 #define APP_EEPROM_METER_MODE_MAX_ELEMENT           2
 #define APP_EEPROM_MAX_PHONE_LENGTH                 16
 #define APP_EEPROM_MAX_SERVER_ADDR_LENGTH           64

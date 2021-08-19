@@ -522,9 +522,13 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_POWER_ON:
         DEBUG_RAW("POWERON\r\n");
         gsm_hw_layer_reset_rx_buffer();
+#ifdef DTG01
 		m_wake_time = app_bkup_read_nb_of_wakeup_time();
 		m_wake_time++;
 		app_bkup_write_nb_of_wakeup_time(m_wake_time);
+#else
+		m_wake_time++;
+#endif
         break;
 //    case GSM_STATE_REOPEN_PPP:
 //        DEBUG_VERBOSE("REOPENPPP\r\n");
@@ -1177,9 +1181,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-		if (measure_input->water_pulse_counter[i].line_break_detect)
+		if (measure_input->water_pulse_counter[i].line_break_detect
+			&& (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_DISABLE))
 		{
 			found_break_pulse_input = true;
+			total_length += sprintf((char *)(ptr + total_length), "cb xung %u dut,", i+1);
 			break;
 		}
 	}
@@ -1189,7 +1195,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	if (found_break_pulse_input)
 	{
 		ctx->error_not_critical.detail.circuit_break = 1;
-		total_length += sprintf((char *)(ptr + total_length), "%s", "cam_bien_xung_dut,");
 	}
 	else
 	{
@@ -1200,7 +1205,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build error msg
     if (msg->vbat_percent < eeprom_cfg->battery_low_percent)
     {
-        total_length += sprintf((char *)(ptr + total_length), "%s", "pin_yeu,");
+        total_length += sprintf((char *)(ptr + total_length), "%s", "pin yeu,");
     }
     
 	// Flash
@@ -1212,7 +1217,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	// Nhiet do
 	if (measure_input->temperature > 70)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet_do_cao,");
+		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet do cao,");
 	}
 
 	
@@ -1225,11 +1230,17 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	// Cam bien
 	if (ctx->error_critical.detail.sensor_out_of_range)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "qua_nguong,");
+		total_length += sprintf((char *)(ptr + total_length), "%s", "qua nguong cam bien,");
 	}
-	
-	ptr[total_length - 1] = 0;
-	total_length--;		// remove char ','
+	if (ptr[total_length - 1] == ',')
+	{
+		ptr[total_length - 1] = 0;
+		total_length--;		// remove char ','
+	}
+//	else	// no error
+//	{
+//		total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
+//	}
 	
 	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
 	

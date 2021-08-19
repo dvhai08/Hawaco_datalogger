@@ -81,7 +81,7 @@ static uint8_t process_output_config(char *buffer)
         {
             m_eeprom_config->io_enable.name.output0 = out1;
             new_cfg++;
-            DEBUG_PRINTF("4-20MA output1 1 changed\r\n");
+            DEBUG_PRINTF("Output1 on/off changed to %u\r\n", out1);
         }
     }
 #ifdef DTG02
