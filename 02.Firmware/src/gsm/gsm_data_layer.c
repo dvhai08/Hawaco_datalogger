@@ -1186,7 +1186,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		{
 			found_break_pulse_input = true;
 			total_length += sprintf((char *)(ptr + total_length), "cb xung %u dut,", i+1);
-			break;
 		}
 	}
 
