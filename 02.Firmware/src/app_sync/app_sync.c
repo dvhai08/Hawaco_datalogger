@@ -4,7 +4,7 @@
 #define SYNC_TIMER_INTERVAL APP_TIMER_TICKS(m_sync_slice_ms)
 #define INTERVAL_MS_TO_TICK(x) (x/m_config.polling_interval_ms)  // convert ms to polling tick count
 
-static app_sync_config_t m_config;
+static volatile app_sync_config_t m_config;
 
 uint32_t app_sync_get_timeslice_interval(void)
 {
@@ -116,7 +116,8 @@ void app_sync_polling_task(void)
     static uint32_t m_last_tick = 0;
     uint32_t diff = m_config.get_ms() - m_last_tick;
 
-    if (diff >= m_config.polling_interval_ms)
+    if (diff >= m_config.polling_interval_ms
+		&& m_config.polling_interval_ms)
     {
         app_sync_system_handle((void*)(diff/m_config.polling_interval_ms));
         m_last_tick = m_config.get_ms();

@@ -368,7 +368,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
     for (uint32_t i = 0; i < length; i++)
     {
 		LL_USART_TransmitData8(USART1, raw[i]);
-        while (0 == LL_USART_IsActiveFlag_TXE(USART1));
+        while (0 == LL_USART_IsActiveFlag_TC(USART1));
     }
 #endif /* USE_DMA_TX */
 }

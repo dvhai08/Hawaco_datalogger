@@ -579,7 +579,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                 {
                     m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_DATA, &post_rx_data);
                 }
-                DEBUG_PRINTF("Send post data\r\n"); 
+//                DEBUG_PRINTF("Send post data\r\n"); 
                 sprintf(m_http_cmd_buffer, "AT+QHTTPPOST=%u,3,7\r\n", 
                                             post_rx_data.data_length); 
                 gsm_hw_send_at_cmd(m_http_cmd_buffer, 
@@ -658,8 +658,8 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             }
             else        // POST
             {
-                DEBUG_PRINTF("Input http post, header size %u, data size %u\r\n", 
-								strlen((char*)post_rx_data.header), strlen((char*)post_rx_data.data));
+//                DEBUG_PRINTF("Input http post, header size %u, data size %u\r\n", 
+//								strlen((char*)post_rx_data.header), strlen((char*)post_rx_data.data));
 #if GSM_HTTP_CUSTOM_HEADER
 				DEBUG_RAW("%s", post_rx_data.header);
                 gsm_hw_uart_send_raw(post_rx_data.header, strlen((char*)post_rx_data.header));
@@ -716,7 +716,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                     if (http_response_code != 200)
                     {
                         success = false;
-                        DEBUG_ERROR("HTTP error code %u\r\n", http_response_code);
+//                        DEBUG_ERROR("HTTP error code %u\r\n", http_response_code);
                     }
                     else
                     {

@@ -312,7 +312,10 @@ int main(void)
 				ENABLE_INPUT_4_20MA_POWER(0);
 				system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
 				measure_input_turn_on_in_4_20ma_power = 0;
-				
+				LED1(0);
+#ifdef DTG01
+				LED2(0);
+#endif
 				sys_config_low_power_mode();
 			}
 			#endif
@@ -608,6 +611,12 @@ void sys_config_low_power_mode(void)
         SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;
         
         SystemClock_Config();
+		LED1(1);
+#ifdef DTG01
+		LED2(1);
+#endif
+		sys_delay_ms(10);
+
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);
 #endif

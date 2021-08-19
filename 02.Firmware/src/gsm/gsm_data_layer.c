@@ -1355,6 +1355,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%02u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
 #else   // DTG02 : Vinput 24V
+	total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%02u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
     // Temperature
@@ -1438,7 +1439,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     switch (event)
     {
     case GSM_HTTP_EVENT_START:
-        DEBUG_VERBOSE("HTTP task started\r\n");
+//        DEBUG_VERBOSE("HTTP task started\r\n");
         break;
 
     case GSM_HTTP_EVENT_CONNTECTED:
@@ -1447,7 +1448,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update)
         {
-            ota_update_start(*((uint32_t*)data));
+            if (!ota_update_start(*((uint32_t*)data)))
+			{
+				DEBUG_WARN("OTA update failed\r\n");
+				sys_delay_ms(10);
+				NVIC_SystemReset();
+			}
         }
         break;
     
@@ -1490,7 +1496,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq = measure_input_get_data_in_queue();
         if (!m_sensor_msq)
         {
-            DEBUG_VERBOSE("No more sensor data\r\n");
+//            DEBUG_VERBOSE("No more sensor data\r\n");
             if (!m_retransmision_data_in_flash)
             {
                 gsm_change_state(GSM_STATE_OK);
@@ -1523,7 +1529,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 
                 m_sensor_msq = &tmp;
                 build_msg = true;
-                DEBUG_VERBOSE("Build retransmision data\r\n");
+//                DEBUG_VERBOSE("Build retransmision data\r\n");
             }
         }
         else
@@ -1537,12 +1543,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             {
                 umm_free(m_last_http_msg);
                 m_last_http_msg = NULL;
-                DEBUG_VERBOSE("Umm free\r\n");
+//                DEBUG_VERBOSE("Umm free\r\n");
                 m_malloc_count--;
             }
             
             // Malloc data to http post
-            DEBUG_VERBOSE("Malloc data\r\n");
+//            DEBUG_VERBOSE("Malloc data\r\n");
 #ifdef DTG01
             m_last_http_msg = (char*)umm_malloc(512+128);
 #else
@@ -1621,7 +1627,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             m_malloc_count--;
             umm_free(m_last_http_msg);
-            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
+//            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
         LED1(0);
@@ -1649,7 +1655,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
         if (!ctx->peripheral_running.name.flash_running)
         {
-            DEBUG_VERBOSE("Wakup flash\r\n");
+//            DEBUG_VERBOSE("Wakup flash\r\n");
             spi_init();
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
