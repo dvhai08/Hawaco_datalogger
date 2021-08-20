@@ -39,7 +39,7 @@
 #define ADC_MEASURE_INTERVAL_MS			        30000
 #define PULSE_STATE_WAIT_FOR_FALLING_EDGE       0
 #define PULSE_STATE_WAIT_FOR_RISING_EDGE        1
-#define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
+//#define PULSE_DIR_FORWARD_LOGICAL_LEVEL         1
 #define ADC_OFFSET_MA                           0      // 0.6mA, mul by 10
 #define DEFAULT_INPUT_4_20MA_ENABLE_TIMEOUT     2000
 #define CHECK_BOTH_INPUT_EDGE					0
@@ -626,7 +626,7 @@ static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_inp
     return ms;
 }
 
-
+volatile uint32_t m_last_direction_is_forward = 1;
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
 	__disable_irq();
@@ -669,6 +669,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 				m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
 				m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
 #endif
+//				if (1)
 				if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
 				{
 					m_is_pulse_trigger = 1;
@@ -678,24 +679,28 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 //						{
 ////							DEBUG_VERBOSE("Reserve\r\n");
 //						}
-						if (PULSE_DIR_FORWARD_LOGICAL_LEVEL == input->dir_level)
+						if (eeprom_cfg->dir_level == input->dir_level)
 						{
-							DEBUG_VERBOSE("[PWM%u]+++ %ums\r\n", input->port, m_pull_diff[input->port]);
-							m_pulse_counter_in_backup[input->port].forward++;
+							DEBUG_INFO("[PWM%u]+++ \r\n", input->port);
+//							if (m_last_direction_is_forward)
+								m_pulse_counter_in_backup[input->port].forward++;
+							m_last_direction_is_forward = 1;
 						}
 						else
 						{
-							if (m_pulse_counter_in_backup[input->port].forward > 0)
+//							if (m_pulse_counter_in_backup[input->port].forward > 0)
 							{
-								DEBUG_WARN("[PWM] --- %ums\r\n", m_pull_diff[input->port]);
+								DEBUG_WARN("[PWM]---\r\n");
 								m_pulse_counter_in_backup[input->port].forward--;
+								m_last_direction_is_forward = 0;
 							}
 						}
 						m_pulse_counter_in_backup[input->port].reserve = 0;
 					}
 					else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
 					{
-						DEBUG_VERBOSE("[PWM] +++++++ in %ums\r\n", m_pull_diff[input->port]);
+						DEBUG_INFO("[PWM] +++++++\r\n");
+						m_last_direction_is_forward = 1;
 						m_pulse_counter_in_backup[input->port].forward++;
 						m_pulse_counter_in_backup[input->port].reserve = 0;
 					}
@@ -703,6 +708,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 					{
 						m_pulse_counter_in_backup[input->port].forward = 0;
 						m_pulse_counter_in_backup[input->port].reserve = 0;
+					}
+					else
+					{
+						
 					}
 				}
 				else
@@ -758,7 +767,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 #endif
                 if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
                 {
-                    DEBUG_VERBOSE("[DIR]++++ in %ums\r\n", m_pull_diff[input->port]);
+                    DEBUG_VERBOSE("[DIR]++++\r\n");
 					if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE
 						|| eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
 					{
@@ -769,6 +778,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 						m_pulse_counter_in_backup[input->port].reserve++;
 					}
                 }
+				else
+				{
+					DEBUG_WARN("DIR Noise\r\n");
+				}
             }
 //            else
 //            {
@@ -818,8 +831,8 @@ measure_input_perpheral_data_t *measure_input_current_data(void)
 
 void modbus_master_sleep(void)
 {
-    __WFI();
-//    sys_delay_ms(1);
+//    __WFI();
+    sys_delay_ms(1);
 }
 
 bool measure_input_sensor_data_availble(void)

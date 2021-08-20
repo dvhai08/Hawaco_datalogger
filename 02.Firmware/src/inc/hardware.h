@@ -163,15 +163,18 @@
 #define VREF_OFFSET_MV							80
 #define ADC_INPUT_4_20MA_GAIN               	(50.0f)   
 
-#define MEASURE_INPUT_PORT_0					0
+
 
 #ifdef DTG02
+#define MEASURE_INPUT_PORT_0						1
+#define MEASURE_INPUT_PORT_1		                0
 #define NUMBER_OF_INPUT_4_20MA						4
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
 #define	NUMBER_OF_INPUT_ON_OFF						4
 #define NUMBER_OF_OUTPUT_ON_OFF						4
-#define MEASURE_INPUT_PORT_1		                1
 #else
+#define MEASURE_INPUT_PORT_0						0
+#define MEASURE_INPUT_PORT_1		                1
 #define	NUMBER_OF_OUTPUT_ON_OFF						1
 #define NUMBER_OF_INPUT_4_20MA						1
 #define NUMBER_OF_OUTPUT_4_20MA                     1
@@ -261,8 +264,8 @@ typedef struct
 
 typedef struct
 {
-	uint32_t forward;
-	uint32_t reserve;
+	int32_t forward;
+	int32_t reserve;
 } __attribute__((packed)) measure_input_counter_t;
 
 typedef struct
@@ -276,6 +279,12 @@ typedef struct
 	uint32_t round_per_sec_max;
 	uint32_t round_per_sec_min;
 } __attribute__((packed)) speed_limit_t;
+
+typedef struct
+{
+	uint32_t tick;
+	uint32_t isr_type;
+} pulse_irq_t;
 
 static const input_4_20ma_lookup_t lookup_table_4_20ma_input[] =
 {

@@ -1179,6 +1179,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    char *p = alarm_str;
     uint16_t total_length = 0;
 	
+	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Error\":\"");
+
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		if (measure_input->water_pulse_counter[i].line_break_detect
@@ -1188,9 +1190,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 			total_length += sprintf((char *)(ptr + total_length), "cb xung %u dut,", i+1);
 		}
 	}
-
-	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Error\":\"");
-
+	
 	if (found_break_pulse_input)
 	{
 		ctx->error_not_critical.detail.circuit_break = 1;
@@ -1263,22 +1263,24 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		// Build input pulse counter
 		temp_counter = msg->counter[i].forward / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
-									i,
-								  temp_counter);
-		if (eeprom_cfg->meter_mode[i] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+									i+1,
+									temp_counter);
+//		if (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_DISABLE)
 		{
 			temp_counter = msg->counter[i].reserve / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
-										i,
+											i+1,
 											temp_counter);
 			// K : he so chia cua dong ho nuoc, input 1
 			// Offset: Gia tri offset cua dong ho nuoc
 			// Mode : che do hoat dong
-			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i, eeprom_cfg->k[i]);
-			total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i, eeprom_cfg->offset[i]);
-			total_length += sprintf((char *)(ptr + total_length), "\"Mode%u\":%u,", i, eeprom_cfg->meter_mode[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, eeprom_cfg->k[i]);
+			//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
 		}
 	}
+	
+	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
 	
     // Build input 4-20ma
 	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
@@ -1363,9 +1365,9 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
 #ifdef DTG01    // Battery
-    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%02u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
 #else   // DTG02 : Vinput 24V
-	total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u.%02u,", msg->vbat_mv/1000, msg->vbat_mv%1000);
+	total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
     // Temperature

@@ -103,6 +103,7 @@ static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
+volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END 0 */
 
 /**
@@ -114,6 +115,10 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 	hardware_manager_get_reset_reason();
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+	{
+		recheck_input_pulse[i].tick = 0;
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -304,7 +309,9 @@ int main(void)
     if (system->peripheral_running.value == 0)
     {
         adc_stop();
-        if (system->status.is_enter_test_mode == 0)
+        if (system->status.is_enter_test_mode == 0
+			&& recheck_input_pulse[0].tick == 0
+			&& recheck_input_pulse[1].tick == 0)
         {
 			#if TEST_DEVICE_NEVER_SLEEP == 0
 			{
@@ -615,7 +622,7 @@ void sys_config_low_power_mode(void)
 #ifdef DTG01
 		LED2(1);
 #endif
-		sys_delay_ms(10);
+		sys_delay_ms(5);
 
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);

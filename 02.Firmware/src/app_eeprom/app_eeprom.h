@@ -68,6 +68,7 @@ typedef struct
 	
 	uint8_t battery_low_percent;
 	uint8_t max_sms_1_day;
+	uint8_t dir_level;
     uint32_t crc;
 } __attribute__((packed))  app_eeprom_config_data_t;
 

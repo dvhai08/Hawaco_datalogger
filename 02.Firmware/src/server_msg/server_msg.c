@@ -234,6 +234,20 @@ uint8_t process_input_config(char *buffer)
         }
     }
 	
+	// Dir active level
+	char *dir = strstr(buffer, "Dir\":");
+    if (dir != NULL)
+    {
+        uint8_t dir_level = gsm_utilities_get_number_from_string(strlen("Dir\":"), dir);
+        if (m_eeprom_config->dir_level != dir_level)
+        {
+            DEBUG_PRINTF("dir_level mode changed\r\n");
+            m_eeprom_config->dir_level = dir_level;
+            new_cfg++;
+        }
+    }
+	
+	
 	// Input 4-20mA
     char *input_4_20ma = strstr(buffer, "Input_J3_1\":");
     if (input_4_20ma != NULL)

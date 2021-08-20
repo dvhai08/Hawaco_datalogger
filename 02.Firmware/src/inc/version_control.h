@@ -1,7 +1,7 @@
 #ifndef VERSION_CONTROL_H
 #define VERSION_CONTROL_H
 
-#define VERSION_CONTROL_FW				"0.0.8"
+#define VERSION_CONTROL_FW				"0.0.1"
 #define VERSION_CONTROL_HW				"0.0.1"
 #ifdef DTG01
 #define VERSION_CONTROL_DEVICE			"DTG1"
