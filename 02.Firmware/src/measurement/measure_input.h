@@ -91,6 +91,20 @@ measure_input_perpheral_data_t *measure_input_current_data(void);
 void measure_input_reset_counter(uint8_t index);
 
 /**
+ * @brief       Reset indicator offset
+ * @param[in]	index Pulse meter index
+ * @param[in]	new_indicator Pulse indicator
+ */
+void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator);
+
+/**
+ * @brief       Reset k offset
+ * @param[in]	index k meter
+ * @param[in]	new_k K divider
+ */
+void measure_input_reset_k(uint8_t index, uint32_t new_k);
+	
+/**
  * @brief       Measure input callback
  * @param[in]	input New input data
  */

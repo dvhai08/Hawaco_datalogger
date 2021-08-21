@@ -82,6 +82,12 @@
 										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
 								}								
 
+#define TRANS_IS_OUTPUT_HIGH()		(LL_GPIO_IsOutputPinSet(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin) ? 0 : 1)
+#define TRANS_1_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin) ? 0 : 1)
+#define TRANS_2_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin) ? 0 : 1)
+#define TRANS_3_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin) ? 0 : 1)
+#define TRANS_4_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin) ? 0 : 1)
+								
 #define ENABLE_NTC_POWER(x)     {	if (x) \
 										LL_GPIO_SetOutputPin(VNTC_GPIO_Port, VNTC_Pin);	\
 									else	\

@@ -315,6 +315,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             m_eeprom_config->offset[0] = offset;
             DEBUG_WARN("PWM 1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(0);
+			measure_input_reset_indicator(0, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
 			counter[0].forward = 0;
@@ -334,6 +335,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             m_eeprom_config->offset[1] = offset;
             DEBUG_PRINTF("PWM2 offset changed to %u\r\n", offset);
             measure_input_reset_counter(1);
+			measure_input_reset_indicator(1, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			counter[1].forward = 0;
 			counter[1].reserve = 0;
@@ -354,7 +356,8 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         if (m_eeprom_config->k[0] != k)
         {
             m_eeprom_config->k[0] = k;
-            DEBUG_PRINTF("K0 factor changed to %u\r\n", k);
+			measure_input_reset_k(0, k);
+            DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
             new_cfg++; 
         }
     }
@@ -371,7 +374,8 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         if (m_eeprom_config->k[1] != k)
         {
             m_eeprom_config->k[1] = k;
-            DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
+			measure_input_reset_k(1, k);
+            DEBUG_PRINTF("K2 factor changed to %u\r\n", k);
             new_cfg++; 
         }
     }
@@ -384,6 +388,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         {
             new_cfg++;   
             m_eeprom_config->offset[0] = offset;
+			measure_input_reset_indicator(0, offset);
             DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);

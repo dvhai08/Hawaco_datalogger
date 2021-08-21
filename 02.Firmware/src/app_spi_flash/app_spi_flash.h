@@ -8,13 +8,13 @@
 typedef struct
 {
     uint32_t valid_flag;
-    measure_input_counter_t meter_input[APP_FLASH_NB_OF_METER_INPUT];
-    measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
-    uint8_t temp;
-    uint16_t vbat_mv;
+    measure_input_counter_t meter_input[APP_FLASH_NB_OF_METER_INPUT];		// so nuoc
+    measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];			// 485
+    uint8_t temp;	// nhiet do
+    uint16_t vbat_mv;		// dien ap pin
     uint8_t vbat_precent;
-    float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];
-    uint32_t timestamp;
+    float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 4-20mA
+    uint32_t timestamp;		//
     uint32_t resend_to_server_flag;
 	uint32_t crc;
 } __attribute__((packed)) app_spi_flash_data_t;

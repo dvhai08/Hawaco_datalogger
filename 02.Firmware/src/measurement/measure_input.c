@@ -250,6 +250,38 @@ void measure_input_measure_wakeup_to_get_data()
     sys_ctx()->peripheral_running.name.adc = 1;
 }
 
+void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
+{
+	if (index == 0)
+	{
+		m_measure_data.counter[0].indicator = new_indicator;
+		m_pulse_counter_in_backup[0].indicator = new_indicator;
+	}
+#ifdef DTG02
+    else
+    {
+		m_measure_data.counter[1].indicator = new_indicator;
+		m_pulse_counter_in_backup[1].indicator = new_indicator;
+    }
+#endif
+}
+
+void measure_input_reset_k(uint8_t index, uint32_t new_k)
+{
+	if (index == 0)
+	{
+		m_measure_data.counter[0].k = new_k;
+		m_pulse_counter_in_backup[0].k = new_k;
+	}
+#ifdef DTG02
+    else
+    {
+		m_measure_data.counter[1].k = new_k;
+		m_pulse_counter_in_backup[1].k = new_k;
+    }
+#endif
+}
+
 void measure_input_reset_counter(uint8_t index)
 {
     if (index == 0)
@@ -436,9 +468,19 @@ void measure_input_task(void)
                     m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i];
                 }
                 
+				m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
+				m_measure_data.counter[0].k = eeprom_cfg->k[0];
                 DEBUG_INFO("PWM0 %u\r\n", m_measure_data.counter[0].forward);
 #ifdef DTG02                
                 DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
+				m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
+				m_measure_data.counter[1].k = eeprom_cfg->k[1];
+				m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
+				m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
+				m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
+				m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
+#else
+				m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
 #endif
                 m_measure_data.temperature = adc_retval->temp;
 
