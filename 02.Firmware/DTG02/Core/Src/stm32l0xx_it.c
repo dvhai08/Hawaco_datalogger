@@ -221,6 +221,11 @@ void SysTick_Handler(void)
 				measure_input_pulse_irq(&input);	
 		}			
 	}
+	
+	if (sys_ctx()->status.timeout_wait_message_sync_data)
+	{
+		sys_ctx()->status.timeout_wait_message_sync_data--;
+	}
   /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -330,6 +335,7 @@ void EXTI4_15_IRQHandler(void)
         LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_4);
         LED1(1);
         led_blink_delay = 5;
+		sys_ctx()->status.timeout_wait_message_sync_data = 15000;	
 		if (gsm_data_layer_is_module_sleeping())
         {
             measure_input_measure_wakeup_to_get_data();
@@ -450,7 +456,8 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	if (LL_USART_IsActiveFlag_RXNE(LPUART1))
 	{
 		uint32_t data = LPUART1->RDR;
-		if (jig_timeout_ms == 0)
+		if (jig_timeout_ms == 0
+			&& sys_ctx()->status.timeout_wait_message_sync_data == 0)
 		{
 			measure_input_rs485_uart_handler(data);
 		}

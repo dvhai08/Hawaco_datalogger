@@ -35,4 +35,9 @@ bool jig_is_in_test_mode(void);
  */
 bool jig_found_cmd_sync_data_to_host(void);
 
+/**
+ * @brief		Release JIG memory
+ */
+void jig_release_memory(void);
+
 #endif /* ZIG_H */

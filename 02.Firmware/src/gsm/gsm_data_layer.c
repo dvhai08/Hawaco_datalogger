@@ -418,6 +418,7 @@ void gsm_manager_tick(void)
             }
 			else if (ctx->status.new_server && ctx->status.try_new_server)		// Try new server address
 			{
+				DEBUG_INFO("Try new server\r\n");
 				snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
 						GET_URL, 
 						ctx->status.new_server,
@@ -1261,20 +1262,24 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
-		temp_counter = msg->counter[i].forward / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
+		if (msg->counter[i].k == 0)
+		{
+			msg->counter[i].k = 1;
+		}
+		temp_counter = msg->counter[i].forward / msg->counter[i].k + msg->counter[i].indicator;
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
 									i+1,
 									temp_counter);
 //		if (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_DISABLE)
 		{
-			temp_counter = msg->counter[i].reserve / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
+			temp_counter = msg->counter[i].reserve / msg->counter[i].k + msg->counter[i].indicator;
 			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
 											i+1,
 											temp_counter);
 			// K : he so chia cua dong ho nuoc, input 1
 			// Offset: Gia tri offset cua dong ho nuoc
 			// Mode : che do hoat dong
-			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, eeprom_cfg->k[i]);
+			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, msg->counter[i].k);
 			//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
 			total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
 		}
@@ -1329,13 +1334,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		
 #else	
     // Build pulse counter
-    temp_counter = msg->counter[0].forward / eeprom_cfg->k[0]+ eeprom_cfg->offset[0];
+    temp_counter = msg->counter[0].forward / msg->counter[0].k + msg->counter[i].indicator;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
     
     if (eeprom_cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-        temp_counter = msg->counter[0].reserve / eeprom_cfg->k[0]+ eeprom_cfg->offset[0];
+        temp_counter = msg->counter[0].reserve / msg->counter[0].k + msg->counter[i].indicator;
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
@@ -1408,6 +1413,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 				}
 				else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
 				{
+					if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+					{
+						total_length += sprintf((char *)(ptr + total_length), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+					}
 					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "FFFF");
 				}	
 			}
@@ -1520,6 +1529,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 				{
 					tmp.counter[i].forward = m_retransmision_data_in_flash->meter_input[i].forward;
 					tmp.counter[i].reserve = m_retransmision_data_in_flash->meter_input[i].reserve;
+					tmp.counter[i].k = m_retransmision_data_in_flash->meter_input[i].k;
+					tmp.counter[i].indicator = m_retransmision_data_in_flash->meter_input[i].indicator;
 				}
 				
                
@@ -1607,7 +1618,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
 		
 		// If device in mode test connection with new server =>> Store new server to flash
-		if (ctx->status.try_new_server && ctx->status.new_server)
+		// Step 1 : device trying to connect with new server, step jump from 2 to 1
+		// Step 2 : step == 1 =>> try success
+		if (ctx->status.try_new_server == 1 && ctx->status.new_server)
 		{
 			// Delete old server and copy new server addr
 			memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
@@ -1620,7 +1633,10 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 			app_eeprom_save_config();		// Store current config into eeprom
 			DEBUG_INFO("Set new server addr success\r\n");
 		}
-        
+        if (ctx->status.try_new_server)
+		{
+			ctx->status.try_new_server--;
+		}
         gsm_change_state(GSM_STATE_OK);
 //        DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);

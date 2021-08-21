@@ -266,6 +266,8 @@ typedef struct
 {
 	int32_t forward;
 	int32_t reserve;
+	uint32_t k;
+	uint32_t indicator;
 } __attribute__((packed)) measure_input_counter_t;
 
 typedef struct

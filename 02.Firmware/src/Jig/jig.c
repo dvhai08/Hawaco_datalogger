@@ -217,4 +217,14 @@ bool jig_found_cmd_sync_data_to_host(void)
 	return false;
 }
 
+void jig_release_memory(void)
+{
+	if (m_jig_buffer.rx_ptr)
+	{
+		umm_free(m_jig_buffer.rx_ptr); 
+		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
+	}
+}
+
+
 

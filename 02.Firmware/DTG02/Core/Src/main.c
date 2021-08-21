@@ -259,7 +259,8 @@ int main(void)
 	}
     
     if (!eeprom_cfg->io_enable.name.rs485_en
-        && system->status.is_enter_test_mode == 0)
+        && system->status.is_enter_test_mode == 0
+		&& system->status.timeout_wait_message_sync_data == 0)
     {
         system->peripheral_running.name.rs485_running = 0;
         usart_lpusart_485_control(0);
@@ -305,14 +306,44 @@ int main(void)
         system->status.disconnect_timeout_s = 0;
     }
     
+	if (system->status.timeout_wait_message_sync_data)
+	{
+		RS485_POWER_EN(1);
+		usart_lpusart_485_control(1);
+		if (jig_found_cmd_sync_data_to_host())
+		{
+			// Step 1 : Wakeup spi
+			if (!system->peripheral_running.name.flash_running)
+			{
+				spi_init();
+				app_spi_flash_wakeup();
+				system->peripheral_running.name.flash_running = 1;
+			}
+		
+			app_spi_flash_dump_to_485();
+			
+			// Step 2 : Shutdown spi
+			app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+		}
+	}
+	else
+	{
+		usart_lpusart_485_control(0);
+	}
+	
 	    
     if (system->peripheral_running.value == 0)
     {
         adc_stop();
         if (system->status.is_enter_test_mode == 0
 			&& recheck_input_pulse[0].tick == 0
-			&& recheck_input_pulse[1].tick == 0)
+			&& recheck_input_pulse[1].tick == 0
+			&& system->status.timeout_wait_message_sync_data == 0)
         {
+			jig_release_memory();
+			
 			#if TEST_DEVICE_NEVER_SLEEP == 0
 			{
 				RS485_POWER_EN(0);

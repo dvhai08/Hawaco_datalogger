@@ -254,6 +254,7 @@ int main(void)
 	}
     
     if (!cfg->io_enable.name.rs485_en
+		&& system->status.is_enter_test_mode == 0
 		&& system->status.timeout_wait_message_sync_data == 0)
     {
         system->peripheral_running.name.rs485_running = 0;
@@ -302,6 +303,7 @@ int main(void)
             && (LL_GPIO_IsInputPinSet(ADC_24V_GPIO_Port, ADC_24V_Pin) == 0)
 			&& system->status.timeout_wait_message_sync_data == 0)
         {
+			jig_release_memory();
 			RS485_POWER_EN(0);
 			ENABLE_INPUT_4_20MA_POWER(0);
 			system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;

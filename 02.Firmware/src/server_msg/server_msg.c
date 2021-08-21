@@ -39,25 +39,26 @@ static void process_server_addr_change(char *buffer)
             tmp[server_addr_len] = '\0';
         }
         
-        if (strcmp((char*)tmp, (char*)m_eeprom_config->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]))
+        if (strcmp((char*)tmp, (char*)m_eeprom_config->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX])
+			&& m_ctx->status.try_new_server == 0)
         {
             if (m_ctx->status.new_server)
             {
                 umm_free(m_ctx->status.new_server);
                 m_ctx->status.new_server = NULL;
             }
-            m_ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
-            if (m_ctx->status.new_server)
-            {
-                m_ctx->status.try_new_server = 1;
-                snprintf((char*)m_ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
-                DEBUG_INFO("Server changed to %s\r\n", m_eeprom_config->server_addr);
-            }
-            else
-            {
-                m_ctx->status.try_new_server = 0;
-                DEBUG_ERROR("Server changed : No memory\r\n");
-            }
+			m_ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+			if (m_ctx->status.new_server)
+			{
+				m_ctx->status.try_new_server = 2;
+				snprintf((char*)m_ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
+				DEBUG_INFO("Server changed to %s\r\n", m_eeprom_config->server_addr);
+			}
+			else
+			{
+				m_ctx->status.try_new_server = 0;
+				DEBUG_ERROR("Server changed : No memory\r\n");
+			}
         }
         else
         {
@@ -803,7 +804,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 	has_new_cfg += process_modbus_register_config(buffer);
 	
     //Luu config moi
-    if (has_new_cfg)
+    if (has_new_cfg && sys_ctx()->status.try_new_server == 0)
     {
         DEBUG_INFO("Save eeprom config\r\n");
  		app_eeprom_save_config();

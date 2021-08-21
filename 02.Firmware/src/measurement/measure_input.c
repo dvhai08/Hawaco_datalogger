@@ -166,14 +166,14 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 							}
 //							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr, 
 //													register_value[slave_idx].sub_register[sub_register_index].value);
-							
-							strncpy((char*)register_value[slave_idx].sub_register[sub_register_index].unit,
-									(char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit,
-									6);
 							register_value[slave_idx].sub_register[sub_register_index].data_type.name.type = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type;
 							register_value[slave_idx].sub_register[sub_register_index].register_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr;
 							ctx->error_not_critical.detail.rs485_err = 0;
 						}
+						strncpy((char*)register_value[slave_idx].sub_register[sub_register_index].unit,
+								(char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit,
+								6);
+
 					}
 						break;
 					
@@ -204,18 +204,21 @@ void measure_input_pulse_counter_poll(void)
 		char ptr[48];
 		uint8_t total_length = 0;
 		uint32_t temp_counter;
-		app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
 		
 		// Build debug counter message
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
-			temp_counter = m_pulse_counter_in_backup[i].forward / cfg->k[i] + cfg->offset[i];
+			temp_counter = m_pulse_counter_in_backup[i].forward / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 			total_length += sprintf((char *)(ptr + total_length), "(%u-",
 									  temp_counter);
 			
-			temp_counter = m_pulse_counter_in_backup[0].reserve / cfg->k[i] + cfg->offset[i];
+			temp_counter = m_pulse_counter_in_backup[i].reserve / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 			total_length += sprintf((char *)(ptr + total_length), "%u),",
 										temp_counter);
+			
+			m_pulse_counter_in_backup[i].k = eeprom_cfg->k[i];
+			m_pulse_counter_in_backup[i].indicator = eeprom_cfg->offset[i];
 		}
 	
         app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
@@ -289,6 +292,10 @@ void measure_input_save_all_data_to_flash(void)
 			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
 			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
 			wr_data.temp = m_sensor_msq[j].temperature;
+			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
+			{
+				memcpy(&wr_data.rs485[nb_485_device], &m_sensor_msq[nb_485_device].rs485[nb_485_device], sizeof(measure_input_modbus_register_t));
+			}
 			
 			if (!ctx->peripheral_running.name.flash_running)
 			{
@@ -422,6 +429,7 @@ void measure_input_task(void)
 #endif
                 app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
 
+
                 m_measure_data.csq_percent = gsm_get_csq_in_percent();
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
@@ -466,7 +474,18 @@ void measure_input_task(void)
 
 void measure_input_initialize(void)
 {	
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+	m_pulse_counter_in_backup[0].k = eeprom_cfg->k[0];
+	m_pulse_counter_in_backup[0].indicator = eeprom_cfg->offset[0];
+	m_measure_data.counter[0].k = eeprom_cfg->k[0];
+	m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
 #if DTG02
+	
+	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
+	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
+	m_measure_data.counter[1].k = eeprom_cfg->k[1];
+	m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
+	
 	if (LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin))
 	{
 		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
@@ -521,6 +540,7 @@ void measure_input_initialize(void)
 		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
 	}
 #endif	
+
 	
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register

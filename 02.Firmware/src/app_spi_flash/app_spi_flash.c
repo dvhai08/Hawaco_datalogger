@@ -1290,7 +1290,7 @@ uint32_t app_spi_flash_dump_to_485(void)
 	uint32_t struct_size = sizeof(app_spi_flash_data_t);
 	
 	app_spi_flash_data_t *rd = (app_spi_flash_data_t*)umm_malloc(struct_size);
-	
+
 	for (;;)
 	{
 		LED1_TOGGLE();
@@ -1334,15 +1334,44 @@ uint32_t app_spi_flash_dump_to_485(void)
 				// Build message
 				len += sprintf(ptr+len, "{\"TotalPacket\":%u,\"CurrentPacket\":%u,", total, packet_num);
 				len += sprintf(ptr+len, "\"Timestamp\":%u,", rd->timestamp);
+				len += sprintf((char *)(ptr + len), "\"BatteryLevel\":%u,", rd->vbat_precent);	
+				len += sprintf((char *)(ptr + len), "\"Temperature\":%d,", rd->temp);
+				
 #ifdef DTG02
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
+				// Counter
+				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+				{
+					// Build input pulse counter
+					if (rd->meter_input[i].k == 0)
+					{
+						rd->meter_input[i].k = 1;
+					}
+					len += sprintf((char *)(ptr + len), "\"Input1_J%u\":%u,",
+												i+1,
+												rd->meter_input[i].forward/rd->meter_input[i].k + rd->meter_input[i].indicator);
+					len += sprintf((char *)(ptr + len), "\"Input1_J%u_D\":%u,",
+														i+1,
+														rd->meter_input[i].reserve/rd->meter_input[i].k + rd->meter_input[i].indicator);
+				}
+				
+				// Build input 4-20ma
+				len += sprintf((char *)(ptr + len), "\"Input1_J3_1\":%.3f,", 
+														rd->input_4_20mA[0]); // dau vao 4-20mA 0
+				len += sprintf((char *)(ptr + len), "\"Input1_J3_2\":%.3f,", 
+														rd->input_4_20mA[1]); // dau vao 4-20mA 0
+				len += sprintf((char *)(ptr + len), "\"Input1_J3_3\":%.3f,", 
+														rd->input_4_20mA[2]); // dau vao 4-20mA 0
+				len += sprintf((char *)(ptr + len), "\"Input1_J3_4\":%.3f,", 
+													rd->input_4_20mA[3]); // dau vao 4-20mA 0
+	
 #else
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->meter_input[0].forward);
 				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->meter_input[0].reserve);
 				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
-				len += sprintf((char *)(ptr + len), "\"BatteryLevel\":%u,", rd->vbat_precent);	
-
+#endif
+				
 				//485			
 				for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 				{
@@ -1362,13 +1391,13 @@ uint32_t app_spi_flash_dump_to_485(void)
 							{
 								len += sprintf((char *)(ptr + len), "%.4f,", (float)rd->rs485[index].sub_register[sub_idx].value);
 							}
+						}
+						else if (rd->rs485[index].sub_register[sub_idx].data_type.name.valid)
+						{
 							if (strlen((char*)rd->rs485[index].sub_register[sub_idx].unit))
 							{
 								len += sprintf((char *)(ptr + len), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, rd->rs485[index].sub_register[sub_idx].unit);
 							}
-						}
-						else if (rd->rs485[index].sub_register[sub_idx].data_type.name.valid)
-						{
 							len += sprintf((char *)(ptr + len), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "-1");
 						}	
 					}
@@ -1381,8 +1410,11 @@ uint32_t app_spi_flash_dump_to_485(void)
 				}
 				len += sprintf(ptr+len, "%s", "}");
 				usart_lpusart_485_send((uint8_t*)ptr, len);
-#endif
-			}	
+			}
+//			else
+//			{
+//				DEBUG_WARN("Invalid CRC\r\n");
+//			}				
 			
 			LL_IWDG_ReloadCounter(IWDG);
 			
