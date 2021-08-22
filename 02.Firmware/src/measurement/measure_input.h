@@ -27,14 +27,14 @@ typedef struct
 #endif
 	
 	// Oupput 	
-	float output_4_20mA;
+	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
 	
 	// Battery
 	uint8_t vbat_percent;
 	uint16_t vbat_mv;
 	float vin_mv;
 
-	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+//	measure_input_water_meter_input_t water_pulse_counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 	measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 	
 	// Temperature

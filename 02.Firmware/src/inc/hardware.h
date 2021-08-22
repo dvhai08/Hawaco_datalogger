@@ -178,6 +178,7 @@
 #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
 #define	NUMBER_OF_INPUT_ON_OFF						4
 #define NUMBER_OF_OUTPUT_ON_OFF						4
+#define NUMBER_OF_OUTPUT_4_20MA                     1
 #else
 #define MEASURE_INPUT_PORT_0						0
 #define MEASURE_INPUT_PORT_1		                1
@@ -274,6 +275,7 @@ typedef struct
 	int32_t reserve;
 	uint32_t k;
 	uint32_t indicator;
+	uint8_t cir_break;
 } __attribute__((packed)) measure_input_counter_t;
 
 typedef struct

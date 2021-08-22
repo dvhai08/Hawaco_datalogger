@@ -305,29 +305,47 @@ void measure_input_save_all_data_to_flash(void)
     sys_ctx_t *ctx = sys_ctx();
     wr_data.resend_to_server_flag = 0;
 
-    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM ; j++)
+    for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
     {
 		if (m_sensor_msq[j].state != MEASUREMENT_QUEUE_STATE_IDLE)
 		{
+			// 4-20mA input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
 			{
 				wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20mA[i];
 			}
 			
+			// Meter input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
 			{
 				memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
 			}			
+			
+#ifdef DTG02
+			// On/off
+			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
+			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
+			wr_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
+			wr_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+			wr_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
+			wr_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
+			wr_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
+			wr_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
+#endif
+			wr_data.output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
 			
 			wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
 			wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
 			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
 			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
 			wr_data.temp = m_sensor_msq[j].temperature;
+			
+			// 485
 			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
 			{
 				memcpy(&wr_data.rs485[nb_485_device], &m_sensor_msq[nb_485_device].rs485[nb_485_device], sizeof(measure_input_modbus_register_t));
 			}
+			
 			
 			if (!ctx->peripheral_running.name.flash_running)
 			{
@@ -382,12 +400,19 @@ void measure_input_task(void)
 	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
+	m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
+	m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
+	m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
+	m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
 	
-	m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_1].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);    
+	m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin)
+																				&& (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);    
 #else
     TRANS_OUTPUT(eeprom_cfg->io_enable.name.output0);
+	m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
 #endif	
-    m_measure_data.water_pulse_counter[MEASURE_INPUT_PORT_0].line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+    m_measure_data.counter[MEASURE_INPUT_PORT_0].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin)
+																				 && (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);
     
     m_measure_data.vbat_percent = input_adc->bat_percent;
     m_measure_data.vbat_mv = input_adc->bat_mv;
@@ -461,12 +486,23 @@ void measure_input_task(void)
 #endif
                 app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
 
-
+				// CSQ
                 m_measure_data.csq_percent = gsm_get_csq_in_percent();
-                for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                
+				// Input 4-20mA
+				for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
                     m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i];
                 }
+				// Output 4-20mA
+				if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
+				{
+					m_measure_data.output_4_20mA[0] = eeprom_cfg->output_4_20ma;
+				}
+				else
+				{
+					m_measure_data.output_4_20mA[0] = 0;
+				}
                 
 				m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
 				m_measure_data.counter[0].k = eeprom_cfg->k[0];
@@ -475,10 +511,6 @@ void measure_input_task(void)
                 DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
 				m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
 				m_measure_data.counter[1].k = eeprom_cfg->k[1];
-				m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
-				m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
-				m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
-				m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
 #else
 				m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
 #endif
@@ -521,8 +553,8 @@ void measure_input_initialize(void)
 	m_pulse_counter_in_backup[0].indicator = eeprom_cfg->offset[0];
 	m_measure_data.counter[0].k = eeprom_cfg->k[0];
 	m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
-#if DTG02
 	
+#if DTG02
 	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
 	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
 	m_measure_data.counter[1].k = eeprom_cfg->k[1];
@@ -688,7 +720,7 @@ static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_inp
     return ms;
 }
 
-volatile uint32_t m_last_direction_is_forward = 1;
+//volatile uint32_t m_last_direction_is_forward = 1;
 void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
 	__disable_irq();
@@ -744,9 +776,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 						if (eeprom_cfg->dir_level == input->dir_level)
 						{
 							DEBUG_INFO("[PWM%u]+++ \r\n", input->port);
-//							if (m_last_direction_is_forward)
-								m_pulse_counter_in_backup[input->port].forward++;
-							m_last_direction_is_forward = 1;
+							m_pulse_counter_in_backup[input->port].forward++;
 						}
 						else
 						{
@@ -754,7 +784,6 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 							{
 								DEBUG_WARN("[PWM]---\r\n");
 								m_pulse_counter_in_backup[input->port].forward--;
-								m_last_direction_is_forward = 0;
 							}
 						}
 						m_pulse_counter_in_backup[input->port].reserve = 0;
@@ -762,7 +791,6 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 					else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
 					{
 						DEBUG_INFO("[PWM] +++++++\r\n");
-						m_last_direction_is_forward = 1;
 						m_pulse_counter_in_backup[input->port].forward++;
 						m_pulse_counter_in_backup[input->port].reserve = 0;
 					}

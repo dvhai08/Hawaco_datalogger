@@ -5,6 +5,22 @@
 #include <stdbool.h>
 #include "hardware.h"
 
+typedef union
+{
+	struct
+	{
+		uint8_t output_on_off_0 : 1;
+		uint8_t output_on_off_1 : 1;
+		uint8_t output_on_off_2 : 1;
+		uint8_t output_on_off_3 : 1;
+		uint8_t input_on_off_0 : 1;
+		uint8_t input_on_off_1 : 1;
+		uint8_t input_on_off_2 : 1;
+		uint8_t input_on_off_3 : 1;
+	} __attribute__((packed)) name;
+	uint8_t value;
+} __attribute__((packed)) app_spi_flash_on_off_data_t;
+
 typedef struct
 {
     uint32_t valid_flag;
@@ -14,7 +30,10 @@ typedef struct
     uint16_t vbat_mv;		// dien ap pin
     uint8_t vbat_precent;
     float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 4-20mA
-    uint32_t timestamp;		//
+	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
+    app_spi_flash_on_off_data_t on_off;
+	uint32_t timestamp;		//
+	
     uint32_t resend_to_server_flag;
 	uint32_t crc;
 } __attribute__((packed)) app_spi_flash_data_t;

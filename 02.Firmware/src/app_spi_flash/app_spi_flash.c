@@ -1226,6 +1226,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
     return false;
 }
 
+
 /**
  * DTG01
 	{
@@ -1273,6 +1274,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 		"HW": "0.0.1"                       // Hardware version
 	}
  */
+ 
 uint32_t app_spi_flash_dump_to_485(void)
 {
 	if (!m_flash_is_good)
@@ -1364,13 +1366,50 @@ uint32_t app_spi_flash_dump_to_485(void)
 														rd->input_4_20mA[2]); // dau vao 4-20mA 0
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_4\":%.3f,", 
 													rd->input_4_20mA[3]); // dau vao 4-20mA 0
-	
+				
+				// Build input on/off digital
+				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
+																		1,
+																		rd->on_off.name.input_on_off_0);
+
+				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
+														2,
+														rd->on_off.name.input_on_off_1);
+				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
+														3,
+														rd->on_off.name.input_on_off_2);
+				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
+														4,
+														rd->on_off.name.input_on_off_3);
+								
+				// Build output on/off
+				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
+																	1,
+																	rd->on_off.name.output_on_off_0);  //dau ra on/off 
+				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
+																	2,
+																	rd->on_off.name.output_on_off_1);  //dau ra on/off 	
+				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
+																	3,
+																	rd->on_off.name.output_on_off_2);  //dau ra on/off 
+				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
+																	4,
+																	rd->on_off.name.output_on_off_3);  //dau ra on/off 
+				
 #else
+				if (rd->meter_input[0].k == 0)
+				{
+					rd->meter_input[0].k = 1;
+				}
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
-				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->meter_input[0].forward);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->meter_input[0].forward/rd->meter_input[0].k + rd->meter_input[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->meter_input[0].reserve/rd->meter_input[0].k + rd->meter_input[0].indicator);
 				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->meter_input[0].reserve);
 				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
 #endif
+				
+				// output 4-20mA
+				len += sprintf((char *)(ptr + len), "\"Output4_20\":%.3f,", rd->output_4_20mA[0]);   // dau ra 4-20mA 0
 				
 				//485			
 				for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
@@ -1410,6 +1449,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 				}
 				len += sprintf(ptr+len, "%s", "}");
 				usart_lpusart_485_send((uint8_t*)ptr, len);
+				ptr[len] = 0;
+//				DEBUG_INFO("%s", ptr);
 			}
 //			else
 //			{

@@ -24,6 +24,7 @@
 #include "sys_ctx.h"
 #include "app_spi_flash.h"
 #include "tim.h"
+#include "spi.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -272,7 +273,11 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	else if (strstr(argv[1], "dump"))
 	{
 		DEBUG_INFO("Dump all flash\r\n");
+		spi_init();
+		app_spi_flash_wakeup();
+
 		app_spi_flash_dump_to_485();
+		app_spi_flash_shutdown();
 	}
     return 0;
 }

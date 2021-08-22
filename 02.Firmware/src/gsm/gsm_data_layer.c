@@ -1172,7 +1172,7 @@ SEND_SMS_FAIL:
 static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *msg)
 {
     app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
+//	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
 //    DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
 	sys_ctx_t *ctx = sys_ctx();
 	bool found_break_pulse_input = false;
@@ -1184,8 +1184,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
-		if (measure_input->water_pulse_counter[i].line_break_detect
-			&& (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_DISABLE))
+		if (msg->counter[i].cir_break)
 		{
 			found_break_pulse_input = true;
 			total_length += sprintf((char *)(ptr + total_length), "cb xung %u dut,", i+1);
@@ -1215,7 +1214,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	}
 
 	// Nhiet do
-	if (measure_input->temperature > 70)
+	if (msg->temperature > 70)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet do cao,");
 	}
@@ -1270,19 +1269,25 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
 									i+1,
 									temp_counter);
-//		if (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_DISABLE)
+		if (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+		{
+			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
+											i+1,
+											0);
+		}
+		else
 		{
 			temp_counter = msg->counter[i].reserve / msg->counter[i].k + msg->counter[i].indicator;
 			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
 											i+1,
 											temp_counter);
-			// K : he so chia cua dong ho nuoc, input 1
-			// Offset: Gia tri offset cua dong ho nuoc
-			// Mode : che do hoat dong
-			total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, msg->counter[i].k);
-			//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
-			total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
 		}
+		// K : he so chia cua dong ho nuoc, input 1
+		// Offset: Gia tri offset cua dong ho nuoc
+		// Mode : che do hoat dong
+		total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, msg->counter[i].k);
+		//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
+		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
 	}
 	
 	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
@@ -1314,7 +1319,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":%u,", 
 																			i+1,
-																			measure_input->input_on_off[i]); // dau vao 4-20mA 0
+																			msg->input_on_off[i]); // dau vao 4-20mA 0
 	}	
 
     // Build output on/off
@@ -1322,32 +1327,32 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":%u,", 
 																			i+1,
-																			measure_input->output_on_off[i]);  //dau ra on/off 
+																			msg->output_on_off[i]);  //dau ra on/off 
 	}
     
     // Build output 4-20ma
 	if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.3f,", measure_input->output_4_20mA);   // dau ra 4-20mA 0
+		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.3f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
 	}
 	
 		
 #else	
     // Build pulse counter
-    temp_counter = msg->counter[0].forward / msg->counter[0].k + msg->counter[i].indicator;
+    temp_counter = msg->counter[0].forward / msg->counter[0].k + msg->counter[0].indicator;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
     
     if (eeprom_cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
-        temp_counter = msg->counter[0].reserve / msg->counter[0].k + msg->counter[i].indicator;
+        temp_counter = msg->counter[0].reserve / msg->counter[0].k + msg->counter[0].indicator;
 		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
 									temp_counter);
 	}
 	
     // Build input on/off
     total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
-                                                                        measure_input->output_on_off[0]); // dau vao on/off
+                                                                        msg->output_on_off[0]); // dau vao on/off
 	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
 	{
 		// Build input 4-20ma
@@ -1357,7 +1362,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
     // Build ouput 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%.2f,", 
-                                                                        measure_input->output_4_20mA); // dau ra 4-20mA
+																			msg->output_4_20mA[0]); // dau ra 4-20mA
 #endif
 
     // CSQ in percent 
@@ -1376,10 +1381,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
 #endif    
     // Temperature
-    if (!measure_input->temperature_error)
-    {
-        total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", measure_input->temperature);
-    }
+	total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", msg->temperature);
     
 //    // Reset reason
 //    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
@@ -1533,18 +1535,38 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 					tmp.counter[i].reserve = m_retransmision_data_in_flash->meter_input[i].reserve;
 					tmp.counter[i].k = m_retransmision_data_in_flash->meter_input[i].k;
 					tmp.counter[i].indicator = m_retransmision_data_in_flash->meter_input[i].indicator;
+					tmp.counter[i].cir_break = m_retransmision_data_in_flash->meter_input[i].cir_break;
 				}
 				
-               
+				// Input 4-20mA
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
                     tmp.input_4_20mA[i] = m_retransmision_data_in_flash->input_4_20mA[i];
                 }
+				
+				// Output 4-20mA
+				for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
+                {
+                    tmp.output_4_20mA[i] = m_retransmision_data_in_flash->output_4_20mA[i];
+                }
+				
                 tmp.csq_percent = 0;
                 tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
                 tmp.temperature = m_retransmision_data_in_flash->temp;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
+				
+				// on/off
+				tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
+#ifdef DTG02
+				tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
+				tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
+				tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;
+				tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
+				tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
+				tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
+				tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
+#endif
 				
 				// Modbus
 				for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
@@ -1671,7 +1693,24 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		{
 			memcpy(&wr_data.meter_input[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
 		}
-              
+        
+		// on/off
+		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+#ifdef DTG02
+		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+#endif		
+		// 4-20mA output
+		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
+		{
+			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+		}
+		
         wr_data.timestamp = m_sensor_msq->measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
@@ -1741,6 +1780,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     {
         app_spi_flash_data_t wr_data;
         wr_data.resend_to_server_flag = 0;
+		
+		// Input 4-20mA
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
             wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
@@ -1757,6 +1798,25 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
 		
+		// on/off
+		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+#ifdef DTG02
+		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+#endif
+		
+		// Output 4-20mA
+		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
+		{
+			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+		}
+		
+		// 485
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
 			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
