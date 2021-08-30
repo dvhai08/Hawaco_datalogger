@@ -148,18 +148,18 @@ static void gsm_query_sms_buffer(void)
             || sms[cnt].need_to_send == 2)
         {
             sms[cnt].retry_count++;
-            DEBUG_PRINTF("Send sms in buffer index %d\r\n", cnt);
+            DEBUG_INFO("Send sms in buffer index %d\r\n", cnt);
 
             /* If retry > 3 =>> delete from queue */
             if (sms[cnt].retry_count < 3)
             {
                 sms[cnt].need_to_send = 2;
-                DEBUG_PRINTF("Change gsm state to send sms\r\n");
+                DEBUG_INFO("Change gsm state to send sms\r\n");
                 gsm_change_state(GSM_STATE_SEND_SMS);
             }
             else
             {
-                DEBUG_PRINTF("SMS buffer %u send FAIL %u times. Cancle!\r\n", 
+                DEBUG_INFO("SMS buffer %u send FAIL %u times. Cancle!\r\n", 
                                 cnt, 
                                 sms[cnt].retry_count);
                 sms[cnt].need_to_send = 0;
@@ -632,7 +632,7 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 {
-    //DEBUG_PRINTF("%s\r\n", __FUNCTION__);
+    //DEBUG_INFO("%s\r\n", __FUNCTION__);
     switch (gsm_manager.step)
     {
     case 1:
@@ -644,17 +644,17 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 2: /* Use AT+CMEE=2 to enable result code and use verbose values */
-        DEBUG_PRINTF("Disable AT echo : %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Disable AT echo : %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMEE=2\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 3:
-        DEBUG_PRINTF("Set CMEE report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Set CMEE report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("ATI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 4:
-        DEBUG_PRINTF("Get module info: %s\r\n", resp_buffer);
+        DEBUG_INFO("Get module info: %s\r\n", resp_buffer);
         gsm_hw_send_at_cmd("AT+QURCCFG=\"URCPORT\",\"uart1\"\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
@@ -682,7 +682,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 9:
         DEBUG_INFO("AT CNUM: %s, %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
 										(char*)resp_buffer);
-//        DEBUG_PRINTF("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//        DEBUG_INFO("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
@@ -690,11 +690,11 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 	{
 		uint8_t *imei_buffer = (uint8_t*)gsm_get_module_imei();
         gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
-        DEBUG_PRINTF("Get GSM IMEI: %s\r\n", imei_buffer);
+        DEBUG_INFO("Get GSM IMEI: %s\r\n", imei_buffer);
 		imei_buffer = (uint8_t*)gsm_get_module_imei();
         if (strlen((char*)imei_buffer) < 15)
         {
-            DEBUG_PRINTF("IMEI's invalid!\r\n");
+            DEBUG_INFO("IMEI's invalid!\r\n");
             gsm_change_state(GSM_STATE_RESET); //Khong doc dung IMEI -> reset module GSM!
             return;
         }
@@ -710,7 +710,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 	{
 		uint8_t *imei_buffer = (uint8_t*)gsm_get_sim_imei();
         gsm_utilities_get_imei(resp_buffer, imei_buffer, 16);
-        DEBUG_PRINTF("Get SIM IMSI: %s\r\n", gsm_get_sim_imei());
+        DEBUG_INFO("Get SIM IMSI: %s\r\n", gsm_get_sim_imei());
         if (strlen(gsm_get_sim_imei()) < 15)
         {
             DEBUG_ERROR("SIM's not inserted!\r\n");
@@ -729,19 +729,23 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 12:
     {
-        DEBUG_PRINTF("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
+        DEBUG_INFO("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
+		uint8_t *ccid_buffer = (uint8_t*)gsm_get_sim_ccid();
+        gsm_utilities_get_sim_ccid(resp_buffer, ccid_buffer, 20);
+        DEBUG_INFO("SIM CCID: %s\r\n", ccid_buffer);
+		
         gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "", 3000, 3, gsm_at_cb_power_on_gsm); 
     }
         break;
 
     case 13:
-        DEBUG_PRINTF("CPIN: %s\r\n", (char *)resp_buffer);
+        DEBUG_INFO("CPIN: %s\r\n", (char *)resp_buffer);
         gsm_hw_send_at_cmd("AT+QIDEACT=1\r\n", "OK\r\n", "", 3000, 1, gsm_at_cb_power_on_gsm);
         break;
 #if UNLOCK_BAND == 0        // o lan dau tien active sim, voi module ec200 thi phai active band, ec20 thi ko can
                             // neu ko active thi se ko reg dc vao nha mang
     case 14:
-        DEBUG_PRINTF("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("De-activate PDP: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"nwscanmode\",0\r\n", "OK\r\n", "", 5000, 2, gsm_at_cb_power_on_gsm); // Select mode AUTO
         break;
 #else
@@ -753,15 +757,15 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 #endif
     case 15:
 #if UNLOCK_BAND == 0
-        DEBUG_PRINTF("Network search mode AUTO: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Network search mode AUTO: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 #else
-        DEBUG_PRINTF("Unlock band: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Unlock band: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
 #endif
         gsm_hw_send_at_cmd("AT+CGDCONT=1,\"IP\",\"v-internet\"\r\n", "", "OK\r\n", 1000, 2, gsm_at_cb_power_on_gsm); /** <cid> = 1-24 */
         break;
 
     case 16:
-        DEBUG_PRINTF("Define PDP context: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Define PDP context: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         //			gsm_hw_send_at_cmd("AT+QIACT=1\r\n", "OK\r\n", "", 5000, 5, gsm_at_cb_power_on_gsm);	/** Bật QIACT lỗi gửi tin với 1 số SIM dùng gói cước trả sau! */
         gsm_hw_send_at_cmd("AT+CSCS=\"GSM\"\r\n", "OK\r\n", "", 1000, 1, gsm_at_cb_power_on_gsm);
         break;
@@ -772,12 +776,12 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 18:
-        DEBUG_PRINTF("Network registration status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_INFO("Network registration status: %s, data %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", (char*)resp_buffer);
         gsm_hw_send_at_cmd("AT+CGREG?\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 19:
-        DEBUG_PRINTF("Query network status: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +CGREG: 2,1,"3279","487BD01",7 */
+        DEBUG_INFO("Query network status: %s, data %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", (char*)resp_buffer); /** +CGREG: 2,1,"3279","487BD01",7 */
         if (event == GSM_EVENT_OK)
         {
             bool retval;
@@ -793,7 +797,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 20:
-        DEBUG_PRINTF("Query network operator: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +COPS: 0,0,"Viettel Viettel",7 */
+        DEBUG_INFO("Query network operator: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]"); /** +COPS: 0,0,"Viettel Viettel",7 */
         if (event == GSM_EVENT_OK)
         {
             gsm_utilities_get_network_operator(resp_buffer, 
@@ -813,14 +817,14 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 21:
     {
-//        DEBUG_PRINTF("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+//        DEBUG_INFO("Select QSCLK: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CCLK?\r\n", "+CCLK:", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
     break;
 
     case 22:
     {
-        DEBUG_PRINTF("Query CCLK: %s,%s\r\n",
+        DEBUG_INFO("Query CCLK: %s,%s\r\n",
                      (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                      (char *)resp_buffer);
         rtc_date_time_t time;
@@ -838,7 +842,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 23:
         if (event != GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("GSM: init fail, reset modem...\r\n");
+            DEBUG_INFO("GSM: init fail, reset modem...\r\n");
             gsm_manager.step = 0;
             gsm_change_state(GSM_STATE_RESET);
             return;
@@ -847,7 +851,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 		uint8_t csq;
         gsm_set_csq(0);
         gsm_utilities_get_signal_strength_from_buffer(resp_buffer, &csq);
-        DEBUG_PRINTF("CSQ: %d\r\n", csq);
+        DEBUG_INFO("CSQ: %d\r\n", csq);
 
         if (csq == 99)
         {
@@ -871,13 +875,13 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 #if CUSD_ENABLE
             if (event != GSM_EVENT_OK)
             {
-                DEBUG_PRINTF("GSM: CUSD query failed\r\n");
+                DEBUG_INFO("GSM: CUSD query failed\r\n");
             }
             else
             {
                 char *p = strstr((char*)resp_buffer, "+CUSD: ");
                 p += 5;
-                DEBUG_PRINTF("CUSD %s\r\n", p);
+                DEBUG_INFO("CUSD %s\r\n", p);
                 //Delayms(5000);
             }
 #endif
@@ -909,12 +913,12 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-//            DEBUG_PRINTF("Exit sleep!");
+//            DEBUG_INFO("Exit sleep!");
             gsm_change_state(GSM_STATE_OK);
         }
         else
         {
-//            DEBUG_PRINTF("Khong phan hoi lenh, reset module...");
+//            DEBUG_INFO("Khong phan hoi lenh, reset module...");
             gsm_change_state(GSM_STATE_RESET);
         }
         break;
@@ -951,7 +955,7 @@ void gsm_hard_reset(void)
 
     case 2:
         GSM_PWR_RESET(0);
-        DEBUG_PRINTF("Gsm power on\r\n");
+        DEBUG_INFO("Gsm power on\r\n");
         GSM_PWR_EN(1);
         step++;
         break;
@@ -1001,7 +1005,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
     gsm_sms_msg_t *sms = gsm_get_sms_memory_buffer();
     uint32_t max_sms = gsm_get_max_sms_memory_buffer();
 
-//    DEBUG_PRINTF("Debug SEND SMS : %u %u,%s\r\n", gsm_manager.step, event, resp_buffer);
+//    DEBUG_INFO("Debug SEND SMS : %u %u,%s\r\n", gsm_manager.step, event, resp_buffer);
 
     switch (gsm_manager.step)
     {
@@ -1038,7 +1042,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
                                         30000, 
                                         1, 
                                         gsm_at_cb_send_sms);
-//                    DEBUG_PRINTF("Sending sms in buffer %u\r\n", count);
+//                    DEBUG_INFO("Sending sms in buffer %u\r\n", count);
                     break;
                 }
             }
@@ -1061,7 +1065,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            DEBUG_PRINTF("SMS : Send sms success\r\n");
+            DEBUG_INFO("SMS : Send sms success\r\n");
 
             for (count = 0; count < max_sms; count++)
             {
@@ -1091,7 +1095,7 @@ void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer)
         return;
 
     default:
-        DEBUG_PRINTF("Unknown outgoing sms step %d\r\n", gsm_manager.step);
+        DEBUG_INFO("Unknown outgoing sms step %d\r\n", gsm_manager.step);
         gsm_change_state(GSM_STATE_OK);
         break;
     }
@@ -1253,10 +1257,16 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
 #else
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
+	// K : he so chia cua dong ho nuoc, input 1
+	// Offset: Gia tri offset cua dong ho nuoc
+	// Mode : che do hoat dong
+	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0+1, msg->counter[0].k);
+	//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
+	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0+1, eeprom_cfg->meter_mode[0]);
 #endif
 //    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
 //    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
-       
+	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
 #ifdef DTG02
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
@@ -1289,9 +1299,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
 		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
 	}
-	
-	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
-	
+		
     // Build input 4-20ma
 	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
 	{
@@ -1427,6 +1435,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
     // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":%s,", gsm_get_sim_imei());
+	total_length += sprintf((char *)(ptr + total_length), "\"CCID\":%s,", gsm_get_sim_ccid());
     
     // Uptime
     total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
@@ -1517,7 +1526,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_DATA:
     {
         bool build_msg = false;
-        DEBUG_PRINTF("Get http post data from queue\r\n");
+        DEBUG_INFO("Get http post data from queue\r\n");
         m_sensor_msq = measure_input_get_data_in_queue();
         if (!m_sensor_msq)
         {
@@ -1618,7 +1627,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 ((gsm_http_data_t *)data)->data_length = strlen(m_last_http_msg);
 #if GSM_HTTP_CUSTOM_HEADER
                 ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
-                DEBUG_PRINTF("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
+                DEBUG_INFO("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
 #else
                 ((gsm_http_data_t *)data)->header = (uint8_t *)"";
 #endif
@@ -1629,7 +1638,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_GET_EVENT_FINISH_SUCCESS:
     {
-        DEBUG_PRINTF("HTTP get : event success\r\n");
+        DEBUG_INFO("HTTP get : event success\r\n");
         app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
         ctx->status.disconnect_timeout_s = 0;
         if (ctx->status.enter_ota_update            // Neu dang trong tien trinh ota update vaf download xong file =>> turn off gsm
@@ -1673,7 +1682,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_POST_EVENT_FINISH_SUCCESS:
     {
-        DEBUG_PRINTF("HTTP post : event success\r\n");
+        DEBUG_INFO("HTTP post : event success\r\n");
         ctx->status.disconnect_timeout_s = 0;
         if (m_last_http_msg)
         {
@@ -1764,7 +1773,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         else
         {
             gsm_change_state(GSM_STATE_OK);
-            DEBUG_PRINTF("No more data need to re-send to server\r\n");
+            DEBUG_INFO("No more data need to re-send to server\r\n");
             m_retransmision_data_in_flash = NULL;
         }
 		

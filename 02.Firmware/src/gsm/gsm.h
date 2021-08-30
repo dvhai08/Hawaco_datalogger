@@ -235,6 +235,12 @@ void gsm_uart_tx_complete_callback(bool status);
 char* gsm_get_sim_imei(void);
 
 /**
+ * @brief		Get SIM CCID
+ * @retval		SIM CCID pointer
+ */
+char *gsm_get_sim_ccid(void);
+
+/**
  * @brief		Get GSM IMEI
  * @retval		GSM IMEI
  */

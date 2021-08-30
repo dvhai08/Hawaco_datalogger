@@ -52,6 +52,40 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t *result, uint8_t max_l
     result[tmp_count] = 0;
 }
 
+void gsm_utilities_get_sim_ccid(uint8_t *imei_buffer, uint8_t *result, uint8_t max_lenth)
+{
+	/* +QCCID: 8984012012120000151F\r\nOK\r\n*/
+	char *p = strstr((char*)imei_buffer, "+QCCID: ");
+	if (p == NULL)
+	{
+		*result = 0;
+		return;
+	}
+	p += strlen("+QCCID: ");
+	
+    uint8_t count = 0;
+    uint8_t tmp_count = 0;
+
+    for (count = 0; count < strlen((char *)p); count++)
+    {
+        if (p[count] >= '0' && p[count] <= '9')
+        {
+            result[tmp_count++] = p[count];
+        }
+		else
+		{
+			break;
+		}
+        if (tmp_count >= max_lenth)
+        {
+            result[tmp_count-1] = 0;
+            break;
+        }
+    }
+
+    result[tmp_count] = 0;
+}
+
 /*
 +CUSD: 1,"84353078550. TKG: 0d, dung den 0h ngay 18/02/2020. Bam chon dang ky:1. 15K=3GB/3ngay2. 30K=7GB/7ngayHoac bam goi *098#",15
 OK

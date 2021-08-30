@@ -196,5 +196,14 @@ void gsm_utilities_parse_file_handle(char *buffer, int32_t *file_handle);
  */ 
 void gsm_utilities_get_qfile_content(char *buffer, uint8_t **content, uint32_t *size);
 
+/**
+ * @brief               Get SIM CCID
+ * @param[in]           imei_buffer raw buffer from gsm module
+ * @param[out]          result result output
+ * @param[in]           max_lenth Max result length
+ * @note                Maximum imei length is 15
+ */ 
+void gsm_utilities_get_sim_ccid(uint8_t *imei_buffer, uint8_t *result, uint8_t max_lenth);
+
 #endif /* GSM_UTILITIES_H */
 

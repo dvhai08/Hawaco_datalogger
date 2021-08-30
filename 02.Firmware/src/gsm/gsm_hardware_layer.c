@@ -27,6 +27,7 @@ static volatile bool m_new_uart_data = false;
 static char m_gsm_imei[16];
 static char m_sim_imei[16];
 static char m_nw_operator[32];
+static char m_sim_ccid[21];
 
 void gsm_init_hw(void)
 {
@@ -305,6 +306,10 @@ char* gsm_get_sim_imei(void)
 	return m_sim_imei;
 }
 
+char *gsm_get_sim_ccid(void)
+{
+	return m_sim_ccid;
+}
 
 char* gsm_get_module_imei(void)
 {
