@@ -21,7 +21,7 @@
 #include "control_output.h"
 #include "app_bkup.h"
 #include "app_eeprom.h"
-#include "dac.h"
+//#include "dac.h"
 #include "app_sync.h"
 #include "adc.h"
 #include "tim.h"

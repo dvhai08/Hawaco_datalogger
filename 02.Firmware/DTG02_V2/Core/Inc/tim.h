@@ -38,7 +38,26 @@ extern "C" {
 void MX_TIM2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/**
+ * @brief		Stop pwm
+ */
+void tim_pwm_stop(void);
 
+/**
+ * @brief		Start pwm
+ */
+void tim_pwm_start(void);
+
+/**
+ * @brief		Set pwm percent
+ */
+void tim_pwm_output_percent(uint32_t thoughsand);
+
+/**
+ * @brief		Change pwm freq
+ * @param[in]   freq : Frequency
+ */
+void tim_pwm_change_freq(uint32_t freq);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

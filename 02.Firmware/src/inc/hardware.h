@@ -3,12 +3,24 @@
 
 #if 1
 #include "main.h"
+#ifndef DTG02V2
 #define GSM_PWR_EN(x)			{	if (x) \
 										LL_GPIO_SetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
 									else	\
 										LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
 								}
-
+#else
+#define GSM_PWR_EN(x)			{	if (x) \
+									{	\
+										LL_GPIO_SetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
+										LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+									}	\
+									else	\
+									{	\
+										LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);	\
+									}	\
+								}
+#endif
 #define GSM_PWR_RESET(x)		{	if (x) \
 										LL_GPIO_SetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);	\
 									else	\
@@ -20,6 +32,8 @@
 									else	\
 										LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);	\
 								}		
+
+#define GSM_IS_PWR_EN()			LL_GPIO_IsOutputPinSet(GSM_EN_GPIO_Port, GSM_EN_Pin) ? 1 : 0
 
 #define GSM_UART				0
 #define RS485_UART				1
@@ -104,13 +118,21 @@
 										}
 
 #define INPUT_POWER_4_20_MA_IS_ENABLE()       (LL_GPIO_IsOutputPinSet(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin) ? 0 : 1)
-                                        
+         
+#ifndef DTG02V2										
 #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 											else	\
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 										}	
-
+#else
+#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x && (GSM_IS_PWR_EN() == 0)) \
+												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+											else if (x == 0)	\
+												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+										}	
+#endif
+										
 #define RS485_POWER_EN(x)				{	if (x) \
 												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
 											else	\
@@ -155,7 +177,27 @@
 //#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
 //#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
 //#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
-#else
+#endif
+
+#ifdef DTG02V2
+#define ADC_CHANNEL_DMA_COUNT				9
+//#define ADC_VREF							3300
+
+#define V_INPUT_3_4_20MA_CHANNEL_INDEX		5
+#define VIN_24V_CHANNEL_INDEX				0
+#define V_INPUT_2_4_20MA_CHANNEL_INDEX		1
+#define V_INPUT_1_4_20MA_CHANNEL_INDEX		2
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		3
+#define VBAT_CHANNEL_INDEX					6
+#define V_NTC_TEMP_CHANNEL_INDEX				7
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
+#define V_REF_CHANNEL_INDEX                 8
+//#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
+//#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
+#endif
+
+#ifdef DTG01
 #define ADC_CHANNEL_DMA_COUNT				6
 //#define ADC_VREF							3300
 

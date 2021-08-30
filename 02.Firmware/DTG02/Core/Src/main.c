@@ -69,11 +69,12 @@
 #define TEST_BACKUP_REGISTER                            0
 #define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
+#define GSM_ENABLE										1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define GSM_ENABLE					1
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

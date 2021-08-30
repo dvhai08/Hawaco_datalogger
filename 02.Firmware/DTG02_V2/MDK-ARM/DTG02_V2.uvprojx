@@ -313,7 +313,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>1</Optim>
+            <Optim>2</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32L071xx,RTC_BACKUP_VALID_DATA=0x12345613,DEBUG_MODE,UMM_MALLOC_CFG_HEAP_SIZE=6144,USER_VECT_TAB_ADDRESS,WDT_ENABLE,DTG02V2,BUFFER_SIZE_UP=512,USE_FULL_LL_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\app_bkup;..\..\src\app_cli;..\..\src\app_debug;..\..\src\app_eeprom;..\..\src\app_md5;..\..\src\app_queue;..\..\src\app_rtc;..\..\src\app_spi_flash;..\..\src\app_sync;..\..\src\fault;..\..\src\gsm;..\..\src\inc;..\..\src\Jig;..\..\src\lowpass_filter;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\measurement;..\..\src\modbus_master;..\..\src\ota_update;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\sys_ctx;..\..\src\umm_malloc-1.0.1;..\..\src\utilities;..\..\src\version_control;..\..\src\umm_malloc-1.0.1\includes;..\..\src\server_msg;..\..\src\umm_malloc-1.0.1\src</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc;../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32L0xx/Include;../Drivers/CMSIS/Include;..\..\src\app_bkup;..\..\src\app_cli;..\..\src\app_debug;..\..\src\app_eeprom;..\..\src\app_md5;..\..\src\app_queue;..\..\src\app_rtc;..\..\src\app_spi_flash;..\..\src\app_sync;..\..\src\fault;..\..\src\gsm;..\..\src\inc;..\..\src\Jig;..\..\src\lowpass_filter;..\..\src\lwrb\lwrb\src\include\lwrb;..\..\src\measurement;..\..\src\modbus_master;..\..\src\ota_update;..\..\src\SEGGER_RTT_V698b\RTT;..\..\src\sys_ctx;..\..\src\umm_malloc-1.0.1;..\..\src\utilities;..\..\src\version_control;..\..\src\umm_malloc-1.0.1\includes;..\..\src\server_msg;..\..\src\umm_malloc-1.0.1\src;..\..\src\app_spi_flash</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1654,6 +1654,36 @@
               <FileName>jig.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\..\src\Jig\jig.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>app_spi_flash</GroupName>
+          <Files>
+            <File>
+              <FileName>app_spi_flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\app_spi_flash\app_spi_flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_spi_flash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\app_spi_flash\app_spi_flash.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>sys_ctx</GroupName>
+          <Files>
+            <File>
+              <FileName>sys_ctx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\src\sys_ctx\sys_ctx.c</FilePath>
+            </File>
+            <File>
+              <FileName>sys_ctx.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\..\src\sys_ctx\sys_ctx.h</FilePath>
             </File>
           </Files>
         </Group>

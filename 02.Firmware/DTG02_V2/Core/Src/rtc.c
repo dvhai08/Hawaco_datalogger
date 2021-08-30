@@ -21,7 +21,8 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
-
+#include "app_rtc.h"
+#include "app_debug.h"
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -56,7 +57,19 @@ void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
-
+    HAL_RTCEx_DeactivateTamper(&hrtc, RTC_TAMPER_1);
+    __HAL_RTC_TAMPER_CLEAR_FLAG(&hrtc, RTC_FLAG_TAMP1F);
+    rtc_date_time_t time;
+    if (app_rtc_get_time(&time))
+    {
+//        HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+//        HAL_NVIC_EnableIRQ(RTC_IRQn);
+        return;
+    }
+    else
+    {
+        DEBUG_WARN("Reinit RTC\r\n");
+    }
   /* USER CODE END Check_RTC_BKUP */
 
   /** Initialize RTC and set the Time and Date
@@ -81,12 +94,13 @@ void MX_RTC_Init(void)
   }
   /** Enable the WakeUp
   */
-  if (HAL_RTCEx_SetWakeUpTimer(&hrtc, 18, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+  if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 18, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN RTC_Init 2 */
-
+//    HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+//    HAL_NVIC_EnableIRQ(RTC_IRQn);
   /* USER CODE END RTC_Init 2 */
 
 }
@@ -97,10 +111,15 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
   if(rtcHandle->Instance==RTC)
   {
   /* USER CODE BEGIN RTC_MspInit 0 */
-
+    __HAL_RCC_PWR_CLK_ENABLE();
+    HAL_PWR_EnableBkUpAccess();
   /* USER CODE END RTC_MspInit 0 */
     /* RTC clock enable */
     __HAL_RCC_RTC_ENABLE();
+
+    /* RTC interrupt Init */
+    HAL_NVIC_SetPriority(RTC_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspInit 1 */
 
   /* USER CODE END RTC_MspInit 1 */
@@ -117,6 +136,9 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
   /* USER CODE END RTC_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_RTC_DISABLE();
+
+    /* RTC interrupt Deinit */
+    HAL_NVIC_DisableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspDeInit 1 */
 
   /* USER CODE END RTC_MspDeInit 1 */

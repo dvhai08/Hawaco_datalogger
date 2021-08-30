@@ -31,7 +31,29 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "app_eeprom.h"
+#include "measure_input.h"
+#include "lpf.h"
+#include "stdbool.h"
+#include "app_cli.h"
+#include "app_wdt.h"
+#include "app_sync.h"
+#include "hardware_manager.h"
+#include "app_bkup.h"
+#include "control_output.h"
+#include "gsm.h"
+#include "hardware.h"
+#include "modbus_master.h"
+#include "string.h" 
+#include "sys_ctx.h"
+#include "app_rtc.h"
+#include "app_debug.h"
+#include "app_spi_flash.h"
+#include "ota_update.h"
+#include "flash_if.h"
+#include "version_control.h"
+#include "utilities.h"
+#include "jig.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,6 +63,18 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            28000    // ( ~16s)
+#define DEBUG_LOW_POWER                                 1
+#define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
+#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
+#define TEST_OUTPUT_4_20MA                              0
+#define TEST_RS485                                      0
+#define TEST_INPUT_4_20_MA                              0
+#define MAX_DISCONNECTED_TIMEOUT_S                      60
+#define TEST_BACKUP_REGISTER                            0
+#define TEST_DEVICE_NEVER_SLEEP							0
+#define TEST_CRC32										0
+#define GSM_ENABLE										1
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,7 +96,16 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/* memory for ummalloc */
+uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 
+static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
+static void task_feed_wdt(void *arg);
+static void info_task(void *arg);
+volatile uint32_t led_blink_delay = 0;
+void sys_config_low_power_mode(void);
+extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
+volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END 0 */
 
 /**
@@ -72,7 +115,11 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	hardware_manager_get_reset_reason();
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+	{
+		recheck_input_pulse[i].tick = 0;
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -81,6 +128,19 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+__enable_irq();
+	MX_CRC_Init();
+	app_eeprom_init();
+	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    sys_ctx_t *system = sys_ctx();
+#if TEST_OUTPUT_4_20MA || TEST_RS485
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
+//#if TEST_INPUT_4_20_MA
+//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+//    system->status.is_enter_test_mode = 1;
+//#endif
 
   /* USER CODE END Init */
 
@@ -103,7 +163,54 @@ int main(void)
   MX_TIM2_Init();
   MX_CRC_Init();
   /* USER CODE BEGIN 2 */
+//	HAL_ADC
+//    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+    ENABLE_INPUT_4_20MA_POWER(0);
+    RS485_POWER_EN(0);
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        LED1(1);
+        sys_delay_ms(20);
+        LED1(0);
+        sys_delay_ms(20);
+    }
+    LED1(0);
+        
+//	DEBUG_RAW(RTT_CTRL_CLEAR);
+    gpio_config_input_as_wakeup_source();
+    system->peripheral_running.name.flash_running = 1;
+    system->peripheral_running.name.rs485_running = 1;
+	app_cli_start();
+	app_bkup_init();
+    app_spi_flash_initialize();
+	measure_input_initialize();
+	control_ouput_init();
+//	adc_start();
+	gsm_init_hw();
+	app_sync_config_t config;
+	config.get_ms = sys_get_ms;
+	config.polling_interval_ms = 1;
+	app_sync_sytem_init(&config);
+	
+	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 
+#if TEST_OUTPUT_4_20MA
+	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+	eeprom_cfg->output_4_20ma = 10;
+	eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+	control_output_dac_enable(1000000);
+    system->status.is_enter_test_mode = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+#endif     
+#if TEST_INPUT_4_20_MA
+    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+    system->status.is_enter_test_mode = 1;
+#endif
+//    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
+    DEBUG_INFO("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
+	jig_start();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,6 +220,154 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  #if GSM_ENABLE
+	gsm_hw_layer_run();
+#endif
+      
+#if TEST_POWER_ALWAYS_TURN_OFF_GSM
+    if (!gsm_data_layer_is_module_sleeping())
+    {
+        gsm_change_state(GSM_STATE_SLEEP);
+    }
+#endif
+	control_ouput_task();
+	measure_input_task();
+	app_cli_poll();
+	app_sync_polling_task();
+	if (led_blink_delay)
+	{
+		LED1(1);
+#ifdef DTG01
+		LED2(1);
+#endif
+	}
+	else
+	{
+		LED1(0);
+#ifdef DTG01
+		LED2(0);
+#endif
+	}	
+	if (system->status.is_enter_test_mode)
+	{
+		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
+		if (eeprom_cfg->output_4_20ma < 1.0f)
+			eeprom_cfg->output_4_20ma = 10;
+		eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
+		control_output_dac_enable(1000000);
+		eeprom_cfg->io_enable.name.rs485_en = 1;
+		ENABLE_INPUT_4_20MA_POWER(1);
+        RS485_POWER_EN(1);
+        usart_lpusart_485_control(1);
+	}
+    
+    if (!eeprom_cfg->io_enable.name.rs485_en
+        && system->status.is_enter_test_mode == 0
+		&& system->status.timeout_wait_message_sync_data == 0)
+    {
+        system->peripheral_running.name.rs485_running = 0;
+        usart_lpusart_485_control(0);
+    }
+
+    
+#ifdef DTG01
+    if (!eeprom_cfg->io_enable.name.input_4_20ma_enable)
+#else
+	    if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_1_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_2_enable == 0
+			 && eeprom_cfg->io_enable.name.input_4_20ma_3_enable == 0)
+#endif
+    {
+        ENABLE_INPUT_4_20MA_POWER(0);
+        system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+        measure_input_turn_on_in_4_20ma_power = 0;
+    }
+    
+    if (gsm_data_layer_is_module_sleeping())
+    {
+        system->peripheral_running.name.gsm_running = 0;
+        if (system->peripheral_running.name.flash_running)
+        {
+            app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+        }
+        
+        usart1_control(false);
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(0);
+        GSM_PWR_KEY(0);
+    }
+    else
+    {
+        system->peripheral_running.name.gsm_running = 1;
+    }
+        
+    if (ota_update_is_running())
+    {
+        system->status.disconnect_timeout_s = 0;
+    }
+    
+	if (system->status.timeout_wait_message_sync_data)
+	{
+		RS485_POWER_EN(1);
+		usart_lpusart_485_control(1);
+		if (jig_found_cmd_sync_data_to_host())
+		{
+			// Step 1 : Wakeup spi
+			if (!system->peripheral_running.name.flash_running)
+			{
+				spi_init();
+				app_spi_flash_wakeup();
+				system->peripheral_running.name.flash_running = 1;
+			}
+		
+			app_spi_flash_dump_to_485();
+			
+			// Step 2 : Shutdown spi
+			app_spi_flash_shutdown();
+            spi_deinit();
+            system->peripheral_running.name.flash_running = 0;
+		}
+	}
+	else
+	{
+		usart_lpusart_485_control(0);
+	}
+	
+	    
+    if (system->peripheral_running.value == 0)
+    {
+        adc_stop();
+        if (system->status.is_enter_test_mode == 0
+			&& recheck_input_pulse[0].tick == 0
+			&& recheck_input_pulse[1].tick == 0
+			&& system->status.timeout_wait_message_sync_data == 0)
+        {
+			jig_release_memory();
+			
+			#if TEST_DEVICE_NEVER_SLEEP == 0
+			{
+				RS485_POWER_EN(0);
+				ENABLE_INPUT_4_20MA_POWER(0);
+				system->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
+				measure_input_turn_on_in_4_20ma_power = 0;
+				LED1(0);
+#ifdef DTG01
+				LED2(0);
+#endif
+				// turn off 4.2V
+				#warning "Please turn off 4.2V and gsm power "
+				sys_config_low_power_mode();
+			}
+			#endif
+        }
+    }
+#ifdef WDT_ENABLE
+    LL_IWDG_ReloadCounter(IWDG);
+#endif
+	
   }
   /* USER CODE END 3 */
 }
@@ -176,7 +431,246 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+uint32_t sys_get_ms()
+{
+	return uwTick;
+}
 
+void sys_delay_ms(uint32_t ms)
+{
+	uint32_t current_tick = HAL_GetTick();
+	
+	while (1)
+	{
+#ifdef WDT_ENABLE
+        LL_IWDG_ReloadCounter(IWDG);
+#endif
+//		__WFI();
+		if (HAL_GetTick() - current_tick >= (uint32_t)ms)
+		{
+			break;
+		}
+	}
+}
+
+static void task_feed_wdt(void *arg)
+{
+#ifdef WDT_ENABLE
+	LL_IWDG_ReloadCounter(IWDG);
+#endif
+}
+
+static void info_task(void *arg)
+{	
+	static uint32_t i = 0;
+    sys_ctx_t *system = sys_ctx();
+    
+	if (system->status.is_enter_test_mode)
+	{
+#if TEST_RS485
+		usart_lpusart_485_control(1);
+		sys_delay_ms(100);
+		uint8_t result;
+		uint16_t input_result[8];
+		
+		modbus_master_reset(1000);
+		uint32_t before = sys_get_ms();
+		 // read input registers function test
+		 // slave address 0x01, two consecutive addresses are register 0x2
+		result = modbus_master_read_input_register(8, 106, 8);
+		if (result == 0x00)
+		{
+			DEBUG_INFO("Modbus read success in %ums\r\n", sys_get_ms() - before);
+		
+			for (uint32_t i = 0; i < 8; i++)
+			{
+				input_result[i] = modbus_master_get_response_buffer(i);
+				DEBUG_RAW("(30%u-%u),", 106 + i, input_result[i]);
+			}
+			DEBUG_RAW("\r\n");
+		}
+		else
+		{
+			DEBUG_ERROR("Modbus failed\r\n");
+		}
+		usart_lpusart_485_control(0);
+#endif
+        i = 5;
+	}
+    if (i++ > 4)
+	{
+		i = 0;
+		adc_input_value_t *adc = adc_get_input_result();
+        rtc_date_time_t time;
+        app_rtc_get_time(&time);
+        char tmp[48];
+        char *p = tmp;
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            p += sprintf(p, "(%.2f),", adc->in_4_20ma_in[i]);
+        }
+        for (uint32_t i = 0; i < 4; i++)
+        {
+            p += sprintf(p, "IN%u-%u,", i+1, measure_input_current_data()->input_on_off[i]);
+        }
+        
+		if (gsm_data_layer_is_module_sleeping())
+		{
+			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+						adc->vdda_mv,
+						adc->bat_mv, adc->bat_percent, 
+						adc->vin_24,
+						tmp,
+						adc->temp);
+		}
+#if TEST_CRC32
+		uint32_t crc;
+		static const char *feed_str0 ="12345";
+		static const char *feed_str1 ="12349876";
+		crc = utilities_calculate_crc32((uint8_t*)feed_str0, strlen(feed_str0));
+		DEBUG_INFO("CRC0 0x%08X\r\n", crc);
+		crc = utilities_calculate_crc32((uint8_t*)feed_str1, strlen(feed_str1));
+		DEBUG_INFO("CRC1 0x%08X\r\n", crc);
+#endif
+		static sys_ctx_error_critical_t m_last_critical_err;
+		sys_ctx_t *ctx = sys_ctx();
+		app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+		
+		// If rs485 was not enable =>> clear rs485 error code
+		if (!eeprom_cfg->io_enable.name.rs485_en)
+		{
+			ctx->error_not_critical.detail.rs485_err = 0;
+		}
+		if (m_last_critical_err.value != ctx->error_critical.value)
+		{
+			m_last_critical_err.value = ctx->error_critical.value;
+			
+			if (!eeprom_cfg->io_enable.name.warning
+				&& (strlen((char*)eeprom_cfg->phone) > 8)
+				&& m_last_critical_err.value)
+			{
+				char msg[156];
+				char *p = msg;
+				rtc_date_time_t time;
+				app_rtc_get_time(&time);
+				
+				p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] ",
+								time.year + 2000,
+								time.month,
+								time.day,
+								time.hour,
+								time.minute);
+				if (m_last_critical_err.detail.sensor_out_of_range)
+				{
+					p += sprintf(p, "%s", "He thong bi loi luu luong");
+				}
+				gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			}
+		}			
+	}
+}
+
+void sys_turn_on_led(uint32_t delay_ms)
+{
+    led_blink_delay = delay_ms;
+}
+
+static bool m_wakeup_timer_run = false;
+void sys_config_low_power_mode(void)
+{
+    // estimate RTC wakeup time
+    if (m_wakeup_timer_run == false)
+    {
+        sys_ctx_t *ctx = sys_ctx();
+        
+#if DEBUG_LOW_POWER
+        __DBGMCU_CLK_ENABLE() ; // (RCC->APB2ENR |= (RCC_APB2ENR_DBGMCUEN))
+        SET_BIT(DBGMCU->CR, DBGMCU_CR_DBG_STOP);        // Enable debug stop mode
+#endif
+        
+#ifdef WDT_ENABLE
+        LL_IWDG_ReloadCounter(IWDG);
+#endif
+        
+        uint32_t counter_before_sleep = app_rtc_get_counter();
+		
+        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
+        HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+        {
+            Error_Handler();
+        }
+        __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+        
+        /* Disable GPIOs clock */
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOA);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOC);
+        LL_IOP_GRP1_DisableClock(LL_IOP_GRP1_PERIPH_GPIOH);
+        
+        // Suspend tick
+        SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+        
+//          GPIO_InitTypeDef GPIO_InitStructure;
+        __HAL_RCC_PWR_CLK_ENABLE();
+        
+        /* Enable the Ultra Low Power mode */
+        SET_BIT(PWR->CR, PWR_CR_ULP);
+
+        /* Enable the fast wake up from Ultra low power mode */
+        SET_BIT(PWR->CR, PWR_CR_FWU);
+        
+        /* Select MSI as system clock source after Wake Up from Stop mode */
+        __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+
+          /* Enter Stop Mode */
+        HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
+        
+        __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+        
+#if 1   
+        /* Enable GPIOs clock */
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOB);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOC);
+        LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOH);
+#endif        
+        uint32_t counter_after_sleep = app_rtc_get_counter();
+        uint32_t diff = counter_after_sleep-counter_before_sleep;
+        uwTick += diff*1000;
+        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
+                
+//        ctx->status.sleep_time_s += diff;
+        HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+        m_wakeup_timer_run = false;
+        DEBUG_VERBOSE("Wakeup\r\n");
+        
+        // Resume tick
+        SysTick->CTRL  |= SysTick_CTRL_TICKINT_Msk;
+        
+        SystemClock_Config();
+		LED1(1);
+#ifdef DTG01
+		LED2(1);
+#endif
+		sys_delay_ms(5);
+
+#ifdef WDT_ENABLE
+        LL_IWDG_ReloadCounter(IWDG);
+#endif
+    }
+    else
+    {
+        DEBUG_WARN("RTC timer still running\r\n");
+    }
+}
+
+void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)
+{
+    m_wakeup_timer_run = false;
+    HAL_RTCEx_DeactivateWakeUpTimer(hrtc);
+    __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+}
 /* USER CODE END 4 */
 
 /**
@@ -187,7 +681,8 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
+	__disable_irq();
+	NVIC_SystemReset();
   while (1)
   {
   }

@@ -39,7 +39,6 @@
         * EXTI
         * Free pins are configured automatically as Analog (this feature is enabled through
         * the Code Generation settings)
-     PA11   ------> SPI1_MISO
 */
 void MX_GPIO_Init(void)
 {
@@ -61,10 +60,13 @@ void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);
 
   /**/
+  LL_GPIO_ResetOutputPin(PULSE_PWM2_GPIO_Port, PULSE_PWM2_Pin);
+
+  /**/
   LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(GSM_ENA15_GPIO_Port, GSM_ENA15_Pin);
+  LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);
@@ -92,6 +94,9 @@ void MX_GPIO_Init(void)
 
   /**/
   LL_GPIO_ResetOutputPin(GSM_RESET_GPIO_Port, GSM_RESET_Pin);
+
+  /**/
+  LL_GPIO_SetOutputPin(EXT_FLASH_CS_GPIO_Port, EXT_FLASH_CS_Pin);
 
   /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
@@ -156,10 +161,12 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(OPTOIN3_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_12;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pin = EXT_FLASH_CS_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  LL_GPIO_Init(EXT_FLASH_CS_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = GSM_EN_Pin;
@@ -176,10 +183,12 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(PULSE_DIR1_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = LL_GPIO_PIN_8;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pin = PULSE_PWM2_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  LL_GPIO_Init(PULSE_PWM2_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = PULSE_DIR2_Pin;
@@ -196,13 +205,10 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(GSM_PWR_KEY_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = EXT_FLASH_MISO_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_11;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  GPIO_InitStruct.Alternate = LL_GPIO_AF_0;
-  LL_GPIO_Init(EXT_FLASH_MISO_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_12;
@@ -223,12 +229,12 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = GSM_ENA15_Pin;
+  GPIO_InitStruct.Pin = SYS_4V2_EN_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(GSM_ENA15_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(SYS_4V2_EN_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = TRANS_OUT2_Pin;

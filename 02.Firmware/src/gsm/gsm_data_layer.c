@@ -33,10 +33,9 @@
 #include "spi.h"
 #include "umm_malloc_cfg.h"
 
-#ifdef STM32L083xx
 #include "usart.h"
 #include "app_rtc.h"
-#endif
+
 
 #define UNLOCK_BAND     1
 #define CUSD_ENABLE     0
@@ -1253,11 +1252,15 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     uint32_t temp_counter;
 
     // Build ID, phone and id
-#if define (DTG02)
+#ifdef DTG02
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
-#else
+#endif
+	
+#ifdef DTG02V2
 	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V2-%s\",", gsm_get_module_imei());
-#else
+#endif
+	
+#ifdef DTG01
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 	// K : he so chia cua dong ho nuoc, input 1
 	// Offset: Gia tri offset cua dong ho nuoc
@@ -1266,6 +1269,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
 	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0+1, eeprom_cfg->meter_mode[0]);
 #endif
+
 //    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
 //    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
 	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
@@ -1569,7 +1573,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 				
 				// on/off
 				tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
-#if define (DTG02) || define (DTG02)
+#if defined (DTG02) || defined (DTG02)
 				tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
 				tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
 				tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;

@@ -38,7 +38,23 @@ extern "C" {
 void MX_CRC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+/**
+ * @brief		Reset and start CRC32 again
+ */
+void crc32_restart(void);
 
+/**
+ * @brief		Stop CRC32
+ */
+void crc32_stop(void);
+
+/**
+ * @brief		Estimate crc32 value
+ * @param[in]	data CRC32 data
+ * @length		length Data length
+ * @retval		CRC32 value
+ */
+uint32_t crc32_calculate(uint8_t *data, uint32_t length);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

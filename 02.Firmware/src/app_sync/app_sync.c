@@ -100,7 +100,7 @@ bool app_sync_sytem_init(app_sync_config_t *config)
         return false;
     }
     
-    memcpy(&m_config, config, sizeof(m_config));
+    memcpy((void*)&m_config, config, sizeof(m_config));
 
     return true;
 }
