@@ -91,7 +91,7 @@ void jig_start(void)
 				{
 					jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
 					jig_print("Vin24v: %u\r\n", adc_result->vin_24);
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 					for (uint32_t i = 0; i < 4; i++)
 #else
 					for (uint32_t i = 0; i < 1; i++)

@@ -85,7 +85,7 @@ static uint8_t process_output_config(char *buffer)
             DEBUG_PRINTF("Output1 on/off changed to %u\r\n", out1);
         }
     }
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     char *output2 = strstr(buffer, "Output2\":");
     if (output2 != NULL)
     {
@@ -303,7 +303,7 @@ uint8_t process_input_config(char *buffer)
 static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 {
 	uint8_t new_cfg = 0;
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     char *counter_offset = strstr(buffer, "MeterIndicator_J1\":");
     if (counter_offset)
     {
@@ -831,7 +831,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
                 data.meter_input[0].forward = 0;
                 data.meter_input[0].reserve = 0;
             }
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
             if (factor_change & 0x02)		// 0x02 mean we need to store new data of pulse counter[1] to eeprom
             {
                 data.meter_input[1].forward = 0;

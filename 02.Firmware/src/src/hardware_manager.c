@@ -29,7 +29,6 @@ hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void)
         DEBUG_RAW("RST:");
     }
 	
-#ifdef STM32L083xx
 	if (LL_RCC_IsActiveFlag_PINRST())
     {
 		m_reset_reason.name.pin_reset = 1;
@@ -74,54 +73,7 @@ hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void)
 	DEBUG_RAW("\r\n");
 	
 	LL_RCC_ClearResetFlags();
-#else
 
-    if (RCC_GetFlagStatus(RCU_FLAG_EPRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 1;
-        DEBUG_RAW("External pin reset, ");
-        m_reset_reason.name.pin_reset = 1;
-    }
-    if (RCC_GetFlagStatus(RCU_FLAG_PORRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 2;
-        DEBUG_RAW("Power on reset, ");
-        m_reset_reason.name.power_on = 1;
-    }
-
-    if (RCC_GetFlagStatus(RCU_FLAG_SWRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 4;
-        DEBUG_RAW("software reset, ");
-        m_reset_reason.name.software = 1;
-    }
-
-    if (RCC_GetFlagStatus(RCU_FLAG_FWDGTRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 8;
-        DEBUG_RAW("IWD watchdog, ");
-        m_reset_reason.name.watchdog = 1;
-    }
-
-    if (RCC_GetFlagStatus(RCU_FLAG_WWDGTRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 16;
-        m_reset_reason.name.watchdog = 1;
-        DEBUG_RAW("WWDG watchdog, ");
-    }
-
-    if (RCC_GetFlagStatus(RCU_FLAG_LPRST) != RESET)
-    {
-        //        xSystem.HardwareInfo.rst_reason |= 32;
-        m_reset_reason.name.low_power = 1;
-        DEBUG_RAW("low power reset");
-    }
-
-    DEBUG_RAW("\r\n");
-
-    /* clear the reset flag */
-    rcu_all_reset_flag_clear();
-#endif
 	return &m_reset_reason;
 }
 

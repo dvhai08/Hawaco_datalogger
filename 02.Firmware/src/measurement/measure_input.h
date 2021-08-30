@@ -22,7 +22,7 @@ typedef struct
     uint8_t output_on_off[NUMBER_OF_OUTPUT_ON_OFF];
 // Input
 	float input_4_20mA[NUMBER_OF_INPUT_4_20MA];
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
 	

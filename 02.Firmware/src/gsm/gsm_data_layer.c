@@ -1253,8 +1253,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     uint32_t temp_counter;
 
     // Build ID, phone and id
-#ifdef DTG02
+#if define (DTG02)
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
+#else
+	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V2-%s\",", gsm_get_module_imei());
 #else
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 	// K : he so chia cua dong ho nuoc, input 1
@@ -1267,7 +1269,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
 //    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
 	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
@@ -1567,7 +1569,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 				
 				// on/off
 				tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
-#ifdef DTG02
+#if define (DTG02) || define (DTG02)
 				tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
 				tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
 				tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;
@@ -1705,7 +1707,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
 		// on/off
 		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
@@ -1809,7 +1811,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		
 		// on/off
 		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];

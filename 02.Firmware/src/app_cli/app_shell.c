@@ -18,7 +18,9 @@ static void process_cmd(p_shell_context_t context, const char *cmd); /*!< proces
 
 static void get_history_cmd(p_shell_context_t context, uint8_t hist_pos); /*!< get commands history */
 
+#if SHELL_AUTO_COMPLETE
 static void auto_complete(p_shell_context_t context); /*!< auto complete command */
+#endif
 
 static uint8_t get_char(p_shell_context_t context); /*!< get a char from communication interface */
 
@@ -397,9 +399,9 @@ static void get_history_cmd(p_shell_context_t context, uint8_t hist_pos)
     context->printf_data_func(context->hist_buf[hist_pos]);
 }
 
+#if SHELL_AUTO_COMPLETE
 static void auto_complete(p_shell_context_t context)
 {
-#if SHELL_AUTO_COMPLETE
     int32_t len;
     int32_t minLen;
     uint8_t i = 0;
@@ -453,9 +455,11 @@ static void auto_complete(p_shell_context_t context)
         custom_str_cpy(context->line, namePtr, minLen);
     }
     context->printf_data_func("%s%s", context->prompt, context->line);
-#endif
+
     return;
 }
+
+#endif /* SHELL_AUTO_COMPLETE */
 
 static char *custom_str_cpy(char *dest, const char *src, int32_t count)
 {

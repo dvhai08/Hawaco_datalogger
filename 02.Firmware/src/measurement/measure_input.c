@@ -257,7 +257,7 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 		m_measure_data.counter[0].indicator = new_indicator;
 		m_pulse_counter_in_backup[0].indicator = new_indicator;
 	}
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     else
     {
 		m_measure_data.counter[1].indicator = new_indicator;
@@ -273,7 +273,7 @@ void measure_input_reset_k(uint8_t index, uint32_t new_k)
 		m_measure_data.counter[0].k = new_k;
 		m_pulse_counter_in_backup[0].k = new_k;
 	}
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     else
     {
 		m_measure_data.counter[1].k = new_k;
@@ -289,7 +289,7 @@ void measure_input_reset_counter(uint8_t index)
         m_pulse_counter_in_backup[0].forward = 0;
         m_pulse_counter_in_backup[0].reserve = 0;
     }
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     else
     {
         m_pulse_counter_in_backup[1].forward = 0;
@@ -321,7 +321,7 @@ void measure_input_save_all_data_to_flash(void)
 				memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
 			}			
 			
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 			// On/off
 			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
 			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
@@ -391,7 +391,7 @@ void measure_input_task(void)
         ctx->peripheral_running.name.high_bat_detect = 0;
     }
         
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
     TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
     TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
@@ -484,7 +484,7 @@ void measure_input_task(void)
                 m_measure_data.measure_timestamp = app_rtc_get_counter();
                 m_measure_data.vbat_mv = adc_retval->bat_mv;
                 m_measure_data.vbat_percent = adc_retval->bat_percent;
-#ifdef DTG02                
+#if defined(DTG02) || defined(DTG02V2)               
                 m_measure_data.vin_mv = adc_retval->vin_24;
 #endif
                 app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
@@ -510,7 +510,7 @@ void measure_input_task(void)
 				m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
 				m_measure_data.counter[0].k = eeprom_cfg->k[0];
                 DEBUG_INFO("PWM0 %u\r\n", m_measure_data.counter[0].forward);
-#ifdef DTG02                
+#if defined(DTG02) || defined(DTG02V2)              
                 DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
 				m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
 				m_measure_data.counter[1].k = eeprom_cfg->k[1];
@@ -557,7 +557,7 @@ void measure_input_initialize(void)
 	m_measure_data.counter[0].k = eeprom_cfg->k[0];
 	m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
 	
-#if DTG02
+#if DTG02 || defined DTG02V2
 	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
 	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
 	m_measure_data.counter[1].k = eeprom_cfg->k[1];
@@ -645,7 +645,7 @@ void measure_input_initialize(void)
             m_pulse_counter_in_backup[0].reserve = last_data.meter_input[0].reserve;
             save = true;
         }
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
         if (last_data.meter_input[1].forward > m_pulse_counter_in_backup[1].forward)
         {
             m_pulse_counter_in_backup[1].forward = last_data.meter_input[1].forward;

@@ -171,7 +171,7 @@
 
 
 
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 #define MEASURE_INPUT_PORT_0						1
 #define MEASURE_INPUT_PORT_1		                0
 #define NUMBER_OF_INPUT_4_20MA						4
@@ -216,7 +216,7 @@
 #define APP_EEPROM_MAX_NUMBER_OF_SERVER				2
 #define APP_EEPROM_MAIN_SERVER_ADDR_INDEX			0
 #define APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX	(APP_EEPROM_MAX_NUMBER_OF_SERVER-1)
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 #define APP_EEPROM_NB_OF_INPUT_4_20MA               4
 #else
 #define APP_EEPROM_NB_OF_INPUT_4_20MA               1

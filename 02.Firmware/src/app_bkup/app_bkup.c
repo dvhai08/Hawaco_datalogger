@@ -45,7 +45,7 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, val);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter[0].forward);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter[0].reserve);
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter[1].forward);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR4, counter[1].reserve);
 #endif
@@ -59,7 +59,7 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 	uint32_t valid = 1;
 	
     LL_RTC_EnableWriteProtection(RTC);
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
     if (counter[0].forward != tmp[0]
 		|| counter[0].reserve != tmp[2]
         || counter[1].forward != tmp[1]
@@ -94,7 +94,7 @@ void app_bkup_read_pulse_counter(measure_input_counter_t *counter)
 	{
         counter[0].forward = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR1);
 		counter[0].reserve = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR3);
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 		counter[1].reserve = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR4);
 		counter[1].forward = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
 #endif
@@ -103,7 +103,7 @@ void app_bkup_read_pulse_counter(measure_input_counter_t *counter)
 	{
 		counter[0].forward = 0;
 		counter[0].reserve = 0;
-#ifdef DTG02
+#if defined(DTG02) || defined(DTG02V2)
 		counter[1].reserve = 0;
 		counter[1].forward = 0;
 #endif
