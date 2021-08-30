@@ -336,6 +336,7 @@ void measure_input_save_all_data_to_flash(void)
 			
 			wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
 			wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+			wr_data.resend_to_server_flag = 0;
 			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
 			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
 			wr_data.temp = m_sensor_msq[j].temperature;
