@@ -64,12 +64,12 @@ static sync_drv_reg_t *sync_static_malloc(uint32_t size)
         {
             m_pool[i].in_use = SYNC_DRV_MEM_NOT_AVAILBLE;
             m_active_evt++;
-            // DEBUG_PRINTF("[%s] : Allocate at addr %p, memory idx %d\n", __FUNCTION__, &m_pool[i].evt, i);
+            // DEBUG_ERROR("[%s] : Allocate at addr %p, memory idx %d\n", __FUNCTION__, &m_pool[i].evt, i);
             return &m_pool[i].evt;
         }
     }
 
-    // DEBUG_PRINTF("[%s] : Malloc failed\n", __FUNCTION__);
+    // DEBUG_ERROR("[%s] : Malloc failed\n", __FUNCTION__);
     return NULL;
 }
 

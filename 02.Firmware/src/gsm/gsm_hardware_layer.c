@@ -257,7 +257,7 @@ void gsm_hw_send_at_cmd(char *cmd, char *expect_resp,
 
     if (strlen(cmd) < 64)
     {
-        DEBUG_PRINTF("ATC: %s", cmd);
+        DEBUG_INFO("ATC: %s", cmd);
     }
 
     m_gsm_hardware.atc.cmd = cmd;

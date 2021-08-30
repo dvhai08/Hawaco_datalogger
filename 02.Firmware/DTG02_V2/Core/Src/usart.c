@@ -307,7 +307,7 @@ static inline void usart1_hw_transmit_dma(void)
         m_usart1_tx_run = false;
         m_last_usart1_transfer_size = 0;
 #if DEBUG_USART1_DMA
-		DEBUG_PRINTF("TX cplt\r\n");
+		DEBUG_VERBOSE("TX cplt\r\n");
 #endif
         return;
     }	
@@ -354,7 +354,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
 	
     if (length == 0 || m_usart1_is_enabled == false)
     {
-        DEBUG_PRINTF("[%s] Invalid params\r\n", __FUNCTION__);
+        DEBUG_VERBOSE("[%s] Invalid params\r\n", __FUNCTION__);
         return;
     }
 
@@ -371,7 +371,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
             if (buffer_full == false)
             {
                 buffer_full = true;
-                DEBUG_PRINTF("UART TX queue full\r\n");
+                DEBUG_VERBOSE("UART TX queue full\r\n");
             }
             sys_delay_ms(5);
         }

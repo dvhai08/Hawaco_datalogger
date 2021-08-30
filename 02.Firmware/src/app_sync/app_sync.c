@@ -96,7 +96,7 @@ bool app_sync_sytem_init(app_sync_config_t *config)
 {
     if (config->get_ms == NULL || config->polling_interval_ms == 0)
     {
-        // DEBUG_PRINTF("Invalid param\r\n");
+        // DEBUG_ERROR("Invalid param\r\n");
         return false;
     }
     

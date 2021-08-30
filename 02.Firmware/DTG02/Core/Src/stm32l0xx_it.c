@@ -77,12 +77,12 @@ volatile uint32_t m_last_exti0_timestamp;
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 extern volatile uint32_t jig_timeout_ms;
 extern volatile uint8_t *jig_rs485_rx_buffer;
+extern volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
 extern RTC_HandleTypeDef hrtc;
 /* USER CODE BEGIN EV */
-extern volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END EV */
 
 /******************************************************************************/

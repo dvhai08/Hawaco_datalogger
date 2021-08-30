@@ -60,9 +60,6 @@ void MX_GPIO_Init(void)
   LL_GPIO_ResetOutputPin(GSM_EN_GPIO_Port, GSM_EN_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(PULSE_PWM2_GPIO_Port, PULSE_PWM2_Pin);
-
-  /**/
   LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);
 
   /**/
@@ -175,26 +172,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(GSM_EN_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = PULSE_DIR1_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(PULSE_DIR1_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = PULSE_PWM2_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
-  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(PULSE_PWM2_GPIO_Port, &GPIO_InitStruct);
-
-  /**/
-  GPIO_InitStruct.Pin = PULSE_DIR2_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(PULSE_DIR2_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = GSM_PWR_KEY_Pin;
@@ -327,16 +304,43 @@ void MX_GPIO_Init(void)
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTB, LL_SYSCFG_EXTI_LINE14);
 
   /**/
+  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTC, LL_SYSCFG_EXTI_LINE7);
+
+  /**/
+  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTC, LL_SYSCFG_EXTI_LINE8);
+
+  /**/
+  LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTC, LL_SYSCFG_EXTI_LINE9);
+
+  /**/
   LL_GPIO_SetPinPull(WKUP1_GPIO_Port, WKUP1_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinPull(PULSE_PWM1_GPIO_Port, PULSE_PWM1_Pin, LL_GPIO_PULL_NO);
 
   /**/
+  LL_GPIO_SetPinPull(PULSE_DIR1_GPIO_Port, PULSE_DIR1_Pin, LL_GPIO_PULL_NO);
+
+  /**/
+  LL_GPIO_SetPinPull(PULSE_PWM2_GPIO_Port, PULSE_PWM2_Pin, LL_GPIO_PULL_NO);
+
+  /**/
+  LL_GPIO_SetPinPull(PULSE_DIR2_GPIO_Port, PULSE_DIR2_Pin, LL_GPIO_PULL_NO);
+
+  /**/
   LL_GPIO_SetPinMode(WKUP1_GPIO_Port, WKUP1_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
   LL_GPIO_SetPinMode(PULSE_PWM1_GPIO_Port, PULSE_PWM1_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(PULSE_DIR1_GPIO_Port, PULSE_DIR1_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(PULSE_PWM2_GPIO_Port, PULSE_PWM2_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(PULSE_DIR2_GPIO_Port, PULSE_DIR2_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
   EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_0;
@@ -351,6 +355,33 @@ void MX_GPIO_Init(void)
   EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
   EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
   LL_EXTI_Init(&EXTI_InitStruct);
+
+  /**/
+  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_7;
+  EXTI_InitStruct.LineCommand = ENABLE;
+  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  LL_EXTI_Init(&EXTI_InitStruct);
+
+  /**/
+  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_8;
+  EXTI_InitStruct.LineCommand = ENABLE;
+  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_FALLING;
+  LL_EXTI_Init(&EXTI_InitStruct);
+
+  /**/
+  EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_9;
+  EXTI_InitStruct.LineCommand = ENABLE;
+  EXTI_InitStruct.Mode = LL_EXTI_MODE_IT;
+  EXTI_InitStruct.Trigger = LL_EXTI_TRIGGER_RISING;
+  LL_EXTI_Init(&EXTI_InitStruct);
+
+  /* EXTI interrupt init*/
+  NVIC_SetPriority(EXTI0_1_IRQn, 0);
+  NVIC_EnableIRQ(EXTI0_1_IRQn);
+  NVIC_SetPriority(EXTI4_15_IRQn, 0);
+  NVIC_EnableIRQ(EXTI4_15_IRQn);
 
 }
 

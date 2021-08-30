@@ -126,10 +126,15 @@
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 										}	
 #else
-#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x && (GSM_IS_PWR_EN() == 0)) \
-												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-											else if (x == 0)	\
+#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+											else if ((GSM_IS_PWR_EN() == 0))	\
+												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+										}	
+#define ENABLE_SYS_4V2(x)				{	if (x) \
+												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+											else	\
+												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
 										}	
 #endif
 										

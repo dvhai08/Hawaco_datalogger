@@ -35,15 +35,15 @@ bool ota_update_start(uint32_t expected_size)
     m_expected_size = expected_size - OTA_UPDATE_DEFAULT_HEADER_SIZE;
     m_current_write_size = 0;
     memset(&m_ota_remain, 0, sizeof(m_ota_remain));
-    DEBUG_PRINTF("Firmware size %u bytes\r\n", expected_size);
+    DEBUG_INFO("Firmware size %u bytes\r\n", expected_size);
     if (expected_size > OTA_MAX_SIZE)
     {
-        DEBUG_PRINTF("Firmware size too large %ubytes, max allowed %ubytes", expected_size, OTA_MAX_SIZE);
+        DEBUG_INFO("Firmware size too large %ubytes, max allowed %ubytes", expected_size, OTA_MAX_SIZE);
         return false;
     }
     uint32_t nb_of_page = (expected_size + FLASH_PAGE_SIZE-1) / FLASH_PAGE_SIZE;
 
-    DEBUG_PRINTF("Erase %d pages, from addr 0x%08X\r\n", nb_of_page, DONWLOAD_START_ADDR);
+    DEBUG_INFO("Erase %d pages, from addr 0x%08X\r\n", nb_of_page, DONWLOAD_START_ADDR);
 	flash_if_init();
     
     flash_if_erase(DONWLOAD_START_ADDR);
@@ -65,21 +65,21 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
 		char *p = strstr((char*)data, OTA_UPDATE_DEFAULT_HEADER_DATA_FIRMWARE);
         if (!p)
         {
-            DEBUG_PRINTF("Wrong firmware header\r\n");
+            DEBUG_ERROR("Wrong firmware header\r\n");
             return false;
         }
 		
 		p += strlen(OTA_UPDATE_DEFAULT_HEADER_DATA_FIRMWARE);
 		if (!strstr(p, OTA_UPDATE_DEFAULT_HEADER_DATA_HARDWARE))
         {
-            DEBUG_PRINTF("Wrong firmware hardware\r\n");
+            DEBUG_ERROR("Wrong firmware hardware\r\n");
             return false;
         }
 		
         m_found_header = true;
         length -= OTA_UPDATE_DEFAULT_HEADER_SIZE;
         data += OTA_UPDATE_DEFAULT_HEADER_SIZE;
-        DEBUG_PRINTF("Found header\r\n");
+        DEBUG_INFO("Found header\r\n");
     }
     
     if (!m_found_header)
@@ -114,7 +114,7 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
             break;
         }
     }
-    DEBUG_PRINTF("Total write size %u\r\n", m_current_write_size);
+    DEBUG_INFO("Total write size %u\r\n", m_current_write_size);
     if (m_current_write_size >= m_expected_size)
     {
         DEBUG_INFO("All data received\r\n");
@@ -131,14 +131,14 @@ void ota_update_finish(bool status)
         // TODO write boot information
         if (m_ota_remain.size)
         {
-            DEBUG_PRINTF("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
+            DEBUG_INFO("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
             flash_if_write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
             m_ota_remain.size = 0;
         }
     
         if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
         {
-            DEBUG_PRINTF("Valid checksum\r\n");
+            DEBUG_INFO("Valid checksum\r\n");
             ota_flash_cfg_t new_cfg;
             new_cfg.flag = OTA_FLAG_UPDATE_NEW_FW;
             new_cfg.firmware_size = m_expected_size;
@@ -147,12 +147,12 @@ void ota_update_finish(bool status)
         }
         else
         {
-            DEBUG_PRINTF("Invalid checksum\r\n");        
+            DEBUG_ERROR("Invalid checksum\r\n");        
         }
     }
     else
     {
-        DEBUG_PRINTF("OTA update failed\r\n");
+        DEBUG_ERROR("OTA update failed\r\n");
     }
 	
     m_current_write_size = 0;

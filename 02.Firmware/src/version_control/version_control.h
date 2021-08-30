@@ -5,11 +5,19 @@
 #define VERSION_CONTROL_DEVICE			"DTG1"
 #define VERSION_CONTROL_FW				"0.0.1"
 #define VERSION_CONTROL_HW				"0.0.1"
-#else
+#endif
+#ifdef DTG02
 #define VERSION_CONTROL_DEVICE			"DTG2"
 #define VERSION_CONTROL_FW				"0.0.6"
 #define VERSION_CONTROL_HW				"0.0.1"
 #endif
+
+#ifdef DTG02V2
+#define VERSION_CONTROL_DEVICE			"DTG2"
+#define VERSION_CONTROL_FW				"0.0.1"
+#define VERSION_CONTROL_HW				"0.0.2"
+#endif
+
 #define VERSION_CONTROL_BUILD_DATE		__DATE__
 #define VERSION_CONTROL_BUILD_TIME		__TIME__
 

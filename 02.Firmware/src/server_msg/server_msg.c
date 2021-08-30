@@ -82,7 +82,7 @@ static uint8_t process_output_config(char *buffer)
         {
             m_eeprom_config->io_enable.name.output0 = out1;
             new_cfg++;
-            DEBUG_PRINTF("Output1 on/off changed to %u\r\n", out1);
+            DEBUG_INFO("Output1 on/off changed to %u\r\n", out1);
         }
     }
 #if defined(DTG02) || defined(DTG02V2)
@@ -94,7 +94,7 @@ static uint8_t process_output_config(char *buffer)
         {
             m_eeprom_config->io_enable.name.output1 = out2;
 			new_cfg++;
-            DEBUG_PRINTF("Output 2 changed\r\n");
+            DEBUG_INFO("Output 2 changed\r\n");
 			TRANS_2_OUTPUT(out2);
         }
     }
@@ -108,7 +108,7 @@ static uint8_t process_output_config(char *buffer)
         {
             m_eeprom_config->io_enable.name.output2 = out3;
             new_cfg++;
-            DEBUG_PRINTF("Output 3 changed\r\n");
+            DEBUG_INFO("Output 3 changed\r\n");
 			TRANS_3_OUTPUT(out3);
         }
     }
@@ -121,7 +121,7 @@ static uint8_t process_output_config(char *buffer)
         {
             m_eeprom_config->io_enable.name.output3 = out4;
             new_cfg++;
-            DEBUG_PRINTF("Output 4 changed\r\n");
+            DEBUG_INFO("Output 4 changed\r\n");
 			TRANS_4_OUTPUT(out4);
         }
     }
@@ -167,7 +167,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("InputMode0\":"), mode_j1);
         if (m_eeprom_config->meter_mode[0] != mode)
         {
-            DEBUG_PRINTF("PWM1 mode changed\r\n");
+            DEBUG_INFO("PWM1 mode changed\r\n");
             m_eeprom_config->meter_mode[0] = mode;
             new_cfg++;
         }
@@ -204,7 +204,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input2\":"), input_4_20mA);
         if (m_eeprom_config->io_enable.name.input_4_20ma_0_enable != enable)
         {
-            DEBUG_PRINTF("Input4_20mA 1 changed to %u\r\n", enable);
+            DEBUG_INFO("Input4_20mA 1 changed to %u\r\n", enable);
             m_eeprom_config->io_enable.name.input_4_20ma_0_enable = enable;
             new_cfg++;
         }
@@ -216,7 +216,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t dir_level = gsm_utilities_get_number_from_string(strlen("Dir\":"), dir);
         if (m_eeprom_config->dir_level != dir_level)
         {
-            DEBUG_PRINTF("dir_level mode changed\r\n");
+            DEBUG_INFO("dir_level mode changed\r\n");
             m_eeprom_config->dir_level = dir_level;
             new_cfg++;
         }
@@ -229,7 +229,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J1\":"), mode_j1);
         if (m_eeprom_config->meter_mode[0] != mode)
         {
-            DEBUG_PRINTF("PWM1 mode changed\r\n");
+            DEBUG_INFO("PWM1 mode changed\r\n");
             m_eeprom_config->meter_mode[0] = mode;
             new_cfg++;
         }
@@ -241,7 +241,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t mode = gsm_utilities_get_number_from_string(strlen("Input_J2\":"), mode_j2);
         if (m_eeprom_config->meter_mode[1] != mode)
         {
-            DEBUG_PRINTF("PWM2 mode changed\r\n");
+            DEBUG_INFO("PWM2 mode changed\r\n");
             m_eeprom_config->meter_mode[1] = mode;
             new_cfg++;
         }
@@ -255,7 +255,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_1\":"), input_4_20ma) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.input_4_20ma_0_enable != enable)
         {
-            DEBUG_PRINTF("Input4_20mA 1 changed to %u\r\n", enable);
+            DEBUG_INFO("Input4_20mA 1 changed to %u\r\n", enable);
             m_eeprom_config->io_enable.name.input_4_20ma_0_enable = enable;
             new_cfg++;
         }
@@ -266,7 +266,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_2\":"), input_4_20ma) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.input_4_20ma_1_enable != enable)
         {
-            DEBUG_PRINTF("Input4_20mA 2 changed to %u\r\n", enable);
+            DEBUG_INFO("Input4_20mA 2 changed to %u\r\n", enable);
             m_eeprom_config->io_enable.name.input_4_20ma_1_enable = enable;
             new_cfg++;
         }
@@ -278,7 +278,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_3\":"), input_4_20ma) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.input_4_20ma_2_enable != enable)
         {
-            DEBUG_PRINTF("Input4_20mA 3 changed to %u\r\n", enable);
+            DEBUG_INFO("Input4_20mA 3 changed to %u\r\n", enable);
             m_eeprom_config->io_enable.name.input_4_20ma_2_enable = enable;
             new_cfg++;
         }
@@ -290,7 +290,7 @@ uint8_t process_input_config(char *buffer)
         uint8_t enable = gsm_utilities_get_number_from_string(strlen("Input_J3_4\":"), input_4_20ma) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.input_4_20ma_3_enable != enable)
         {
-            DEBUG_PRINTF("Input4_20mA 4 changed to %u\r\n", enable);
+            DEBUG_INFO("Input4_20mA 4 changed to %u\r\n", enable);
             m_eeprom_config->io_enable.name.input_4_20ma_3_enable = enable;
             new_cfg++;
         }
@@ -332,7 +332,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         {
             new_cfg++;   
             m_eeprom_config->offset[1] = offset;
-            DEBUG_PRINTF("PWM2 offset changed to %u\r\n", offset);
+            DEBUG_INFO("PWM2 offset changed to %u\r\n", offset);
             measure_input_reset_counter(1);
 			measure_input_reset_indicator(1, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
@@ -356,7 +356,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         {
             m_eeprom_config->k[0] = k;
 			measure_input_reset_k(0, k);
-            DEBUG_PRINTF("K1 factor changed to %u\r\n", k);
+            DEBUG_INFO("K1 factor changed to %u\r\n", k);
             new_cfg++; 
         }
     }
@@ -374,7 +374,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         {
             m_eeprom_config->k[1] = k;
 			measure_input_reset_k(1, k);
-            DEBUG_PRINTF("K2 factor changed to %u\r\n", k);
+            DEBUG_INFO("K2 factor changed to %u\r\n", k);
             new_cfg++; 
         }
     }
@@ -388,7 +388,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             new_cfg++;   
             m_eeprom_config->offset[0] = offset;
 			measure_input_reset_indicator(0, offset);
-            DEBUG_PRINTF("PWM1 offset changed to %u\r\n", offset);
+            DEBUG_INFO("PWM1 offset changed to %u\r\n", offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
 			counter[0].forward = 0;
@@ -411,7 +411,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         if (m_eeprom_config->k[0] != k)
         {
             m_eeprom_config->k[0] = k;
-            DEBUG_PRINTF("K0 changed to %u\r\n", k);
+            DEBUG_INFO("K0 changed to %u\r\n", k);
             new_cfg++; 
         }
     }
@@ -730,7 +730,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint8_t in485 = gsm_utilities_get_number_from_string(strlen("RS485\":"), rs485_ptr) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.rs485_en != in485)
         {
-            DEBUG_PRINTF("in485 changed\r\n");
+            DEBUG_INFO("in485 changed\r\n");
             m_eeprom_config->io_enable.name.rs485_en = in485;
             has_new_cfg++;
         }
@@ -742,7 +742,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         uint8_t alrm = gsm_utilities_get_number_from_string(strlen("Warning\":"), alarm) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.warning != alrm)
         {
-            DEBUG_PRINTF("Warning changed\r\n");
+            DEBUG_INFO("Warning changed\r\n");
             m_eeprom_config->io_enable.name.warning = alrm;
             has_new_cfg++;
         }
@@ -778,7 +778,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 			m_eeprom_config->phone[15] = 0;
             if (changed)
             {
-                DEBUG_PRINTF("Phone changed to %s\r\n", m_eeprom_config->phone);
+                DEBUG_INFO("Phone changed to %s\r\n", m_eeprom_config->phone);
             }
 #endif
         }

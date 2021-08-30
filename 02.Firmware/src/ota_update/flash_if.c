@@ -21,7 +21,7 @@ void flash_if_init(void)
 
 uint32_t flash_if_erase(uint32_t start)
 {
-    DEBUG_PRINTF("Flash erase at addr 0x%08X\r\n", start);
+    DEBUG_INFO("Flash erase at addr 0x%08X\r\n", start);
 
     flash_if_init();
 
@@ -55,7 +55,7 @@ uint32_t flash_if_erase(uint32_t start)
     }
 
     HAL_FLASH_Lock();
-    DEBUG_PRINTF("Erase flash error code %u\r\n", result);
+    DEBUG_INFO("Erase flash error code %u\r\n", result);
     return result;
 }
 
@@ -141,7 +141,7 @@ uint32_t flash_if_write(uint32_t destination, uint32_t *p_source, uint32_t lengt
 
     if (status != FLASH_IF_OK)
     {
-        DEBUG_PRINTF("Flash write error %d\r\n", status);
+        DEBUG_INFO("Flash write error %d\r\n", status);
     }
 
     return status;

@@ -128,7 +128,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-__enable_irq();
+	__enable_irq();
 	MX_CRC_Init();
 	app_eeprom_init();
 	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
@@ -177,7 +177,9 @@ __enable_irq();
     LED1(0);
         
 //	DEBUG_RAW(RTT_CTRL_CLEAR);
+#if 0
     gpio_config_input_as_wakeup_source();
+#endif
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 	app_cli_start();
@@ -358,7 +360,7 @@ __enable_irq();
 				LED2(0);
 #endif
 				// turn off 4.2V
-				#warning "Please turn off 4.2V and gsm power "
+				ENABLE_SYS_4V2(0);
 				sys_config_low_power_mode();
 			}
 			#endif
@@ -445,7 +447,7 @@ void sys_delay_ms(uint32_t ms)
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);
 #endif
-//		__WFI();
+//		__WFI();	// hardfault when exit from stopmode
 		if (HAL_GetTick() - current_tick >= (uint32_t)ms)
 		{
 			break;

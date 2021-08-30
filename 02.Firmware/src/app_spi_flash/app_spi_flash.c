@@ -126,7 +126,7 @@ void app_spi_flash_initialize(void)
             DEBUG_RAW("W25Q32FV");
             break;
         default:
-            DEBUG_PRINTF("UNKNOWNN: %u", m_flash_version);
+            DEBUG_RAW("UNKNOWNN: %u", m_flash_version);
             m_flash_is_good = false;
             break;
         }
@@ -143,7 +143,7 @@ void app_spi_flash_initialize(void)
     {
         flash_test_status = flash_test();
 
-        DEBUG_PRINTF("Test R/W Flash: ");
+        DEBUG_INFO("Test R/W Flash: ");
         if (flash_test_status)
         {
             DEBUG_RAW("[FAIL], N = %u\r\n", flash_test_status);
@@ -175,13 +175,13 @@ void app_spi_flash_initialize(void)
 			flash_write_bytes(FLASH_CHECK_FIRST_RUN, tmp_buff, 1);
 		}
 	
-        DEBUG_PRINTF("Estimate write addr 0x%08X\r\n", addr);
+        DEBUG_INFO("Estimate write addr 0x%08X\r\n", addr);
         
         app_spi_flash_estimate_current_read_addr(&flash_status, true);
         if (flash_status)
         {
-            DEBUG_PRINTF("Flash : need retransmission data to server\r\n");
-            DEBUG_PRINTF("Retransmission data in flash at addr 0x%08X\r\n", m_resend_data_in_flash_addr);
+            DEBUG_INFO("Flash : need retransmission data to server\r\n");
+            DEBUG_INFO("Retransmission data in flash at addr 0x%08X\r\n", m_resend_data_in_flash_addr);
         }
     }
 }
@@ -297,7 +297,7 @@ static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
     }
     if (found_error == false)
     {
-        DEBUG_PRINTF("Page write success\r\n");
+        DEBUG_INFO("Page write success\r\n");
     }
 //    else
 //    {
@@ -334,7 +334,7 @@ void flash_write_bytes(uint32_t addr, uint8_t *buffer, uint32_t length)
     uint32_t length_need_to_write = 0;
     uint32_t nb_bytes_written = 0;
 #if DEBUG_FLASH
-    DEBUG_PRINTF("Flash write %u bytes, from addr 0x%08X\r\n", length, addr);
+    DEBUG_INFO("Flash write %u bytes, from addr 0x%08X\r\n", length, addr);
 #endif
 
     while (length)
@@ -431,7 +431,7 @@ void flash_read_bytes(uint32_t addr, uint8_t *buffer, uint16_t length)
 void flash_erase_sector_4k(uint32_t sector_count)
 {
 #if DEBUG_FLASH
-    DEBUG_PRINTF("Erase sector[%u] 4k\r\n", sector_count);
+    DEBUG_INFO("Erase sector[%u] 4k\r\n", sector_count);
 #endif
     uint32_t addr = 0;
     uint32_t old_addr = 0;
@@ -480,11 +480,11 @@ void flash_erase_sector_4k(uint32_t sector_count)
 #if VERIFY_FLASH
     if (app_spi_flash_check_empty_sector(sector_count))
     {
-        DEBUG_PRINTF("Erase sector %u success\r\n", sector_count);
+        DEBUG_INFO("Erase sector %u success\r\n", sector_count);
     }
     else
     {
-        DEBUG_PRINTF("Erase sector %u error\r\n", sector_count);
+        DEBUG_INFO("Erase sector %u error\r\n", sector_count);
     }
 #endif
 }
@@ -557,7 +557,7 @@ uint8_t flash_self_test(void)
 
         SPI_EXT_FLASH_CS(1);
 
-        DEBUG_PRINTF("device id: 0x%02X, manufacture id: 0x%02X\r\n", device_id, manufacture_id);
+        DEBUG_INFO("device id: 0x%02X, manufacture id: 0x%02X\r\n", device_id, manufacture_id);
         if (manufacture_id == 0x01 && device_id == 0x16) /* FL164K - 64Mb */
             m_flash_version = FL164K;
         else if (manufacture_id == 0x01 && device_id == 0x17) /* FL127S - 1 chan CS 128Mb */
@@ -566,12 +566,12 @@ uint8_t flash_self_test(void)
             m_flash_version = FL256S;
         else if (manufacture_id == 0xEF && device_id == 0x17) /* FL256S - 1 chan CS 256Mb */
         {
-            DEBUG_PRINTF("W25Q128\r\n");
+            DEBUG_INFO("W25Q128\r\n");
             m_flash_version = W25Q128;
         }
         else if (manufacture_id == 0xEF && device_id == 0x15)
         {
-            DEBUG_PRINTF("W25Q32FV\r\n");
+            DEBUG_INFO("W25Q32FV\r\n");
             m_flash_version = W25Q32;
         }
         else if (manufacture_id == 0xC8 && device_id == 0x18) /* GD256C - GigaDevice 256Mb */
@@ -594,10 +594,10 @@ uint8_t flash_self_test(void)
             spi_flash_transmit_receive(&cmd, &reg_status, 1);
             SPI_EXT_FLASH_CS(1);
 
-            DEBUG_PRINTF("status register: %02X\r\n", reg_status);
+            DEBUG_INFO("status register: %02X\r\n", reg_status);
             if (reg_status & 0x20)
             {
-                DEBUG_PRINTF("Address mode : 32 bit\r\n");
+                DEBUG_INFO("Address mode : 32 bit\r\n");
             }
             else
             {
@@ -609,7 +609,7 @@ uint8_t flash_self_test(void)
         {
             if (device_id == 0x18)
             {
-                DEBUG_PRINTF("Winbond W25Q256JV\r\n");
+                DEBUG_INFO("Winbond W25Q256JV\r\n");
                 m_flash_version = W25Q256JV;
                 //Vao che do 4-Byte addr
                 SPI_EXT_FLASH_CS(0);
@@ -626,16 +626,16 @@ uint8_t flash_self_test(void)
                 cmd = SPI_DUMMY;
                 spi_flash_transmit_receive(&cmd, &reg_status, 1);
 
-                DEBUG_PRINTF("status register: %02X\r\n", reg_status);
+                DEBUG_INFO("status register: %02X\r\n", reg_status);
                 if (reg_status & 0x01)
                 {
-                    DEBUG_PRINTF("Address mode : 32 bit\r\n");
+                    DEBUG_INFO("Address mode : 32 bit\r\n");
                 }
                 SPI_EXT_FLASH_CS(1);
             }
             else if (device_id == 0x13)
             {
-                DEBUG_PRINTF("Winbond W25Q80DLZPIG\r\n");
+                DEBUG_INFO("Winbond W25Q80DLZPIG\r\n");
                 m_flash_version = W25Q80DLZPIG;
             }
         }
@@ -724,7 +724,7 @@ void app_spi_flash_erase_all(void)
     }
     if (found_error == false)
     {
-        DEBUG_PRINTF("Erase success\r\n");
+        DEBUG_INFO("Erase success\r\n");
     }
 #endif
 
