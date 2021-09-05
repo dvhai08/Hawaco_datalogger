@@ -53,6 +53,7 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
 
 static const shell_command_context_t cli_command_table[] = 
 {
@@ -66,6 +67,7 @@ static const shell_command_context_t cli_command_table[] =
     {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
+    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -292,6 +294,19 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv)
 {
     tim_pwm_change_freq(atoi(argv[1]));
+    return 0;
+}
+
+static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv)
+{
+    DEBUG_INFO("Set server %s\r\n", argv[1]);
+    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+    sprintf((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], "%s", argv[1]);
+
+    app_eeprom_save_config();		// Store current config into eeprom
+    DEBUG_INFO("Set new server addr success\r\n");
+
     return 0;
 }
 

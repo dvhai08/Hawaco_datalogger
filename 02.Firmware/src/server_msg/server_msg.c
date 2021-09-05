@@ -27,9 +27,11 @@ static void process_server_addr_change(char *buffer)
 		return;
 	}
 	
+    char *server_update = strstr(buffer, "ServerUpdate\":1");
     buffer += strlen("Server\":");
     uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
-    if (gsm_utilities_copy_parameters(buffer, (char*)tmp, '"', '"')
+    if (server_update &&
+        gsm_utilities_copy_parameters(buffer, (char*)tmp, '"', '"')
         && (strstr((char*)tmp, "http://") || strstr((char*)tmp, "https://")))
     {
         uint32_t server_addr_len = strlen((char*)tmp);
@@ -67,7 +69,7 @@ static void process_server_addr_change(char *buffer)
     }
     else
     {
-        DEBUG_ERROR("Server is not http or https\r\n");
+        DEBUG_ERROR("Invalid server\r\n");
     }
 }
 
