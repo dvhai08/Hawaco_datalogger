@@ -263,7 +263,7 @@ void EXTI0_1_IRQHandler(void)
 //            m_last_exti0_timestamp = current_tick;
 #ifdef DTG01
             measure_input_water_meter_input_t input;
-            input.port = MEASURE_INPUT_PORT_0;
+            input.port = MEASURE_INPUT_PORT_1;
             input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
             input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
             input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
@@ -294,7 +294,7 @@ void EXTI2_3_IRQHandler(void)
     /* USER CODE BEGIN LL_EXTI_LINE_3 */
 #ifdef DTG01
         measure_input_water_meter_input_t input;
-        input.port = MEASURE_INPUT_PORT_0;
+        input.port = MEASURE_INPUT_PORT_1;
         input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
         input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
         input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);

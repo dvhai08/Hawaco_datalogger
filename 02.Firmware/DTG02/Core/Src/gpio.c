@@ -107,10 +107,10 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(ENABLE_OUTPUT_4_20MA_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = CIRIN0_Pin;
+  GPIO_InitStruct.Pin = CIRIN2_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(CIRIN0_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(CIRIN2_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = CIRIN1_Pin;
@@ -309,28 +309,28 @@ void MX_GPIO_Init(void)
   LL_SYSCFG_SetEXTISource(LL_SYSCFG_EXTI_PORTC, LL_SYSCFG_EXTI_LINE9);
 
   /**/
-  LL_GPIO_SetPinPull(PWMIN1_GPIO_Port, PWMIN1_Pin, LL_GPIO_PULL_NO);
-
-  /**/
-  LL_GPIO_SetPinPull(DIRIN1_GPIO_Port, DIRIN1_Pin, LL_GPIO_PULL_NO);
-
-  /**/
   LL_GPIO_SetPinPull(PWMIN2_GPIO_Port, PWMIN2_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinPull(DIRIN2_GPIO_Port, DIRIN2_Pin, LL_GPIO_PULL_NO);
 
   /**/
-  LL_GPIO_SetPinMode(PWMIN1_GPIO_Port, PWMIN1_Pin, LL_GPIO_MODE_INPUT);
+  LL_GPIO_SetPinPull(PWMIN1_GPIO_Port, PWMIN1_Pin, LL_GPIO_PULL_NO);
 
   /**/
-  LL_GPIO_SetPinMode(DIRIN1_GPIO_Port, DIRIN1_Pin, LL_GPIO_MODE_INPUT);
+  LL_GPIO_SetPinPull(DIRIN1_GPIO_Port, DIRIN1_Pin, LL_GPIO_PULL_NO);
 
   /**/
   LL_GPIO_SetPinMode(PWMIN2_GPIO_Port, PWMIN2_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
   LL_GPIO_SetPinMode(DIRIN2_GPIO_Port, DIRIN2_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(PWMIN1_GPIO_Port, PWMIN1_Pin, LL_GPIO_MODE_INPUT);
+
+  /**/
+  LL_GPIO_SetPinMode(DIRIN1_GPIO_Port, DIRIN1_Pin, LL_GPIO_MODE_INPUT);
 
   /**/
   EXTI_InitStruct.Line_0_31 = LL_EXTI_LINE_14;

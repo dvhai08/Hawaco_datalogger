@@ -406,14 +406,14 @@ void measure_input_task(void)
 	m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
 	m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
 	
-	m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin)
-																				&& (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);   
-    m_measure_data.counter[MEASURE_INPUT_PORT_0].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin)
-																				 && (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);	
+	m_measure_data.counter[MEASURE_INPUT_PORT_2].cir_break = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin)
+																				&& (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);   
+    m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin)
+																				 && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);	
 #else
     TRANS_OUTPUT(eeprom_cfg->io_enable.name.output0);
 	m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
-	m_measure_data.counter[MEASURE_INPUT_PORT_0].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin)
+	m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin)
 																				 && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
 #endif	
     

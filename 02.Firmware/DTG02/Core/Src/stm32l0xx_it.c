@@ -194,30 +194,30 @@ void SysTick_Handler(void)
 		jig_timeout_ms--;
 	}
 	// Delay timeout after pulse interrupt, recheck input pulse counter
-	if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick)
+	if (recheck_input_pulse[MEASURE_INPUT_PORT_2].tick)
 	{
-		if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick-- == 1)
+		if (recheck_input_pulse[MEASURE_INPUT_PORT_2].tick-- == 1)
 		{			
 				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_1;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
+				input.port = MEASURE_INPUT_PORT_2;
+				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin);
+				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type;
 				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
 				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
 				measure_input_pulse_irq(&input);	
 		}			
 	}
 	
-	if (recheck_input_pulse[MEASURE_INPUT_PORT_0].tick)
+	if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick)
 	{
-		if (recheck_input_pulse[MEASURE_INPUT_PORT_0].tick-- == 1)
+		if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick-- == 1)
 		{
 				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_0;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type;
-				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
-				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
+				input.port = MEASURE_INPUT_PORT_1;
+				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
+				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
+				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
 				measure_input_pulse_irq(&input);	
 		}			
 	}
@@ -261,17 +261,8 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_7);
     /* USER CODE BEGIN LL_EXTI_LINE_7 */
         /* DIRIN1 */
-		recheck_input_pulse[MEASURE_INPUT_PORT_0].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-		recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
-//#ifdef DTG02
-//        measure_input_water_meter_input_t input;
-//        input.port = MEASURE_INPUT_PORT_0;
-//        input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
-//        input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
-//        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-//        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
-//        measure_input_pulse_irq(&input);
-//#endif
+		recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+		recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_7 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_8) != RESET)
@@ -281,32 +272,12 @@ void EXTI4_15_IRQHandler(void)
     /* PWMIN2 interrupt */
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
-//#ifdef DTG02
-//        measure_input_water_meter_input_t input;
-//        input.port = MEASURE_INPUT_PORT_1;
-//        input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
-//        input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
-//        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-//        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
-//        measure_input_pulse_irq(&input);
-//#endif
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
-	  
-    /* DIRIN2 interupt */
-//#ifdef DTG02
-//        measure_input_water_meter_input_t input;
-//        input.port = MEASURE_INPUT_PORT_1;
-//        input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
-//        input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
-//        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-//        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
-//        measure_input_pulse_irq(&input);
-//#endif
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_9 */
@@ -315,18 +286,8 @@ void EXTI4_15_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_14);
     /* USER CODE BEGIN LL_EXTI_LINE_14 */
-    /* PWMIN1 */   
-//#ifdef DTG02
-//        measure_input_water_meter_input_t input;
-//        input.port = MEASURE_INPUT_PORT_0;
-//        input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
-//        input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
-//        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-//        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
-//        measure_input_pulse_irq(&input);
-//#endif
-			recheck_input_pulse[MEASURE_INPUT_PORT_0].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-			recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+        recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+        recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
