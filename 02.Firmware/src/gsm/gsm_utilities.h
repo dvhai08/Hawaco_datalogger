@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/**
+/*!
  * @brief               Get gsm imei from buffer
  * @param[in]           imei_buffer raw buffer from gsm module
  * @param[out]          result result output
@@ -15,7 +15,7 @@
 void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result, uint8_t max_lenth);
 
 
-/**
+/*!
  * @brief				Get signal strength from buffer
  * @param[in]			buffer buffer response from GSM module
  * @param[out]			CSQ value
@@ -25,7 +25,7 @@ void gsm_utilities_get_imei(uint8_t *imei_buffer, uint8_t * result, uint8_t max_
  */ 
 bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq);
 
-/**
+/*!
  * @brief				Get Number from string
  * @param[in]			Index Begin index of buffer want to find
  * @param[in]			buffer Data want to search
@@ -34,7 +34,7 @@ bool gsm_utilities_get_signal_strength_from_buffer(uint8_t *buffer, uint8_t *csq
  */ 
 uint32_t gsm_utilities_get_number_from_string(uint16_t index, char* buffer);
 
-/**
+/*!
  * @brief				Get Number from buffer
  * @param[in]			Index Begin index of buffer want to find
  * @param[in]			buffer Data want to search
@@ -44,7 +44,7 @@ uint32_t gsm_utilities_get_number_from_string(uint16_t index, char* buffer);
  */ 
 uint32_t gsm_utilities_get_number_from_buffer(char* buffer, uint8_t offset, uint8_t length);
   
-/**
+/*!
  * @brief				Caculate CRC16
  * @param[in]			data_p Data to caculate CRC16 value
  * @param[in]			length Length of data
@@ -52,7 +52,7 @@ uint32_t gsm_utilities_get_number_from_buffer(char* buffer, uint8_t offset, uint
  */ 
 uint16_t gsm_utilities_crc16(const uint8_t* data_p, uint8_t length);
 
-/**
+/*!
  * @brief				get phone number from AT+CLIP message
  * @param[in]			data : Pointer to buffer data will be parsed
  * @param[in]			result : Phone number result
@@ -60,7 +60,7 @@ uint16_t gsm_utilities_crc16(const uint8_t* data_p, uint8_t length);
  */ 
 void gsm_utilities_get_phone_number_from_at_clip(char * data, char * result);
 
-/**
+/*!
  * @brief				Parse HTTP action response
  * @param[in]			response : Pointer to buffer data will be parsed
  * @param[out]			error_code : HTTP response code
@@ -71,7 +71,7 @@ void gsm_utilities_get_phone_number_from_at_clip(char * data, char * result);
  */ 
 bool gsm_utilities_parse_http_action_response(char* response, uint32_t *error_code, uint32_t *content_length);
 
-/**
+/*!
  * @brief				Parse HTTPRREAD message response size
  * @param[in]			buffer : Pointer to buffer data will be parsed
  * @param[out]			begin_data_pointer : Address of user data in buffer
@@ -81,7 +81,7 @@ bool gsm_utilities_parse_http_action_response(char* response, uint32_t *error_co
  */ 
 int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_pointer);
 
-/**
+/*!
  * @brief                       Get ip address from string
  * @param[in]                   buffer : Pointer to buffer data will be parsed
  * @param[out]                  ip_addr : Ip address output
@@ -89,7 +89,7 @@ int32_t gsm_utilities_parse_httpread_msg(char *buffer, uint8_t **begin_data_poin
 void gsm_utilities_get_ip_addr_from_string(char *buffer, void *ip_addr);
 
 
-/**
+/*!
  * @brief                       Copy parameter from src to des
  * @param[in]                   src : Pointer to source buffer
  * @param[out]                  src : Pointer to des buffer
@@ -100,7 +100,7 @@ void gsm_utilities_get_ip_addr_from_string(char *buffer, void *ip_addr);
  */ 
 bool gsm_utilities_copy_parameters(char* src, char* des, char find_char_begin, char find_char_end);
 
-/**
+/*!
  * @brief                       Caculate CRC16
  * @param[in]                   data_int : Pointer to source buffer
  * @param[in]                   nb_of_bytes : Size of buffer
@@ -109,7 +109,7 @@ bool gsm_utilities_copy_parameters(char* src, char* des, char find_char_begin, c
 uint16_t gsm_utilities_calculate_crc16(uint8_t *data_int, uint8_t nb_of_bytes);
 
 
-/**
+/*!
  * @brief                       Parse GSM HTTP timestamp response message
  * @param[in]                   buffer : Pointer to buffer data will be parsed
  * @param[out]                  date_time : Date time result
@@ -150,7 +150,7 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time
 // */ 
 //bool gps_utilities_parse_timestamp_from_psuttz_message(char *buffer, date_time_t *date_time, int8_t *gsm_adjust);
 
-/**
+/*!
  * @brief       Get GSM network operator
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  nw_operator : Network operator
@@ -159,7 +159,7 @@ bool gsm_utilities_parse_timestamp_buffer(char *response_buffer, void *date_time
  */ 
 void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t max_len);
 
-/**
+/*!
  * @brief       Get GSM access technology
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  access_technology : Access technology result
@@ -169,7 +169,7 @@ void gsm_utilities_get_network_operator(char *buffer, char *nw_operator, uint8_t
  */ 
 bool gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technology);
 
-/**
+/*!
  * @brief       Get GSM cusd money
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  money : Money from str
@@ -179,7 +179,7 @@ bool gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technol
 void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_len);
 
 
-/**
+/*!
  * @brief       Get file handle from QOPEN message
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  file_handler : -1 on error
@@ -187,7 +187,7 @@ void gsm_utilities_process_cusd_message(char *buffer, char *money, uint32_t max_
  */ 
 void gsm_utilities_parse_file_handle(char *buffer, int32_t *file_handle);
 
-/**
+/*!
  * @brief       Get file content from QREAD message
  * @param[in]   buffer : Pointer to buffer data will be parsed
  * @param[out]  content : Pointer to positions of data
@@ -196,7 +196,7 @@ void gsm_utilities_parse_file_handle(char *buffer, int32_t *file_handle);
  */ 
 void gsm_utilities_get_qfile_content(char *buffer, uint8_t **content, uint32_t *size);
 
-/**
+/*!
  * @brief               Get SIM CCID
  * @param[in]           imei_buffer raw buffer from gsm module
  * @param[out]          result result output

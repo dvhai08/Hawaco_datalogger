@@ -318,7 +318,7 @@ static void flash_write_page(uint32_t addr, uint8_t *buffer, uint16_t length)
 }
 
 /*****************************************************************************/
-/**
+/*!
  * @brief	:  PageSize = 256 (Flash 8,16,32MB); 512 (Flash >= 64MB)
  * @param	:  
  * @retval	:
@@ -1232,30 +1232,30 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 	{
 		"TotalPacket": 12345,               // S? d? li?u s? g?i
 		"CurrentPacket": 12345,             // Th? t? packet dang g?i hi?n t?i
-		"Error": "cam_bien_xung_dut",       // Ð? debug, không c?n x? lí
+		"Error": "cam_bien_xung_dut",       // ï¿½? debug, khï¿½ng c?n x? lï¿½
 		"Timestamp": 1629200614,
 		"ID": "G1-860262050125363",
 		"Input1": 124511,                   // Ki?u int
 		"Inputl_J3_1":	0.01,				// Ki?u float
 		"BatteryLevel": 80,
-		"Vbat": 4.101,                      // Ð? debug, không c?n x? lí
+		"Vbat": 4.101,                      // ï¿½? debug, khï¿½ng c?n x? lï¿½
 
 
-		"SlaveID1" : 3,                         // Ð?a ch? slave
+		"SlaveID1" : 3,                         // ï¿½?a ch? slave
 		"Register1_1": 64,
 		"Unit1_1":"m3/s",
 
 		"Register1_2": 339,
 		"Unit1_2":"jun",
 
-		"Register1_3": 64,                      // Các tru?ng Register_x_y có th? là s? int ho?c float, N?u modbus d?c l?i thì giá tr? là FFFF cái này do server yêu c?u, ki?u int hay float cung là server yêu c?u
+		"Register1_3": 64,                      // Cï¿½c tru?ng Register_x_y cï¿½ th? lï¿½ s? int ho?c float, N?u modbus d?c l?i thï¿½ giï¿½ tr? lï¿½ FFFF cï¿½i nï¿½y do server yï¿½u c?u, ki?u int hay float cung lï¿½ server yï¿½u c?u
 		"Unit1_3":"m3/s",
 
 		"Register1_4": 12.3,	
-		"Unit1_4":"jun",                        // Ðon vi tinh 
+		"Unit1_4":"jun",                        // ï¿½on vi tinh 
 					
-		"SlaveID2" : 4,                         // Ðia chi salve
-		"Register2_1": 0.0000,                  // Luu ý, nêu server k cài d?t modbus thì các tru?ng này s? ko có ? json
+		"SlaveID2" : 4,                         // ï¿½ia chi salve
+		"Register2_1": 0.0000,                  // Luu ï¿½, nï¿½u server k cï¿½i d?t modbus thï¿½ cï¿½c tru?ng nï¿½y s? ko cï¿½ ? json
 		"Unit2_1":"kg",
 
 		"Register2_2": 0,
@@ -1269,7 +1269,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 
 		"Temperature": 26,                  // Nhi?t d?
 		"SIM": 452018100001935,             // Sim imei
-		"Uptime": 7,                        // Ð? debug, không c?n x? lí
+		"Uptime": 7,                        // ï¿½? debug, khï¿½ng c?n x? lï¿½
 		"FW": "0.0.5",                      // Firmware version
 		"HW": "0.0.1"                       // Hardware version
 	}

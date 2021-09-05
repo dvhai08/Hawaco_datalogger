@@ -84,7 +84,7 @@ typedef struct
     sys_ctx_sleep_peripheral_t peripheral_running;
 } sys_ctx_t;
 
-/**
+/*!
  * @brief		Get system context
  */
 sys_ctx_t *sys_ctx(void);

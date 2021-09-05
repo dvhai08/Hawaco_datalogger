@@ -147,7 +147,7 @@ bool gsm_utilities_get_network_access_tech(char *buffer, uint8_t *access_technol
 }
 
 /*****************************************************************************/
-/**
+/*!
  * @brief	:  
  * @param	:  +COPS: 0,0,"Viettel Viettel",7
  * @retval	:

@@ -51,12 +51,12 @@ typedef struct
 } measure_input_perpheral_data_t;
 
 
-/**
+/*!
  * @brief       Init measurement module 
  */
 void measure_input_initialize(void);
 
-/**
+/*!
  * @brief       Poll input
  */
 void measure_input_task(void);
@@ -66,45 +66,45 @@ void measure_input_task(void);
 // */
 //measure_input_water_meter_input_t *measure_input_get_backup_counter(void);
 
-/**
+/*!
  * @brief       RS485 new uart data
  * @param[in]	data New uart data
  */
 void measure_input_rs485_uart_handler(uint8_t data);
 
-/**
+/*!
  * @brief       RS485 IDLE detecte
  */
 void measure_input_rs485_idle_detect(void);
 
 
-/**
+/*!
  * @brief       Read current measurement input data
  * @param[in]	data New uart data
  */
 measure_input_perpheral_data_t *measure_input_current_data(void);
 
-/**
+/*!
  * @brief       Reset counter in backup domain
  * @param[in]	index Pulse meter index
  */
 void measure_input_reset_counter(uint8_t index);
 
-/**
+/*!
  * @brief       Reset indicator offset
  * @param[in]	index Pulse meter index
  * @param[in]	new_indicator Pulse indicator
  */
 void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator);
 
-/**
+/*!
  * @brief       Reset k offset
  * @param[in]	index k meter
  * @param[in]	new_k K divider
  */
 void measure_input_reset_k(uint8_t index, uint32_t new_k);
 	
-/**
+/*!
  * @brief       Measure input callback
  * @param[in]	input New input data
  */
@@ -115,25 +115,25 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input);
  */
 void measure_input_measure_wakeup_to_get_data(void);
 
-/**
+/*!
  * @brief       Check device has new sensor data
  * @retval      TRUE : New sensor data availble
  *              FALSE : No new sensor data
  */
 bool measure_input_sensor_data_availble(void);
 
-/**
+/*!
  * @brief       Get data in sensor message queue
  * @retval      Pointer to queue, NULL on no data availble
  */
 measure_input_perpheral_data_t *measure_input_get_data_in_queue(void);
 
-/**
+/*!
  * @brief       Save all data in sensor message queue to flash 
  */
 void measure_input_save_all_data_to_flash(void);
 
-/**
+/*!
  * @brief       Set delay time to enable input 4_20ma
  * @param[in]   ms Delay time in ms
  */

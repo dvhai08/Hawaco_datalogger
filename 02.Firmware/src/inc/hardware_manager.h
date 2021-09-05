@@ -19,19 +19,19 @@ typedef union
 } hardware_manager_reset_reason_t;
 
 
-/**
+/*!
  * @brief       Get reset reason
  * @retval      Reset reason 
  */
 hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void) ;
 
-/**
+/*!
  * @brief       Reset system
  * @param[in]   reset_reason Reset reason 
  */
 void hardware_manager_sys_reset(uint8_t reset_reason);
 
-/**
+/*!
  * @brief       Clear UART error flag 
  */
 void hardware_manager_clear_uart_error_flag(void);

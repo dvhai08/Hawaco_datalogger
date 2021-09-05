@@ -30,6 +30,10 @@ void app_eeprom_init(void)
 		m_cfg.battery_low_percent = 20;
 		m_cfg.max_sms_1_day = 10;
 		m_cfg.dir_level = 1;
+		for (uint32_t i = 0; i < APP_EEPROM_METER_MODE_MAX_ELEMENT; i++)
+		{
+			m_cfg.meter_mode[i] = APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN;
+		}
        
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{

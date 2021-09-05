@@ -78,7 +78,7 @@ hardware_manager_reset_reason_t *hardware_manager_get_reset_reason(void)
 }
 
 /*****************************************************************************/
-/**
+/*!
  * @brief	:  
  * @param	:  
  * @retval	:

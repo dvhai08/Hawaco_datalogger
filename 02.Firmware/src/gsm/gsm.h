@@ -1,6 +1,12 @@
 #ifndef GSM_H
 #define GSM_H
 
+/**
+ * \defgroup        gsm GSM
+ * \brief           All gsm function process here
+ * \{
+ */
+
 #include <stdbool.h>
 #include "sys_ctx.h"
 
@@ -105,7 +111,7 @@ void gsm_get_cell_id_and_signal_strength(char *Buffer);
 void gsm_query_sms(void);
 void gsm_process_cmd_from_sms(char *Buffer);
 
-/**
+/*!
  * @brief           Send sms to phone number
  * @param[in]       phone_number : Des phone number
  * @param[in]       message : A message send to phone number
@@ -113,32 +119,32 @@ void gsm_process_cmd_from_sms(char *Buffer);
 bool gsm_send_sms(char *phone_number, char *message);
 
 
-/**
+/*!
  * @brief           Get SMS buffer size
  * @retval          Pointer to sms buffer size
  */
 uint32_t gsm_get_max_sms_memory_buffer(void);
 
-/**
+/*!
  * @brief       Get SMS context
  * @retval      Pointer to sms memory buffer
  */
 gsm_sms_msg_t *gsm_get_sms_memory_buffer(void);
 
 
-/**
+/*!
  * @brief       Process new sms message
  * @param[in]   buffer : Received buffer from serial port
  */
 void gsm_sms_layer_process_cmd(char * buffer);
 
-/**
+/*!
  * @brief           Change GSM state 
  * @param[in]       new_state New gsm state
  */
 void gsm_change_state(gsm_state_t new_state);
 
-/**
+/*!
  * @brief       Check gsm is sleeping or not
  * @retval      TRUE : GSM is sleeping
  *              FALSE : GSM is not sleeping
@@ -171,7 +177,7 @@ typedef struct
 } gsm_hardware_t;
 
 
-/**
+/*!
  * @brief       Send data directly to serial port
  * @param[in]   raw Raw data send to serial port
  * @param[in]   len Data length
@@ -179,48 +185,48 @@ typedef struct
 void gsm_hw_uart_send_raw(uint8_t *raw, uint32_t length);
 
 
-/**
+/*!
  * @brief       Get internet mode
  * @retval      Internet mode
  */
 gsm_internet_mode_t *gsm_get_internet_mode(void);
 
-/**
+/*!
  * @brief       GSM hardware uart polling
  */
 void gsm_hw_layer_run(void);
 
-/**
+/*!
  * @brief       Change GSM hardware uart polling interval is ms
  * @param[in]   Polling interval in ms
  */
 void gsm_change_hw_polling_interval(uint32_t ms);
 
-/**
+/*!
  * @brief       Set flag to prepare enter read sms state
  */
 void gsm_set_flag_prepare_enter_read_sms_mode(void);
 
 
-/**
+/*!
  * @brief       Enter read sms state
  */
 void gsm_enter_read_sms(void);
 
-/**
+/*!
  * @brief       Get current tick in ms
  * @retval      Current tick in ms
  */
 uint32_t gsm_get_current_tick(void);
 
-/**
+/*!
  * @brief       Update current index of gsm dma rx buffer
  * @param[in]   rx_status RX status code
  *				TRUE : data is valid, FALSE data is invalid
  */
 void gsm_uart_rx_dma_update_rx_index(bool rx_status);
 
-/**
+/*!
  * @brief       UART transmit callback
  * @param[in]   status TX status code
  *				TRUE : transmit data is valid
@@ -228,80 +234,84 @@ void gsm_uart_rx_dma_update_rx_index(bool rx_status);
  */
 void gsm_uart_tx_complete_callback(bool status);
 
-/**
+/*!
  * @brief		Get SIM IMEI
  * @retval		SIM IMEI
  */
 char* gsm_get_sim_imei(void);
 
-/**
+/*!
  * @brief		Get SIM CCID
  * @retval		SIM CCID pointer
  */
 char *gsm_get_sim_ccid(void);
 
-/**
+/*!
  * @brief		Get GSM IMEI
  * @retval		GSM IMEI
  */
 char* gsm_get_module_imei(void);
 
 
-/**
+/*!
  * @brief		Set SIM IMEI
  * @param[in]	SIM IMEI
  */
 void gsm_set_sim_imei(char *imei);
 
-/**
+/*!
  * @brief		Set GSM IMEI
  * @param[in]	GSM IMEI
  */
 void gsm_set_module_imei(char *imei);
 
-/**
+/*!
  * @brief		Set network operator
  * @param[in]	Network operator
  */
 void gsm_set_network_operator(char *nw_operator);
 
-/**
+/*!
  * @brief		Get network operator
  * @retval		Network operator
  */
 char *gsm_get_network_operator(void);
 
-/**
+/*!
  * @brief		Set GSM CSQ
  * @param[in]	CSQ GSM CSQ
  */
 void gsm_set_csq(uint8_t csq);
 
-/**
+/*!
  * @brief		Get GSM CSQ
  * @retval	 	GSM CSQ
  */
 uint8_t gsm_get_csq(void);
 
-/**
+/*!
  * @brief		Get GSM CSQ in percent
  * @retval	 	GSM CSQ in percent
  */
 uint8_t gsm_get_csq_in_percent(void);
 
-/**
+/*!
  * @brief		Wakeup gsm module
  */
 void gsm_set_wakeup_now(void);
 
-/**
+/*!
  * @brief		Reset gsm rx buffer
  */
 void gsm_hw_layer_reset_rx_buffer(void);
 
-/**
+/*!
  * @brief		GSM mnr task
  */
 void gsm_mnr_task(void *arg);
+
+/**
+ * \}
+ */
 
 #endif // GSM_H

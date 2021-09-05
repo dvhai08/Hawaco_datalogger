@@ -194,31 +194,7 @@ void gsm_manager_tick(void)
             m_do_read_sms = false;
             gsm_change_state(GSM_STATE_READ_SMS);
         }
-		
-		if (ctx->status.last_state_is_disconnect)
-		{				
-			ctx->status.last_state_is_disconnect = 0;
-			if (strlen((char*)eeprom_cfg->phone) > 9
-				&& eeprom_cfg->io_enable.name.warning
-				&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
-			{
-				char msg[128];
-				char *p = msg;
-				rtc_date_time_t time;
-				app_rtc_get_time(&time);
 				
-				p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
-								time.year + 2000,
-								time.month,
-								time.day,
-								time.hour,
-								time.minute);
-				p += sprintf(p, "Thiet bi %s, %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "da ket noi tro lai");
-				ctx->status.total_sms_in_24_hour++;
-				gsm_send_sms((char*)eeprom_cfg->phone, msg);
-			}
-		}
-		
 		if (eeprom_cfg->io_enable.name.register_sim_number == 0
 			&& strlen((char*)eeprom_cfg->phone) > 9
 			&& eeprom_cfg->io_enable.name.warning
@@ -829,7 +805,9 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         rtc_date_time_t time;
         gsm_utilities_parse_timestamp_buffer((char *)resp_buffer, &time);
         time.hour += 7;     // GMT + 7
-        if (time.year > 20 && time.year < 40 && time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
+        if (time.year > 20 
+			&& time.year < 40 
+			&& time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
                                                                 // Lazy solution : do not update time from 17h
         {
             app_rtc_set_counter(&time);
@@ -1291,13 +1269,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 											i+1,
 											0);
 		}
-		else
-		{
-			temp_counter = msg->counter[i].reserve / msg->counter[i].k + msg->counter[i].indicator;
-			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
-											i+1,
-											temp_counter);
-		}
+//		else
+//		{
+//			temp_counter = msg->counter[i].reserve / msg->counter[i].k + msg->counter[i].indicator;
+//			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
+//											i+1,
+//											temp_counter);
+//		}
 		// K : he so chia cua dong ho nuoc, input 1
 		// Offset: Gia tri offset cua dong ho nuoc
 		// Mode : che do hoat dong
@@ -1445,13 +1423,23 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
     // Uptime
     total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
-    
+	
+	// Relase data
 	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
+	
+	// Server
+	char *server = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
+	if (strlen((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]) > 8)
+	{
+		server = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
+	}
+					
+	total_length += sprintf((char *)(ptr + total_length), "\"SVR\":\"%s\",", server);
 	
     // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}", VERSION_CONTROL_HW);
-        
+    
 //    hardware_manager_get_reset_reason()->value = 0;
 
     DEBUG_VERBOSE("%s\r\n", (char*)ptr);
@@ -1676,6 +1664,31 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		{
 			ctx->status.try_new_server--;
 		}
+        
+        if (ctx->status.last_state_is_disconnect)
+		{				
+			ctx->status.last_state_is_disconnect = 0;
+			if (strlen((char*)eeprom_cfg->phone) > 9
+				&& eeprom_cfg->io_enable.name.warning
+				&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
+			{
+				char msg[128];
+				char *p = msg;
+				rtc_date_time_t time;
+				app_rtc_get_time(&time);
+				
+				p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
+								time.year + 2000,
+								time.month,
+								time.day,
+								time.hour,
+								time.minute);
+				p += sprintf(p, "Thiet bi %s, %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "da ket noi tro lai");
+				ctx->status.total_sms_in_24_hour++;
+				gsm_send_sms((char*)eeprom_cfg->phone, msg);
+			}
+		}
+        
         gsm_change_state(GSM_STATE_OK);
 //        DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);
@@ -1935,7 +1948,7 @@ void gsm_mnr_task(void *arg)
 					{
 						server = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
 					}
-					p += snprintf(p, 155, "TB %s,%s %s", gsm_get_module_imei(), "Mat ket noi toi", server);
+					p += snprintf(p, 155, "TB %s %s,%s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "Mat ket noi toi", server);
 					ctx->status.total_sms_in_24_hour++;
 					gsm_send_sms((char*)eeprom_cfg->phone, msg);
                 }

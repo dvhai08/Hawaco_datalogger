@@ -4,6 +4,11 @@
 #include <stdint.h>
 #include "hardware.h"
 
+/**
+ * \defgroup        App eeprom
+ * \brief           Store device config into internal eeprom
+ * \{
+ */
 
 typedef union
 {
@@ -73,25 +78,29 @@ typedef struct
 } __attribute__((packed))  app_eeprom_config_data_t;
 
 
-/**
+/*!
  * @brief       Init eeprom data 
  */
 void app_eeprom_init(void);
 
-/**
+/*!
  * @brief		Save data to eeprom
  */
 void app_eeprom_save_config(void);
 
-/**
+/*!
  * @brief		Read data from eeprom
  * @retval	 	Pointer to data, NULL on error
  */
 app_eeprom_config_data_t *app_eeprom_read_config_data(void);
 
-/**
+/*!
  * @brief       Erase eeprom data
  */
 void app_eeprom_erase(void);
+
+/**
+ * \}
+ */
 
 #endif /* APP_EEPROM_H */

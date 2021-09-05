@@ -48,7 +48,7 @@ typedef struct
     sync_drv_callback_t fn;
 } sync_drv_reg_t;
 
-/**
+/*!
  * @brief Insert event and callback into linked list
  * @retval TRUE : success
  *         FALSE : No memory
@@ -58,40 +58,40 @@ bool sync_drv_insert_event(sync_drv_callback_t callback, uint32_t interval, sync
 
 sync_drv_reg_t *sync_drv_next(void);
 
-/**
+/*!
  * @brief Search and remove sync driver by callback
  */
 void sync_drv_remove_by_callback(sync_drv_callback_t cb);
 
-/**
+/*!
  * @brief Change sync interval 
  */
 void sync_drv_change_interval(sync_drv_callback_t cb, uint32_t interval);
 
-/**
+/*!
  * @brief Remove sync event
  */
 void sync_drv_remove(sync_drv_reg_t *node_sync);
 
-/**
+/*!
  * @brief Initialize sync driver
  */
 void sync_drv_initialize(void);
 
-/**
+/*!
  * @brief Find node by callback
  */
 sync_drv_reg_t *sync_drv_find_node_by_callback(sync_drv_callback_t callback);
 
 #if SYNC_DRV_STATIC_ALLOCATOR
 
-/**
+/*!
  * @brief Get maximim sync event supported by driver
  * @retval Max event
  */
 uint32_t sync_drv_get_maximum_event(void);
 
-/**
+/*!
  * @brief Get number of sync event currently running
  * @retval Number of active event
  */

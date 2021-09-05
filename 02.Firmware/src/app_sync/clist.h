@@ -88,7 +88,7 @@ extern "C" {
  */
 
 
-/**
+/*!
  * @brief List node structure
  *
  * Used as is as reference to a list, or as member of any data structure that
@@ -102,7 +102,7 @@ typedef struct list_node {
     struct list_node *next;     /**< pointer to next list entry */
 } list_node_t;
 
-/**
+/*!
  * @brief Insert object into list
  *
  * If called with a list reference as node, the new node will become the new
@@ -117,7 +117,7 @@ static inline void list_add(list_node_t *node, list_node_t *new_node)
     node->next = new_node;
 }
 
-/**
+/*!
  * @brief Removes the head of the list and returns it
  *
  * @param[in] list  Pointer to the list itself, where list->next points
@@ -135,7 +135,7 @@ static inline list_node_t *list_remove_head(list_node_t *list)
     return head;
 }
 
-/**
+/*!
  * @brief Removes the node from the list
  *
  * @param[in] list  Pointer to the list itself, where list->next points
@@ -159,7 +159,7 @@ static inline list_node_t *list_remove(list_node_t *list, list_node_t *node)
 //========================================= END LIST.H ===================================//
 
 
-/**
+/*!
  * @brief List node structure
  *
  * Used as is as reference to a list.
@@ -167,7 +167,7 @@ static inline list_node_t *list_remove(list_node_t *list, list_node_t *node)
  */
 typedef list_node_t clist_node_t;
 
-/**
+/*!
  * @brief Appends *new_node* at the end of *list
  *
  * @note Complexity: O(1)
@@ -188,7 +188,7 @@ static inline void clist_rpush(clist_node_t *list, clist_node_t *new_node)
     list->next = new_node;
 }
 
-/**
+/*!
  * @brief Inserts *new_node* at the beginning of *list
  *
  * @note Complexity: O(1)
@@ -209,7 +209,7 @@ static inline void clist_lpush(clist_node_t *list, clist_node_t *new_node)
     }
 }
 
-/**
+/*!
  * @brief Removes and returns first element from list
  *
  * @note Complexity: O(1)
@@ -234,7 +234,7 @@ static inline clist_node_t *clist_lpop(clist_node_t *list)
     }
 }
 
-/**
+/*!
  * @brief Advances the circle list.
  *
  * The result of this function is will be a list with
@@ -254,7 +254,7 @@ static inline void clist_lpoprpush(clist_node_t *list)
     }
 }
 
-/**
+/*!
  * @brief Returns first element in list
  *
  * @note: Complexity: O(1)
@@ -270,7 +270,7 @@ static inline clist_node_t *clist_lpeek(const clist_node_t *list)
     return NULL;
 }
 
-/**
+/*!
  * @brief Returns last element in list
  *
  * @note: Complexity: O(1)
@@ -283,7 +283,7 @@ static inline clist_node_t *clist_rpeek(const clist_node_t *list)
     return list->next;
 }
 
-/**
+/*!
  * @brief Removes and returns last element from list
  *
  * @note Complexity: O(n) with n being the number of elements in the list.
@@ -305,7 +305,7 @@ static inline clist_node_t *clist_rpop(clist_node_t *list)
     }
 }
 
-/**
+/*!
  * @brief Finds node and returns its predecessor
  *
  * @note Complexity: O(n)
@@ -333,7 +333,7 @@ static inline clist_node_t *clist_find_before(const clist_node_t *list, const cl
     return NULL;
 }
 
-/**
+/*!
  * @brief Finds and returns node
  *
  * @note Complexity: O(n)
@@ -356,7 +356,7 @@ static inline clist_node_t *clist_find(const clist_node_t *list, const clist_nod
     }
 }
 
-/**
+/*!
  * @brief Finds and removes node
  *
  * @note Complexity: O(n)
@@ -389,7 +389,7 @@ static inline clist_node_t *clist_remove(clist_node_t *list, clist_node_t *node)
     return NULL;
 }
 
-/**
+/*!
  * @brief Traverse clist, call function for each member
  *
  * The pointer supplied by @p arg will be passed to every call to @p func.
@@ -419,13 +419,13 @@ static inline clist_node_t *clist_foreach(clist_node_t *list, int(*func)(clist_n
     return NULL;
 }
 
-/**
+/*!
  * @brief Typedef for comparison function used by @ref clist_sort()
  *
  */
 typedef int (*clist_cmp_func_t)(clist_node_t *a, clist_node_t *b);
 
-/**
+/*!
  * @brief   List sorting helper function
  *
  * @internal
@@ -437,7 +437,7 @@ typedef int (*clist_cmp_func_t)(clist_node_t *a, clist_node_t *b);
  */
 clist_node_t *_clist_sort(clist_node_t *list_head, clist_cmp_func_t cmp);
 
-/**
+/*!
  * @brief   Sort a list
  *
  * This function will sort @p list using merge sort.

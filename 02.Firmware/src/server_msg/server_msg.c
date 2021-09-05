@@ -52,7 +52,7 @@ static void process_server_addr_change(char *buffer)
 			{
 				m_ctx->status.try_new_server = 2;
 				snprintf((char*)m_ctx->status.new_server, APP_EEPROM_MAX_SERVER_ADDR_LENGTH - 1, "%s", (char*)tmp);
-				DEBUG_INFO("Server changed to %s\r\n", m_eeprom_config->server_addr);
+				DEBUG_INFO("Server changed to %s\r\n", (char*)m_ctx->status.new_server);
 			}
 			else
 			{

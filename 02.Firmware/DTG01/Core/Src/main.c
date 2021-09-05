@@ -53,6 +53,8 @@
 #include "flash_if.h"
 #include "version_control.h"
 #include "jig.h"
+#include "umm_malloc.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -203,7 +205,22 @@ int main(void)
     cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-    DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
+	char *info = umm_malloc(128);
+	char *p = info;
+	rtc_date_time_t time;
+	app_rtc_get_time(&time);
+	
+	p += sprintf(p, "[%04u/%02u/%02u %02u:%02u] ",
+					time.year + 2000,
+					time.month,
+					time.day,
+					time.hour,
+					time.minute);
+								
+    DEBUG_INFO("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
+	DEBUG_INFO("Now is %s\r\n", info);
+	umm_free(info);
+	
 	jig_start();
 //uint32_t spi_flash_packet_size = sizeof(app_spi_flash_data_t);
 //DEBUG_INFO("Size of spi flash %u\r\n", spi_flash_packet_size);

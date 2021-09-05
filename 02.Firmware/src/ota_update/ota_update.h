@@ -57,7 +57,7 @@ typedef struct
 	uint32_t reserve[30];
 } ota_flash_cfg_t;
 
-/**
+/*!
  * @brief		Start ota update process
  * @param[in]	expected_size : Firmware size, included header signature
  * @retval 		TRUE : Operation success
@@ -65,7 +65,7 @@ typedef struct
  */
 bool ota_update_start(uint32_t expected_size);
 
-/**
+/*!
  * @brief		Write data to flash
  * @param[in]	data : Data write to flash
  * @param[in]	length : Size of data in bytes
@@ -75,21 +75,21 @@ bool ota_update_start(uint32_t expected_size);
  */
 bool ota_update_write_next(uint8_t *data, uint32_t length);
 
-/**
+/*!
  * @brief Finish ota process
  * @param[in] status TRUE : All data downloaded success
  *                   FALSE : A problem occurs
  */
 void ota_update_finish(bool status);
 
-/**
+/*!
  * @brief		Check ota update status
  * @retval		TRUE : OTA is running
  * 				FALSE : OTA is not running
  */
 bool ota_update_is_running(void);
 
-/**
+/*!
  * @brief		Get current ota update
  * @retval		OTA config in flash
  */

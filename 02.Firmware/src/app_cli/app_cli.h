@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-/**
+/*!
  * @brief Start cli task 
  */
 void app_cli_start(void);
 
-/**
+/*!
  * @brief Polling cli service
  */
 void app_cli_poll(void);

@@ -8,7 +8,7 @@
 #endif
 #ifdef DTG02
 #define VERSION_CONTROL_DEVICE			"DTG2"
-#define VERSION_CONTROL_FW				"0.0.6"
+#define VERSION_CONTROL_FW				"0.0.7"
 #define VERSION_CONTROL_HW				"0.0.1"
 #endif
 
@@ -29,7 +29,7 @@
 #include <stdint.h>
 
 
-/**
+/*!
  * @brief		Comapare version control
  * @retval		version status @ref VERSION_CONTROL_RESULT
  */

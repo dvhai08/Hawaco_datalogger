@@ -20,7 +20,7 @@ typedef struct
 } app_sync_config_t;
 
 
-/**
+/*!
  * @brief Register sync driver callback
  * @param[in] interval Interval in milisecond
  * @param[in] mode Event excecute only nce time or excecute forever
@@ -33,25 +33,25 @@ bool app_sync_register_callback(sync_drv_callback_t callback,
                                 sync_drv_syn_mode_t mode, 
                                 sync_drv_scope_t scope_sync);
 
-/**
+/*!
  * @brief Remove sync driver callback
  * @param[in] scope_sync Event execute in callback
  */
 void app_sync_remove_callback(sync_drv_callback_t callback);
 
-/**
+/*!
  * @brief Get number of event
  * @retval Number of event in driver
  */
 uint32_t app_sync_get_number_of_event(void);
 
-/**
+/*!
  * @brief Get sync event in milisecond
  * @retval Current sync period in milisecond
  */
 uint32_t app_sync_get_timeslice_interval(void);
 
-/**
+/*!
  * @brief Initialize system event service
  * @param[in] config : Driver configuration parameter
  * @retval TRUE : App sync init success
@@ -59,7 +59,7 @@ uint32_t app_sync_get_timeslice_interval(void);
  */
 bool app_sync_sytem_init(app_sync_config_t * config);
 
-/**
+/*!
  * @brief app_sync_polling_task
  */
 void app_sync_polling_task(void);

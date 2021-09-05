@@ -60,6 +60,15 @@ int main(int argc, char **argv)
     int retval = 0;
     int header_len;
     /* Path + header + fw version + hardware version + output_file name */
+    if (argc == 2)
+    {
+        if (strstr(argv[1], "help"))
+        {
+            printf("Please use format [input_file_name.bin header firmware_version hardware_version output_file_name]\r\n", argc);
+            printf("Example mcu.bin DTG01 0.0.1 0.0.2 release.bin\r\n");
+            return 0;
+        }
+    }
     if (argc != 6)
     {
         printf("Invalid %u arguments, please use format [input_file_name.bin header firmware_version hardware_version output_file_name]\r\n", argc);

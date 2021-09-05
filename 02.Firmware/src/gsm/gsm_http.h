@@ -53,7 +53,7 @@ typedef struct
 } gsm_http_config_t;
 
 
-/**
+/*!
  * @brief       Get max url size allowed
  * @retval      Max url length
  */
@@ -62,18 +62,18 @@ static inline uint32_t gsm_http_get_max_url_size(void)
     return GSM_HTTP_MAX_URL_SIZE - 1;       // reserve 1 byte for null terminal
 }
 
-/**
+/*!
  * @brief       Get current gsm http configuration
  * @retval      Pointer to current gsm configuration
  */
 gsm_http_config_t *gsm_http_get_config(void);
 
-/**
+/*!
  * @brief       Clean up current configuration
  */
 void gsm_http_cleanup(void);
 
-/**
+/*!
  * @brief       Start gsm http download
  * @param[in] config : HTTP configuration
  * @retval TRUE : Operation success
