@@ -260,10 +260,17 @@ void gsm_http_close_on_error(void)
     // Goto case close http session
     m_ssl_step = 0;
     m_total_bytes_recv = 0;
-    m_renew_config_ssl = 0;
+    m_renew_config_ssl = true;
     if (m_http_cfg.on_event_cb)
     {
-        m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+        if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
+        {
+            m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+        }
+        else
+        {
+            m_http_cfg.on_event_cb(GSM_HTTP_POST_EVENT_FINISH_FAILED, &m_total_bytes_recv);
+        }
     }
 }
 
@@ -532,7 +539,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
         case 8:
         {
-            DEBUG_INFO("URL : %s, response %s\r\n", 
+            DEBUG_INFO("Connect : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
 
@@ -597,8 +604,11 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
             DEBUG_INFO("HTTP action : %s, response %s\r\n", 
                         (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                         (char*)response_buffer);
-
-            if (m_http_cfg.action == GSM_HTTP_ACTION_GET)       // GET
+            if (event == GSM_EVENT_ERROR)
+            {
+                gsm_http_close_on_error();
+            }
+            else if (m_http_cfg.action == GSM_HTTP_ACTION_GET)       // GET
             {
                 if (event == GSM_EVENT_OK)
                 {
@@ -656,7 +666,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                     return;
                 }
             }
-            else        // POST
+            else       // POST
             {
 //                DEBUG_INFO("Input http post, header size %u, data size %u\r\n", 
 //								strlen((char*)post_rx_data.header), strlen((char*)post_rx_data.data));

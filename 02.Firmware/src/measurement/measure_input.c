@@ -310,10 +310,11 @@ void measure_input_save_all_data_to_flash(void)
     {
 		if (m_sensor_msq[j].state != MEASUREMENT_QUEUE_STATE_IDLE)
 		{
+            DEBUG_INFO("Store data in queue index %u to flash\r\n", j);
 			// 4-20mA input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
 			{
-				wr_data.input_4_20mA[i] = m_sensor_msq[i].input_4_20mA[i];
+				wr_data.input_4_20mA[i] = m_sensor_msq[j].input_4_20mA[i];
 			}
 			
 			// Meter input
@@ -345,7 +346,7 @@ void measure_input_save_all_data_to_flash(void)
 			// 485
 			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
 			{
-				memcpy(&wr_data.rs485[nb_485_device], &m_sensor_msq[nb_485_device].rs485[nb_485_device], sizeof(measure_input_modbus_register_t));
+				memcpy(&wr_data.rs485[nb_485_device], &m_sensor_msq[j].rs485[nb_485_device], sizeof(measure_input_modbus_register_t));
 			}
 			
 			

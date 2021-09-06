@@ -332,6 +332,8 @@ int main(void)
 	{
 		RS485_POWER_EN(1);
 		usart_lpusart_485_control(1);
+        char *server;
+        uint32_t server_len;
 		if (jig_found_cmd_sync_data_to_host())
 		{
 			// Step 1 : Wakeup spi
@@ -349,6 +351,17 @@ int main(void)
             spi_deinit();
             system->peripheral_running.name.flash_running = 0;
 		}
+        else if (jig_found_cmd_change_server(&server, &server_len))
+        {
+            server[server_len] = 0;
+            usart_lpusart_485_send((uint8_t*)"Set new server ", strlen("Set new server "));
+            usart_lpusart_485_send((uint8_t*)server, strlen(server));
+            memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+            memset(eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+            memcpy((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], server, server_len);
+            app_eeprom_save_config();		// Store current config into eeprom
+            
+        }
 	}
 	else
 	{

@@ -31,9 +31,18 @@ bool jig_is_in_test_mode(void);
 
 /**
  * @brief		Check cmd sync data from host
- * @retval		TRUE	jig cmd update data found, device need to send data to server
+ * @retval		TRUE jig update cmd data found, device need to send data to server or rs485 port
+ *              FALSE jig update cmd not found
  */
 bool jig_found_cmd_sync_data_to_host(void);
+
+
+/**
+ * @brief		Check cmd change server
+ * @retval		TRUE jig new server data found, device need to send data to server or rs485 port
+ *              FALSE jig new server data not found
+ */
+bool jig_found_cmd_change_server(char **server_ptr, uint32_t *server_name_len);
 
 /**
  * @brief		Release JIG memory

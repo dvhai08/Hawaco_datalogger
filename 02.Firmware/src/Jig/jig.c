@@ -217,6 +217,35 @@ bool jig_found_cmd_sync_data_to_host(void)
 	return false;
 }
 
+bool jig_found_cmd_change_server(char **ptr, uint32_t *size)
+{
+    // Format Server:http://iot.wilab.vn\r\n;
+    *size = 0;
+    char *server = strstr((char*)m_jig_buffer.rx_ptr, "Server:http://");
+	if (server && strstr(server, "\r\n"))
+	{
+        *ptr = server + 7;      // 7 = strlen("Server:")
+        *size = strstr(server, "\r\n") - *ptr;
+        if (*size >= (APP_EEPROM_MAX_SERVER_ADDR_LENGTH-1))
+        {
+            return false;
+        }
+        return true;
+	}
+	else if ((server = strstr((char*)m_jig_buffer.rx_ptr, "Server:https://"))
+	        && server)
+	{
+        *ptr = server + 7;      // 7 = strlen("Server:")
+        *size = strstr(server, "\r\n") - *ptr;
+        if (*size >= (APP_EEPROM_MAX_SERVER_ADDR_LENGTH-1))
+        {
+            return false;
+        }
+        return true;
+	}
+	return false;
+}
+
 void jig_release_memory(void)
 {
 	if (m_jig_buffer.rx_ptr)

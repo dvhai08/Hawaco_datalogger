@@ -1567,14 +1567,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         DEBUG_INFO("Get http post data from queue\r\n");
         m_sensor_msq = measure_input_get_data_in_queue();
         if (!m_sensor_msq)
-        {
-//            DEBUG_VERBOSE("No more sensor data\r\n");
+        {       
             if (!m_retransmision_data_in_flash)
             {
+                DEBUG_INFO("No more retransmission data\r\n");
                 gsm_change_state(GSM_STATE_OK);
             }
             else
             {
+                DEBUG_INFO("Found retransmission data\r\n");
                 static measure_input_perpheral_data_t tmp;
 				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 				{
@@ -1817,8 +1818,10 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
         if (retransmition)
         {
+            DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
             if (!app_spi_flash_get_stored_data(addr, &rd_data, true))
             {
+                DEBUG_ERROR("Read failed\r\n");
                 gsm_change_state(GSM_STATE_OK);
                 m_retransmision_data_in_flash = NULL;
             }
@@ -1847,6 +1850,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
     {
+        DEBUG_WARN("Http post event failed\r\n");
         app_spi_flash_data_t wr_data;
         wr_data.resend_to_server_flag = 0;
 		
@@ -1899,7 +1903,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         app_spi_flash_write_data(&wr_data);
 
-        
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
     }
