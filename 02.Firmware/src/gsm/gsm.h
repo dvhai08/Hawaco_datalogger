@@ -35,6 +35,7 @@
 #define GSM_MAX_SMS_CONTENT_LENGTH   160
 #define GSM_MAX_SMS_PHONE_LENGTH     16
 #define GSM_MIN_SMS_PHONE_LENGTH     9
+#define MAX_DISCONNECTED_TIMEOUT_S                      70
 
 typedef enum
 {

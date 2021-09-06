@@ -50,7 +50,6 @@
 #define GET_URL         		"%s/api/v1/%s/attributes"
 #define POLL_CONFIG_URL      	"%s/api/v1/default_imei/attributes"
 
-#define MAX_DISCONNECTED_TIMEOUT_S		60
 
 extern gsm_manager_t gsm_manager;
 static char m_at_cmd_buffer[128];
@@ -488,7 +487,11 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_RESET:
         DEBUG_RAW("RESET\r\n");
         gsm_hw_layer_reset_rx_buffer();
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
         break;
+    
     case GSM_STATE_SEND_SMS:
         DEBUG_RAW("SEND SMS\r\n");
         break;
@@ -916,42 +919,81 @@ void gsm_hard_reset(void)
 
     switch (step)
     {
-    case 0: // Power off
+    case 0: // Power off // add a lot of delay in power off state, due to reserve time for measurement sensor data
+            // If vbat is low, sensor data will be incorrect
         gsm_manager.gsm_ready = 0;
         GSM_PWR_EN(0);
         GSM_PWR_RESET(1);
         GSM_PWR_KEY(0);
         step++;
         break;
-
-    case 1:
-        GSM_PWR_RESET(0);
+    case 1: 
+        gsm_manager.gsm_ready = 0;
         GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
         step++;
         break;
-
-    case 2:
+    case 2: 
+        gsm_manager.gsm_ready = 0;
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
+        step++;
+        break;
+    case 3: 
+        gsm_manager.gsm_ready = 0;
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
+        step++;
+        break;
+    case 4:
+        gsm_manager.gsm_ready = 0;
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
+        step++;
+        break;
+       
+    case 5:
+        gsm_manager.gsm_ready = 0;
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
+        step++;
+        break;
+    
+    case 6:
+        gsm_manager.gsm_ready = 0;
+        GSM_PWR_EN(0);
+        GSM_PWR_RESET(1);
+        GSM_PWR_KEY(0);
+        step++;
+        break;
+    
+    case 7:
         GSM_PWR_RESET(0);
         DEBUG_INFO("Gsm power on\r\n");
         GSM_PWR_EN(1);
         step++;
         break;
 
-    case 3: // Delayms for Vbat stable
+    case 8: // Delayms for Vbat stable
         step++;
         break;
 
-    case 4: // Delayms for Vbat stable
+    case 9: // Delayms for Vbat stable
         step++;
         break;
 
-    case 5:
+    case 10:
         /* Tao xung |_| de Power On module, min 1s  */
         GSM_PWR_KEY(1);
         step++;
         break;
 
-    case 6:
+    case 11:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
 		usart1_control(true);
@@ -959,16 +1001,18 @@ void gsm_hard_reset(void)
         step++;
         break;
 
-    case 7:
-    case 8:
-    case 9:
-    case 10:
+    case 12:
+    case 13:
+    case 14:
+    case 15:
         step++;
         break;
-    case 11:
+    
+    case 16:
         step = 0;
         gsm_change_state(GSM_STATE_POWER_ON);
         break;
+    
     default:
         break;
     }
@@ -1794,10 +1838,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             gsm_change_state(GSM_STATE_OK);
             DEBUG_INFO("No more data need to re-send to server\r\n");
             m_retransmision_data_in_flash = NULL;
-        }
-		
-		
-        
+        } 
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);
 #endif

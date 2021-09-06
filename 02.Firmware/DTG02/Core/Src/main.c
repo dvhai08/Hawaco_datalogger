@@ -65,7 +65,6 @@
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
-#define MAX_DISCONNECTED_TIMEOUT_S                      60
 #define TEST_BACKUP_REGISTER                            0
 #define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
