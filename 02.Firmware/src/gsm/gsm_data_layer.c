@@ -72,6 +72,7 @@ static uint32_t m_malloc_count = 0;
 static char *m_last_http_msg = NULL;
 static app_spi_flash_data_t *m_retransmision_data_in_flash;
 uint32_t m_wake_time = 0;
+static uint32_t m_send_time = 0;
 
 #if GSM_READ_SMS_ENABLE
 bool m_do_read_sms = false;
@@ -1467,6 +1468,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
     // Uptime
     total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
+    total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", m_send_time++);
 	
 	// Relase data
 	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
@@ -1598,7 +1600,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                     tmp.output_4_20mA[i] = m_retransmision_data_in_flash->output_4_20mA[i];
                 }
 				
-                tmp.csq_percent = 0;
+//                tmp.csq_percent = 0;
+                tmp.csq_percent = m_retransmision_data_in_flash->csq_percent;
                 tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
                 tmp.temperature = m_retransmision_data_in_flash->temp;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
@@ -1784,6 +1787,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
 		}
 		
+        wr_data.csq_percent = m_sensor_msq->csq_percent;
         wr_data.timestamp = m_sensor_msq->measure_timestamp;
         wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
@@ -1870,6 +1874,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data.vbat_mv = m_sensor_msq->vbat_mv;
         wr_data.vbat_precent = m_sensor_msq->vbat_percent;
         wr_data.temp = m_sensor_msq->temperature;
+        wr_data.csq_percent = m_sensor_msq->csq_percent;
 		
 		// on/off
 		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];

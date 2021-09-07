@@ -33,6 +33,7 @@ typedef struct
 	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
     app_spi_flash_on_off_data_t on_off;
 	uint32_t timestamp;		//
+    uint8_t csq_percent;
 	
     uint32_t resend_to_server_flag;
 	uint32_t crc;

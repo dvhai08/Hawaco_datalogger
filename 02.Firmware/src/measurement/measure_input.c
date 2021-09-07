@@ -342,6 +342,7 @@ void measure_input_save_all_data_to_flash(void)
 			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
 			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
 			wr_data.temp = m_sensor_msq[j].temperature;
+            wr_data.csq_percent = m_sensor_msq[j].csq_percent;
 			
 			// 485
 			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
