@@ -500,7 +500,7 @@ void adc_convert(void)
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
-    DEBUG_VERBOSE("VDDA %umv\r\n", m_adc_input.vdda_mv);
+
     
 	/* ADC Vbat 4.2V */
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
@@ -508,6 +508,7 @@ void adc_convert(void)
     /* ADC Vin 24V */
 	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
     
+    DEBUG_WARN("VDDA-VBAT %umv, %umv\r\n", m_adc_input.vdda_mv, m_adc_input.bat_mv);
     /* Get 4-20mA input channel to mv */
     
     // Channel 0

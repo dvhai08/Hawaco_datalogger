@@ -521,7 +521,6 @@ void measure_input_task(void)
 				m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
 #endif
                 m_measure_data.temperature = adc_retval->temp;
-
                 m_measure_data.state = MEASUREMENT_QUEUE_STATE_PENDING;
 
                 // Scan for empty buffer

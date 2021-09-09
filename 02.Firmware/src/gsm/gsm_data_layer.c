@@ -195,7 +195,7 @@ void gsm_manager_tick(void)
             gsm_change_state(GSM_STATE_READ_SMS);
         }
 				
-		if (eeprom_cfg->io_enable.name.register_sim_number == 0
+		if (eeprom_cfg->io_enable.name.register_sim_status == 0
 			&& strlen((char*)eeprom_cfg->phone) > 9
 			&& eeprom_cfg->io_enable.name.warning
 			&& (ctx->status.total_sms_in_24_hour < eeprom_cfg->max_sms_1_day))
@@ -213,7 +213,7 @@ void gsm_manager_tick(void)
 			p += sprintf(p, "Thiet bi %s %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "dang ki hoa mang");
 			ctx->status.total_sms_in_24_hour++;
 			gsm_send_sms((char*)eeprom_cfg->phone, msg);
-			eeprom_cfg->io_enable.name.register_sim_number = 1;
+			eeprom_cfg->io_enable.name.register_sim_status = 1;
 			app_eeprom_save_config();
 		}
 				
@@ -1288,9 +1288,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	// K : he so chia cua dong ho nuoc, input 1
 	// Offset: Gia tri offset cua dong ho nuoc
 	// Mode : che do hoat dong
-	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0+1, msg->counter[0].k);
+    if (msg->counter[0].k == 0)
+    {
+        DEBUG_ERROR("K is zero\r\n");
+        msg->counter[0].k = 1;
+    }
+	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0, msg->counter[0].k);
 	//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
-	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0+1, eeprom_cfg->meter_mode[0]);
+	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0, eeprom_cfg->meter_mode[0]);
 #endif
 
 //    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
@@ -1488,7 +1493,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
 //    hardware_manager_get_reset_reason()->value = 0;
 
-    DEBUG_VERBOSE("%s\r\n", (char*)ptr);
+    DEBUG_INFO("Size %u, data %s\r\n", total_length, (char*)ptr);
     return total_length;
 }
 
@@ -1832,6 +1837,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             else
             {
                 m_retransmision_data_in_flash = &rd_data;
+                DEBUG_INFO("Enter http post\r\n");
                 GSM_ENTER_HTTP_POST();
             }
         }
