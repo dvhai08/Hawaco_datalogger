@@ -1110,12 +1110,14 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
 			*/
 			
             uint32_t sector_offset = 0;
-            uint32_t remain = sizeof(app_spi_flash_data_t) - size_remain_write_to_next_sector;
-            DEBUG_INFO("0 - Copy %u bytes to offset %u\r\n", remain, read_addr - current_sector_addr);
+            uint32_t write_data_in_current_page_size = sizeof(app_spi_flash_data_t) - size_remain_write_to_next_sector;
+            DEBUG_INFO("0 - Copy %u bytes to offset %u\r\n", write_data_in_current_page_size, read_addr - current_sector_addr);
+            
+            // 1. Copy data cua page hien tai
             // Write a part of struct, which fit in current sector
             memcpy(page_data + (read_addr - current_sector_addr),
                    (uint8_t *)rd_data,
-                   remain);
+                   write_data_in_current_page_size);
 
             flash_erase_sector_4k(current_sector_count); // Rewrite page data
             flash_write_bytes(current_sector_addr, page_data, SPI_FLASH_SECTOR_SIZE);
@@ -1128,11 +1130,15 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
                 sector_offset = SPI_FLASH_PAGE_SIZE; // data from addr 0x0000->PAGESIZE is reserve for init process
             }
             
+            // Copy data in next page
             flash_read_bytes(next_sector * SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
-            memcpy(page_data + sector_offset, (uint8_t *)rd_data + size_remain_write_to_next_sector, size_remain_write_to_next_sector);
-            DEBUG_INFO("1 - Copy %u bytes at offset %u\r\n", size_remain_write_to_next_sector, sector_offset);
+            memcpy(page_data + sector_offset, (uint8_t *)rd_data + write_data_in_current_page_size, size_remain_write_to_next_sector);
+            
+            
+            DEBUG_INFO("1 - Copy %u bytes at offset %u\r\n", write_data_in_current_page_size, sector_offset);
             if (size_remain_write_to_next_sector)
             {
+                DEBUG_WARN("Erase sector %u\r\n", next_sector * SPI_FLASH_SECTOR_SIZE);
                 flash_erase_sector_4k(next_sector); 
                 flash_write_bytes(next_sector * SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
             }
@@ -1257,7 +1263,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 		"Input1": 124511,                   // Ki?u int
 		"Inputl_J3_1":	0.01,				// Ki?u float
 		"BatteryLevel": 80,
-		"Vbat": 4.101,                      // �? debug, kh�ng c?n x? l�
+		"Vbat": 4101,                      // �? debug, kh�ng c?n x? l�
 
 
 		"SlaveID1" : 3,                         // �?a ch? slave

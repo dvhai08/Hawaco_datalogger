@@ -279,7 +279,10 @@ void gsm_manager_tick(void)
 				uint32_t current_sec = app_rtc_get_counter();
 				if (current_sec >= ctx->status.next_time_get_data_from_server)
 				{
-					ctx->status.next_time_get_data_from_server = current_sec + app_eeprom_read_config_data()->poll_config_interval_hour*3600;
+                    // Estimate next time polling server config
+					ctx->status.next_time_get_data_from_server = current_sec/ 3600 + app_eeprom_read_config_data()->poll_config_interval_hour;
+                    ctx->status.next_time_get_data_from_server *= 3600;
+                    
 					ctx->status.poll_broadcast_msg_from_server = 1;
 					DEBUG_INFO("Poll server config\r\n");
 					gsm_change_state(GSM_STATE_HTTP_GET);
@@ -1148,7 +1151,7 @@ SEND_SMS_FAIL:
 	"Outputl": 0,
 	"Output2": 0.00,
 	"BatteryLevel": 80,
-	"Vbat": 4.101,
+	"Vbat": 4101,
 	"Temperature": 26,
 	"SIM": 452018100001935,
 	"Uptime": 7,
@@ -1247,11 +1250,34 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
 	
 	// RS485
+#if 0
 	if (ctx->error_not_critical.detail.rs485_err)
 	{
 		total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
 	}
-	
+#else
+    bool found_rs485_err = false;
+    for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
+    {
+        for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
+        {
+            if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
+            {
+                continue;
+            }
+            if (msg->rs485[slave_idx].sub_register[sub_register_index].read_ok == 0)
+            {
+                found_rs485_err = true;
+                break;
+            }
+        }
+    }
+    
+    if (found_rs485_err)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
+    }
+#endif
 	// Cam bien
 	if (ctx->error_critical.detail.sensor_out_of_range)
 	{
@@ -1610,7 +1636,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
                 tmp.temperature = m_retransmision_data_in_flash->temp;
                 tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
-                tmp.vbat_mv = m_retransmision_data_in_flash->vbat_precent;
+                tmp.vbat_percent = m_retransmision_data_in_flash->vbat_precent;
 				
 				// on/off
 				tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
@@ -1912,9 +1938,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
         }
-        app_spi_flash_write_data(&wr_data);
-
-        m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
+        if (m_sensor_msq->state != MEASUREMENT_QUEUE_STATE_IDLE)
+        {
+            app_spi_flash_write_data(&wr_data);
+            m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
+        }
         m_sensor_msq = NULL;
     }
     case GSM_HTTP_GET_EVENT_FINISH_FAILED:

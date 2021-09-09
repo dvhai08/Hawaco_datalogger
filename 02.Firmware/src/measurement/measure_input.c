@@ -184,7 +184,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 			}
 		}
         RS485_POWER_EN(0);  
-        sys_delay_ms(10);
+        sys_delay_ms(1000);
     }
     else if (ctx->status.is_enter_test_mode == 0)
     {

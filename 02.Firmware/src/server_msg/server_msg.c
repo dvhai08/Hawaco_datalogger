@@ -18,22 +18,30 @@
 static app_eeprom_config_data_t *m_eeprom_config = NULL; //app_eeprom_read_config_data();
 static sys_ctx_t *m_ctx = NULL;// sys_ctx();
 	
+static bool poll_server = 0;
 // "Server":"https://123.com" 
 static void process_server_addr_change(char *buffer)
 {
+    char *server_update = strstr(buffer, "ServerUpdate\":1");
+    if (server_update)
+    {
+        poll_server = true;
+    }
+    
 	buffer = strstr(buffer, "Server\":");
 	if (buffer == NULL)
 	{
 		return;
 	}
 	
-    char *server_update = strstr(buffer, "ServerUpdate\":1");
+    
     buffer += strlen("Server\":");
     uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
-    if (server_update &&
+    if (poll_server &&
         gsm_utilities_copy_parameters(buffer, (char*)tmp, '"', '"')
         && (strstr((char*)tmp, "http://") || strstr((char*)tmp, "https://")))
     {
+        poll_server = false;
         uint32_t server_addr_len = strlen((char*)tmp);
         --server_addr_len;
         if (tmp[server_addr_len] == '/')		// Change https://acb.com/ to https://acb.com
