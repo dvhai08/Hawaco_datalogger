@@ -67,12 +67,12 @@ static void process_server_addr_change(char *buffer)
 			else
 			{
 				m_ctx->status.try_new_server = 0;
-				DEBUG_ERROR("Server changed : No memory\r\n");
+//				DEBUG_ERROR("Server changed : No memory\r\n");
 			}
         }
         else
         {
-            DEBUG_INFO("New server is the same with old server\r\n");
+//            DEBUG_INFO("New server is the same with old server\r\n");
         }
     }
     else
@@ -479,10 +479,10 @@ static void process_ota_update(char *buffer)
                     sprintf((char*)m_ctx->status.ota_url, "%s", strstr(link, "http"));
 				}
 			}
-			else
-			{
-				DEBUG_VERBOSE("Invalid fw version\r\n");
-			}
+//			else
+//			{
+//				DEBUG_VERBOSE("Invalid fw version\r\n");
+//			}
         }
     }
 }
@@ -631,7 +631,7 @@ static uint8_t process_modbus_register_config(char *buffer)
 						new_cfg++;
 					}
 					strncpy((char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit, (char*)rs485_unit, copy_len); 
-					DEBUG_INFO("Unit %s\r\n", (char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit);
+//					DEBUG_INFO("Unit %s\r\n", (char*)m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].unit);
 				}
 			}
 			else

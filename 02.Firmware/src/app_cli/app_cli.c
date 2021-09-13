@@ -64,10 +64,10 @@ static const shell_command_context_t cli_command_table[] =
 //    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
-    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
+//    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
-    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
+//    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -269,12 +269,12 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	}
     else if (strstr(argv[1], "writetoend"))
 	{
-		DEBUG_INFO("Skip write to end sector\r\n");
+//		DEBUG_INFO("Skip write to end sector\r\n");
         app_spi_flash_skip_to_end_flash_test();
 	}
 	else if (strstr(argv[1], "dump"))
 	{
-		DEBUG_INFO("Dump all flash\r\n");
+//		DEBUG_INFO("Dump all flash\r\n");
 		spi_init();
 		app_spi_flash_wakeup();
 
@@ -305,7 +305,7 @@ static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char
     sprintf((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], "%s", argv[1]);
 
     app_eeprom_save_config();		// Store current config into eeprom
-    DEBUG_INFO("Set new server addr success\r\n");
+//    DEBUG_INFO("Set new server addr success\r\n");
 
     return 0;
 }

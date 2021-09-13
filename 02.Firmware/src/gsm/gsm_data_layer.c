@@ -670,6 +670,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 10:
 	{
+        DEBUG_INFO("CSGN resp: %s, Data %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", (char*)resp_buffer);
 		uint8_t *imei_buffer = (uint8_t*)gsm_get_module_imei();
         gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
         DEBUG_INFO("Get GSM IMEI: %s\r\n", imei_buffer);
@@ -817,7 +818,12 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 			&& time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
                                                                 // Lazy solution : do not update time from 17h
         {
-            app_rtc_set_counter(&time);
+            static uint32_t update_counter = 0;
+            if ((update_counter % 24) == 0)
+            {
+                app_rtc_set_counter(&time);
+            }
+            update_counter++;
         }
         gsm_hw_send_at_cmd("AT+CSQ\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
@@ -1505,13 +1511,16 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
 	
 	// Server
+#if 0
 	char *server = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
 	if (strlen((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]) > 8)
 	{
 		server = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
 	}
-					
+			
 	total_length += sprintf((char *)(ptr + total_length), "\"SVR\":\"%s\",", server);
+#endif	
+    total_length += sprintf((char *)(ptr + total_length), "\"FactorySVR\":\"%s\",", app_eeprom_read_factory_data()->server);
 	
     // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
@@ -1601,6 +1610,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq = measure_input_get_data_in_queue();
         if (!m_sensor_msq)
         {       
+            DEBUG_INFO("No data in RAM queue, scan message in flash\r\n");
             if (!m_retransmision_data_in_flash)
             {
                 DEBUG_INFO("No more retransmission data\r\n");
@@ -1843,41 +1853,48 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         m_sensor_msq = NULL;
         
         bool retransmition;
-        static app_spi_flash_data_t rd_data;
-        if (!ctx->peripheral_running.name.flash_running)
+        if (measure_input_sensor_data_availble() == 0)
         {
-            spi_init();
-            app_spi_flash_wakeup();
-            ctx->peripheral_running.name.flash_running = 1;
-        }
-        uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
-        if (retransmition)
-        {
-            DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
-            if (!app_spi_flash_get_stored_data(addr, &rd_data, true))
+            static app_spi_flash_data_t rd_data;
+            if (!ctx->peripheral_running.name.flash_running)
             {
-                DEBUG_ERROR("Read failed\r\n");
+                spi_init();
+                app_spi_flash_wakeup();
+                ctx->peripheral_running.name.flash_running = 1;
+            }
+            uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
+            if (retransmition)
+            {
+                DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
+                if (!app_spi_flash_get_stored_data(addr, &rd_data, true))
+                {
+                    DEBUG_ERROR("Read failed\r\n");
+                    gsm_change_state(GSM_STATE_OK);
+                    m_retransmision_data_in_flash = NULL;
+                }
+                else
+                {
+                    m_retransmision_data_in_flash = &rd_data;
+                    DEBUG_INFO("Enter http post\r\n");
+                    GSM_ENTER_HTTP_POST();
+                }
+            }
+            else if (sys_ctx()->status.poll_broadcast_msg_from_server)
+            {
+                sys_ctx()->status.poll_broadcast_msg_from_server = 0;
                 gsm_change_state(GSM_STATE_OK);
-                m_retransmision_data_in_flash = NULL;
             }
             else
             {
-                m_retransmision_data_in_flash = &rd_data;
-                DEBUG_INFO("Enter http post\r\n");
-                GSM_ENTER_HTTP_POST();
+                gsm_change_state(GSM_STATE_OK);
+                DEBUG_INFO("No more data need to re-send to server\r\n");
+                m_retransmision_data_in_flash = NULL;
             }
         }
-		else if (sys_ctx()->status.poll_broadcast_msg_from_server)
-		{
-			sys_ctx()->status.poll_broadcast_msg_from_server = 0;
-			gsm_change_state(GSM_STATE_OK);
-		}
         else
         {
             gsm_change_state(GSM_STATE_OK);
-            DEBUG_INFO("No more data need to re-send to server\r\n");
-            m_retransmision_data_in_flash = NULL;
-        } 
+        }    
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);
 #endif

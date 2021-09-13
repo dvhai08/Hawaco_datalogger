@@ -751,7 +751,7 @@ static uint8_t flash_check_first_run(void)
     }
     else
     {
-        DEBUG_VERBOSE("Check Byte : 0x%X\r\n", tmp);
+//        DEBUG_VERBOSE("Check Byte : 0x%X\r\n", tmp);
     }
 
     return 1;
@@ -842,7 +842,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
     uint32_t tmp_addr;
     app_spi_flash_data_t tmp;
     *found_error = false;
-    DEBUG_INFO("Resend addr 0x%08X, write addr 0x%08X\r\n", m_resend_data_in_flash_addr, m_wr_addr);
+//    DEBUG_INFO("Resend addr 0x%08X, write addr 0x%08X\r\n", m_resend_data_in_flash_addr, m_wr_addr);
     if (m_resend_data_in_flash_addr == m_wr_addr) // Neu read = write =>> check current page status
     {
         flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, sizeof(tmp));
@@ -873,7 +873,12 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
 			// =>> if scan data from 0 -> write pointer 
 			// -> we not found anythings
 			// Use full when flash overflow
-			tmp_addr = find_retransmission_message(m_wr_addr, m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE);
+            uint32_t next_addr = m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE;
+            if (next_addr > APP_SPI_FLASH_SIZE)
+            {
+                next_addr = APP_SPI_FLASH_SIZE;
+            }
+			tmp_addr = find_retransmission_message(m_wr_addr, next_addr);
 			if (tmp_addr != 0)
 			{
 				DEBUG_INFO("Found flash overflow\r\n");
@@ -915,7 +920,7 @@ uint32_t app_spi_flash_dump_all_data(void)
     uint8_t read[5];
     flash_read_bytes(0, read, 4);
     read[4] = 0;
-    DEBUG_VERBOSE("Read data %s\r\n", (char *)read);
+//    DEBUG_VERBOSE("Read data %s\r\n", (char *)read);
     return 0;
 }
 
@@ -968,7 +973,7 @@ bool app_spi_flash_check_empty_sector(uint32_t sector)
     }
     if (retval)
     {
-        DEBUG_VERBOSE("We need erase next sector %u\r\n", sector);
+//        DEBUG_VERBOSE("We need erase next sector %u\r\n", sector);
     }
     return retval;
 }
@@ -977,10 +982,10 @@ bool app_spi_flash_check_empty_sector(uint32_t sector)
 
 void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
 {
-    DEBUG_INFO("Flash write new data\r\n");
+//    DEBUG_INFO("Flash write new data\r\n");
     if (!m_flash_is_good)
     {
-        DEBUG_ERROR("Flash init error, ignore write msg\r\n");
+//        DEBUG_ERROR("Flash init error, ignore write msg\r\n");
         return;
     }
     app_spi_flash_data_t rd_data;
@@ -1510,7 +1515,7 @@ uint32_t app_spi_flash_dump_to_485(void)
     len += sprintf((char *)(config + len), "\"DelaySendToServer\":%u,", eeprom_cfg->send_to_server_delay_s);
     len += sprintf((char *)(config + len), "\"Cyclewakeup\":%u,", eeprom_cfg->measure_interval_ms/1000/60);
     len += sprintf((char *)(config + len), "\"MaxSmsOneday\":%u,", eeprom_cfg->max_sms_1_day);
-    len += snprintf((char *)(config + len), APP_EEPROM_MAX_PHONE_LENGTH, "\"Phone\":\"%s\",", eeprom_cfg->phone);
+    len += sprintf((char *)(config + len), "\"Phone\":\"%s\",", eeprom_cfg->phone);
     len += sprintf((char *)(config + len), "\"PollConfig\":%u,", eeprom_cfg->poll_config_interval_hour);
     len += sprintf((char *)(config + len), "\"DirLevel\":%u,", eeprom_cfg->dir_level);
     for (uint32_t i = 0; i < APP_EEPROM_METER_MODE_MAX_ELEMENT; i++)
@@ -1557,10 +1562,14 @@ uint32_t app_spi_flash_dump_to_485(void)
     len += sprintf((char *)(config + len), "\"input4_20mA_3\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_3_enable);
 #endif
     len += sprintf((char *)(config + len), "\"Output4_20mA_En\":%u,", eeprom_cfg->io_enable.name.output_4_20ma_enable);
-    len += sprintf((char *)(config + len), "\"Output4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
+    if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
+    {
+        len += sprintf((char *)(config + len), "\"Output4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
+    }
     
     len += sprintf((char *)(config + len), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     len += sprintf((char *)(config + len), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
+    len += sprintf((char *)(config + len), "\"FactoryServer\":\"%s\",", app_eeprom_read_factory_data()->server);
     
     len--;      // Skip ','
     len += sprintf((char *)(config + len), "%s", "}");     

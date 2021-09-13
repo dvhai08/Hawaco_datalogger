@@ -60,7 +60,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000     // ( ~18s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
@@ -224,6 +224,8 @@ int main(void)
 //uint32_t spi_flash_packet_size = sizeof(app_spi_flash_data_t);
 //DEBUG_INFO("Size of spi flash %u\r\n", spi_flash_packet_size);
 	
+    static uint32_t button_factory_timeout = 0;
+    bool do_factory_reset = false;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -330,6 +332,54 @@ int main(void)
 	
 	if (system->status.timeout_wait_message_sync_data)
 	{
+        if (LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin) == 0)
+        {
+            uint32_t now = sys_get_ms();
+            static uint32_t m_last_blink = 0;
+            if (button_factory_timeout == 0)
+            {
+                button_factory_timeout = now;
+            }
+            if (now - button_factory_timeout >= (uint32_t)7000) // button hold for 5s =>> factory reset
+            {
+                DEBUG_INFO("Factory reset server\r\n");
+                if (strcmp(DEFAULT_SERVER_ADDR, (char*)app_eeprom_read_factory_data()->server))
+                {
+                    app_eeprom_factory_data_t *pre_data = app_eeprom_read_factory_data();
+                    app_eeprom_factory_data_t new_data;
+                    
+                    memcpy(&new_data, pre_data, sizeof(app_eeprom_factory_data_t));
+                    memset(new_data.server, 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+                    memcpy(new_data.server, DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
+                    app_eeprom_save_factory_data(&new_data);
+                 
+                    memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+                    memset(eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+                    
+                    memcpy((char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
+                    app_eeprom_save_config();		// Store current config into eeprom                 
+                }
+                usart_lpusart_485_send((uint8_t*)"Factory reset server ", strlen("Factory reset server "));
+                usart_lpusart_485_send((uint8_t*)DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
+                button_factory_timeout = now;
+                do_factory_reset = true;
+            }
+            
+                        
+            if (now - m_last_blink >= (uint32_t)100)
+            {
+                m_last_blink = now;
+                if (do_factory_reset)
+                {
+                    LL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+                }
+            }
+        }
+        else
+        {
+            button_factory_timeout = sys_get_ms();
+            do_factory_reset = false;
+        }
 		RS485_POWER_EN(1);
 		usart_lpusart_485_control(1);
         char *server;
@@ -360,12 +410,106 @@ int main(void)
             memset(eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
             memcpy((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], server, server_len);
             app_eeprom_save_config();		// Store current config into eeprom
+            jig_release_memory();
             
+        }
+        else if (jig_found_cmd_set_default_server_server(&server, &server_len))
+        {
+            server[server_len] = 0;
+            usart_lpusart_485_send((uint8_t*)"Set default server ", strlen("Set default server "));
+            usart_lpusart_485_send((uint8_t*)server, strlen(server));
+            app_eeprom_factory_data_t *pre_data = app_eeprom_read_factory_data();
+            app_eeprom_factory_data_t new_data;
+            
+            memcpy(&new_data, pre_data, sizeof(app_eeprom_factory_data_t));
+            memset(new_data.server, 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+            memcpy(new_data.server, server, server_len);
+            app_eeprom_save_factory_data(&new_data);
+            
+            jig_release_memory();
+        }
+        else if (jig_found_cmd_get_config())
+        {
+            char *config = umm_malloc(1024);     // TODO check malloc result
+            uint32_t len = 0;
+            
+            app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+            len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "{\"Server0\":\"%s\",", eeprom_cfg->server_addr[0]);
+            len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "\"Server1\":\"%s\",", eeprom_cfg->server_addr[1]);
+            len += sprintf((char *)(config + len), "\"CycleSendWeb\":%u,", eeprom_cfg->send_to_server_interval_ms/1000/60);
+            len += sprintf((char *)(config + len), "\"DelaySendToServer\":%u,", eeprom_cfg->send_to_server_delay_s);
+            len += sprintf((char *)(config + len), "\"Cyclewakeup\":%u,", eeprom_cfg->measure_interval_ms/1000/60);
+            len += sprintf((char *)(config + len), "\"MaxSmsOneday\":%u,", eeprom_cfg->max_sms_1_day);
+            len += sprintf((char *)(config + len), "\"Phone\":\"%s\",", eeprom_cfg->phone);
+            len += sprintf((char *)(config + len), "\"PollConfig\":%u,", eeprom_cfg->poll_config_interval_hour);
+            len += sprintf((char *)(config + len), "\"DirLevel\":%u,", eeprom_cfg->dir_level);
+            for (uint32_t i = 0; i < APP_EEPROM_METER_MODE_MAX_ELEMENT; i++)
+            {
+                len += sprintf((char *)(config + len), "\"K%u\":%u,", i+1, eeprom_cfg->k[i]);
+                len += sprintf((char *)(config + len), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
+                len += sprintf((char *)(config + len), "\"MeterIndicator%u\":%u,", i+1, eeprom_cfg->offset[i]);
+            }
+            
+            len += sprintf((char *)(config + len), "\"OutputIO_0\":%u,", eeprom_cfg->io_enable.name.output0);
+            len += sprintf((char *)(config + len), "\"OutputIO_1\":%u,", eeprom_cfg->io_enable.name.output1);
+            len += sprintf((char *)(config + len), "\"OutputIO_2\":%u,", eeprom_cfg->io_enable.name.output2);
+            len += sprintf((char *)(config + len), "\"OutputIO_3\":%u,", eeprom_cfg->io_enable.name.output3);
+            len += sprintf((char *)(config + len), "\"Input0\":%u,", eeprom_cfg->io_enable.name.input0);
+            len += sprintf((char *)(config + len), "\"Input1\":%u,", eeprom_cfg->io_enable.name.input1);
+            len += sprintf((char *)(config + len), "\"Input2\":%u,", eeprom_cfg->io_enable.name.input2);
+            len += sprintf((char *)(config + len), "\"Input3\":%u,", eeprom_cfg->io_enable.name.input3);
+            
+        //    len += sprintf((char *)(config + len), "\"SOS\":%u,", eeprom_cfg->io_enable.name.sos);
+            len += sprintf((char *)(config + len), "\"Warning\":%u,", eeprom_cfg->io_enable.name.warning);
+            len += sprintf((char *)(config + len), "\"485_EN\":%u,", eeprom_cfg->io_enable.name.rs485_en);
+            if (eeprom_cfg->io_enable.name.rs485_en)
+            {
+                for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
+                {
+                    for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
+                    {
+                        if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
+                        {
+                            uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].read_ok = 0;
+                            continue;
+                        }
+                        len += sprintf((char *)(config + len), "\"485_%u_Slave\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].slave_addr);
+                        len += sprintf((char *)(config + len), "\"485_%u_Reg\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr);
+                        len += snprintf((char *)(config + len), 6, "\"485_%u_Unit\":\"%s\",", slave_idx, (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
+                    }
+                }
+            }
+            
+            len += sprintf((char *)(config + len), "\"input4_20mA_0\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_0_enable);
+        #ifndef DTG01
+            len += sprintf((char *)(config + len), "\"input4_20mA_1\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_1_enable);
+            len += sprintf((char *)(config + len), "\"input4_20mA_2\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_2_enable);
+            len += sprintf((char *)(config + len), "\"input4_20mA_3\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_3_enable);
+        #endif
+            len += sprintf((char *)(config + len), "\"Output4_20mA_En\":%u,", eeprom_cfg->io_enable.name.output_4_20ma_enable);
+            if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
+            {
+                len += sprintf((char *)(config + len), "\"Output4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
+            }
+            
+            len += sprintf((char *)(config + len), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
+            len += sprintf((char *)(config + len), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
+            len += sprintf((char *)(config + len), "\"FactoryServer\":\"%s\",", app_eeprom_read_factory_data()->server);
+            
+            len--;      // Skip ','
+            len += sprintf((char *)(config + len), "%s", "}");     
+            usart_lpusart_485_send((uint8_t*)config, len);
+            
+            umm_free(config);
+    
+            jig_release_memory();
         }
 	}
 	else
 	{
 		usart_lpusart_485_control(0);
+        button_factory_timeout = 0;
+        do_factory_reset = false;
 	}
 	
 #ifdef WDT_ENABLE

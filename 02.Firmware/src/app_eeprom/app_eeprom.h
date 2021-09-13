@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include "hardware.h"
 
+#define DEFAULT_SERVER_ADDR             "http://222.252.52.34:8080"
+
+
 /**
  * \defgroup        App eeprom
  * \brief           Store device config into internal eeprom
@@ -78,6 +81,14 @@ typedef struct
 } __attribute__((packed))  app_eeprom_config_data_t;
 
 
+typedef struct
+{
+    uint8_t server[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
+    uint8_t reserve[32];
+    uint32_t crc;
+} __attribute__((packed)) app_eeprom_factory_data_t;
+
+
 /*!
  * @brief       Init eeprom data 
  */
@@ -98,6 +109,17 @@ app_eeprom_config_data_t *app_eeprom_read_config_data(void);
  * @brief       Erase eeprom data
  */
 void app_eeprom_erase(void);
+
+/*!
+ * @brief       Save default factory data
+ */
+void app_eeprom_save_factory_data(app_eeprom_factory_data_t *factory_data);
+
+/*!
+ * @brief		Read factory reset data
+ * @retval	 	Pointer to data
+ */
+app_eeprom_factory_data_t *app_eeprom_read_factory_data(void);
 
 /**
  * \}

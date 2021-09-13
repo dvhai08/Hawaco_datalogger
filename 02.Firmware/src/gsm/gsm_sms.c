@@ -78,7 +78,7 @@ static void copy_sms_content(char *buffer, char *content, uint32_t max_size)
     char *p_begin = strstr(buffer, "+CMGR");
     if (p_begin == NULL)
     {
-        DEBUG_VERBOSE("Invalid sms format\r\n");
+//        DEBUG_VERBOSE("Invalid sms format\r\n");
         return;
     }
     p_begin += strlen("+CMGR");
@@ -110,7 +110,7 @@ bool gsm_send_sms(char *phone_number, char *message)
     /* Check message length */
     if (strlen(message) >= GSM_MAX_SMS_CONTENT_LENGTH)
     {
-        DEBUG_VERBOSE("SMS message too long %d\r\n", strlen(message));
+//        DEBUG_VERBOSE("SMS message too long %d\r\n", strlen(message));
         return false;
     }
 
@@ -118,7 +118,7 @@ bool gsm_send_sms(char *phone_number, char *message)
     if ((phone_len >= GSM_MAX_SMS_PHONE_LENGTH) || (phone_len == 0)
 		|| (phone_len <= GSM_MIN_SMS_PHONE_LENGTH))
     {
-        DEBUG_VERBOSE("SMS phone number [%s] is invalid\r\n", phone_number);
+//        DEBUG_VERBOSE("SMS phone number [%s] is invalid\r\n", phone_number);
         return false;
     }
 
@@ -142,7 +142,7 @@ bool gsm_send_sms(char *phone_number, char *message)
         return true;
     }
 
-    DEBUG_ERROR("SMS buffer full\r\n");
+//    DEBUG_ERROR("SMS buffer full\r\n");
 
     return false;
 }
@@ -159,7 +159,7 @@ void gsm_sms_layer_process_cmd(char *buffer)
 
     if (split_phone_number_from_incomming_message(buffer, phone_number) == 0)
     {
-        DEBUG_VERBOSE("Cannot get phone number from incomming msg\r\n");
+//        DEBUG_VERBOSE("Cannot get phone number from incomming msg\r\n");
         return;
     }
 
@@ -172,7 +172,7 @@ void gsm_sms_layer_process_cmd(char *buffer)
 //    // Send msg to server
 //    gsm_message_send_sms_to_server(phone_number, sms_content);
 
-    DEBUG_PRINTF("New sms from %s, content : %s\r\n", phone_number, sms_content);
+//    DEBUG_PRINTF("New sms from %s, content : %s\r\n", phone_number, sms_content);
 }
 
 
@@ -199,7 +199,7 @@ static void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer)
 
         if (tmp_num > 10)
         {
-            DEBUG_VERBOSE("Cannot read SMS\r\n");
+//            DEBUG_VERBOSE("Cannot read SMS\r\n");
             gsm_change_state(GSM_STATE_OK);
             tmp_num = 0xFF;
             return;
@@ -243,7 +243,7 @@ static void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer)
     case 3:
         if (event == GSM_EVENT_OK)
         {
-            DEBUG_VERBOSE("Message deleted\r\n");
+//            DEBUG_VERBOSE("Message deleted\r\n");
         }
         else
         {
@@ -254,7 +254,7 @@ static void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer)
         return;
 
     default:
-        DEBUG_PRINTF("[%s] Unhandled switch case\r\n", __FUNCTION__);
+//        DEBUG_PRINTF("[%s] Unhandled switch case\r\n", __FUNCTION__);
         break;
     }
 

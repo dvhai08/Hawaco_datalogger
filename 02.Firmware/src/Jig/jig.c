@@ -219,7 +219,7 @@ bool jig_found_cmd_sync_data_to_host(void)
 
 bool jig_found_cmd_change_server(char **ptr, uint32_t *size)
 {
-    // Format Server:http://iot.wilab.vn\r\n;
+    // Format Server:http://iot.wilab.vn\r\n
     *size = 0;
     char *server = strstr((char*)m_jig_buffer.rx_ptr, "Server:http://");
 	if (server && strstr(server, "\r\n"))
@@ -243,6 +243,46 @@ bool jig_found_cmd_change_server(char **ptr, uint32_t *size)
         }
         return true;
 	}
+	return false;
+}
+
+bool jig_found_cmd_set_default_server_server(char **ptr, uint32_t *size)
+{
+    // Format Default:http://iot.wilab.vn\r\n
+    *size = 0;
+    char *server = strstr((char*)m_jig_buffer.rx_ptr, "Default:http://");
+	if (server && strstr(server, "\r\n"))
+	{
+        *ptr = server + 7;      // 7 = strlen("Server:")
+        *size = strstr(server, "\r\n") - *ptr;
+        if (*size >= (APP_EEPROM_MAX_SERVER_ADDR_LENGTH-1))
+        {
+            return false;
+        }
+        return true;
+	}
+	else if ((server = strstr((char*)m_jig_buffer.rx_ptr, "Default:https://"))
+	        && server)
+	{
+        *ptr = server + 7;      // 7 = strlen("Server:")
+        *size = strstr(server, "\r\n") - *ptr;
+        if (*size >= (APP_EEPROM_MAX_SERVER_ADDR_LENGTH-1))
+        {
+            return false;
+        }
+        return true;
+	}
+	return false;
+}
+
+bool jig_found_cmd_get_config(void)
+{
+    // Format GetConfig\r\n
+    char *config = strstr((char*)m_jig_buffer.rx_ptr, "GetConfig\r\n");
+	if (config)
+    {
+        return true;
+    }
 	return false;
 }
 

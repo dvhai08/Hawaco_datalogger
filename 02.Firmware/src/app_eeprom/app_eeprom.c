@@ -7,11 +7,12 @@
 #include "utilities.h"
 
 #define EEPROM_STORE_DATA_ADDR	        0x08080000
+#define EEPROM_STORE_FACTORY_ADDR       (0x08080000 + 2048)
 #define MEASURE_INTERVAL_S              (30*60*1000)
 #define SEND_TO_SERVER_INTERVAL_S       (60*60*1000)
-#define DEFAULT_SERVER_ADDR             "https://iot.wilad.vn"
 
 app_eeprom_config_data_t m_cfg;
+static void app_eeprom_factory_data_initialize(void);
 
 void app_eeprom_init(void)
 {
@@ -42,6 +43,16 @@ void app_eeprom_init(void)
 			m_cfg.offset[i] = 0;
 		}
         m_cfg.measure_interval_ms = MEASURE_INTERVAL_S;
+        
+        m_cfg.io_enable.name.input0 = 1;
+        m_cfg.io_enable.name.input1 = 1;
+        m_cfg.io_enable.name.input2 = 1;
+        m_cfg.io_enable.name.input3 = 1;
+        
+        m_cfg.io_enable.name.input_4_20ma_0_enable = 1;
+        m_cfg.io_enable.name.input_4_20ma_1_enable = 1;
+        m_cfg.io_enable.name.input_4_20ma_2_enable = 1;
+        m_cfg.io_enable.name.input_4_20ma_3_enable = 1;
 
         memcpy(m_cfg.phone, "0", 1);
         m_cfg.send_to_server_interval_ms = SEND_TO_SERVER_INTERVAL_S;
@@ -75,6 +86,8 @@ void app_eeprom_init(void)
 			m_cfg.battery_low_percent = 20;
 		}
     }
+    
+    app_eeprom_factory_data_initialize();
 }
 
 void app_eeprom_erase(void)
@@ -87,7 +100,7 @@ void app_eeprom_erase(void)
 		err = HAL_FLASHEx_DATAEEPROM_Erase(EEPROM_STORE_DATA_ADDR + i*4);
 		if (HAL_OK != err)
 		{
-			DEBUG_ERROR("Erase eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i*4, err);
+//			DEBUG_ERROR("Erase eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i*4, err);
 			break;
 		}
 	}
@@ -112,7 +125,7 @@ void app_eeprom_save_config(void)
 		err = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, EEPROM_STORE_DATA_ADDR + i, tmp[i]);
 		if (HAL_OK != err)
 		{
-			DEBUG_ERROR("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
+//			DEBUG_ERROR("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_DATA_ADDR + i, err);
 			break;
 		}
 	}
@@ -124,6 +137,47 @@ void app_eeprom_save_config(void)
 	HAL_FLASHEx_DATAEEPROM_Lock();
 }
 
+void app_eeprom_factory_data_initialize(void)
+{
+    app_eeprom_factory_data_t *factory_data = app_eeprom_read_factory_data(); 
+    uint32_t crc = utilities_calculate_crc32((uint8_t*)factory_data, sizeof(app_eeprom_factory_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
+    if (crc != factory_data->crc)
+    {
+        app_eeprom_factory_data_t new_data;
+        memset(&new_data, 0, sizeof(app_eeprom_factory_data_t));
+        memcpy(new_data.server, DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
+        app_eeprom_save_factory_data(&new_data);
+    }
+}
+
+void app_eeprom_save_factory_data(app_eeprom_factory_data_t *factory_data)
+{
+    uint32_t err;
+	uint8_t *tmp = (uint8_t*)factory_data;
+    factory_data->crc = utilities_calculate_crc32((uint8_t*)factory_data, sizeof(app_eeprom_factory_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
+    
+    flash_if_init();
+    
+	HAL_FLASHEx_DATAEEPROM_Unlock();
+
+
+	for (uint32_t i = 0; i < sizeof(app_eeprom_factory_data_t); i++)
+	{
+		err = HAL_FLASHEx_DATAEEPROM_Program(FLASH_TYPEPROGRAMDATA_BYTE, EEPROM_STORE_FACTORY_ADDR + i, tmp[i]);
+		if (HAL_OK != err)
+		{
+//			DEBUG_ERROR("Write eeprom failed at addr 0x%08X, err code %08X\r\n", EEPROM_STORE_FACTORY_ADDR + i, err);
+			break;
+		}
+	}
+
+	HAL_FLASHEx_DATAEEPROM_Lock();
+}
+
+app_eeprom_factory_data_t *app_eeprom_read_factory_data(void)
+{
+    return (app_eeprom_factory_data_t*)(EEPROM_STORE_FACTORY_ADDR);
+}
 
 app_eeprom_config_data_t *app_eeprom_read_config_data(void)
 {

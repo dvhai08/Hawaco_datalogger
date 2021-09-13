@@ -460,6 +460,16 @@ void measure_input_task(void)
 
         if (measure_input_turn_on_in_4_20ma_power == 0)
         {
+            rtc_date_time_t now;
+            app_rtc_get_time(&now);
+            estimate_measure_timestamp = (measure_interval_sec*(current_sec/measure_interval_sec + 1));
+            uint32_t next_hour = estimate_measure_timestamp/3600;
+            next_hour %= 24;
+            uint32_t next_min = (estimate_measure_timestamp/60);
+            next_min %= 60;
+            
+            DEBUG_WARN("[%02u:%02u] Next measurement tick is %02u:%02u\r\n", now.hour, now.minute, next_hour, next_min);
+            
             // Process rs485
             process_rs485(&m_measure_data.rs485[0]);
             
@@ -512,7 +522,7 @@ void measure_input_task(void)
                 
 				m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
 				m_measure_data.counter[0].k = eeprom_cfg->k[0];
-                DEBUG_INFO("PWM0 %u\r\n", m_measure_data.counter[0].forward);
+                DEBUG_VERBOSE("PWM0 %u\r\n", m_measure_data.counter[0].forward);
 #if defined(DTG02) || defined(DTG02V2)              
                 DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
 				m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
@@ -522,28 +532,32 @@ void measure_input_task(void)
 #endif
                 m_measure_data.temperature = adc_retval->temp;
                 m_measure_data.state = MEASUREMENT_QUEUE_STATE_PENDING;
-
-                // Scan for empty buffer
-                bool queue_full = true;
-                for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+                
+                bool scan = true;
+                while (scan)
                 {
-                    if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+                    // Scan for empty buffer
+                    bool queue_full = true;
+                    for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
                     {
-                        memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
-                        queue_full = false;
-                        DEBUG_INFO("Puts new msg to sensor queue\r\n");
-                        break;
-                    }
-                }        
+                        if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+                        {
+                            memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
+                            queue_full = false;
+//                            DEBUG_INFO("Puts new msg to sensor queue\r\n");
+                            scan = false;
+                            break;
+                        }
+                    }        
 
-                if (queue_full)
-                {
-                    DEBUG_ERROR("Message queue full\r\n");
-                    measure_input_save_all_data_to_flash();
+                    if (queue_full)
+                    {
+//                        DEBUG_ERROR("Message queue full\r\n");
+                        measure_input_save_all_data_to_flash();
+                    }
                 }
             }        
             
-            estimate_measure_timestamp = (measure_interval_sec*(current_sec/measure_interval_sec + 1));
 //            m_last_time_measure_data = sys_get_ms();
             ctx->peripheral_running.name.adc = 0;
             ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
@@ -674,7 +688,7 @@ void measure_input_initialize(void)
         {
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
-		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
+		DEBUG_INFO("Pulse counter in BKP: %u-%u\r\n", 
                     m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
 #endif
     }
@@ -945,9 +959,7 @@ bool measure_input_sensor_data_availble(void)
 }
 
 measure_input_perpheral_data_t *measure_input_get_data_in_queue(void)
-{
-    measure_input_perpheral_data_t *ptr = NULL;
-    
+{    
     for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
     {
         if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_PENDING)
@@ -957,7 +969,7 @@ measure_input_perpheral_data_t *measure_input_get_data_in_queue(void)
         }
     }
     
-    return ptr;
+    return NULL;
 }
 
 void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms)

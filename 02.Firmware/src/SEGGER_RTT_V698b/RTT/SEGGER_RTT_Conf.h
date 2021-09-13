@@ -99,8 +99,13 @@ Revision: $Rev: 21386 $
   #define BUFFER_SIZE_DOWN                          (32)    // Size of the buffer for terminal input to target from host (Usually keyboard input) (Default: 16)
 #endif
 
+#ifdef DTG01
 #ifndef   SEGGER_RTT_PRINTF_BUFFER_SIZE
   #define SEGGER_RTT_PRINTF_BUFFER_SIZE             (512)    // Size of buffer for RTT printf to bulk-send chars via RTT     (Default: 64)
+#endif
+#endif
+#ifndef   SEGGER_RTT_PRINTF_BUFFER_SIZE
+  #define SEGGER_RTT_PRINTF_BUFFER_SIZE             (256)    // Size of buffer for RTT printf to bulk-send chars via RTT     (Default: 64)
 #endif
 
 #ifndef   SEGGER_RTT_MODE_DEFAULT

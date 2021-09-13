@@ -105,7 +105,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 	sTime.StoreOperation = RTC_STOREOPERATION_SET;
 	if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
 	{
-        DEBUG_ERROR("Set RTC time failed\r\n");
+//        DEBUG_ERROR("Set RTC time failed\r\n");
 		Error_Handler();
 	}
 	int week_day;
@@ -117,7 +117,7 @@ void app_rtc_set_counter(rtc_date_time_t *time)
 
 	if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD) != HAL_OK)
 	{
-        DEBUG_ERROR("Set RTC date failed\r\n");
+//        DEBUG_ERROR("Set RTC date failed\r\n");
 		Error_Handler();
 	}
 //    LL_PWR_DisableBkUpAccess();
