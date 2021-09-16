@@ -33,6 +33,7 @@
 #include "app_spi_flash.h"
 #include "spi.h"
 #include "modbus_master.h"
+#include "umm_malloc.h"
 
 #define VBAT_DETECT_HIGH_MV                     9000
 #define STORE_MEASURE_INVERVAL_SEC              30
@@ -53,6 +54,7 @@
 
 typedef measure_input_counter_t backup_pulse_data_t;
 
+
 typedef struct
 {
     uint32_t counter_pwm;
@@ -70,16 +72,30 @@ typedef struct
 volatile uint8_t m_is_pulse_trigger = 0;
 
 measure_input_timestamp_t m_begin_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_end_pulse_timestamp[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-measure_input_pull_state_t m_pull_state[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+
+// PWM, DIR interrupt timestamp between 2 times interrupt called
 static uint32_t m_pull_diff[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 
-static measure_input_water_meter_input_t m_water_meter_input[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+static backup_pulse_data_t m_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT], m_pre_pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 static measure_input_perpheral_data_t m_measure_data;
 volatile uint32_t store_measure_result_timeout = 0;
 static bool m_this_is_the_first_time = true;
 measure_input_perpheral_data_t m_sensor_msq[MEASUREMENT_MAX_MSQ_IN_RAM];
 volatile uint32_t measure_input_turn_on_in_4_20ma_power = 0;
+
+// Min-max value of water flow speed between 2 times send data to web
+static float forward_flow_min_in_cycle_send_web[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+static float forward_flow_max_in_cycle_send_web[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+static float reserve_flow_min_in_cycle_send_web[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+static float reserve_flow_max_in_cycle_send_web[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+
+// Input4-20mA min max
+static float input_4_20ma_min_value[NUMBER_OF_INPUT_4_20MA];
+static float input_4_20ma_max_value[NUMBER_OF_INPUT_4_20MA];
+
+// 485
+static measure_input_rs485_min_max_t m_485_min_max[RS485_MAX_SLAVE_ON_BUS];
+
 
 static void process_rs485(measure_input_modbus_register_t *register_value)
 {	
@@ -95,23 +111,23 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
         usart_lpusart_485_control(1);
 		sys_delay_ms(50);   // ensure rs485 transmister ic power on
         
-		for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
+		for (uint32_t slave_count = 0; slave_count < RS485_MAX_SLAVE_ON_BUS; slave_count++)
 		{
-			for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
+			for (uint32_t sub_reg_idx = 0; sub_reg_idx < RS485_MAX_SUB_REGISTER; sub_reg_idx++)
 			{
-				if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
+				if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid == 0)
 				{
-					uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].read_ok = 0;
+					uint32_t slave_addr = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 					continue;
 				}
 				sys_delay_ms(15);   // delay between 2 transaction
 				// convert register to function code and offset
 				// ex : 30001 =>> function code = 04, offset = 01
-				uint32_t function_code = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr / 10000;
-				uint32_t register_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr - function_code * 10000;
+				uint32_t function_code = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr / 10000;
+				uint32_t register_addr = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr - function_code * 10000;
 				function_code += 1;     // 30001 =>> function code = 04 read input register
-				uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].slave_addr;
-				register_value[slave_idx].sub_register[sub_register_index].data_type.name.valid = 1;
+				uint32_t slave_addr = eeprom_cfg->rs485[slave_count].slave_addr;
+				register_value[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
 				if (register_addr)		// For example, we want to read data at addr 30100 =>> register_addr = 99
 				{
 					register_addr--;
@@ -133,8 +149,8 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 						
 						modbus_master_reset(1000);
 						uint32_t halfword_quality = 1;
-						if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type == RS485_DATA_TYPE_FLOAT
-							|| eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type == RS485_DATA_TYPE_INT32)
+						if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT
+							|| eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
 						{
 							halfword_quality = 2;
 						}
@@ -143,35 +159,101 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 						result = modbus_master_read_input_register(slave_addr, 
 																	register_addr, 
 																	halfword_quality);
-						register_value[slave_idx].slave_addr = slave_addr;
+						register_value[slave_count].slave_addr = slave_addr;
 						
 						if (result != MODBUS_MASTER_OK)		// Read data error
 						{
 							DEBUG_ERROR("Modbus read input register failed\r\n");
-							register_value[slave_idx].sub_register[sub_register_index].read_ok = 0;
+							register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 							modbus_master_clear_response_buffer();
 							ctx->error_not_critical.detail.rs485_err = 1;
 						}
 						else		// Read data ok
 						{
 							// Read ok, copy result to buffer
-							register_value[slave_idx].sub_register[sub_register_index].read_ok = 1;
-							register_value[slave_idx].sub_register[sub_register_index].value = modbus_master_get_response_buffer(0);
+							register_value[slave_count].sub_register[sub_reg_idx].read_ok = 1;
+							register_value[slave_count].sub_register[sub_reg_idx].value = modbus_master_get_response_buffer(0);
 							
 							if (halfword_quality == 2)
 							{	
 								// Byte order : Float, int32 (2-1,4-3)
 								// int16 2 - 1
-								register_value[slave_idx].sub_register[sub_register_index].value |= (modbus_master_get_response_buffer(1) << 16);
+								register_value[slave_count].sub_register[sub_reg_idx].value |= (modbus_master_get_response_buffer(1) << 16);
 							}
-//							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr, 
-//													register_value[slave_idx].sub_register[sub_register_index].value);
-							register_value[slave_idx].sub_register[sub_register_index].data_type.name.type = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.type;
-							register_value[slave_idx].sub_register[sub_register_index].register_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr;
+//							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr, 
+//													register_value[slave_count].sub_register[sub_reg_idx].value);
+							register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type;
+							
+                            for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
+                            {
+                                if ((register_addr+1) == eeprom_cfg->rs485[slave_on_bus].forward_flow_reg)      // If register == forward flow register
+                                {
+                                    if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT) // If data type is float
+                                    {
+                                        // Neu chua dc khoi tao min max =>> khoi tao gia tri min max
+                                        if (m_485_min_max[slave_on_bus].min_forward_flow.type_int == INPUT_485_INVALID_INT_VALUE
+                                            || m_485_min_max[slave_on_bus].min_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        {
+                                            m_485_min_max[slave_on_bus].min_forward_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                        
+                                        if (m_485_min_max[slave_on_bus].min_forward_flow.type_float > (float)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        {
+                                            m_485_min_max[slave_on_bus].min_forward_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                    }
+                                    else        // Data type is int
+                                    {
+                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_int == INPUT_485_INVALID_INT_VALUE
+                                            || m_485_min_max[slave_on_bus].max_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        {
+                                            m_485_min_max[slave_on_bus].max_forward_flow.type_int = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                        
+                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_int < (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        {
+                                            m_485_min_max[slave_on_bus].max_forward_flow.type_int = (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                    }
+                                        
+                                }
+                                else if ((register_addr+1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
+                                {
+                                    if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT) // If data type is float
+                                    {
+                                        // Neu chua dc khoi tao min max =>> khoi tao gia tri min max
+                                        if (m_485_min_max[slave_on_bus].min_reserve_flow.type_int == INPUT_485_INVALID_INT_VALUE
+                                            || m_485_min_max[slave_on_bus].min_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        {
+                                            m_485_min_max[slave_on_bus].min_reserve_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                        
+                                        if (m_485_min_max[slave_on_bus].min_reserve_flow.type_float > (float)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        {
+                                            m_485_min_max[slave_on_bus].min_reserve_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                    }
+                                    else    // Data type is int
+                                    {
+                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_int == INPUT_485_INVALID_INT_VALUE
+                                            || m_485_min_max[slave_on_bus].max_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        {
+                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_int = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                        
+                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_int < (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        {
+                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_int = (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            register_value[slave_count].sub_register[sub_reg_idx].register_addr = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr;
 							ctx->error_not_critical.detail.rs485_err = 0;
 						}
-						strncpy((char*)register_value[slave_idx].sub_register[sub_register_index].unit,
-								(char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit,
+						strncpy((char*)register_value[slave_count].sub_register[sub_reg_idx].unit,
+								(char*)eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].unit,
 								6);
 
 					}
@@ -210,11 +292,11 @@ void measure_input_pulse_counter_poll(void)
 		// Build debug counter message
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
-			temp_counter = m_pulse_counter_in_backup[i].forward / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
+			temp_counter = m_pulse_counter_in_backup[i].real_counter / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
 			total_length += sprintf((char *)(ptr + total_length), "(%u-",
 									  temp_counter);
 			
-			temp_counter = m_pulse_counter_in_backup[i].reserve / eeprom_cfg->k[i] + eeprom_cfg->offset[i];
+			temp_counter = m_pulse_counter_in_backup[i].reserve_counter/eeprom_cfg->k[i] /* + eeprom_cfg->offset[i] */;
 			total_length += sprintf((char *)(ptr + total_length), "%u),",
 										temp_counter);
 			
@@ -228,13 +310,13 @@ void measure_input_pulse_counter_poll(void)
 
 		
 		DEBUG_INFO("Counter (%u-%u), real value %s\r\n", 
-				m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
+				m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve,
 				ptr);
 #else
 								
 	DEBUG_INFO("Counter (%u-%u), (%u-%u), real value %s\r\n", 
-				m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve,
-				m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve,
+				m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter,
+				m_pulse_counter_in_backup[1].real_counter, m_pulse_counter_in_backup[1].reserve_counter,
 				ptr);
 #endif			
         m_is_pulse_trigger = 0;
@@ -242,7 +324,7 @@ void measure_input_pulse_counter_poll(void)
     sys_ctx()->peripheral_running.name.measure_input_pwm_running = 0;
 }
 
-//static uint32_t m_last_time_measure_data = 0;
+static uint32_t m_last_time_measure_data = 0;
 uint32_t m_number_of_adc_conversion = 0;
 app_eeprom_config_data_t *eeprom_cfg;
 void measure_input_measure_wakeup_to_get_data()
@@ -258,13 +340,14 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 		m_measure_data.counter[0].indicator = new_indicator;
 		m_pulse_counter_in_backup[0].indicator = new_indicator;
 	}
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
     else
     {
 		m_measure_data.counter[1].indicator = new_indicator;
 		m_pulse_counter_in_backup[1].indicator = new_indicator;
     }
 #endif
+    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
 }
 
 void measure_input_reset_k(uint8_t index, uint32_t new_k)
@@ -274,37 +357,45 @@ void measure_input_reset_k(uint8_t index, uint32_t new_k)
 		m_measure_data.counter[0].k = new_k;
 		m_pulse_counter_in_backup[0].k = new_k;
 	}
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
     else
     {
 		m_measure_data.counter[1].k = new_k;
 		m_pulse_counter_in_backup[1].k = new_k;
     }
 #endif
+    
+    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
 }
 
 void measure_input_reset_counter(uint8_t index)
 {
     if (index == 0)
     {
-        m_pulse_counter_in_backup[0].forward = 0;
-        m_pulse_counter_in_backup[0].reserve = 0;
+        m_pulse_counter_in_backup[0].real_counter = 0;
+        m_pulse_counter_in_backup[0].reserve_counter = 0;
     }
 #if defined(DTG02) || defined(DTG02V2)
     else
     {
-        m_pulse_counter_in_backup[1].forward = 0;
-        m_pulse_counter_in_backup[1].forward = 0;
+        m_pulse_counter_in_backup[1].real_counter = 0;
+        m_pulse_counter_in_backup[1].real_counter = 0;
     }
 #endif
     app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
+    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
 }
 
 void measure_input_save_all_data_to_flash(void)
 {
-    app_spi_flash_data_t wr_data;
+    app_spi_flash_data_t *spi_flash_store_data = umm_malloc(sizeof(app_spi_flash_data_t));
+    if (spi_flash_store_data == NULL)
+    {
+        DEBUG_WARN("Malloc spi data failed\r\n");
+        NVIC_SystemReset();
+    }
     sys_ctx_t *ctx = sys_ctx();
-    wr_data.resend_to_server_flag = 0;
+    spi_flash_store_data->resend_to_server_flag = 0;
 
     for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
     {
@@ -314,40 +405,45 @@ void measure_input_save_all_data_to_flash(void)
 			// 4-20mA input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
 			{
-				wr_data.input_4_20mA[i] = m_sensor_msq[j].input_4_20mA[i];
+				spi_flash_store_data->input_4_20mA[i] = m_sensor_msq[j].input_4_20mA[i];
+                memcpy(&spi_flash_store_data->input_4_20ma_cycle_send_web[i], 
+                        &m_sensor_msq[j].input_4_20ma_cycle_send_web[i], 
+                        sizeof(input_4_20ma_min_max_hour_t));
 			}
 			
 			// Meter input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
 			{
-				memcpy(&wr_data.meter_input[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
+				memcpy(&spi_flash_store_data->counter[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
 			}			
 			
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
 			// On/off
-			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
-			wr_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
-			wr_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
-			wr_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
-			wr_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
-			wr_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
-			wr_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
-			wr_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
+			spi_flash_store_data->on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
+			spi_flash_store_data->on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
+			spi_flash_store_data->on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
+			spi_flash_store_data->on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+			spi_flash_store_data->on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
+			spi_flash_store_data->on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
+			spi_flash_store_data->on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
+			spi_flash_store_data->on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
 #endif
-			wr_data.output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
+			spi_flash_store_data->output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
 			
-			wr_data.timestamp = m_sensor_msq[j].measure_timestamp;
-			wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-			wr_data.resend_to_server_flag = 0;
-			wr_data.vbat_mv = m_sensor_msq[j].vbat_mv;
-			wr_data.vbat_precent = m_sensor_msq[j].vbat_percent;
-			wr_data.temp = m_sensor_msq[j].temperature;
-            wr_data.csq_percent = m_sensor_msq[j].csq_percent;
+			spi_flash_store_data->timestamp = m_sensor_msq[j].measure_timestamp;
+			spi_flash_store_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
+			spi_flash_store_data->resend_to_server_flag = 0;
+			spi_flash_store_data->vbat_mv = m_sensor_msq[j].vbat_mv;
+			spi_flash_store_data->vbat_precent = m_sensor_msq[j].vbat_percent;
+			spi_flash_store_data->temp = m_sensor_msq[j].temperature;
+            spi_flash_store_data->csq_percent = m_sensor_msq[j].csq_percent;
 			
 			// 485
 			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
 			{
-				memcpy(&wr_data.rs485[nb_485_device], &m_sensor_msq[j].rs485[nb_485_device], sizeof(measure_input_modbus_register_t));
+				memcpy(&spi_flash_store_data->rs485[nb_485_device], 
+                        &m_sensor_msq[j].rs485[nb_485_device], 
+                        sizeof(measure_input_modbus_register_t));
 			}
 			
 			
@@ -357,19 +453,25 @@ void measure_input_save_all_data_to_flash(void)
 				app_spi_flash_wakeup();
 				ctx->peripheral_running.name.flash_running = 1;
 			}
-			app_spi_flash_write_data(&wr_data);
+			app_spi_flash_write_data(spi_flash_store_data);
 			m_sensor_msq[j].state = MEASUREMENT_QUEUE_STATE_IDLE;
 		}
     }   
+    
+    umm_free(spi_flash_store_data);
 }
 
 uint32_t estimate_measure_timestamp = 0;
 void measure_input_task(void)
 {
 	eeprom_cfg = app_eeprom_read_config_data();
+    // Poll input counter state machine
     measure_input_pulse_counter_poll();
-    adc_input_value_t *input_adc = adc_get_input_result();
+    
+    // Get ADC result pointer
     sys_ctx_t *ctx = sys_ctx();
+    
+    
     uint32_t measure_interval_sec = eeprom_cfg->measure_interval_ms/1000;
     adc_input_value_t *adc_retval = adc_get_input_result();
     uint32_t current_sec = app_rtc_get_counter();
@@ -394,12 +496,13 @@ void measure_input_task(void)
         ctx->peripheral_running.name.high_bat_detect = 0;
     }
         
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
     TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
     TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
     TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
     TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
     
+    // Get input and output on/off value
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
 	m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
@@ -409,6 +512,7 @@ void measure_input_task(void)
 	m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
 	m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
 	
+    // Check meter input circuit status
 	m_measure_data.counter[MEASURE_INPUT_PORT_2].cir_break = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin)
 																				&& (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);   
     m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin)
@@ -420,18 +524,15 @@ void measure_input_task(void)
 																				 && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
 #endif	
     
-    m_measure_data.vbat_percent = input_adc->bat_percent;
-    m_measure_data.vbat_mv = input_adc->bat_mv;
-    for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
-    {
-        m_measure_data.input_4_20mA[i] = input_adc->in_4_20ma_in[i];
-    }
+    // Get Vbat
+    m_measure_data.vbat_percent = adc_retval->bat_percent;
+    m_measure_data.vbat_mv = adc_retval->bat_mv;
     
     // Vtemp
-    if (input_adc->temp_is_valid)
+    if (adc_retval->temp_is_valid)
     {
         m_measure_data.temperature_error = 0;
-        m_measure_data.temperature = input_adc->temp;
+        m_measure_data.temperature = adc_retval->temp;
     }
     else
     {
@@ -475,7 +576,7 @@ void measure_input_task(void)
             
             // ADC conversion
             adc_start();
-//            m_last_time_measure_data = sys_get_ms();
+
             if (m_this_is_the_first_time)
             {
                 m_this_is_the_first_time = false;
@@ -497,19 +598,103 @@ void measure_input_task(void)
                 m_measure_data.measure_timestamp = app_rtc_get_counter();
                 m_measure_data.vbat_mv = adc_retval->bat_mv;
                 m_measure_data.vbat_percent = adc_retval->bat_percent;
-#if defined(DTG02) || defined(DTG02V2)               
+                
+#ifndef DTG01             
                 m_measure_data.vin_mv = adc_retval->vin_24;
 #endif
-                app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
+//                app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
 
 				// CSQ
                 m_measure_data.csq_percent = gsm_get_csq_in_percent();
                 
 				// Input 4-20mA
-				for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                // If input is disable, we set value of input 4-20mA to zero
+                if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
                 {
-                    m_measure_data.input_4_20mA[i] = adc_retval->in_4_20ma_in[i];
+                    m_measure_data.input_4_20mA[0] = adc_retval->in_4_20ma_in[0];
+                    
+                    // Set init min-max value
+                    if (input_4_20ma_min_value[0] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_min_value[0] = m_measure_data.input_4_20mA[0];
+                    }
+                    if (input_4_20ma_max_value[0] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_max_value[0] = m_measure_data.input_4_20mA[0];
+                    }
+                    
+                    if (input_4_20ma_min_value[0] > adc_retval->in_4_20ma_in[0])
+                    {
+                        input_4_20ma_min_value[0] = adc_retval->in_4_20ma_in[0];
+                    }                        
+                    if (input_4_20ma_max_value[0] < adc_retval->in_4_20ma_in[0])
+                    {
+                        input_4_20ma_max_value[0] = adc_retval->in_4_20ma_in[0];
+                    }  
                 }
+                else
+                {
+                    m_measure_data.input_4_20mA[0] = 0;
+                    input_4_20ma_min_value[0] = 0;
+                }
+#ifndef DTG01                    
+                if (eeprom_cfg->io_enable.name.input_4_20ma_1_enable)
+                {
+                    m_measure_data.input_4_20mA[1] = adc_retval->in_4_20ma_in[1];
+                }
+                else
+                {
+                    m_measure_data.input_4_20mA[1] = 0;
+                    input_4_20ma_min_value[1] = 0;
+                }
+                if (input_4_20ma_min_value[1] > adc_retval->in_4_20ma_in[1])
+                {
+                    input_4_20ma_min_value[1] = adc_retval->in_4_20ma_in[1];
+                }                        
+                if (input_4_20ma_max_value[1] < adc_retval->in_4_20ma_in[1])
+                {
+                    input_4_20ma_max_value[1] = adc_retval->in_4_20ma_in[1];
+                } 
+                
+                
+                if (eeprom_cfg->io_enable.name.input_4_20ma_2_enable)
+                {
+                    m_measure_data.input_4_20mA[2] = adc_retval->in_4_20ma_in[2];
+                }
+                else
+                {
+                    m_measure_data.input_4_20mA[2] = 0;
+                    input_4_20ma_min_value[2] = 0;
+                }
+                if (input_4_20ma_min_value[2] > adc_retval->in_4_20ma_in[2])
+                {
+                    input_4_20ma_min_value[2] = adc_retval->in_4_20ma_in[2];
+                }                        
+                if (input_4_20ma_max_value[2] < adc_retval->in_4_20ma_in[2])
+                {
+                    input_4_20ma_max_value[2] = adc_retval->in_4_20ma_in[2];
+                }
+                
+                
+                if (eeprom_cfg->io_enable.name.input_4_20ma_3_enable)
+                {
+                    m_measure_data.input_4_20mA[3] = adc_retval->in_4_20ma_in[3];
+                }
+                else
+                {
+                    m_measure_data.input_4_20mA[3] = 0;
+                    input_4_20ma_min_value[3] = 0;
+                }
+                
+                if (input_4_20ma_min_value[3] > adc_retval->in_4_20ma_in[3])
+                {
+                    input_4_20ma_min_value[3] = adc_retval->in_4_20ma_in[3];
+                }                        
+                if (input_4_20ma_max_value[3] < adc_retval->in_4_20ma_in[3])
+                {
+                    input_4_20ma_max_value[3] = adc_retval->in_4_20ma_in[3];
+                }
+#endif
 				// Output 4-20mA
 				if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
 				{
@@ -520,14 +705,170 @@ void measure_input_task(void)
 					m_measure_data.output_4_20mA[0] = 0;
 				}
                 
-				m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
-				m_measure_data.counter[0].k = eeprom_cfg->k[0];
-                DEBUG_VERBOSE("PWM0 %u\r\n", m_measure_data.counter[0].forward);
-#if defined(DTG02) || defined(DTG02V2)              
-                DEBUG_INFO("PWM1 %u\r\n", m_measure_data.counter[1].forward);
-				m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
-				m_measure_data.counter[1].k = eeprom_cfg->k[1];
-#else
+                uint32_t now = sys_get_ms();
+                // Calculate avg flow speed between 2 times measurement data
+                uint32_t diff = (uint32_t)(now - m_last_time_measure_data);
+                
+                // Copy backup data into current measure data
+                bool estimate_time_save_min_max_value = false;
+                uint32_t current_counter = app_rtc_get_counter();
+                uint32_t wakeup_counter = gsm_data_layer_get_estimate_wakeup_time_stamp();
+                
+                for (uint32_t counter_index = 0; counter_index < MEASURE_NUMBER_OF_WATER_METER_INPUT; counter_index++)
+                {
+//                    if (diff)
+                    if (0)      // test
+                    {
+                        // Forward direction
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
+                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].real_counter);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f/(float)diff;
+                        
+                        // Reserve direction
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
+                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].real_counter);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600000.0f/(float)diff;
+                        
+                        // min-max of forward/reserve direction flow speed
+                        // If value is invalid =>> Initialize new value
+                        if (forward_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
+                            || forward_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
+                        {
+                            forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                            forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                        }
+                        if (forward_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
+                            || forward_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
+                        {
+                            forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                            forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                        }
+                        
+                        if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
+                            || reserve_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
+                        {
+                            reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                            reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                        }
+                        if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
+                            || reserve_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
+                        {
+                            reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                            reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                        }
+                        
+                        // Compare old value and new value to determite new min-max value
+                        // 1.1 Forward direction min value
+                        if (forward_flow_min_in_cycle_send_web[counter_index] > m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup)        
+                        {
+                            forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                        }
+                        
+                        // 1.2 Forward direction max value
+                        if (forward_flow_max_in_cycle_send_web[counter_index] < m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup)        
+                        {
+                            forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                        }
+                        
+                        // 2.1 reserve direction min value
+                        if (reserve_flow_min_in_cycle_send_web[counter_index] > m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup)        
+                        {
+                            reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                        }
+                        
+                        // 2.2 reserve direction max value
+                        if (reserve_flow_max_in_cycle_send_web[counter_index] < m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup)        
+                        {
+                            reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                        }
+                        
+                        
+                        estimate_time_save_min_max_value = true;
+                    }
+                    else        // invalid value, should never get there
+                    {
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = 0;
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = 0;
+                    }
+                    
+                    if (estimate_time_save_min_max_value)
+                    {
+                        // If current counter >= wakeup counter =>> Send min max to server
+                        // Else we dont need to send min max data to server
+                        if (current_counter >= wakeup_counter)
+                        {
+                            // Pulse counter
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_max = forward_flow_max_in_cycle_send_web[counter_index];
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_min = forward_flow_min_in_cycle_send_web[counter_index];
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = reserve_flow_max_in_cycle_send_web[counter_index];
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = reserve_flow_min_in_cycle_send_web[counter_index];
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 1; 
+                            
+                        }
+                        else        // Mark invalid, we dont need to send data to server
+                        {
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 0;
+                        }
+                    }
+
+                                               
+                    // Copy current value to prev value
+                    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
+                    
+                    // Copy current measure counter to message queue variable
+                    memcpy(&m_measure_data.counter[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(measure_input_counter_t));
+                    
+                    m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 0;
+                    
+                    DEBUG_VERBOSE("PWM%u %u\r\n", counter_index, m_measure_data.counter[counter_index].real_counter);
+                }
+                
+                // If current counter >= wakeup counter =>> Send min max to server
+                // Else we dont need to send min max data to server
+                if (current_counter >= wakeup_counter)
+                {
+                    // Store 485 min - max value
+                                            
+                    // 485
+                    for (uint32_t slave_index = 0; slave_index < RS485_MAX_SLAVE_ON_BUS; slave_index++)
+                    {
+                        m_measure_data.rs485[slave_index].min_max.min_forward_flow = m_485_min_max[slave_index].min_forward_flow;
+                        m_measure_data.rs485[slave_index].min_max.max_forward_flow = m_485_min_max[slave_index].max_forward_flow;
+                        
+                        m_measure_data.rs485[slave_index].min_max.min_reserve_flow = m_485_min_max[slave_index].min_reserve_flow;
+                        m_measure_data.rs485[slave_index].min_max.max_reserve_flow = m_485_min_max[slave_index].max_reserve_flow;
+                        
+                        m_measure_data.rs485[slave_index].min_max.valid = 1;
+                    }
+                    
+                    // 4-20mA
+                    // Input 4-20mA
+                    for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                    {
+                        m_measure_data.input_4_20ma_cycle_send_web[i].input4_20ma_min = input_4_20ma_min_value[i];
+                        m_measure_data.input_4_20ma_cycle_send_web[i].input4_20ma_max = input_4_20ma_max_value[i];
+                        m_measure_data.input_4_20ma_cycle_send_web[i].valid = 1;
+                    }
+                }
+                else
+                {
+                     for (uint32_t slave_index = 0; slave_index < RS485_MAX_SLAVE_ON_BUS; slave_index++)
+                     {
+                        m_measure_data.rs485[slave_index].min_max.min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        
+                        m_measure_data.rs485[slave_index].min_max.min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.valid = 0;
+                     }
+             
+                     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+                     { 
+                         m_measure_data.input_4_20ma_cycle_send_web[i].valid = 0;
+                     }
+                }
+                    
+#ifdef DTG01        
 				m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
 #endif
                 m_measure_data.temperature = adc_retval->temp;
@@ -558,7 +899,7 @@ void measure_input_task(void)
                 }
             }        
             
-//            m_last_time_measure_data = sys_get_ms();
+            m_last_time_measure_data = sys_get_ms();
             ctx->peripheral_running.name.adc = 0;
             ctx->peripheral_running.name.wait_for_input_4_20ma_power_on = 0;
         }
@@ -567,73 +908,50 @@ void measure_input_task(void)
 
 void measure_input_initialize(void)
 {	
+    m_last_time_measure_data = sys_get_ms();
 	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    memset(m_pulse_counter_in_backup, 0, sizeof(m_pulse_counter_in_backup));
 	m_pulse_counter_in_backup[0].k = eeprom_cfg->k[0];
 	m_pulse_counter_in_backup[0].indicator = eeprom_cfg->offset[0];
 	m_measure_data.counter[0].k = eeprom_cfg->k[0];
 	m_measure_data.counter[0].indicator = eeprom_cfg->offset[0];
-	
-#if DTG02 || defined DTG02V2
+    
+    // Mark forward-reserve value is invalid
+    forward_flow_min_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
+    forward_flow_max_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
+    reserve_flow_min_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
+    reserve_flow_max_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
+    
+#ifndef DTG01
+    memset(m_pulse_counter_in_backup, 1, sizeof(m_pulse_counter_in_backup));
 	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
 	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
 	m_measure_data.counter[1].k = eeprom_cfg->k[1];
 	m_measure_data.counter[1].indicator = eeprom_cfg->offset[1];
-	
-	if (LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin))
-	{
-		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-	
-	if (LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin))
-	{
-		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-
-	if (LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin))
-	{
-		m_pull_state[1].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[1].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-	
-	if (LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin))
-	{
-		m_pull_state[1].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[1].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-#else
-	if (LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin))
-	{
-		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[0].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
-	
-	if (LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin))
-	{
-		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-	}
-	else
-	{
-		m_pull_state[0].dir = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-	}
+    
+    // Mark forward-reserve value is invalid
+    forward_flow_min_in_cycle_send_web[1] = FLOW_INVALID_VALUE;
+    forward_flow_max_in_cycle_send_web[1] = FLOW_INVALID_VALUE;
+    reserve_flow_min_in_cycle_send_web[1] = FLOW_INVALID_VALUE;
+    reserve_flow_max_in_cycle_send_web[1] = FLOW_INVALID_VALUE;
 #endif	
-
+    
+    // Reset input 4-20ma to invalid value
+    for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+    {
+        input_4_20ma_min_value[i] = INPUT_4_20MA_INVALID_VALUE;
+        input_4_20ma_max_value[i] = INPUT_4_20MA_INVALID_VALUE;
+    }
+    
+    // Reset 485 register min - max
+    for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+    {
+        m_485_min_max[i].min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+        m_485_min_max[i].max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+        m_485_min_max[i].min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+        m_485_min_max[i].max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+        
+    }
 	
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash
     * -> Case: Mat dien nguon -> mat du lieu trong RTC backup register
@@ -650,27 +968,27 @@ void measure_input_initialize(void)
     if (app_spi_flash_get_lastest_data(&last_data))
     {
         bool save = false;
-        if (last_data.meter_input[0].forward > m_pulse_counter_in_backup[0].forward)
+        if (last_data.counter[0].real_counter > m_pulse_counter_in_backup[0].real_counter)
         {
-            m_pulse_counter_in_backup[0].forward = last_data.meter_input[0].forward;
+            m_pulse_counter_in_backup[0].real_counter = last_data.counter[0].real_counter;
             save = true;
         }
         
-        if (last_data.meter_input[0].reserve > m_pulse_counter_in_backup[0].reserve)
+        if (last_data.counter[0].reserve_counter > m_pulse_counter_in_backup[0].reserve_counter)
         {
-            m_pulse_counter_in_backup[0].reserve = last_data.meter_input[0].reserve;
+            m_pulse_counter_in_backup[0].reserve_counter = last_data.counter[0].reserve_counter;
             save = true;
         }
-#if defined(DTG02) || defined(DTG02V2)
-        if (last_data.meter_input[1].forward > m_pulse_counter_in_backup[1].forward)
+#ifndef DTG01
+        if (last_data.counter[1].real_counter > m_pulse_counter_in_backup[1].real_counter)
         {
-            m_pulse_counter_in_backup[1].forward = last_data.meter_input[1].forward;
+            m_pulse_counter_in_backup[1].real_counter = last_data.counter[1].real_counter;
             save = true; 
         }
         
-        if (last_data.meter_input[1].reserve > m_pulse_counter_in_backup[1].reserve)
+        if (last_data.counter[1].reserve_counter > m_pulse_counter_in_backup[1].reserve_counter)
         {
-            m_pulse_counter_in_backup[1].reserve = last_data.meter_input[1].reserve;
+            m_pulse_counter_in_backup[1].reserve_counter = last_data.counter[1].reserve_counter;
             save = true;    
         }
         
@@ -680,8 +998,8 @@ void measure_input_initialize(void)
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
 		DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
-                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve, 
-                    m_pulse_counter_in_backup[1].forward, m_pulse_counter_in_backup[1].reserve);
+                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter, 
+                    m_pulse_counter_in_backup[1].real_counter, m_pulse_counter_in_backup[1].reserve_counter);
 #else
         
         if (save)
@@ -689,9 +1007,10 @@ void measure_input_initialize(void)
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
 		DEBUG_INFO("Pulse counter in BKP: %u-%u\r\n", 
-                    m_pulse_counter_in_backup[0].forward, m_pulse_counter_in_backup[0].reserve);
+                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve);
 #endif
     }
+    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
     m_this_is_the_first_time = true;
 }
 
@@ -700,17 +1019,6 @@ void measure_input_rs485_uart_handler(uint8_t data)
 {
     modbus_memory_serial_rx(data); 
 }
-
-void measure_input_rs485_idle_detect(void)
-{
-    
-}
-
-measure_input_water_meter_input_t *measure_input_get_backup_counter(void)
-{
-	return &m_water_meter_input[0];
-}
-
 
 static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_input_timestamp_t *end, uint8_t isr_type)
 {
@@ -744,158 +1052,100 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 {
 	__disable_irq();
     if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN)
-    {
-#if CHECK_BOTH_INPUT_EDGE
-        if (input->pwm_level)
+    {        
+        m_end_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
+        m_end_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
+        
+        m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
+                                            &m_end_pulse_timestamp[input->port],
+                                            MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN);
+        m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
+        m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
+        if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
         {
-            m_begin_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
-            m_begin_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
-			if (m_pull_state[input->port].pwm != PULSE_STATE_WAIT_FOR_FALLING_EDGE)
-			{
-				DEBUG_ERROR("Invalid state\r\n");
-			}
-            m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-            m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
+                    // Increase total forward counter
+            m_pulse_counter_in_backup[input->port].total_forward++;
+            m_is_pulse_trigger = 1;
+            if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
+            {
+                // If direction current level = direction on forward level
+                if (eeprom_cfg->dir_level == input->dir_level)
+                {
+                    DEBUG_INFO("[PWM%u]+++ \r\n", input->port);
+                    m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward/m_pulse_counter_in_backup[input->port].k
+                                                                                + m_pulse_counter_in_backup[input->port].indicator;
+                    m_pulse_counter_in_backup[input->port].real_counter++;
+                }
+                else    // Reserver counter
+                {
+                    DEBUG_WARN("[PWM]---\r\n");
+                    m_pulse_counter_in_backup[input->port].real_counter--;
+                    m_pulse_counter_in_backup[input->port].total_reserve++;
+                    m_pulse_counter_in_backup[input->port].total_reserve_index = m_pulse_counter_in_backup[input->port].total_reserve
+                                                                                /m_pulse_counter_in_backup[input->port].k;
+                }
+                m_pulse_counter_in_backup[input->port].reserve_counter = 0;
+            }
+            else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
+            {
+                DEBUG_INFO("[PWM] +++++++\r\n");
+                            // Calculate total forward index
+                m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward/m_pulse_counter_in_backup[input->port].k
+                                                                                + m_pulse_counter_in_backup[input->port].indicator;
+                
+                m_pulse_counter_in_backup[input->port].real_counter++;
+                m_pulse_counter_in_backup[input->port].reserve_counter = 0;
+            }
+            else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE)
+            {
+                m_pulse_counter_in_backup[input->port].real_counter = 0;
+                m_pulse_counter_in_backup[input->port].reserve_counter = 0;
+                m_pulse_counter_in_backup[input->port].total_forward_index = 0;
+                m_pulse_counter_in_backup[input->port].total_forward = 0;
+            }
         }
-#else
-		if (0)
-		{
-			
-		}
-#endif
-        else 
-		{
-#if CHECK_BOTH_INPUT_EDGE
-			if (m_pull_state[input->port].pwm == PULSE_STATE_WAIT_FOR_RISING_EDGE)
-#endif
-			{
-				m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-				m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-				
-				m_end_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
-				m_end_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
-				
-				m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
-													&m_end_pulse_timestamp[input->port],
-													MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN);
-#if CHECK_BOTH_INPUT_EDGE == 0
-				m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
-				m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
-#endif
-//				if (1)
-				if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
-				{
-					m_is_pulse_trigger = 1;
-					if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
-					{
-//						if (input->dir_level == 0)
-//						{
-////							DEBUG_VERBOSE("Reserve\r\n");
-//						}
-						if (eeprom_cfg->dir_level == input->dir_level)
-						{
-							DEBUG_INFO("[PWM%u]+++ \r\n", input->port);
-							m_pulse_counter_in_backup[input->port].forward++;
-						}
-						else
-						{
-//							if (m_pulse_counter_in_backup[input->port].forward > 0)
-							{
-								DEBUG_WARN("[PWM]---\r\n");
-								m_pulse_counter_in_backup[input->port].forward--;
-							}
-						}
-						m_pulse_counter_in_backup[input->port].reserve = 0;
-					}
-					else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
-					{
-						DEBUG_INFO("[PWM] +++++++\r\n");
-						m_pulse_counter_in_backup[input->port].forward++;
-						m_pulse_counter_in_backup[input->port].reserve = 0;
-					}
-					else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE)
-					{
-						m_pulse_counter_in_backup[input->port].forward = 0;
-						m_pulse_counter_in_backup[input->port].reserve = 0;
-					}
-					else
-					{
-						
-					}
-				}
-				else
-				{
-					DEBUG_WARN("PWM Noise\r\n");
-				}
-			}
-#if CHECK_BOTH_INPUT_EDGE
-			else	// pwm level = 0.
-			{
-				DEBUG_WARN("Invalid edge\r\n");
-				m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-			}
-#endif
-		}
+        else
+        {
+            DEBUG_WARN("PWM Noise\r\n");
+        }
     }
     else if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN)
     {
         if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
         {
-#if CHECK_BOTH_INPUT_EDGE
-            if (input->dir_level)
-            {
-                m_begin_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
-                m_begin_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
-                m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_RISING_EDGE;
-                m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-            }
-
-#else
-			if (0)
-			{
-				
-			}
-#endif
-			else//  if (m_pull_state[input->port].dir == PULSE_STATE_WAIT_FOR_RISING_EDGE)
-            {
-                m_is_pulse_trigger = 1;
-                // reset state
-                m_pull_state[input->port].pwm = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-                m_pull_state[input->port].dir = PULSE_STATE_WAIT_FOR_FALLING_EDGE;
-                
-                m_end_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
-                m_end_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
-                
-                m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
-                                                    &m_end_pulse_timestamp[input->port],
-                                                    MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN);
-                
-#if CHECK_BOTH_INPUT_EDGE == 0
-				m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
-				m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
-#endif
-                if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
+            m_is_pulse_trigger = 1;
+              
+            m_end_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
+            m_end_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
+            
+            m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port], 
+                                                &m_end_pulse_timestamp[input->port],
+                                                MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN);
+            
+            m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
+            m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
+            if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
+            {   
+                DEBUG_VERBOSE("[DIR]++++\r\n");
+                if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE
+                    || eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
                 {
-                    DEBUG_VERBOSE("[DIR]++++\r\n");
-					if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE
-						|| eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
-					{
-						m_pulse_counter_in_backup[input->port].reserve = 0;
-					}
-					else
-					{
-						m_pulse_counter_in_backup[input->port].reserve++;
-					}
+                    m_pulse_counter_in_backup[input->port].reserve_counter = 0;
+                    m_pulse_counter_in_backup[input->port].total_reserve_index = 0;
+                    m_pulse_counter_in_backup[input->port].total_reserve = 0;
                 }
-				else
-				{
-					DEBUG_WARN("DIR Noise\r\n");
-				}
+                else
+                {
+                    m_pulse_counter_in_backup[input->port].total_reserve++;    
+                    m_pulse_counter_in_backup[input->port].reserve_counter++;
+                    m_pulse_counter_in_backup[input->port].total_reserve_index = m_pulse_counter_in_backup[input->port].total_reserve
+                                                                                    /m_pulse_counter_in_backup[input->port].k;                    
+                }
             }
-//            else
-//            {
-//                DEBUG_VERBOSE("DIR Noise, diff time %ums\r\n", m_pull_diff[input->port]);
-//            }
+            else
+            {
+                DEBUG_WARN("DIR Noise\r\n");
+            }
         }
     }
     __enable_irq();
@@ -976,3 +1226,9 @@ void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms)
 {
     measure_input_turn_on_in_4_20ma_power = ms;
 }
+
+void measure_input_monitor_min_max_in_cycle_send_web(void)
+{
+    
+}
+

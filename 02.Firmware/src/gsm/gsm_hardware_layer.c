@@ -24,7 +24,7 @@ gsm_hardware_t m_gsm_hardware;
 gsm_manager_t gsm_manager;
 
 static volatile bool m_new_uart_data = false;
-static char m_gsm_imei[16];
+static char m_gsm_imei[16] = {0};
 static char m_sim_imei[16];
 static char m_nw_operator[32];
 static char m_sim_ccid[21];

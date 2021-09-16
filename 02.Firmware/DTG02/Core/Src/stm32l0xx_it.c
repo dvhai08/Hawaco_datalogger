@@ -166,7 +166,7 @@ void SysTick_Handler(void)
 			{
 				if (gsm_data_layer_is_module_sleeping())
 				{
-					gsm_set_wakeup_now();
+					gsm_wakeup_now();
                     sys_ctx_t *ctx = sys_ctx();
                     ctx->peripheral_running.name.gsm_running = 1;
 				}
@@ -297,10 +297,10 @@ void EXTI4_15_IRQHandler(void)
         LED1(1);
         led_blink_delay = 5;
 		sys_ctx()->status.timeout_wait_message_sync_data = 15000;	
-		if (gsm_data_layer_is_module_sleeping())
+		if (gsm_data_layer_is_module_sleeping())        // if device is sleeping =>> Wake device up
         {
             measure_input_measure_wakeup_to_get_data();
-            gsm_set_wakeup_now();
+            gsm_wakeup_now();
             sys_ctx_t *ctx = sys_ctx();
             ctx->peripheral_running.name.gsm_running = 1;
         }
@@ -431,7 +431,6 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 
     {
         LL_USART_ClearFlag_IDLE(LPUART1);        /* Clear IDLE line flag */
-		measure_input_rs485_idle_detect();
     }
 	
   /* USER CODE END AES_RNG_LPUART1_IRQn 0 */

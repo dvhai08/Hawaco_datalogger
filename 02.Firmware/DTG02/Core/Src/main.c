@@ -67,8 +67,9 @@
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							0
+#define TEST_DEVICE_NEVER_SLEEP							1
 #define TEST_CRC32										0
+#define CLI_ENABLE                                      0
 #define GSM_ENABLE										1
 /* USER CODE END PTD */
 
@@ -180,7 +181,9 @@ int main(void)
     gpio_config_input_as_wakeup_source();
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
+#if CLI_ENABLE
 	app_cli_start();
+#endif
 	app_bkup_init();
     app_spi_flash_initialize();
 	measure_input_initialize();
@@ -232,7 +235,9 @@ int main(void)
 #endif
 	control_ouput_task();
 	measure_input_task();
+#if CLI_ENABLE
 	app_cli_poll();
+#endif 
 	app_sync_polling_task();
 	if (led_blink_delay)
 	{
@@ -453,9 +458,18 @@ int main(void)
                             uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].read_ok = 0;
                             continue;
                         }
-                        len += sprintf((char *)(config + len), "\"485_%u_Slave\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].slave_addr);
-                        len += sprintf((char *)(config + len), "\"485_%u_Reg\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr);
-                        len += snprintf((char *)(config + len), 6, "\"485_%u_Unit\":\"%s\",", slave_idx, (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
+                        len += sprintf((char *)(config + len), 
+                                        "\"485_%u_Slave\":%u,", 
+                                        slave_idx, 
+                                        eeprom_cfg->rs485[slave_idx].slave_addr);
+                        len += sprintf((char *)(config + len), 
+                                                "\"485_%u_Reg\":%u,", 
+                                                slave_idx, 
+                                                eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr);
+                        len += snprintf((char *)(config + len), 6, 
+                                                "\"485_%u_Unit\":\"%s\",", 
+                                                slave_idx, 
+                                                (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
                     }
                 }
             }
@@ -499,7 +513,6 @@ int main(void)
 			&& recheck_input_pulse[1].tick == 0
 			&& system->status.timeout_wait_message_sync_data == 0)
         {
-			jig_release_memory();
 			
 			#if TEST_DEVICE_NEVER_SLEEP == 0
 			{

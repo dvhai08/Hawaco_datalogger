@@ -327,8 +327,8 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 			measure_input_reset_indicator(0, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
-			counter[0].forward = 0;
-			counter[0].reserve = 0;
+			counter[0].real_counter = 0;
+			counter[0].reserve_counter = 0;
             app_bkup_write_pulse_counter(&counter[0]);
 			(*factor_change) |= (1 << 0);
         }
@@ -346,8 +346,8 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             measure_input_reset_counter(1);
 			measure_input_reset_indicator(1, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-			counter[1].forward = 0;
-			counter[1].reserve = 0;
+			counter[1].real_counter = 0;
+			counter[1].reserve_counter = 0;
             app_bkup_write_pulse_counter(&counter[0]);
 			(*factor_change) |= (1 << 1);
         }
@@ -401,7 +401,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
             DEBUG_INFO("PWM1 offset changed to %u\r\n", offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
-			counter[0].forward = 0;
+			counter[0].real_counter = 0;
 			counter[0].reserve = 0;
 			
             app_bkup_write_pulse_counter(&counter[0]);
@@ -465,7 +465,6 @@ static void process_ota_update(char *buffer)
         uint32_t update = gsm_utilities_get_number_from_string(strlen("Update\":"), do_ota);
         if (update)
         {
-//			DEBUG_VERBOSE("Server request device to ota update, current fw version %s\r\n", VERSION_CONTROL_FW);
 			uint8_t version_compare;
 			version = strtok(version, "\"");
 			version_compare = version_control_compare(version);
@@ -479,10 +478,6 @@ static void process_ota_update(char *buffer)
                     sprintf((char*)m_ctx->status.ota_url, "%s", strstr(link, "http"));
 				}
 			}
-//			else
-//			{
-//				DEBUG_VERBOSE("Invalid fw version\r\n");
-//			}
         }
     }
 }
@@ -838,14 +833,14 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
             if (factor_change & 0x01)		// 0x01 mean we need to store new data of pulse counter[0] to eeprom
             {
-                data.meter_input[0].forward = 0;
-                data.meter_input[0].reserve = 0;
+                data.counter[0].real_counter = 0;
+                data.counter[0].reserve_counter = 0;
             }
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
             if (factor_change & 0x02)		// 0x02 mean we need to store new data of pulse counter[1] to eeprom
             {
-                data.meter_input[1].forward = 0;
-                data.meter_input[1].reserve = 0;
+                data.counter[1].real_counter = 0;
+                data.counter[1].reserve_counter = 0;
             }
 #endif
             data.timestamp = app_rtc_get_counter();

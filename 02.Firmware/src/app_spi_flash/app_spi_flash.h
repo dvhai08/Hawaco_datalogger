@@ -24,12 +24,15 @@ typedef union
 typedef struct
 {
     uint32_t valid_flag;
-    measure_input_counter_t meter_input[APP_FLASH_NB_OF_METER_INPUT];		// so nuoc
+    measure_input_counter_t counter[APP_FLASH_NB_OF_METER_INPUT];		// so nuoc
     measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];			// 485
     uint8_t temp;	// nhiet do
     uint16_t vbat_mv;		// dien ap pin
     uint8_t vbat_precent;
+    
     float input_4_20mA[APP_FLASH_NB_OFF_4_20MA_INPUT];		// 4-20mA
+    input_4_20ma_min_max_hour_t input_4_20ma_cycle_send_web[NUMBER_OF_INPUT_4_20MA];
+    
 	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
     app_spi_flash_on_off_data_t on_off;
 	uint32_t timestamp;		//

@@ -84,6 +84,31 @@ void gsm_set_flag_prepare_enter_read_sms_mode(void)
 #endif
 
 uint32_t estimate_wakeup_time = 0;
+
+uint32_t gsm_data_layer_get_estimate_wakeup_time_stamp(void)
+{
+    return estimate_wakeup_time;
+}
+
+static float convert_input_4_20ma_to_pressure(float current)
+{
+    // Pa = a*current + b
+    // 0 = 4*a + b
+    // 10 = 20*a + b
+    // =>> Pa = 0.625*current - 2.5f
+    if (current < 4.0f)
+    {
+        return 0.0f;
+    }
+    
+    if (current > 20.0f)
+    {
+        return 10.0f;       // 10PA
+    }
+    
+    return (0.625f*current - 2.5f);
+}
+
 void gsm_wakeup_periodically(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
@@ -119,6 +144,7 @@ void gsm_wakeup_periodically(void)
 //    DEBUG_VERBOSE("Current sec %us\r\n", current_sec);
     if (current_sec >= estimate_wakeup_time)
     {
+        measure_input_monitor_min_max_in_cycle_send_web();
         if (gsm_data_layer_is_module_sleeping())
         {
             gsm_change_state(GSM_STATE_WAKEUP);
@@ -127,10 +153,11 @@ void gsm_wakeup_periodically(void)
     }
 }
 
-void gsm_set_wakeup_now(void)
+void gsm_wakeup_now(void)
 {
 	sys_ctx_t *ctx = sys_ctx();
 //	ctx->status.sleep_time_s = 0;
+    estimate_wakeup_time = 1;
 	gsm_change_state(GSM_STATE_WAKEUP);
 }
 
@@ -241,6 +268,7 @@ void gsm_manager_tick(void)
 			
             if (enter_post)
             {
+                DEBUG_INFO("Enter http post\r\n");
                 GSM_ENTER_HTTP_POST();
                 ready_to_sleep = false;
                 gsm_change_state(GSM_STATE_HTTP_POST);
@@ -276,6 +304,7 @@ void gsm_manager_tick(void)
 			
 			if (ready_to_sleep)
 			{
+                DEBUG_INFO("Poll default config\r\n");
 				uint32_t current_sec = app_rtc_get_counter();
 				if (current_sec >= ctx->status.next_time_get_data_from_server)
 				{
@@ -365,8 +394,8 @@ void gsm_manager_tick(void)
 			char *server_addr = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
 			if (strlen(server_addr) == 0)
 			{
-				DEBUG_INFO("We use alternative server\r\n");
 				server_addr = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
+                DEBUG_INFO("We use alternative server %s\r\n", server_addr);
 			}
 			// Peridic update config data from server
 			if (sys_ctx()->status.poll_broadcast_msg_from_server)
@@ -637,7 +666,8 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 4:
         DEBUG_INFO("Get module info: %s\r\n", resp_buffer);
-        gsm_hw_send_at_cmd("AT+QURCCFG=\"URCPORT\",\"uart1\"\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+//        gsm_hw_send_at_cmd("AT+QURCCFG=\"URCPORT\",\"uart1\"\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 5:
@@ -657,7 +687,8 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 8:
         DEBUG_INFO("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
-        gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
+        // gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         //gsm_hw_send_at_cmd("AT+CNUM\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
@@ -672,19 +703,22 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 	{
         DEBUG_INFO("CSGN resp: %s, Data %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", (char*)resp_buffer);
 		uint8_t *imei_buffer = (uint8_t*)gsm_get_module_imei();
-        gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
-        DEBUG_INFO("Get GSM IMEI: %s\r\n", imei_buffer);
-		imei_buffer = (uint8_t*)gsm_get_module_imei();
-        if (strlen((char*)imei_buffer) < 15)
+        if (strlen((char*)imei_buffer) < 14)
         {
-            DEBUG_INFO("IMEI's invalid!\r\n");
-            gsm_change_state(GSM_STATE_RESET); //Khong doc dung IMEI -> reset module GSM!
-            return;
+            gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
+            DEBUG_INFO("Get GSM IMEI: %s\r\n", imei_buffer);
+            imei_buffer = (uint8_t*)gsm_get_module_imei();
+            if (strlen((char*)imei_buffer) < 15)
+            {
+                DEBUG_INFO("IMEI's invalid!\r\n");
+                gsm_change_state(GSM_STATE_RESET); //Khong doc dung IMEI -> reset module GSM!
+                return;
+            }
+            if (strcmp((char*)imei_buffer, "860262050129480") == 0)
+            {
+                sprintf((char*)imei_buffer, "%s", "860262050127815");
+            }
         }
-		if (strcmp((char*)imei_buffer, "860262050129480") == 0)
-		{
-			sprintf((char*)imei_buffer, "%s", "860262050127815");
-		}
         gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
 	}
         break;
@@ -1154,8 +1188,8 @@ SEND_SMS_FAIL:
 	"Timestamp": 1629200614,
 	"ID": "G1-860262050125363",
 	"Input1": 124511,
-	"Outputl": 0,
-	"Output2": 0.00,
+	"Outl": 0,
+	"Out2": 0.00,
 	"BatteryLevel": 80,
 	"Vbat": 4101,
 	"Temperature": 26,
@@ -1173,30 +1207,30 @@ SEND_SMS_FAIL:
 	"Phone": "0916883454",
 	"Money": 7649,
 	"Inputl_J1": 7649,
-	"Inputl_J3_1": 0.01,
-	"Input1_J3_2": 0.00,
-	"Input1_J3_3": 0.01,
-	"Input1_J3_4 ": 0.01,
-	"Input1_J9_1 ": 1,
-	"Input1_g9_2 ": 1,
-	"Inputl_J9_3 ": 1,
-	"Input_J9_4 ": 71,
-	"Output1 ": 0,
-	"Output2": 0,
-	"Output3": 0,
-	"Output4": 0,
-	"Output4_20": 0.0,
+	"Ipl_J3_1": 0.01,
+	"Ip1_J3_2": 0.00,
+	"Ip1_J3_3": 0.01,
+	"Ip1_J3_4 ": 0.01,
+	"Ip1_J9_1 ": 1,
+	"Ip1_g9_2 ": 1,
+	"Ipl_J9_3 ": 1,
+	"Ip_J9_4 ": 71,
+	"Out1 ": 0,
+	"Out2": 0,
+	"Out3": 0,
+	"Out4": 0,
+	"Out4_20": 0.0,
 	"WarningLevel ": "0,0,0,0,1,0,1",
 	"BatteryLevel ": 100,
 	"Vin": 23.15,
 	"Temperature ": 29,
-	"Registerl_1 ": 64,
+	"Regl_1 ": 64,
 	"Unitl_1 ": "m3/s",
-	"Register1_2 ": 339,
+	"Reg1_2 ": 339,
 	"Unit1_2 ": "jun ",
-	"Register2_1": 0.0000,
+	"Reg2_1": 0.0000,
 	"Unit2_1": "kg",
-	"Register2_2": 0,
+	"Reg2_2": 0,
 	"Unit2_2": "1it",
 	"SIM": "452040700052210",
 	"Uptime": "3",
@@ -1213,16 +1247,16 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	bool found_break_pulse_input = false;
 //	char alarm_str[128];
 //    char *p = alarm_str;
-    uint16_t total_length = 0;
+    volatile uint16_t total_length = 0;
 	
-	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Error\":\"");
+	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Err\":\"");
 
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		if (msg->counter[i].cir_break)
 		{
 			found_break_pulse_input = true;
-			total_length += sprintf((char *)(ptr + total_length), "cb xung %u dut,", i+1);
+			total_length += sprintf((char *)(ptr + total_length), "cir %u,", i+1);
 		}
 	}
 	
@@ -1251,7 +1285,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	// Nhiet do
 	if (msg->temperature > 70)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet do cao,");
+		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet cao,");
 	}
 
 	
@@ -1287,7 +1321,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	// Cam bien
 	if (ctx->error_critical.detail.sensor_out_of_range)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "qua nguong cam bien,");
+		total_length += sprintf((char *)(ptr + total_length), "%s", "qua nguong,");
 	}
 	if (ptr[total_length - 1] == ',')
 	{
@@ -1304,7 +1338,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build timestamp
     total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":%u,", msg->measure_timestamp); //second since 1970
     
-    uint32_t temp_counter;
+    int32_t temp_counter;
 
     // Build ID, phone and id
 #ifdef DTG02
@@ -1332,8 +1366,9 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
 //    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
 //    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
-	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
-#if defined(DTG02) || defined(DTG02V2)
+//	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
+#ifndef DTG01
+#if 0
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
@@ -1341,57 +1376,96 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		{
 			msg->counter[i].k = 1;
 		}
-		temp_counter = msg->counter[i].forward / msg->counter[i].k + msg->counter[i].indicator;
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u\":%u,",
+		temp_counter = msg->counter[i].real_counter/msg->counter[i].k + msg->counter[i].indicator;
+		total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J%u\":%d,",
 									i+1,
 									temp_counter);
-		if (eeprom_cfg->meter_mode[i] != APP_EEPROM_METER_MODE_PWM_F_PWM_R)
-		{
-			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
+        
+        temp_counter = msg->counter[i].reserve_counter / msg->counter[i].k /* + msg->counter[i].indicator */;
+        total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J%u_D\":%u,",
+                                        i+1,
+                                        temp_counter);
+        
+        // Total forward flow
+        total_length += sprintf((char *)(ptr + total_length), "\"FwFlw%u\":%u,",
 											i+1,
-											0);
-		}
-//		else
-//		{
-//			temp_counter = msg->counter[i].reserve / msg->counter[i].k + msg->counter[i].indicator;
-//			total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
-//											i+1,
-//											temp_counter);
-//		}
-		// K : he so chia cua dong ho nuoc, input 1
-		// Offset: Gia tri offset cua dong ho nuoc
-		// Mode : che do hoat dong
-		total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, msg->counter[i].k);
-		//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
-		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
+											msg->counter[i].total_forward);
+        total_length += sprintf((char *)(ptr + total_length), "\"RsvFlw%u\":%u,",
+											i+1,
+											msg->counter[i].total_reserve);
+        
+        // Total forward/reserve index : tong luu luong tich luy thuan/nguoc
+        total_length += sprintf((char *)(ptr + total_length), "\"FwIdx%u\":%u,",
+											i+1,
+											msg->counter[i].total_forward_index);
+        total_length += sprintf((char *)(ptr + total_length), "\"RsvIdx%u\":%u,",
+											i+1,
+											msg->counter[i].total_reserve_index);
+        
+        if (msg->counter[i].flow_avg_cycle_send_web.valid)
+        {
+                    
+            // min max forward flow
+            total_length += sprintf((char *)(ptr + total_length), "\"MinFwFlw%u\":%f,",
+											i+1,
+											msg->counter[i].flow_avg_cycle_send_web.forward_flow_min);
+        
+            total_length += sprintf((char *)(ptr + total_length), "\"MaxFwFlw%u\":%f,",
+											i+1,
+											msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
+        
+            // min max reserve flow
+            total_length += sprintf((char *)(ptr + total_length), "\"MinRsvFlw%u\":%f,",
+                                                i+1,
+                                                msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min);
+            
+            total_length += sprintf((char *)(ptr + total_length), "\"MaxRsvFlw%u\":%f,",
+                                                i+1,
+                                                msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
+        }
+
+        
+               
+        
+//		// K : he so chia cua dong ho nuoc, input 1
+//		// Offset: Gia tri offset cua dong ho nuoc
+//		// Mode : che do hoat dong
+//		total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", i+1, msg->counter[i].k);
+//		//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
+//		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, msg->counter[i].mode);
 	}
-		
+#endif		
     // Build input 4-20ma
-	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_1\":%.3f,", 
-																			msg->input_4_20mA[0]); // dau vao 4-20mA 0
-	}
-	if (eeprom_cfg->io_enable.name.input_4_20ma_1_enable)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_2\":%.3f,", 
-																			msg->input_4_20mA[1]); // dau vao 4-20mA 0
-	}
-	if (eeprom_cfg->io_enable.name.input_4_20ma_2_enable)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_3\":%.3f,", 
-																			msg->input_4_20mA[2]); // dau vao 4-20mA 0
-	}
-		if (eeprom_cfg->io_enable.name.input_4_20ma_3_enable)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_4\":%.3f,", 
-																			msg->input_4_20mA[3]); // dau vao 4-20mA 0
-	}
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J3_1\":%f,", 
+                                                                        msg->input_4_20mA[0]); // dau vao 4-20mA 0
+
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J3_2\":%f,", 
+                                                                        msg->input_4_20mA[1]); // dau vao 4-20mA 0
+
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J3_3\":%f,", 
+                                                                        msg->input_4_20mA[2]); // dau vao 4-20mA 0
+
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J3_4\":%f,", 
+                                                                        msg->input_4_20mA[3]); // dau vao 4-20mA 0
+    
+    // Min max 4-20mA
+#if 0   // test            
+    // 4-20mA  
+    for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+    {
+        if (msg->input_4_20ma_cycle_send_web[i].valid)
+        {
+            total_length += sprintf((char *)(ptr + total_length), "\"MinPA%u\":%f,", i+1,
+                                                                        convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_min));
+        }
+        total_length += sprintf((char *)(ptr + total_length), "\"PA%u\":%f,", i+1,
+                                                                        convert_input_4_20ma_to_pressure(msg->input_4_20mA[i]));
+    }      
     
     // Build input on/off
 	for (uint32_t i = 0; i < NUMBER_OF_INPUT_ON_OFF; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J9_%u\":%u,", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J9_%u\":%u,", 
 																			i+1,
 																			msg->input_on_off[i]); // dau vao 4-20mA 0
 	}	
@@ -1399,7 +1473,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build output on/off
 	for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_ON_OFF; i++)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output%u\":%u,", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Out%u\":%u,", 
 																			i+1,
 																			msg->output_on_off[i]);  //dau ra on/off 
 	}
@@ -1407,35 +1481,35 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build output 4-20ma
 	if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.3f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
+		total_length += sprintf((char *)(ptr + total_length), "\"Out4_20\":%.3f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
 	}
-	
+#endif	
 		
 #else	
     // Build pulse counter
-    temp_counter = msg->counter[0].forward / msg->counter[0].k + msg->counter[0].indicator;
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
+    temp_counter = msg->counter[0].real_counter / msg->counter[0].k + msg->counter[0].indicator;
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1\":%u,",
                               temp_counter); //so xung
     
     if (eeprom_cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
 	{
         temp_counter = msg->counter[0].reserve / msg->counter[0].k + msg->counter[0].indicator;
-		total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
+		total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J1_D\":%u,",
 									temp_counter);
 	}
 	
     // Build input on/off
-    total_length += sprintf((char *)(ptr + total_length), "\"Output1\":%u,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Out1\":%u,", 
                                                                         msg->output_on_off[0]); // dau vao on/off
 	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
 	{
 		// Build input 4-20ma
-		total_length += sprintf((char *)(ptr + total_length), "\"Input2\":%.2f,", 
+		total_length += sprintf((char *)(ptr + total_length), "\"Ip2\":%f,", 
 																			msg->input_4_20mA[0]); // dau vao 4-20mA 0
 	}
 
     // Build ouput 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Output2\":%.2f,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Out2\":%f,", 
 																			msg->output_4_20mA[0]); // dau ra 4-20mA
 #endif
 
@@ -1452,83 +1526,101 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
 #else   // DTG02 : Vinput 24V
 	total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
-    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.2f,", msg->vin_mv/1000);
+    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.1f,", msg->vin_mv/1000);
 #endif    
     // Temperature
-	total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", msg->temperature);
+	total_length += sprintf((char *)(ptr + total_length), "\"T\":%d,", msg->temperature);
     
 //    // Reset reason
 //    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
-    
-	// Register0_1:1234, Register0_2:4567, Register1_0:12345
+	// Reg0_1:1234, Reg0_2:4567, Reg1_0:12345
+#if 0   // test
 	for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 	{
-		// 485
-		if (eeprom_cfg->io_enable.name.rs485_en)
-		{	
-			total_length += sprintf((char *)(ptr + total_length), "\"SlaveID%u\":%u,", index+1, msg->rs485[index].slave_addr);
-			for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
-			{
-				if (msg->rs485[index].sub_register[sub_idx].read_ok
-					&& msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
-				{
-					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":", index+1, sub_idx+1);
-					if (msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
-						|| msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
-					{
-						total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].sub_register[sub_idx].value);
-					}
-					else
-					{
-						total_length += sprintf((char *)(ptr + total_length), "%.4f,", (float)msg->rs485[index].sub_register[sub_idx].value);
-					}
-					if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
-					{
-						total_length += sprintf((char *)(ptr + total_length), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
-					}
-				}
-				else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
-				{
-					if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
-					{
-						total_length += sprintf((char *)(ptr + total_length), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
-					}
-					total_length += sprintf((char *)(ptr + total_length), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "FFFF");
-				}	
-			}
-		}
+        // Min max
+        if (msg->rs485[index].min_max.valid)
+        {
+            if (msg->rs485[index].min_max.min_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinFwFlw%u\":%d,", 
+                                                                index+1, msg->rs485[index].min_max.min_forward_flow.type_int);
+            }
+            
+            if (msg->rs485[index].min_max.max_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxFwFlw%u\":%d,", 
+                                                                index+1, msg->rs485[index].min_max.max_forward_flow.type_int);
+            }
+            
+            if (msg->rs485[index].min_max.min_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbinRsvFlw%u\":%d,", 
+                                                                index+1, msg->rs485[index].min_max.min_reserve_flow.type_int);
+            }
+            
+            if (msg->rs485[index].min_max.max_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxRsvFlw%u\":%u,", 
+                                                                index+1, msg->rs485[index].min_max.max_reserve_flow.type_int);
+            }
+        }
+
+        // Value
+        total_length += sprintf((char *)(ptr + total_length), "\"SlID%u\":%u,", index+1, msg->rs485[index].slave_addr);
+        for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
+        {
+            if (msg->rs485[index].sub_register[sub_idx].read_ok
+                && msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"Rg%u_%u\":", index+1, sub_idx+1);
+                if (msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
+                    || msg->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
+                {
+                    total_length += sprintf((char *)(ptr + total_length), "%u,", msg->rs485[index].sub_register[sub_idx].value);
+                }
+                else
+                {
+                    total_length += sprintf((char *)(ptr + total_length), "%f,", (float)msg->rs485[index].sub_register[sub_idx].value);
+                }
+                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+                {
+                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+                }
+            }
+            else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
+            {
+                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+                {
+                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+                }
+                total_length += sprintf((char *)(ptr + total_length), "\"Rg%u_%u\":\"%s\",", index+1, sub_idx+1, "FFFF");
+            }	
+        }
 	}
-    
+#endif    
     // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":%s,", gsm_get_sim_imei());
 	total_length += sprintf((char *)(ptr + total_length), "\"CCID\":%s,", gsm_get_sim_ccid());
     
     // Uptime
-    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
-    total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", m_send_time++);
+//    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
+    total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
 	
-	// Relase data
-	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
+//	// Release date
+//	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
 	
-	// Server
-#if 0
-	char *server = (char*)eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX];
-	if (strlen((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX]) > 8)
-	{
-		server = (char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX];
-	}
-			
-	total_length += sprintf((char *)(ptr + total_length), "\"SVR\":\"%s\",", server);
-#endif	
-    total_length += sprintf((char *)(ptr + total_length), "\"FactorySVR\":\"%s\",", app_eeprom_read_factory_data()->server);
+//    total_length += sprintf((char *)(ptr + total_length), "\"FacSVR\":\"%s\",", app_eeprom_read_factory_data()->server);
 	
     // Firmware and hardware
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}", VERSION_CONTROL_HW);
     
 //    hardware_manager_get_reset_reason()->value = 0;
-
-    DEBUG_INFO("Size %u, data %s\r\n", total_length, (char*)ptr);
+    //DEBUG_INFO("Size %u, data %s\r\n", total_length, (char*)ptr);
+    usart_lpusart_485_control(true);
+    sys_delay_ms(500);
+    usart_lpusart_485_send((uint8_t*)ptr, total_length);
+    
     return total_length;
 }
 
@@ -1619,20 +1711,23 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             else
             {
                 DEBUG_INFO("Found retransmission data\r\n");
+                
+                // Copy old pulse counter from spi flash to temp variable
                 static measure_input_perpheral_data_t tmp;
 				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 				{
-					tmp.counter[i].forward = m_retransmision_data_in_flash->meter_input[i].forward;
-					tmp.counter[i].reserve = m_retransmision_data_in_flash->meter_input[i].reserve;
-					tmp.counter[i].k = m_retransmision_data_in_flash->meter_input[i].k;
-					tmp.counter[i].indicator = m_retransmision_data_in_flash->meter_input[i].indicator;
-					tmp.counter[i].cir_break = m_retransmision_data_in_flash->meter_input[i].cir_break;
+                    memcpy(&tmp.counter[i], 
+                            &m_retransmision_data_in_flash->counter[i], 
+                            sizeof(measure_input_counter_t));
 				}
 				
 				// Input 4-20mA
                 for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
                 {
                     tmp.input_4_20mA[i] = m_retransmision_data_in_flash->input_4_20mA[i];
+                    memcpy(&tmp.input_4_20ma_cycle_send_web[i], 
+                            &m_retransmision_data_in_flash->input_4_20ma_cycle_send_web[i], 
+                            sizeof(input_4_20ma_min_max_hour_t));
                 }
 				
 				// Output 4-20mA
@@ -1691,7 +1786,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 #ifdef DTG01
             m_last_http_msg = (char*)umm_malloc(512+128);
 #else
-            m_last_http_msg = (char*)umm_malloc(736);
+            m_last_http_msg = (char*)umm_malloc(1024+128);
 #endif
             if (m_last_http_msg == NULL)
             {
@@ -1796,48 +1891,57 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             m_malloc_count--;
             umm_free(m_last_http_msg);
-//            DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
         LED1(0);
-        app_spi_flash_data_t wr_data;
-        wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
+        app_spi_flash_data_t *wr_data = (app_spi_flash_data_t*)umm_malloc(sizeof(app_spi_flash_data_t));
+        // Check malloc return value
+        if (wr_data == NULL)
+        {
+            DEBUG_INFO("Malloc failed\r\n");
+            NVIC_SystemReset();
+        }
+        wr_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            wr_data->input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            memcpy(&wr_data->input_4_20ma_cycle_send_web[i], 
+                    &m_sensor_msq->input_4_20ma_cycle_send_web[i], 
+                    sizeof(input_4_20ma_min_max_hour_t));
         }
+        
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
-			memcpy(&wr_data.meter_input[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+			memcpy(&wr_data->counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
 		}
         
 		// on/off
-		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+		wr_data->on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
 #if defined(DTG02) || defined(DTG02V2)
-		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
-		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
-		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
-		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
-		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
-		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+		wr_data->on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data->on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data->on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data->on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data->on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data->on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data->on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif		
 		// 4-20mA output
 		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
 		{
-			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+			wr_data->output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
 		}
 		
-        wr_data.csq_percent = m_sensor_msq->csq_percent;
-        wr_data.timestamp = m_sensor_msq->measure_timestamp;
-        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
-        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
-        wr_data.temp = m_sensor_msq->temperature;
+        wr_data->csq_percent = m_sensor_msq->csq_percent;
+        wr_data->timestamp = m_sensor_msq->measure_timestamp;
+        wr_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data->vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data->vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data->temp = m_sensor_msq->temperature;
         
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
-			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+			memcpy(&wr_data->rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
 		}
         
         if (!ctx->peripheral_running.name.flash_running)
@@ -1847,7 +1951,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
         }
-        app_spi_flash_write_data(&wr_data);
+        app_spi_flash_write_data(wr_data);
+        umm_free(wr_data);
         
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
@@ -1904,49 +2009,64 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
     {
         DEBUG_WARN("Http post event failed\r\n");
-        app_spi_flash_data_t wr_data;
-        wr_data.resend_to_server_flag = 0;
+
+        if (m_last_http_msg)
+        {
+            m_malloc_count--;
+            umm_free(m_last_http_msg);
+            m_last_http_msg = NULL;
+        }
+        
+        app_spi_flash_data_t *wr_data = (app_spi_flash_data_t*)umm_malloc(sizeof(app_spi_flash_data_t));
+        if (wr_data == NULL)
+        {
+            NVIC_SystemReset();
+        }
+        wr_data->resend_to_server_flag = 0;
 		
 		// Input 4-20mA
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            wr_data->input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            memcpy(&wr_data->input_4_20ma_cycle_send_web[i], 
+                    &m_sensor_msq->input_4_20ma_cycle_send_web[i], 
+                    sizeof(input_4_20ma_min_max_hour_t));
         }
 		
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
         {
-			memcpy(&wr_data.meter_input[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+			memcpy(&wr_data->counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
         }
       
-        wr_data.timestamp = m_sensor_msq->measure_timestamp;
-        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
-        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
-        wr_data.temp = m_sensor_msq->temperature;
-        wr_data.csq_percent = m_sensor_msq->csq_percent;
+        wr_data->timestamp = m_sensor_msq->measure_timestamp;
+        wr_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data->vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data->vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data->temp = m_sensor_msq->temperature;
+        wr_data->csq_percent = m_sensor_msq->csq_percent;
 		
 		// on/off
-		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+		wr_data->on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
 #if defined(DTG02) || defined(DTG02V2)
-		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
-		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
-		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
-		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
-		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
-		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+		wr_data->on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data->on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data->on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data->on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data->on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data->on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data->on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif
 		
 		// Output 4-20mA
 		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
 		{
-			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+			wr_data->output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
 		}
 		
 		// 485
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
-			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+			memcpy(&wr_data->rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
 		}
         
         if (!ctx->peripheral_running.name.flash_running)
@@ -1957,9 +2077,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         if (m_sensor_msq->state != MEASUREMENT_QUEUE_STATE_IDLE)
         {
-            app_spi_flash_write_data(&wr_data);
+            app_spi_flash_write_data(wr_data);
             m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         }
+        
+        umm_free(wr_data);
         m_sensor_msq = NULL;
     }
     case GSM_HTTP_GET_EVENT_FINISH_FAILED:
@@ -2023,6 +2145,8 @@ void gsm_mnr_task(void *arg)
             DEBUG_ERROR("GSM disconnected for a long time\r\n");
             app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
             measure_input_save_all_data_to_flash();
+            gsm_http_cleanup();
+            gsm_hw_layer_reset_rx_buffer();
             ctx->status.disconnect_timeout_s = 0;
             if (ctx->status.disconnected_count++ > 23)
             {				

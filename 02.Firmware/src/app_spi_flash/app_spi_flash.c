@@ -765,6 +765,7 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
     {
         app_spi_flash_data_t tmp;
         memset(&tmp, 0, sizeof(tmp));
+        DEBUG_INFO("Current write addr 0x%08X\r\n", m_wr_addr);
         flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, sizeof(tmp));
         if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
         {
@@ -784,21 +785,33 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
             {
                 cont = false;
             }
-            else
+            else    // not empty page, erase next page
             {
                 m_last_write_data_addr = m_wr_addr;
+                uint32_t current_page = m_last_write_data_addr/SPI_FLASH_SECTOR_SIZE;
+                uint32_t next_page;
                 m_wr_addr += sizeof(tmp);
                 if (m_wr_addr >= (APP_SPI_FLASH_SIZE - 2 * sizeof(app_spi_flash_data_t)))
                 {
+                    next_page = 0;      // Erase page 0
                     *flash_full = true;
                     cont = false;
+                }
+                else
+                {
+                    next_page = m_wr_addr / SPI_FLASH_SECTOR_SIZE;
+                    if (next_page != current_page)
+                    {
+                        DEBUG_ERROR("Erase sector 4K %u\r\n", next_page);
+                        flash_erase_sector_4k(next_page);
+                        cont = false;
+                    }
                 }
             }
         }
     }
 
-    // Erase next page
-    DEBUG_VERBOSE("Write addr 0x%08X\r\n", m_wr_addr);
+    DEBUG_INFO("Write addr 0x%08X\r\n", m_wr_addr);
     return m_wr_addr;
 }
 
@@ -1025,10 +1038,6 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
             }
         }
         
-        if (flash_full)
-        {
-            DEBUG_WARN("Flash full\r\n");
-        }
 		wr_data->crc = utilities_calculate_crc32((uint8_t *)wr_data, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
         flash_write_bytes(addr, (uint8_t *)wr_data, sizeof(app_spi_flash_data_t));
         flash_read_bytes(addr, (uint8_t *)&rd_data, sizeof(app_spi_flash_data_t));
@@ -1171,51 +1180,6 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
     return false;
 }
 
-void app_spi_flash_stress_test(uint32_t nb_of_write_times)
-{
-    DEBUG_INFO("Flash write %u times\r\n", nb_of_write_times);
-    app_spi_flash_data_t wr_data;
-    memset(&wr_data, 0, sizeof(wr_data));
-    while (1)
-    {
-        bool flash_full;
-        uint32_t addr = app_flash_estimate_next_write_addr(&flash_full);
-        if (!flash_full)
-        {
-            wr_data.meter_input[0].forward = 3;
-            wr_data.meter_input[0].reserve = 4;
-#ifdef DTG02
-            wr_data.meter_input[1].forward = 5;
-            wr_data.meter_input[1].reserve = 6;
-#endif
-//            wr_data.header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
-            wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
-            if (nb_of_write_times % 2 == 0)
-            {
-                wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
-            }
-            else
-            {
-                wr_data.resend_to_server_flag = 0;
-            }
-            app_spi_flash_write_data(&wr_data);
-            if (nb_of_write_times-- == 0)
-            {
-                break;
-            }
-        }
-        else
-        {
-            DEBUG_INFO("Exit flash test\r\n");
-            break;
-        }
-    }
-}
-
-//void app_flash_mark_addr_need_retransmission(uint32_t addr)
-//{
-//    app_flash_get_data(addr);
-//}
 
 void app_spi_flash_retransmission_data_test(void)
 {
@@ -1353,7 +1317,7 @@ uint32_t app_spi_flash_dump_to_485(void)
 #ifdef DTG01
 		char *ptr = umm_malloc(512);
 #else
-		char *ptr = umm_malloc(768);
+		char *ptr = umm_malloc(1024+128);
 #endif
 		while (1)
 		{
@@ -1376,16 +1340,16 @@ uint32_t app_spi_flash_dump_to_485(void)
 				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 				{
 					// Build input pulse counter
-					if (rd->meter_input[i].k == 0)
+					if (rd->counter[i].k == 0)
 					{
-						rd->meter_input[i].k = 1;
+						rd->counter[i].k = 1;
 					}
 					len += sprintf((char *)(ptr + len), "\"Input1_J%u\":%u,",
 												i+1,
-												rd->meter_input[i].forward/rd->meter_input[i].k + rd->meter_input[i].indicator);
+												rd->counter[i].real_counter/rd->counter[i].k + rd->counter[i].indicator);
 					len += sprintf((char *)(ptr + len), "\"Input1_J%u_D\":%u,",
 														i+1,
-														rd->meter_input[i].reserve/rd->meter_input[i].k + rd->meter_input[i].indicator);
+														rd->counter[i].reserve_counter/rd->counter[i].k /* + rd->counter[i].indicator */);
 				}
 				
 				// Build input 4-20ma
@@ -1428,14 +1392,14 @@ uint32_t app_spi_flash_dump_to_485(void)
 																	rd->on_off.name.output_on_off_3);  //dau ra on/off 
 				
 #else
-				if (rd->meter_input[0].k == 0)
+				if (rd->counter[0].k == 0)
 				{
-					rd->meter_input[0].k = 1;
+					rd->counter[0].k = 1;
 				}
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
-				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->meter_input[0].forward/rd->meter_input[0].k + rd->meter_input[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->meter_input[0].reserve/rd->meter_input[0].k + rd->meter_input[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->meter_input[0].reserve);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->counter[0].real_counter/rd->counter[0].k + rd->counter[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->counter[0].reserve/rd->counter[0].k + rd->counter[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->counter[0].reserve);
 				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
 #endif
 				

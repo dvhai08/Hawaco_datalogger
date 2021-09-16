@@ -67,7 +67,7 @@ static const shell_command_context_t cli_command_table[] =
 //    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
-//    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
+    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -199,7 +199,7 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
 //    DEBUG_PRINTF("Begin ota update\r\n");
 //    sys_ctx()->status.enter_ota_update = true;
 //    sprintf((char*)sys_ctx()->status.ota_url, "%s", "http://radiotech.vn:2602/Data_logger_DTG1.bin");
-//    gsm_set_wakeup_now();
+//    gsm_wakeup_now();
 //    return 0;
 //}
 
@@ -222,12 +222,12 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
     sys_ctx_t *system = sys_ctx();
 	if (strstr(argv[1], "en"))
 	{
-		DEBUG_INFO("Enter test mode\r\n");
+//		DEBUG_INFO("Enter test mode\r\n");
 		system->status.is_enter_test_mode = true;
 	}
 	else if (strstr(argv[1], "dis"))
 	{
-		DEBUG_INFO("Exit test mode\r\n");
+//		DEBUG_INFO("Exit test mode\r\n");
 		system->status.is_enter_test_mode = false;
 	}
     return 0;
@@ -243,7 +243,7 @@ static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **ar
 	else if (strstr(argv[1], "stress"))
 	{
 		DEBUG_INFO("Write flash\r\n");
-        app_spi_flash_stress_test(atoi(argv[2]));
+//        app_spi_flash_stress_test(atoi(argv[2]));
 	}
     else if (strstr(argv[1], "rdall"))
 	{

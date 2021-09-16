@@ -236,7 +236,7 @@
 #endif
 #define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
 #define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
-#define MEASUREMENT_MAX_MSQ_IN_RAM                  12
+#define MEASUREMENT_MAX_MSQ_IN_RAM                  2
 
 #define MEASUREMENT_QUEUE_STATE_IDLE                0
 #define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
@@ -246,7 +246,7 @@
 #define RS485_DATA_TYPE_INT32						1
 #define RS485_DATA_TYPE_FLOAT						2
 #define RS485_MAX_SLAVE_ON_BUS						2
-#define RS485_MAX_REGISTER_SUPPORT					3
+#define RS485_MAX_REGISTER_SUPPORT					4
 #define RS485_MAX_SUB_REGISTER						4
 #define RS485_REGISTER_ADDR_TOP						50000
 
@@ -290,6 +290,10 @@
 #define INPUT_ON_OFF_2()			(LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0)
 #define INPUT_ON_OFF_3()			(LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0)
 
+#define FLOW_INVALID_VALUE                  (-1.0f)
+#define INPUT_4_20MA_INVALID_VALUE          (-1.0f)
+#define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
+#define INPUT_485_INVALID_INT_VALUE         (-1)    
 
 typedef union
 {
@@ -310,18 +314,66 @@ typedef struct
 	int8_t read_ok;
 } __attribute__((packed)) measure_input_rs485_sub_register_t;
 
+typedef union
+{
+    float type_float;
+    int32_t type_int;
+    uint8_t raw[4];
+} __attribute__((packed)) min_max_485_type_t;
+typedef struct
+{
+    min_max_485_type_t min_forward_flow;
+    min_max_485_type_t max_forward_flow;
+    min_max_485_type_t min_reserve_flow;
+    min_max_485_type_t max_reserve_flow;
+    uint8_t valid;
+} __attribute__((packed)) measure_input_rs485_min_max_t;
 typedef struct
 {
 	measure_input_rs485_sub_register_t sub_register[RS485_MAX_SUB_REGISTER];
+    measure_input_rs485_min_max_t min_max;
+    uint16_t forward_flow_reg;
+    uint16_t reserve_flow_reg;
     uint8_t slave_addr;
 } __attribute__((packed)) measure_input_modbus_register_t;
 
 typedef struct
 {
-	int32_t forward;
-	int32_t reserve;
+    float forward_flow_min;
+    float forward_flow_max;
+    float reserve_flow_min;
+    float reserve_flow_max;
+    uint8_t valid;
+} __attribute__((packed)) flow_hour_t;
+
+typedef struct
+{
+    float input4_20ma_min;
+    float input4_20ma_max;
+    uint8_t valid;
+} __attribute__((packed)) input_4_20ma_min_max_hour_t;
+
+typedef struct
+{
+	int32_t real_counter;       // gia tri do khi da tinh ca xung am duong
+    int32_t reserve_counter;
+    int32_t total_forward;
+    int32_t total_reserve;
+    
+    uint32_t flow_forward;          // Toc do quay thuan
+    uint32_t flow_reserve;          // Toc do quay nguoc
+    
+    float flow_speed_forward_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
+    float flow_speed_reserve_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
+    
+    uint32_t total_forward_index;       // So nuoc thuan da tinh khi chia cho k + offset
+    uint32_t total_reserve_index;       // so nuoc nghich da tinh sau khi chia cho k (ko co offset)
+    
+    flow_hour_t flow_avg_cycle_send_web;        // Trung binh toc do giua 2 lan thuc day gui data len web
+    
 	uint32_t k;
-	uint32_t indicator;
+	uint8_t mode;
+    uint32_t indicator;
 	uint8_t cir_break;
 } __attribute__((packed)) measure_input_counter_t;
 

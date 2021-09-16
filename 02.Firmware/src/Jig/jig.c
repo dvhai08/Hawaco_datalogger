@@ -108,7 +108,8 @@ void jig_start(void)
 					app_bkup_read_pulse_counter(&pulse_counter_in_backup[0]);
 					for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 					{
-						jig_print("Pulse[%u] value %u-%u\r\n", i+1, pulse_counter_in_backup[i].forward, pulse_counter_in_backup[i].reserve);
+						jig_print("Pulse[%u] value %u-%u\r\n", i+1, pulse_counter_in_backup[i].real_counter, 
+                                                                    pulse_counter_in_backup[i].reserve_counter);
 					}
 					
 					// Test input and outout
@@ -211,6 +212,7 @@ bool jig_found_cmd_sync_data_to_host(void)
 	if (strstr((char*)m_jig_buffer.rx_ptr, "Hawaco.Datalogger.PingMessage"))
 	{
 		umm_free(m_jig_buffer.rx_ptr); 
+        m_jig_buffer.rx_ptr = NULL;
 		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
 		return true;
 	}
@@ -291,6 +293,7 @@ void jig_release_memory(void)
 	if (m_jig_buffer.rx_ptr)
 	{
 		umm_free(m_jig_buffer.rx_ptr); 
+        m_jig_buffer.rx_ptr = NULL;
 		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
 	}
 }

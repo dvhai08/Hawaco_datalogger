@@ -36,7 +36,7 @@
 
 /*! @brief Macro to set maximum arguments in command. */
 #ifndef SHELL_MAX_ARGS
-#define SHELL_MAX_ARGS (4U)
+#define SHELL_MAX_ARGS (3U)
 #endif
 
 /*! @brief Macro to set maximum count of history commands. */

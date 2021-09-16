@@ -20,8 +20,12 @@ typedef struct
 {
 	uint32_t measure_timestamp;
     uint8_t output_on_off[NUMBER_OF_OUTPUT_ON_OFF];
-// Input
+    
+    // Input 4-20mA
 	float input_4_20mA[NUMBER_OF_INPUT_4_20MA];
+    input_4_20ma_min_max_hour_t input_4_20ma_cycle_send_web[NUMBER_OF_INPUT_4_20MA];
+    
+    // Input on/off
 #if defined(DTG02) || defined(DTG02V2)
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
@@ -61,10 +65,6 @@ void measure_input_initialize(void);
  */
 void measure_input_task(void);
 
-///**
-// * @brief       Get measure input counter
-// */
-//measure_input_water_meter_input_t *measure_input_get_backup_counter(void);
 
 /*!
  * @brief       RS485 new uart data
@@ -138,5 +138,10 @@ void measure_input_save_all_data_to_flash(void);
  * @param[in]   ms Delay time in ms
  */
 void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms);
+
+/*!
+ * @brief       Set flag to monitor min max flow in cycle send web
+ */
+void measure_input_monitor_min_max_in_cycle_send_web(void);
 
 #endif /* MEASURE_INTPUT_H */

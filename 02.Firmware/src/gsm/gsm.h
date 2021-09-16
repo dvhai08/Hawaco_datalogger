@@ -299,7 +299,7 @@ uint8_t gsm_get_csq_in_percent(void);
 /*!
  * @brief		Wakeup gsm module
  */
-void gsm_set_wakeup_now(void);
+void gsm_wakeup_now(void);
 
 /*!
  * @brief		Reset gsm rx buffer
@@ -310,6 +310,12 @@ void gsm_hw_layer_reset_rx_buffer(void);
  * @brief		GSM mnr task
  */
 void gsm_mnr_task(void *arg);
+
+/**
+ * @brief       Get next wakeup timestamp send data to server
+ * @retval      Next wakeup timestamp
+ */
+uint32_t gsm_data_layer_get_estimate_wakeup_time_stamp(void);
 
 /**
  * \}

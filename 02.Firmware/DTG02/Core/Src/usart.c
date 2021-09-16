@@ -385,7 +385,7 @@ void usart1_hw_uart_send_raw(uint8_t* raw, uint32_t length)
     for (uint32_t i = 0; i < length; i++)
     {
 		LL_USART_TransmitData8(USART1, raw[i]);
-        while (0 == LL_USART_IsActiveFlag_TXE(USART1));
+        while (0 == LL_USART_IsActiveFlag_TC(USART1));
     }
 #endif
 }
@@ -519,15 +519,10 @@ void usart_lpusart_485_send(uint8_t *data, uint32_t length)
 	for (uint32_t i = 0; i < length; i++)
 	{
 		LL_LPUART_TransmitData8(LPUART1, data[i]);
-		while (0 == LL_LPUART_IsActiveFlag_TXE(LPUART1));
+		while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1));
 	}
 	
-	while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1))
-    {
-        
-    }
-	
-	RS485_DIR_RX();
+//	RS485_DIR_RX();
 }
 
 /* USER CODE END 1 */
