@@ -51,7 +51,6 @@
 #define PULSE_MINMUM_WITDH_MS                   100
 #endif
 
-
 typedef measure_input_counter_t backup_pulse_data_t;
 
 
@@ -611,8 +610,11 @@ void measure_input_task(void)
                 // If input is disable, we set value of input 4-20mA to zero
                 if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
                 {
-                    m_measure_data.input_4_20mA[0] = adc_retval->in_4_20ma_in[0];
-                    
+#if FAKE_MIN_MAX_DATA     
+                    #warning "Fake data"
+                    adc_retval->in_4_20ma_in[0] = adc_retval->bat_mv;
+#endif
+                    m_measure_data.input_4_20mA[0] = adc_retval->in_4_20ma_in[0];                            
                     // Set init min-max value
                     if (input_4_20ma_min_value[0] == INPUT_4_20MA_INVALID_VALUE)
                     {
@@ -637,7 +639,14 @@ void measure_input_task(void)
                     m_measure_data.input_4_20mA[0] = 0;
                     input_4_20ma_min_value[0] = 0;
                 }
-#ifndef DTG01                    
+#ifndef DTG01         
+
+#if FAKE_MIN_MAX_DATA     
+                adc_retval->in_4_20ma_in[1] = (float)adc_retval->bat_mv;
+                adc_retval->in_4_20ma_in[2] = (float)adc_retval->bat_mv;
+                adc_retval->in_4_20ma_in[3] = (float)adc_retval->bat_mv;
+#endif
+                
                 if (eeprom_cfg->io_enable.name.input_4_20ma_1_enable)
                 {
                     m_measure_data.input_4_20mA[1] = adc_retval->in_4_20ma_in[1];
@@ -716,8 +725,7 @@ void measure_input_task(void)
                 
                 for (uint32_t counter_index = 0; counter_index < MEASURE_NUMBER_OF_WATER_METER_INPUT; counter_index++)
                 {
-//                    if (diff)
-                    if (0)      // test
+                    if (diff)
                     {
                         // Forward direction
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
@@ -885,7 +893,7 @@ void measure_input_task(void)
                         {
                             memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
                             queue_full = false;
-//                            DEBUG_INFO("Puts new msg to sensor queue\r\n");
+                            DEBUG_INFO("Puts new msg to sensor queue\r\n");
                             scan = false;
                             break;
                         }
@@ -893,7 +901,7 @@ void measure_input_task(void)
 
                     if (queue_full)
                     {
-//                        DEBUG_ERROR("Message queue full\r\n");
+                        DEBUG_ERROR("Message queue full\r\n");
                         measure_input_save_all_data_to_flash();
                     }
                 }

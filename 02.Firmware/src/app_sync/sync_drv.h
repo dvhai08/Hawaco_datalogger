@@ -14,7 +14,7 @@ typedef void (*sync_drv_callback_t)(void * param);
 #endif
 
 #if SYNC_DRV_STATIC_ALLOCATOR   
-#define SYNC_DRV_MAX_EVENT          (16)
+#define SYNC_DRV_MAX_EVENT          (6)
 #endif 
 
 #if SYNC_DRV_STATIC_ALLOCATOR

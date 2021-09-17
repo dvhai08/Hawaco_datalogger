@@ -1016,43 +1016,41 @@ void gsm_hard_reset(void)
         step++;
         break;
     
-    case 7:
+    case 2:
         GSM_PWR_RESET(0);
         DEBUG_INFO("Gsm power on\r\n");
         GSM_PWR_EN(1);
         step++;
         break;
 
-    case 8: // Delayms for Vbat stable
+    case 3: // Delayms for Vbat stable
+    case 4:
+    case 5:
         step++;
         break;
 
-    case 9: // Delayms for Vbat stable
-        step++;
-        break;
-
-    case 10:
+    case 6:
+        usart1_control(true);
+        DEBUG_INFO("Pulse power key\r\n");
         /* Tao xung |_| de Power On module, min 1s  */
         GSM_PWR_KEY(1);
         step++;
         break;
 
-    case 11:
+    case 7:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
-		usart1_control(true);
         gsm_manager.timeout_after_reset = 90;
         step++;
         break;
 
-    case 12:
-    case 13:
-    case 14:
-    case 15:
+    case 8:
+    case 9:
+    case 10:
         step++;
         break;
     
-    case 16:
+    case 11:
         step = 0;
         gsm_change_state(GSM_STATE_POWER_ON);
         break;

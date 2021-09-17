@@ -4,7 +4,7 @@
 #define SYNC_TIMER_INTERVAL APP_TIMER_TICKS(m_sync_slice_ms)
 #define INTERVAL_MS_TO_TICK(x) (x/m_config.polling_interval_ms)  // convert ms to polling tick count
 
-static volatile app_sync_config_t m_config;
+volatile app_sync_config_t m_config;
 
 uint32_t app_sync_get_timeslice_interval(void)
 {

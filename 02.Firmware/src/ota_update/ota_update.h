@@ -43,6 +43,9 @@
 #define FLASH_END_BANK1               ((uint32_t)0x08017FFF)
 #define FLASH_START_BANK2             ((uint32_t)0x08018000)
 
+#define OTA_VERSION                   1
+
+
 /**
  *	Bootloader		16KB
  *  Application		80KB
@@ -94,5 +97,11 @@ bool ota_update_is_running(void);
  * @retval		OTA config in flash
  */
 ota_flash_cfg_t *ota_update_get_config(void);
+
+/*!
+ * @brief		Set ota image size
+ * @param[in]	size : Size of image
+ */
+void ota_update_set_expected_size(uint32_t size);
 
 #endif /* OTA_UPDATE_H */

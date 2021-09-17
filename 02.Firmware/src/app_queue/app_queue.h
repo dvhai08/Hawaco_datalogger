@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define APP_QUEUE_MAX_SIZE 6
+#define APP_QUEUE_MAX_SIZE 5
 
 typedef struct
 {

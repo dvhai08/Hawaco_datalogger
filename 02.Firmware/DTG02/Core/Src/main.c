@@ -69,7 +69,7 @@
 #define TEST_BACKUP_REGISTER                            0
 #define TEST_DEVICE_NEVER_SLEEP							1
 #define TEST_CRC32										0
-#define CLI_ENABLE                                      0
+#define CLI_ENABLE                                      1
 #define GSM_ENABLE										1
 /* USER CODE END PTD */
 
@@ -98,9 +98,8 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /* memory for ummalloc */
-uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
+volatile uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
-static void task_feed_wdt(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
@@ -191,14 +190,15 @@ int main(void)
 //	adc_start();
 	gsm_init_hw();
 	BUZZER(0);
+#if USE_SYNC_DRV
 	app_sync_config_t config;
 	config.get_ms = sys_get_ms;
 	config.polling_interval_ms = 1;
 	app_sync_sytem_init(&config);
 	
-	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+#endif
 
 #if TEST_OUTPUT_4_20MA
 	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
@@ -238,7 +238,17 @@ int main(void)
 #if CLI_ENABLE
 	app_cli_poll();
 #endif 
+#if USE_SYNC_DRV
 	app_sync_polling_task();
+#else
+      static volatile uint32_t m_last_tick = 0;
+      if (sys_get_ms() - m_last_tick >= (uint32_t)1000)
+      {
+          m_last_tick = sys_get_ms();
+          gsm_mnr_task(NULL);
+          info_task(NULL);
+      }
+#endif
 	if (led_blink_delay)
 	{
 		LED1(1);
@@ -623,12 +633,6 @@ void sys_delay_ms(uint32_t ms)
 	}
 }
 
-static void task_feed_wdt(void *arg)
-{
-#ifdef WDT_ENABLE
-	LL_IWDG_ReloadCounter(IWDG);
-#endif
-}
 
 static void info_task(void *arg)
 {	
@@ -764,7 +768,6 @@ void sys_config_low_power_mode(void)
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
 		
-        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
         if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
@@ -808,7 +811,6 @@ void sys_config_low_power_mode(void)
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;
-        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
 //        ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
@@ -829,10 +831,10 @@ void sys_config_low_power_mode(void)
         LL_IWDG_ReloadCounter(IWDG);
 #endif
     }
-    else
-    {
-        DEBUG_WARN("RTC timer still running\r\n");
-    }
+//    else
+//    {
+//        DEBUG_WARN("RTC timer still running\r\n");
+//    }
 }
 
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)

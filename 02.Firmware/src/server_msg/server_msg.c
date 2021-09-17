@@ -763,7 +763,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         {
 #if 1
             uint8_t changed = 0;
-			int len = strlen(tmp_phone);
+			int32_t len = strlen(tmp_phone);
 			if (len > 15)
 			{
 				len = 15;

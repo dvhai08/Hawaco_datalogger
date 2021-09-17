@@ -99,9 +99,14 @@ static bool is_4_20ma_output_valid(void)
 
 static void stop_dac_output(void *arg)
 {
-	m_max_4_20ma_output_ms = 0;
-	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
-	ENABLE_OUTPUT_4_20MA_POWER(0);
+    static bool stopped = false;
+    if (stopped == true)
+    {
+        stopped = false;
+        m_max_4_20ma_output_ms = 0;
+        app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+        ENABLE_OUTPUT_4_20MA_POWER(0);
+    }
 }
 	
 uint32_t m_last_mv = 0;
@@ -131,9 +136,13 @@ void control_output_dac_enable(uint32_t ms)
         }
 #endif
 	}
+#if USE_SYNC_DRV
 	app_sync_remove_callback(stop_dac_output);
+#else
+    stop_dac_output(NULL);
+#endif
 	m_max_4_20ma_output_ms = ms;
-	app_sync_register_callback(stop_dac_output, ms, SYNC_DRV_SINGLE_SHOT, SYNC_DRV_SCOPE_IN_LOOP);
+//	app_sync_register_callback(stop_dac_output, ms, SYNC_DRV_SINGLE_SHOT, SYNC_DRV_SCOPE_IN_LOOP);
 }
 
 void control_ouput_task(void)
@@ -152,7 +161,22 @@ void control_ouput_task(void)
 		}
 		return;
 	}
-	
+    else
+    {
+        static uint32_t last_tick_stop_adc = 0;
+        uint32_t now = sys_get_ms();
+        if (last_tick_stop_adc == 0)
+        {
+            last_tick_stop_adc = now;
+        }
+        
+        if (now - last_tick_stop_adc >= m_max_4_20ma_output_ms)
+        {
+            last_tick_stop_adc = 0;
+            m_max_4_20ma_output_ms = 0;
+            stop_dac_output(NULL);
+        }
+	}
 	bool stop_dac = true;
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 	if (is_4_20ma_output_valid())

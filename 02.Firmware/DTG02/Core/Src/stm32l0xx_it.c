@@ -367,14 +367,14 @@ void USART1_IRQHandler(void)
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_ERROR("GSM UART : Over run\r\n");
+        DEBUG_ERROR("GSM OVR\r\n");
         uint32_t tmp = USART1->RDR;
         LL_USART_ClearFlag_ORE(USART1);
     }
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_ERROR("Frame error\r\n");
+        DEBUG_ERROR("FE\r\n");
         LL_USART_ClearFlag_FE(USART1);
     }
     
@@ -399,7 +399,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
     {
         DEBUG_PRINTF("LPUART1 OVR\r\n");
         uint32_t tmp = LPUART1->RDR;
-        LL_USART_ClearFlag_ORE(USART1);
+        LL_USART_ClearFlag_ORE(LPUART1);
     }
     
     if (LL_USART_IsActiveFlag_FE(LPUART1))

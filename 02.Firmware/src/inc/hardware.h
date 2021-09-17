@@ -236,7 +236,7 @@
 #endif
 #define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
 #define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
-#define MEASUREMENT_MAX_MSQ_IN_RAM                  2
+#define MEASUREMENT_MAX_MSQ_IN_RAM                  1
 
 #define MEASUREMENT_QUEUE_STATE_IDLE                0
 #define MEASUREMENT_QUEUE_STATE_PENDING             1       // Dang cho de doc
@@ -294,6 +294,9 @@
 #define INPUT_4_20MA_INVALID_VALUE          (-1.0f)
 #define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
 #define INPUT_485_INVALID_INT_VALUE         (-1)    
+
+#define FAKE_MIN_MAX_DATA                   (1)
+#define USE_SYNC_DRV                                    0
 
 typedef union
 {
@@ -371,9 +374,9 @@ typedef struct
     
     flow_hour_t flow_avg_cycle_send_web;        // Trung binh toc do giua 2 lan thuc day gui data len web
     
-	uint32_t k;
-	uint8_t mode;
     uint32_t indicator;
+	uint16_t k;
+	uint8_t mode;
 	uint8_t cir_break;
 } __attribute__((packed)) measure_input_counter_t;
 

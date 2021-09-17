@@ -26,7 +26,7 @@ typedef struct
     input_4_20ma_min_max_hour_t input_4_20ma_cycle_send_web[NUMBER_OF_INPUT_4_20MA];
     
     // Input on/off
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
 #endif
 	
@@ -42,8 +42,8 @@ typedef struct
 	measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 	
 	// Temperature
-    int32_t temperature;
-    int32_t temperature_error;
+    int8_t temperature;
+    int8_t temperature_error;
 	
 	// RS485
     measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];

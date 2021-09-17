@@ -53,7 +53,7 @@ void jig_start(void)
 	m_jig_buffer.rx_idx = 0;
 	m_jig_buffer.tx_ptr = umm_malloc(JIG_RS485_RX485_TX_BUFFER_SIZE);
 	m_jig_buffer.rx_ptr = umm_malloc(JIG_RS485_RX485_RX_BUFFER_SIZE);
-	
+#if 0	
 	RS485_POWER_EN(1);
 	usart_lpusart_485_control(1);
 	sys_delay_ms(200);
@@ -185,7 +185,7 @@ void jig_start(void)
 	umm_free(m_jig_buffer.tx_ptr);
 	m_jig_buffer.rx_ptr = NULL;
 	m_jig_buffer.tx_ptr = NULL;
-	
+#endif
 	RS485_POWER_EN(0);
 }
 

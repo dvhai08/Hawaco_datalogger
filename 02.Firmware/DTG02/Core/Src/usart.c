@@ -27,7 +27,7 @@
 #include "hardware.h"
 
 #define DEBUG_USART1_DMA        0
-#define UART1_RX_BUFFER_SIZE    512
+#define UART1_RX_BUFFER_SIZE    1024
 #define USE_DMA_TX       0
 
 #ifdef DTG01
