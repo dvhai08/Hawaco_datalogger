@@ -568,7 +568,7 @@ void measure_input_task(void)
             uint32_t next_min = (estimate_measure_timestamp/60);
             next_min %= 60;
             
-            DEBUG_WARN("[%02u:%02u] Next measurement tick is %02u:%02u\r\n", now.hour, now.minute, next_hour, next_min);
+            DEBUG_WARN("[%02u:%02u] Next measurement tick is %02u:%u\r\n", now.hour, now.minute, next_hour, next_min);
             
             // Process rs485
             process_rs485(&m_measure_data.rs485[0]);

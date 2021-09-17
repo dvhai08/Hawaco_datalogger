@@ -75,7 +75,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+typedef  void (*p_func)(void);
+p_func jump_to_application;
+uint32_t m_jump_addr;
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -139,6 +141,31 @@ int main(void)
     LED1(0);
 	gsm_init_hw();
 
+    ota_flash_cfg_t cfg;
+	memcpy(&cfg, (ota_flash_cfg_t*)OTA_INFO_START_ADDR, sizeof(ota_flash_cfg_t));
+    if (cfg.flag != OTA_FLAG_UPDATE_NEW_FW)
+	{
+        
+        __disable_irq();
+		if (((*(__IO uint32_t*)APPLICATION_START_ADDR) & 0x2FFE0000) == 0x20000000)
+		{
+			/* Jump to user application */
+			m_jump_addr = *(__IO uint32_t*) (APPLICATION_START_ADDR + 4);
+			jump_to_application = (p_func) m_jump_addr;
+			/* Initialize user application's Stack Pointer */
+			__set_MSP(*(__IO uint32_t*) APPLICATION_START_ADDR);
+			jump_to_application();
+		}
+        while (1)
+        {
+            
+        }
+	}
+	else
+	{
+
+	}
+    
   /* USER CODE END 2 */
 
   /* Infinite loop */

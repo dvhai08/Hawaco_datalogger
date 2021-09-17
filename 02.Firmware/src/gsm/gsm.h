@@ -31,7 +31,8 @@
 #define __GSM_SLEEP_MODE__ 1
 #define __USED_HTTP__ 0
 
-#define GSM_READ_SMS_ENABLE     1
+#define GSM_SMS_ENABLE              1
+#define GSM_READ_SMS_ENABLE          0
 #define GSM_MAX_SMS_CONTENT_LENGTH   160
 #define GSM_MAX_SMS_PHONE_LENGTH     16
 #define GSM_MIN_SMS_PHONE_LENGTH     9
@@ -60,6 +61,7 @@ typedef enum
     GSM_STATE_SLEEP,
     GSM_STATE_HTTP_GET,
     GSM_STATE_HTTP_POST,
+    GSM_STATE_FILE_READ,
 } gsm_state_t;
 
 typedef enum

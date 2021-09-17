@@ -183,7 +183,7 @@ static int32_t cli_factory_reset(p_shell_context_t context, int32_t argc, char *
 //            DEBUG_PRINTF("Send sms failed\r\n");
 //        }
 //    }
-//#if GSM_READ_SMS_ENABLE
+//#if GSM_SMS_ENABLE
 //    else if (strstr(argv[1], "read"))
 //    {
 //        DEBUG_PRINTF("Enter read sms mode\r\n");

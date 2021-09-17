@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "gsm.h"
+#include "ota_update.h"
+#include "main.h"
 
 #define DEBUG_HTTP                  1
 #ifdef DEBUG_HTTP
@@ -158,7 +160,7 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
             return;
         }
     }
-
+#if OTA_VERSION == 0
     if (m_http_read_big_file_step == 0)
     {
         uint32_t download_time = gsm_get_current_tick() - m_start_download_timestamp;
@@ -252,6 +254,10 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
 	}
 
     m_http_read_big_file_step++;
+#else
+    ota_update_finish(true);
+    NVIC_SystemReset();
+#endif
 }
 
 

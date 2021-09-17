@@ -128,6 +128,27 @@ void ota_update_set_expected_size(uint32_t size)
     m_expected_size = size;
 }
 
+bool ota_update_commit_flash(void)
+{
+    // TODO write boot information
+    if (m_ota_remain.size)
+    {
+        DEBUG_INFO("Write final %u bytes, total %u bytes\r\n", m_ota_remain.size, m_current_write_size + m_ota_remain.size);
+        flash_if_write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
+        m_ota_remain.size = 0;
+    }
+    if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
+    {
+        DEBUG_INFO("Valid checksum\r\n");
+        return true;
+    }
+    else
+    {
+        DEBUG_ERROR("Invalid checksum\r\n"); 
+        return false;
+    }
+}
+
 void ota_update_finish(bool status)
 {
     m_found_header = false;
@@ -140,12 +161,12 @@ void ota_update_finish(bool status)
             flash_if_write(DONWLOAD_START_ADDR + m_current_write_size, (uint32_t*)&m_ota_remain.data[0], m_ota_remain.size/sizeof(uint32_t));   
             m_ota_remain.size = 0;
         }
-#if OTA_VERSION    
+#if OTA_VERSION == 0
         if (verify_checksum(DONWLOAD_START_ADDR, m_expected_size))
         {
             DEBUG_INFO("Valid checksum\r\n");
             ota_flash_cfg_t new_cfg;
-            new_cfg.flag = OTA_FLAG_UPDATE_NEW_FW;
+            new_cfg.flag = OTA_FLAG_NO_NEW_FIRMWARE; // OTA_FLAG_UPDATE_NEW_FW;
             new_cfg.firmware_size = m_expected_size;
             new_cfg.reserve[0] = 0;
             flash_if_write_ota_info_page((uint32_t*)&new_cfg, sizeof(ota_flash_cfg_t)/sizeof(uint32_t));
@@ -173,10 +194,8 @@ void ota_update_finish(bool status)
     NVIC_SystemReset();
     while(1);
 }
-
 static bool verify_checksum(uint32_t begin_addr, uint32_t length)
 {
-#if OTA_VERSION == 0
     ///*
     // * @note: check md5 code in the very last 16 bytes at end of file
     // */
@@ -201,10 +220,8 @@ static bool verify_checksum(uint32_t begin_addr, uint32_t length)
 		}
         return false;
     }
-#else
-    return false;
-#endif
 }
+
 
 ota_flash_cfg_t *ota_update_get_config(void)
 {

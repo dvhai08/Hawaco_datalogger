@@ -19,6 +19,7 @@ typedef struct
 typedef struct
 {
 //	uint32_t sleep_time_s;
+    
 	uint32_t disconnect_timeout_s;
     uint32_t disconnected_count;
 	uint32_t last_state_is_disconnect;
@@ -78,9 +79,11 @@ typedef union
 
 typedef struct
 {
+#ifndef BOOTLOADER_MODE
 	sys_ctx_status_t status;
     sys_ctx_error_not_critical_t error_not_critical;
 	sys_ctx_error_critical_t error_critical;
+#endif
     sys_ctx_sleep_peripheral_t peripheral_running;
 } sys_ctx_t;
 

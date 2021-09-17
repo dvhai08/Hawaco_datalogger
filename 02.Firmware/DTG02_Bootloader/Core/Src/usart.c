@@ -27,7 +27,7 @@
 #include "hardware.h"
 
 #define DEBUG_USART1_DMA        0
-#define UART1_RX_BUFFER_SIZE    1024
+#define UART1_RX_BUFFER_SIZE    256
 #define USE_DMA_TX       0
 
 #ifdef DTG01
@@ -50,7 +50,6 @@ static inline void usart1_hw_uart_rx_raw(uint8_t *data, uint32_t length);
 uint8_t m_usart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 volatile uint32_t m_last_usart1_transfer_size = 0;
 static bool m_usart1_is_enabled = true;
-static bool m_lpusart_rs485_is_enabled = true;
 static volatile size_t m_old_usart1_dma_rx_pos;
 /* USER CODE END 0 */
 

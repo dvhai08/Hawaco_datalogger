@@ -7,8 +7,8 @@
 #define OTA_FLAG_UPDATE_NEW_FW		0x12345678
 #define OTA_FLAG_NO_NEW_FIRMWARE	0x19785384
 
-#define BOOTLOADER_SIZE				(6*1024)
-#define APPLICATION_SIZE			(93184)
+#define BOOTLOADER_SIZE				(32*1024)
+#define APPLICATION_SIZE			(152*1024)
 #define OTA_INFO_SIZE               (128)
 #define DOWNLOAD_SIZE				APPLICATION_SIZE
 
@@ -18,8 +18,8 @@
 #define APPLICATION_START_ADDR		(BOOTLOADER_END_ADDR + 1)
 #define APPLICATION_END_ADDR		(APPLICATION_START_ADDR + APPLICATION_SIZE-1)
 
-#define DONWLOAD_START_ADDR			(APPLICATION_END_ADDR+1)
-#define DONWLOAD_END_ADDR			(DONWLOAD_START_ADDR + APPLICATION_SIZE-1)
+#define DONWLOAD_START_ADDR         APPLICATION_START_ADDR
+#define DONWLOAD_END_ADDR           APPLICATION_END_ADDR
 
 #define OTA_INFO_START_ADDR			(DONWLOAD_END_ADDR+1)
 #define OTA_INFO_END_ADDR			(OTA_INFO_START_ADDR + OTA_INFO_SIZE-1)
@@ -103,5 +103,10 @@ ota_flash_cfg_t *ota_update_get_config(void);
  * @param[in]	size : Size of image
  */
 void ota_update_set_expected_size(uint32_t size);
+
+/*!
+ * @brief		Write all remain data into flash
+ */
+bool ota_update_commit_flash(void);
 
 #endif /* OTA_UPDATE_H */

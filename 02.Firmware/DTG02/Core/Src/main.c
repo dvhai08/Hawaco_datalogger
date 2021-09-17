@@ -67,7 +67,7 @@
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							1
+#define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
 #define CLI_ENABLE                                      1
 #define GSM_ENABLE										1
@@ -212,8 +212,8 @@ int main(void)
     eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-//    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);
-//    DEBUG_PRINTF("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
+
+    DEBUG_INFO("Build %s %s, version %s\r\n", __DATE__, __TIME__, VERSION_CONTROL_FW);
 	jig_start();
     static uint32_t button_factory_timeout = 0;
     bool do_factory_reset = false;

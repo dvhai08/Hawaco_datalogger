@@ -452,7 +452,7 @@ static void process_ota_update(char *buffer)
 	
 	if (same_hardware)
 	{
-		do_ota = strstr(buffer, "Update\":");
+		do_ota = strstr(buffer, "\"Update\":1");
 		version = strstr(buffer, "Version\":\"");
 		link = strstr(buffer, "Link\":");
 	}
@@ -461,23 +461,18 @@ static void process_ota_update(char *buffer)
     {
 		version += strlen("Version\":\"");
 		link += strlen("Link\":");
-		
-        uint32_t update = gsm_utilities_get_number_from_string(strlen("Update\":"), do_ota);
-        if (update)
+        uint8_t version_compare;
+        version = strtok(version, "\"");
+        version_compare = version_control_compare(version);
+        if (version_compare == VERSION_CONTROL_FW_NEWER)
         {
-			uint8_t version_compare;
-			version = strtok(version, "\"");
-			version_compare = version_control_compare(version);
-			if (version_compare == VERSION_CONTROL_FW_NEWER)
-			{
-				link = strtok(link, "\"");
-				if (link && strlen(link) && strstr(link, "http"))
-				{
-                    m_ctx->status.delay_ota_update = 5;
-                    m_ctx->status.enter_ota_update = true;
-                    sprintf((char*)m_ctx->status.ota_url, "%s", strstr(link, "http"));
-				}
-			}
+            link = strtok(link, "\"");
+            if (link && strlen(link) && strstr(link, "http"))
+            {
+                m_ctx->status.delay_ota_update = 5;
+                m_ctx->status.enter_ota_update = true;
+                sprintf((char*)m_ctx->status.ota_url, "%s", strstr(link, "http"));
+            }
         }
     }
 }
