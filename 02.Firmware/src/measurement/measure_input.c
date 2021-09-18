@@ -51,6 +51,9 @@
 #define PULSE_MINMUM_WITDH_MS                   100
 #endif
 
+
+#define ALWAYS_SAVE_DATA_TO_FLASH               1
+
 typedef measure_input_counter_t backup_pulse_data_t;
 
 
@@ -309,7 +312,7 @@ void measure_input_pulse_counter_poll(void)
 
 		
 		DEBUG_INFO("Counter (%u-%u), real value %s\r\n", 
-				m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve,
+				m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter,
 				ptr);
 #else
 								
@@ -337,12 +340,14 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 	if (index == 0)
 	{
 		m_measure_data.counter[0].indicator = new_indicator;
+        m_measure_data.counter[0].reserve_counter = 0;
 		m_pulse_counter_in_backup[0].indicator = new_indicator;
 	}
 #ifndef DTG01
     else
     {
 		m_measure_data.counter[1].indicator = new_indicator;
+        m_measure_data.counter[1].reserve_counter = 0;
 		m_pulse_counter_in_backup[1].indicator = new_indicator;
     }
 #endif
@@ -881,7 +886,7 @@ void measure_input_task(void)
 #endif
                 m_measure_data.temperature = adc_retval->temp;
                 m_measure_data.state = MEASUREMENT_QUEUE_STATE_PENDING;
-                
+#if ALWAYS_SAVE_DATA_TO_FLASH == 0                
                 bool scan = true;
                 while (scan)
                 {
@@ -905,6 +910,18 @@ void measure_input_task(void)
                         measure_input_save_all_data_to_flash();
                     }
                 }
+#else
+                    for (uint32_t i = 0; i < MEASUREMENT_MAX_MSQ_IN_RAM; i++)
+                    {
+                        if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
+                        {
+                            DEBUG_INFO("Store data to flash\r\n");
+                            memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
+                            measure_input_save_all_data_to_flash();
+                            break;
+                        }
+                    }        
+#endif
             }        
             
             m_last_time_measure_data = sys_get_ms();
@@ -1015,7 +1032,7 @@ void measure_input_initialize(void)
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
 		DEBUG_INFO("Pulse counter in BKP: %u-%u\r\n", 
-                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve);
+                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter);
 #endif
     }
     memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
@@ -1240,3 +1257,8 @@ void measure_input_monitor_min_max_in_cycle_send_web(void)
     
 }
 
+uint32_t measure_input_get_next_time_wakeup(void)
+{
+    uint32_t current_sec = app_rtc_get_counter();
+    return (current_sec - estimate_measure_timestamp);
+}

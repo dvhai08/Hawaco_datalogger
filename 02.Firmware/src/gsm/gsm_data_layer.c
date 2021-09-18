@@ -68,7 +68,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data);
 static bool m_enter_http_get = false;
 static bool m_enter_http_post = false;
 static uint32_t m_malloc_count = 0;
-
+static app_spi_flash_data_t m_flash_rd_data;
+        
 static char *m_last_http_msg = NULL;
 static app_spi_flash_data_t *m_retransmision_data_in_flash;
 uint32_t m_wake_time = 0;
@@ -266,6 +267,26 @@ void gsm_manager_tick(void)
                 enter_post = true;
             }
 			
+            if (enter_post == false  && m_retransmision_data_in_flash == NULL)
+            {
+                bool re_send;
+                uint32_t addr = app_spi_flash_estimate_current_read_addr(&re_send, false);
+                if (re_send)
+                {
+                    DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
+                    if (!app_spi_flash_get_stored_data(addr, &m_flash_rd_data, true))
+                    {
+                        DEBUG_ERROR("Read failed\r\n");
+                    }
+                    else
+                    {
+                        m_retransmision_data_in_flash = &m_flash_rd_data;
+                        enter_post = true;
+                    }
+                } 
+            }
+            
+            
             if (enter_post)
             {
                 DEBUG_INFO("Enter http post\r\n");
@@ -753,9 +774,11 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         {
             gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm); 
             gsm_manager.step = 11;
-            return;
         }
-        gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "", 3000, 3, gsm_at_cb_power_on_gsm); 
+        else
+        {
+            gsm_hw_send_at_cmd("AT+CPIN?\r\n", "READY\r\n", "", 3000, 3, gsm_at_cb_power_on_gsm); 
+        }
     }
         break;
 
@@ -975,27 +998,19 @@ void gsm_hard_reset(void)
         GSM_PWR_KEY(0);
         step++;
         break;
-    case 1: 
-        gsm_manager.gsm_ready = 0;
-        GSM_PWR_EN(0);
-        GSM_PWR_RESET(1);
-        GSM_PWR_KEY(0);
-        step++;
-        break;
     
-    case 2:
+    case 1:
         GSM_PWR_RESET(0);
         DEBUG_INFO("Gsm power on\r\n");
         GSM_PWR_EN(1);
         step++;
         break;
 
-    case 3: // Delayms for Vbat stable
-    case 4:
+    case 2:
         step++;
         break;
 
-    case 5:
+    case 3:
         usart1_control(true);
         DEBUG_INFO("Pulse power key\r\n");
         /* Tao xung |_| de Power On module, min 1s  */
@@ -1003,19 +1018,19 @@ void gsm_hard_reset(void)
         step++;
         break;
 
-    case 6:
+    case 4:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
         gsm_manager.timeout_after_reset = 90;
         step++;
         break;
 
-    case 7:
-    case 8:
+    case 5:
+    case 6:
         step++;
         break;
     
-    case 9:
+    case 7:
         step = 0;
         gsm_change_state(GSM_STATE_POWER_ON);
         break;
@@ -1257,12 +1272,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 
 	
 	// RS485
-#if 0
-	if (ctx->error_not_critical.detail.rs485_err)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
-	}
-#else
     bool found_rs485_err = false;
     for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
     {
@@ -1284,7 +1293,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     {
         total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
     }
-#endif
+
 	// Cam bien
 	if (ctx->error_critical.detail.sensor_out_of_range)
 	{
@@ -1295,10 +1304,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 		ptr[total_length - 1] = 0;
 		total_length--;		// remove char ','
 	}
-//	else	// no error
-//	{
-//		total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
-//	}
+
 	
 	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
 	
@@ -1327,7 +1333,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         msg->counter[0].k = 1;
     }
 	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0, msg->counter[0].k);
-	//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
 	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0, eeprom_cfg->meter_mode[0]);
 #endif
 
@@ -1389,9 +1394,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 i+1,
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
         }
-
-        
-               
+          
         
 //		// K : he so chia cua dong ho nuoc, input 1
 //		// Offset: Gia tri offset cua dong ho nuoc
@@ -1413,8 +1416,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J3_4\":%.2f,", 
                                                                         msg->input_4_20mA[3]); // dau vao 4-20mA 0
     
-    // Min max 4-20mA
-#if 1   // test            
+    // Min max 4-20mA         
     // 4-20mA  
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
@@ -1448,34 +1450,68 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 	{
 		total_length += sprintf((char *)(ptr + total_length), "\"Out4_20\":%.2f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
 	}
-#endif	
 		
-#else	
+#else	    // DTG01
+
     // Build pulse counter
     temp_counter = msg->counter[0].real_counter / msg->counter[0].k + msg->counter[0].indicator;
     total_length += sprintf((char *)(ptr + total_length), "\"Ip1\":%u,",
                               temp_counter); //so xung
     
-    if (eeprom_cfg->meter_mode[0] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
-	{
-        temp_counter = msg->counter[0].reserve / msg->counter[0].k + msg->counter[0].indicator;
-		total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J1_D\":%u,",
-									temp_counter);
-	}
+    temp_counter = msg->counter[0].reserve_counter / msg->counter[0].k + msg->counter[0].indicator;
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip1_J1_D\":%u,",
+                                temp_counter);
 	
+    // Total forward flow
+    total_length += sprintf((char *)(ptr + total_length), "\"FwFlw1\":%u,",                                    
+                                        msg->counter[0].total_forward);
+    total_length += sprintf((char *)(ptr + total_length), "\"RsvFlw1\":%u,",                                        
+                                        msg->counter[0].total_reserve);
+    
+    // Total forward/reserve index : tong luu luong tich luy thuan/nguoc
+    total_length += sprintf((char *)(ptr + total_length), "\"FwIdx1\":%u,",                                        
+                                        msg->counter[0].total_forward_index);
+    total_length += sprintf((char *)(ptr + total_length), "\"RsvIdx1\":%u,",                                       
+                                        msg->counter[0].total_reserve_index);
+    
+    if (msg->counter[0].flow_avg_cycle_send_web.valid)
+    {
+        // min max forward flow
+        total_length += sprintf((char *)(ptr + total_length), "\"MinFwFlw1\":%.2f,",
+                                        msg->counter[0].flow_avg_cycle_send_web.forward_flow_min);
+    
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxFwFlw1\":%.2f,",
+                                        
+                                        msg->counter[0].flow_avg_cycle_send_web.forward_flow_max);
+    
+        // min max reserve flow
+        total_length += sprintf((char *)(ptr + total_length), "\"MinRsvFlw1\":%.2f,",                                           
+                                            msg->counter[0].flow_avg_cycle_send_web.reserve_flow_min);
+        
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxRsvFlw1\":%.2f,",                                           
+                                            msg->counter[0].flow_avg_cycle_send_web.reserve_flow_max);
+    }
+
+
+    
     // Build input on/off
     total_length += sprintf((char *)(ptr + total_length), "\"Out1\":%u,", 
-                                                                        msg->output_on_off[0]); // dau vao on/off
-	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)
-	{
-		// Build input 4-20ma
-		total_length += sprintf((char *)(ptr + total_length), "\"Ip2\":%.2f,", 
-																			msg->input_4_20mA[0]); // dau vao 4-20mA 0
-	}
+                                                            msg->output_on_off[0]); // dau vao on/off
+    // Build input 4-20ma
+    total_length += sprintf((char *)(ptr + total_length), "\"Ip2\":%.2f,", 
+                                                        msg->input_4_20mA[0]); // dau vao 4-20mA 0
+    // Min max 4-20mA     
+    if (msg->input_4_20ma_cycle_send_web[0].valid)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"MinPA1\":%.2f,",
+                                                                convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[0].input4_20ma_min));
+    }
+    total_length += sprintf((char *)(ptr + total_length), "\"PA1\":%.2f,",
+                                                            convert_input_4_20ma_to_pressure(msg->input_4_20mA[0]));
 
     // Build ouput 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Out2\":%.2f,", 
-																			msg->output_4_20mA[0]); // dau ra 4-20mA
+                                                            msg->output_4_20mA[0]); // dau ra 4-20mA
 #endif
 
     // CSQ in percent 
@@ -1487,10 +1523,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Warning level
 //    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
-#ifdef DTG01    // Battery
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
-#else   // DTG02 : Vinput 24V
-	total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
+#ifndef DTG01    // DTG02 : Vinput 24V
     total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.1f,", msg->vin_mv/1000);
 #endif    
     // Temperature
@@ -1499,7 +1533,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    // Reset reason
 //    total_length += sprintf((char *)(ptr + total_length), "\"RST\":%u,", hardware_manager_get_reset_reason()->value);
 	// Reg0_1:1234, Reg0_2:4567, Reg1_0:12345
-#if 0   // test
+#if 1
 	for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 	{
         // Min max
@@ -1570,6 +1604,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Uptime
 //    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
     total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
+    DEBUG_INFO("Send time %u, ts %u\r\n", m_send_time, msg->measure_timestamp);
 	
 //	// Release date
 //	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
@@ -1667,77 +1702,77 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_DATA:
     {
         bool build_msg = false;
-        DEBUG_INFO("Get http post data from queue\r\n");
-        m_sensor_msq = measure_input_get_data_in_queue();
-        if (!m_sensor_msq)
-        {       
-            DEBUG_INFO("No data in RAM queue, scan message in flash\r\n");
-            if (!m_retransmision_data_in_flash)
+        
+        // If we have data need to send to server from ext flash
+        // Else we scan measure input message queeu
+        if (m_retransmision_data_in_flash)
+        {
+            DEBUG_INFO("Found retransmission data\r\n");                
+            // Copy old pulse counter from spi flash to temp variable
+            static measure_input_perpheral_data_t tmp;
+            for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
             {
-                DEBUG_INFO("No more retransmission data\r\n");
+                memcpy(&tmp.counter[i], 
+                        &m_retransmision_data_in_flash->counter[i], 
+                        sizeof(measure_input_counter_t));
+            }
+            
+            // Input 4-20mA
+            for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
+            {
+                tmp.input_4_20mA[i] = m_retransmision_data_in_flash->input_4_20mA[i];
+                memcpy(&tmp.input_4_20ma_cycle_send_web[i], 
+                        &m_retransmision_data_in_flash->input_4_20ma_cycle_send_web[i], 
+                        sizeof(input_4_20ma_min_max_hour_t));
+            }
+            
+            // Output 4-20mA
+            for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
+            {
+                tmp.output_4_20mA[i] = m_retransmision_data_in_flash->output_4_20mA[i];
+            }
+            
+//                tmp.csq_percent = 0;
+            tmp.csq_percent = m_retransmision_data_in_flash->csq_percent;
+            tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
+            tmp.temperature = m_retransmision_data_in_flash->temp;
+            tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
+            tmp.vbat_percent = m_retransmision_data_in_flash->vbat_precent;
+            
+            // on/off
+            tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
+#if defined (DTG02) || defined (DTG02)
+            tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
+            tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
+            tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;
+            tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
+            tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
+            tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
+            tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
+#endif
+            
+            // Modbus
+            for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
+            {
+                memcpy(&tmp.rs485[i], &m_retransmision_data_in_flash->rs485[i], sizeof(measure_input_modbus_register_t));
+            }
+            
+            m_sensor_msq = &tmp;
+            build_msg = true;
+        }
+        else        // Get data from measure input queue
+        {
+            DEBUG_INFO("Get http post data from queue\r\n");
+            m_sensor_msq = measure_input_get_data_in_queue();
+            if (!m_sensor_msq)
+            {       
+                DEBUG_INFO("No data in RAM queue, scan message in flash\r\n");
                 gsm_change_state(GSM_STATE_OK);
             }
             else
             {
-                DEBUG_INFO("Found retransmission data\r\n");
-                
-                // Copy old pulse counter from spi flash to temp variable
-                static measure_input_perpheral_data_t tmp;
-				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
-				{
-                    memcpy(&tmp.counter[i], 
-                            &m_retransmision_data_in_flash->counter[i], 
-                            sizeof(measure_input_counter_t));
-				}
-				
-				// Input 4-20mA
-                for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
-                {
-                    tmp.input_4_20mA[i] = m_retransmision_data_in_flash->input_4_20mA[i];
-                    memcpy(&tmp.input_4_20ma_cycle_send_web[i], 
-                            &m_retransmision_data_in_flash->input_4_20ma_cycle_send_web[i], 
-                            sizeof(input_4_20ma_min_max_hour_t));
-                }
-				
-				// Output 4-20mA
-				for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
-                {
-                    tmp.output_4_20mA[i] = m_retransmision_data_in_flash->output_4_20mA[i];
-                }
-				
-//                tmp.csq_percent = 0;
-                tmp.csq_percent = m_retransmision_data_in_flash->csq_percent;
-                tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
-                tmp.temperature = m_retransmision_data_in_flash->temp;
-                tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
-                tmp.vbat_percent = m_retransmision_data_in_flash->vbat_precent;
-				
-				// on/off
-				tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
-#if defined (DTG02) || defined (DTG02)
-				tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
-				tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
-				tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;
-				tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
-				tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
-				tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
-				tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
-#endif
-				
-				// Modbus
-				for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
-				{
-					memcpy(&tmp.rs485[i], &m_retransmision_data_in_flash->rs485[i], sizeof(measure_input_modbus_register_t));
-				}
-                
-                m_sensor_msq = &tmp;
                 build_msg = true;
-//                DEBUG_VERBOSE("Build retransmision data\r\n");
             }
-        }
-        else
-        {
-            build_msg = true;
         }
         
         if (build_msg)
@@ -1746,23 +1781,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             {
                 umm_free(m_last_http_msg);
                 m_last_http_msg = NULL;
-//                DEBUG_VERBOSE("Umm free\r\n");
                 m_malloc_count--;
             }
             
-            // Malloc data to http post
-//            DEBUG_VERBOSE("Malloc data\r\n");
 #ifdef DTG01
-            m_last_http_msg = (char*)umm_malloc(512+128);
+            m_last_http_msg = (char*)umm_malloc(1024);
 #else
             m_last_http_msg = (char*)umm_malloc(1024+128);
 #endif
-            if (m_last_http_msg == NULL)
-            {
-                DEBUG_ERROR("Malloc error\r\n");
-                NVIC_SystemReset();
-            }
-            else
+            if (m_last_http_msg)
             {
                 ++m_malloc_count;
                 
@@ -1778,7 +1805,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 #else
                 ((gsm_http_data_t *)data)->header = (uint8_t *)"";
 #endif
-                }
+            }
+            else
+            {
+                DEBUG_ERROR("Malloc error\r\n");
+                NVIC_SystemReset();
+            }
         }
     }
     break;
@@ -1788,7 +1820,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         DEBUG_INFO("HTTP get : event success\r\n");
         app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
         ctx->status.disconnect_timeout_s = 0;
-        if (ctx->status.enter_ota_update            // Neu dang trong tien trinh ota update vaf download xong file =>> turn off gsm
+        if (ctx->status.enter_ota_update            // If ota update finish and all file downloaded =>> turn off gsm
             && ctx->status.delay_ota_update == 0)
         {
             GSM_PWR_EN(0);
@@ -1845,7 +1877,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		}
         
         gsm_change_state(GSM_STATE_OK);
-//        DEBUG_VERBOSE("Free um memory, malloc count[%u]\r\n", m_malloc_count);
         LED1(0);
 		
 #ifdef WDT_ENABLE
@@ -1858,6 +1889,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     {
         DEBUG_INFO("HTTP post : event success\r\n");
         ctx->status.disconnect_timeout_s = 0;
+        
+        // Release old memory from send buffer
         if (m_last_http_msg)
         {
             m_malloc_count--;
@@ -1865,6 +1898,8 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             m_last_http_msg = NULL;
         }
         LED1(0);
+        
+        // Read data from ext flash
         app_spi_flash_data_t *wr_data = (app_spi_flash_data_t*)umm_malloc(sizeof(app_spi_flash_data_t));
         // Check malloc return value
         if (wr_data == NULL)
@@ -1872,7 +1907,11 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             DEBUG_INFO("Malloc failed\r\n");
             NVIC_SystemReset();
         }
+        
+        // Mark flag we dont need to send data to server
         wr_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
+        
+        // Copy 4-20mA input
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
             wr_data->input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
@@ -1910,11 +1949,13 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         wr_data->vbat_precent = m_sensor_msq->vbat_percent;
         wr_data->temp = m_sensor_msq->temperature;
         
+        // Copy 485 data
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
 			memcpy(&wr_data->rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
 		}
         
+        // Wakeup flash if needed
         if (!ctx->peripheral_running.name.flash_running)
         {
 //            DEBUG_VERBOSE("Wakup flash\r\n");
@@ -1922,55 +1963,54 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             app_spi_flash_wakeup();
             ctx->peripheral_running.name.flash_running = 1;
         }
+        
+        // Commit data and release memory
         app_spi_flash_write_data(wr_data);
         umm_free(wr_data);
         
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
         
-        bool retransmition;
-        if (measure_input_sensor_data_availble() == 0)
+        // Scan for retransmission data
+        bool re_send = false;
+        
+        if (!ctx->peripheral_running.name.flash_running)
         {
-            static app_spi_flash_data_t rd_data;
-            if (!ctx->peripheral_running.name.flash_running)
+            spi_init();
+            app_spi_flash_wakeup();
+            ctx->peripheral_running.name.flash_running = 1;
+        }
+        uint32_t addr = app_spi_flash_estimate_current_read_addr(&re_send, false);
+        if (re_send)
+        {
+            DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
+            if (!app_spi_flash_get_stored_data(addr, &m_flash_rd_data, true))
             {
-                spi_init();
-                app_spi_flash_wakeup();
-                ctx->peripheral_running.name.flash_running = 1;
-            }
-            uint32_t addr = app_spi_flash_estimate_current_read_addr(&retransmition, false);
-            if (retransmition)
-            {
-                DEBUG_INFO("Need re-transission at addr 0x%08X\r\n", addr);
-                if (!app_spi_flash_get_stored_data(addr, &rd_data, true))
-                {
-                    DEBUG_ERROR("Read failed\r\n");
-                    gsm_change_state(GSM_STATE_OK);
-                    m_retransmision_data_in_flash = NULL;
-                }
-                else
-                {
-                    m_retransmision_data_in_flash = &rd_data;
-                    DEBUG_INFO("Enter http post\r\n");
-                    GSM_ENTER_HTTP_POST();
-                }
-            }
-            else if (sys_ctx()->status.poll_broadcast_msg_from_server)
-            {
-                sys_ctx()->status.poll_broadcast_msg_from_server = 0;
-                gsm_change_state(GSM_STATE_OK);
+                DEBUG_ERROR("Read failed\r\n");
+                m_retransmision_data_in_flash = NULL;
             }
             else
             {
-                gsm_change_state(GSM_STATE_OK);
+                m_retransmision_data_in_flash = &m_flash_rd_data;
+                DEBUG_INFO("Enter http post\r\n");
+                GSM_ENTER_HTTP_POST();
+            }
+        }       // no need retransmisson
+        else if (measure_input_sensor_data_availble() == 0)
+        {
+            if (sys_ctx()->status.poll_broadcast_msg_from_server)
+            {
+                sys_ctx()->status.poll_broadcast_msg_from_server = 0;
+            }
+            else
+            {
                 DEBUG_INFO("No more data need to re-send to server\r\n");
                 m_retransmision_data_in_flash = NULL;
             }
         }
-        else
-        {
-            gsm_change_state(GSM_STATE_OK);
-        }    
+        
+        gsm_change_state(GSM_STATE_OK);
+        
 #ifdef WDT_ENABLE
     LL_IWDG_ReloadCounter(IWDG);
 #endif

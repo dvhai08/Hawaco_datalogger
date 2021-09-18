@@ -144,4 +144,10 @@ void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms);
  */
 void measure_input_monitor_min_max_in_cycle_send_web(void);
 
+/*!
+ * @brief       Get next diff time wakeup and measure data
+ * @retval      Next time wakeup
+ */
+uint32_t measure_input_get_next_time_wakeup(void);
+
 #endif /* MEASURE_INTPUT_H */

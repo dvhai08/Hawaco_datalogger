@@ -68,8 +68,8 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 		valid = 0;
 	}
 #else
-	if (counter[0].forward != tmp[0]
-		|| counter[0].reserve != tmp[2])
+	if (counter[0].real_counter != tmp[0]
+		|| counter[0].reserve_counter != tmp[2])
 	{
 		valid = 0;
 	}

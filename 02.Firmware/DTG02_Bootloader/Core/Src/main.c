@@ -139,7 +139,6 @@ int main(void)
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_POWER_EN(0);
     LED1(0);
-	gsm_init_hw();
 
     ota_flash_cfg_t cfg;
 	memcpy(&cfg, (ota_flash_cfg_t*)OTA_INFO_START_ADDR, sizeof(ota_flash_cfg_t));
@@ -163,7 +162,7 @@ int main(void)
 	}
 	else
 	{
-
+        gsm_init_hw();
 	}
     
   /* USER CODE END 2 */

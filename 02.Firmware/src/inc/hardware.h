@@ -295,8 +295,8 @@
 #define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
 #define INPUT_485_INVALID_INT_VALUE         (-1)    
 
-#define FAKE_MIN_MAX_DATA                   (1)
-#define USE_SYNC_DRV                                    0
+#define FAKE_MIN_MAX_DATA                   (0)
+#define USE_SYNC_DRV                        (0)
 
 typedef union
 {

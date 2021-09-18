@@ -59,8 +59,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            28000    // ( ~16s)
-#define DEBUG_LOW_POWER                                 1
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 #define TEST_OUTPUT_4_20MA                              0
@@ -767,9 +767,13 @@ void sys_config_low_power_mode(void)
 #endif
         
         uint32_t counter_before_sleep = app_rtc_get_counter();
-		
+        uint32_t sleep_time = ((measure_input_get_next_time_wakeup()+1)*32768)/16;
+        if (sleep_time > WAKEUP_RESET_WDT_IN_LOW_POWER_MODE)
+        {
+            sleep_time = WAKEUP_RESET_WDT_IN_LOW_POWER_MODE;
+        }        
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, sleep_time, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
             Error_Handler();
         }

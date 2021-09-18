@@ -1401,8 +1401,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 				}
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
 				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->counter[0].real_counter/rd->counter[0].k + rd->counter[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->counter[0].reserve/rd->counter[0].k + rd->counter[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->counter[0].reserve);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->counter[0].reserve_counter/rd->counter[0].k + rd->counter[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->counter[0].reserve_counter);
 				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
 #endif
 				

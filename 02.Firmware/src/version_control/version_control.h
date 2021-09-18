@@ -3,7 +3,7 @@
 
 #ifdef DTG01
 #define VERSION_CONTROL_DEVICE			"DTG1"
-#define VERSION_CONTROL_FW				"0.0.3"
+#define VERSION_CONTROL_FW				"0.0.4"
 #define VERSION_CONTROL_HW				"0.0.1"
 #endif
 #ifdef DTG02

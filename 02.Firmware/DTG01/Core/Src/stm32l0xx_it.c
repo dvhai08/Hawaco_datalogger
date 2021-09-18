@@ -152,7 +152,7 @@ void SysTick_Handler(void)
   /* USER CODE BEGIN SysTick_IRQn 0 */
 	
   /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
+    uwTick++;
   /* USER CODE BEGIN SysTick_IRQn 1 */
 	if (led_blink_delay > 0)
 	{
@@ -184,7 +184,7 @@ void SysTick_Handler(void)
                 if (gsm_data_layer_is_module_sleeping())
                 {
                     measure_input_measure_wakeup_to_get_data();
-                    gsm_set_wakeup_now();
+                    gsm_wakeup_now();
                     sys_ctx_t *ctx = sys_ctx();
                     ctx->peripheral_running.name.gsm_running = 1;
                     if (app_eeprom_read_config_data()->io_enable.name.input_4_20ma_0_enable)
@@ -247,7 +247,7 @@ void EXTI0_1_IRQHandler(void)
 		if (gsm_data_layer_is_module_sleeping())
         {
             measure_input_measure_wakeup_to_get_data();
-            gsm_set_wakeup_now();
+            gsm_wakeup_now();
             sys_ctx_t *ctx = sys_ctx();
             ctx->peripheral_running.name.gsm_running = 1;
         }
@@ -411,7 +411,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
     {
         DEBUG_PRINTF("LPUART1 Over run\r\n");
         uint32_t tmp = LPUART1->RDR;
-        LL_USART_ClearFlag_ORE(USART1);
+        LL_USART_ClearFlag_ORE(LPUART1);
     }
     
     if (LL_USART_IsActiveFlag_FE(LPUART1))
@@ -442,7 +442,7 @@ void AES_RNG_LPUART1_IRQHandler(void)
 	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 
     {
         LL_USART_ClearFlag_IDLE(LPUART1);        /* Clear IDLE line flag */
-		measure_input_rs485_idle_detect();
+//		measure_input_rs485_idle_detect();
     }
 	
   /* USER CODE END AES_RNG_LPUART1_IRQn 0 */

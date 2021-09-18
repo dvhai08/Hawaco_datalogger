@@ -67,6 +67,7 @@
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_RS485                                      0
 #define TEST_BACKUP_REGISTER                            0
+#define CLI_ENABLE                                      1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -96,7 +97,6 @@ void SystemClock_Config(void);
 /* memory for ummalloc */
 uint8_t g_umm_heap[UMM_MALLOC_CFG_HEAP_SIZE];
 static volatile uint32_t m_delay_afer_wakeup_from_deep_sleep_to_measure_data;
-static void task_feed_wdt(void *arg);
 static void info_task(void *arg);
 volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
@@ -138,10 +138,7 @@ int main(void)
 	eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
-//#if TEST_INPUT_4_20_MA
-//    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
-//    system->status.is_enter_test_mode = 1;
-//#endif
+
 
   /* USER CODE END SysInit */
 
@@ -172,15 +169,20 @@ int main(void)
 	
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
+    
+#if CLI_ENABLE
 	app_cli_start();
-	app_bkup_init();
+#endif
+    
+    app_bkup_init();
     app_eeprom_init();
     app_spi_flash_initialize();
 	measure_input_initialize();
 	control_ouput_init();
 //	adc_start();
 	gsm_init_hw();
-	
+
+#if USE_SYNC_DRV
 	app_sync_config_t config;
 	config.get_ms = sys_get_ms;
 	config.polling_interval_ms = 1;
@@ -189,6 +191,7 @@ int main(void)
 	app_sync_register_callback(task_feed_wdt, 15000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(gsm_mnr_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
 	app_sync_register_callback(info_task, 1000, SYNC_DRV_REPEATED, SYNC_DRV_SCOPE_IN_LOOP);
+#endif
 	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
 
     ota_flash_cfg_t *ota_cfg = ota_update_get_config();
@@ -221,8 +224,6 @@ int main(void)
 	umm_free(info);
 	
 	jig_start();
-//uint32_t spi_flash_packet_size = sizeof(app_spi_flash_data_t);
-//DEBUG_INFO("Size of spi flash %u\r\n", spi_flash_packet_size);
 	
     static uint32_t button_factory_timeout = 0;
     bool do_factory_reset = false;
@@ -245,7 +246,19 @@ int main(void)
 	control_ouput_task();
 	measure_input_task();
 	app_cli_poll();
+      
+#if USE_SYNC_DRV
 	app_sync_polling_task();
+#else
+      static volatile uint32_t m_last_tick = 0;
+      if (sys_get_ms() - m_last_tick >= (uint32_t)1000)
+      {
+          m_last_tick = sys_get_ms();
+          gsm_mnr_task(NULL);
+          info_task(NULL);
+      }
+#endif
+      
 	if (led_blink_delay)
 	{
 		LED1(1);
@@ -604,12 +617,6 @@ void sys_delay_ms(uint32_t ms)
 	}
 }
 
-static void task_feed_wdt(void *arg)
-{
-#ifdef WDT_ENABLE
-	LL_IWDG_ReloadCounter(IWDG);
-#endif
-}
 
 
 static void info_task(void *arg)
@@ -762,11 +769,16 @@ void sys_config_low_power_mode(void)
 #ifdef WDT_ENABLE
 	LL_IWDG_ReloadCounter(IWDG);
 #endif
-        
+
         uint32_t counter_before_sleep = app_rtc_get_counter();
+        uint32_t sleep_time = ((measure_input_get_next_time_wakeup()+1)*32768)/16;
+        if (sleep_time > WAKEUP_RESET_WDT_IN_LOW_POWER_MODE)
+        {
+            sleep_time = WAKEUP_RESET_WDT_IN_LOW_POWER_MODE;
+        }
 //        DEBUG_VERBOSE("Before sleep - counter %u\r\n", counter_before_sleep);
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
-        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, WAKEUP_RESET_WDT_IN_LOW_POWER_MODE, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
+        if (HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, sleep_time, RTC_WAKEUPCLOCK_RTCCLK_DIV16) != HAL_OK)
         {
             Error_Handler();
         }
@@ -812,7 +824,7 @@ void sys_config_low_power_mode(void)
         uint32_t counter_after_sleep = app_rtc_get_counter();
         uint32_t diff = counter_after_sleep-counter_before_sleep;
         uwTick += diff*1000;
-//        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
+        DEBUG_VERBOSE("Afer sleep - counter %u, diff %u\r\n", counter_after_sleep, diff);
                 
 //        ctx->status.sleep_time_s += diff;
         HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);

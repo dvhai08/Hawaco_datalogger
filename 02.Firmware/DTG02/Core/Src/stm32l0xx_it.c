@@ -159,20 +159,6 @@ void SysTick_Handler(void)
 	{
         LED1(1);
 		led_blink_delay--;
-		if (led_blink_delay == 0)
-		{
-#ifdef DTG01
-			if (!LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin))
-			{
-				if (gsm_data_layer_is_module_sleeping())
-				{
-					gsm_wakeup_now();
-                    sys_ctx_t *ctx = sys_ctx();
-                    ctx->peripheral_running.name.gsm_running = 1;
-				}
-			}
-#endif
-		}
 	}
     
     if (ota_update_timeout_ms != -1)
