@@ -1414,7 +1414,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                                         msg->input_4_20mA[3]); // dau vao 4-20mA 0
     
     // Min max 4-20mA
-#if 0   // test            
+#if 1   // test            
     // 4-20mA  
     for (uint32_t i = 0; i < NUMBER_OF_INPUT_4_20MA; i++)
     {
