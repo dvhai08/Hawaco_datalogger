@@ -74,7 +74,7 @@ static char *m_last_http_msg = NULL;
 static app_spi_flash_data_t *m_retransmision_data_in_flash;
 uint32_t m_wake_time = 0;
 static uint32_t m_send_time = 0;
-
+static bool m_post_failed = false;
 #if GSM_SMS_ENABLE
 bool m_do_read_sms = false;
 
@@ -160,6 +160,7 @@ void gsm_wakeup_now(void)
 //	ctx->status.sleep_time_s = 0;
     estimate_wakeup_time = 1;
 	gsm_change_state(GSM_STATE_WAKEUP);
+    m_post_failed = false;
 }
 
 #if GSM_SMS_ENABLE
@@ -209,6 +210,7 @@ void gsm_manager_tick(void)
     case GSM_STATE_POWER_ON:
         if (gsm_manager.step == 0)
         {
+            m_post_failed = false;
             gsm_manager.step = 1;
             gsm_hw_send_at_cmd("ATV1\r\n", "OK\r\n", "", 1000, 30, gsm_at_cb_power_on_gsm);
         }
@@ -262,12 +264,15 @@ void gsm_manager_tick(void)
 			// If sensor data avaible =>> Enter http post
             if ((measure_input_sensor_data_availble()
                 || m_retransmision_data_in_flash)
-                && !ctx->status.enter_ota_update)
+                && !ctx->status.enter_ota_update
+                && m_post_failed == false)
             {
                 enter_post = true;
             }
 			
-            if (enter_post == false  && m_retransmision_data_in_flash == NULL)
+            if (enter_post == false 
+                && m_post_failed == false 
+                && m_retransmision_data_in_flash == NULL)
             {
                 bool re_send;
                 uint32_t addr = app_spi_flash_estimate_current_read_addr(&re_send, false);
@@ -583,6 +588,7 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_SLEEP:
     {
         DEBUG_RAW("SLEEP\r\n");
+        m_post_failed = false;
         sys_ctx_t *ctx = sys_ctx();
         ctx->peripheral_running.name.gsm_running = 0;
         gsm_hw_layer_reset_rx_buffer();
@@ -1888,6 +1894,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_FINISH_SUCCESS:
     {
         DEBUG_INFO("HTTP post : event success\r\n");
+        m_post_failed = false;
         ctx->status.disconnect_timeout_s = 0;
         
         // Release old memory from send buffer
@@ -2020,7 +2027,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     case GSM_HTTP_POST_EVENT_FINISH_FAILED:
     {
         DEBUG_WARN("Http post event failed\r\n");
-
+        m_post_failed = true;
         if (m_last_http_msg)
         {
             m_malloc_count--;
@@ -2158,6 +2165,14 @@ void gsm_mnr_task(void *arg)
             measure_input_save_all_data_to_flash();
             gsm_http_cleanup();
             gsm_hw_layer_reset_rx_buffer();
+            
+            if (m_last_http_msg)
+            {
+                m_malloc_count--;
+                umm_free(m_last_http_msg);
+                m_last_http_msg = NULL;
+            }
+        
             ctx->status.disconnect_timeout_s = 0;
             if (ctx->status.disconnected_count++ > 23)
             {				
