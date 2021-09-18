@@ -1430,6 +1430,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             total_length += sprintf((char *)(ptr + total_length), "\"MinPA%u\":%.2f,", i+1,
                                                                         convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_min));
+            total_length += sprintf((char *)(ptr + total_length), "\"MaxPA%u\":%.2f,", i+1,
+                                                                        convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_max));
         }
         total_length += sprintf((char *)(ptr + total_length), "\"PA%u\":%.2f,", i+1,
                                                                         convert_input_4_20ma_to_pressure(msg->input_4_20mA[i]));
@@ -1511,6 +1513,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     {
         total_length += sprintf((char *)(ptr + total_length), "\"MinPA1\":%.2f,",
                                                                 convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[0].input4_20ma_min));
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxPA1\":%.2f,",
+                                                                convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[0].input4_20ma_max));
     }
     total_length += sprintf((char *)(ptr + total_length), "\"PA1\":%.2f,",
                                                             convert_input_4_20ma_to_pressure(msg->input_4_20mA[0]));
@@ -1545,24 +1549,28 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         // Min max
         if (msg->rs485[index].min_max.valid)
         {
+            // Min forward flow
             if (msg->rs485[index].min_max.min_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"MbMinFwFlw%u\":%d,", 
                                                                 index+1, msg->rs485[index].min_max.min_forward_flow.type_int);
             }
             
+            // Max forward flow
             if (msg->rs485[index].min_max.max_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"MbMaxFwFlw%u\":%d,", 
                                                                 index+1, msg->rs485[index].min_max.max_forward_flow.type_int);
             }
             
+            // Min reserve flow
             if (msg->rs485[index].min_max.min_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"MbinRsvFlw%u\":%d,", 
                                                                 index+1, msg->rs485[index].min_max.min_reserve_flow.type_int);
             }
             
+            // Max reserve flow
             if (msg->rs485[index].min_max.max_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"MbMaxRsvFlw%u\":%u,", 
