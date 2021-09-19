@@ -10,42 +10,42 @@ a. Bản tin gửi lên
 		"ID":"G2-860262050130983",						// ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
 		"Ip1_J1":16843009,							// Giá trị cảm biên xung quay chiều thuận
 		"Ip1_J1_D":0,								// Giá trị cảm biến xung quay chiều ngược
-		"FwFlw1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
-		"RsvFlw1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
-		"FwIdx1":16843009,								// Forward index của cảm biến xung số 1
-		"RsvIdx1":16843009,							// Reserve index của cảm biến xung số 1
-		"MinFwFlw1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinRsvFlw1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxFwFlw1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxRsvFlw1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
+		"ForwardFlow1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
+		"ReserveFlow1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
+		"ForwardIndex1":16843009,								// Forward index của cảm biến xung số 1
+		"ReserveIndex1":16843009,							// Reserve index của cảm biến xung số 1
+		"MinForwardFlow1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReserveFlow1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReserveFlow1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
 		"Ip1_J2":123456,
 		"Ip1_J2_D":0,
-		"FwFlw2":16843009,								// Forward flow của đầu vào cảm biến xung số 2
-		"RsvFlw2":16843009,							// Reserve flow của đầu vào cảm biến xung số 2
-		"FwIdx2":16843009,								// Forward index của cảm biến xung số 2
-		"RsvIdx2":16843009,							// Reserve index của cảm biến xung số 2
-		"MinFwFlw2":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinRsvFlw2":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxFwFlw2":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxRsvFlw2":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
+		"ForwardFlow2":16843009,								// Forward flow của đầu vào cảm biến xung số 2
+		"ReserveFlow2":16843009,							// Reserve flow của đầu vào cảm biến xung số 2
+		"ForwardIndex2":16843009,								// Forward index của cảm biến xung số 2
+		"ReserveIndex2":16843009,							// Reserve index của cảm biến xung số 2
+		"MinForwardFlow2":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReserveFlow2":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow2":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReserveFlow2":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
 		"Ip1_J3_1":0.00,								// Giá trị input 4-20mA ở cổng số 1
 		"Ip1_J3_2":0.00,								// Giá trị input 4-20mA ở cổng số 2
 		"Ip1_J3_3":0.00,								// Giá trị input 4-20mA ở cổng số 3	
 		"Ip1_J3_4":0.00,								// Giá trị input 4-20mA ở cổng số 4
-		"PA1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"PA2":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 2, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"PA3":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 3, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"PA4":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 4, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"MinPA1":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 1
-		"MaxPA1":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 1
-		"MinPA2":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 2
-		"MaxPA2":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 2
-		"MinPA3":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 3
-		"MaxPA3":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 3
-		"MinPA4":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 4
-		"MaxPA4":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 4
+		"Pressure1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10Pressure), khi dòng điện lớn hơn 20mA thì tính là 10Pressure
+		"Pressure2":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 2, công thức (4-20mA) = (0-10Pressure), khi dòng điện lớn hơn 20mA thì tính là 10Pressure
+		"Pressure3":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 3, công thức (4-20mA) = (0-10Pressure), khi dòng điện lớn hơn 20mA thì tính là 10Pressure
+		"Pressure4":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 4, công thức (4-20mA) = (0-10Pressure), khi dòng điện lớn hơn 20mA thì tính là 10Pressure
+		"MinPressure1":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 1
+		"MaxPressure1":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 1
+		"MinPressure2":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 2
+		"MaxPressure2":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 2
+		"MinPressure3":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 3
+		"MaxPressure3":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 3
+		"MinPressure4":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h ở cổng số 4
+		"MaxPressure4":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h ở cổng số 4
 		
 		"Ip1_J9_1":1,									// Giá trị đầu vào input số (1 hoặc 0) thứ 1
 		"Ip1_J9_2":1,									// Giá trị đầu vào input số (1 hoặc 0) thứ 2
@@ -70,10 +70,10 @@ a. Bản tin gửi lên
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U1_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
 		"Rg1_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinFwFlw1":1234,									// Giá trị min forward flow
-		"MbMaxFwFlw1":1234,									// Giá trị max forward flow
-		"MbMinRsvFlw1":1234,								// Giá trị min reserve flow
-		"MbMaxRsvFlw1":1234,								// Giá trị max reserve flow
+		"MbMinForwardFlow1":1234,									// Giá trị min forward flow
+		"MbMaxForwardFlow1":1234,									// Giá trị max forward flow
+		"MbMinReserveFlow1":1234,								// Giá trị min reserve flow
+		"MbMaxReserveFlow1":1234,								// Giá trị max reserve flow
 	
 		// Phần dữ liệu này là của modbus của slave thứ 2
 		"SlID2":8,											// Địa chỉ slave thứ 2
@@ -82,10 +82,10 @@ a. Bản tin gửi lên
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U2_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
 		"Rg2_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinFwFlw2":1234,									// Giá trị min forward flow
-		"MbMaxFwFlw2":1234,									// Giá trị max forward flow
-		"MbMinRsvFlw2":1234,								// Giá trị min reserve flow
-		"MbMaxRsvFlw2":1234,								// Giá trị max reserve flow
+		"MbMinForwardFlow2":1234,									// Giá trị min forward flow
+		"MbMaxForwardFlow2":1234,									// Giá trị max forward flow
+		"MbMinReserveFlow2":1234,								// Giá trị min reserve flow
+		"MbMaxReserveFlow2":1234,								// Giá trị max reserve flow
 		
 		"SIM":"860262050130983",							// SIM và CCID là 2 thông số để tra cứu sim, từ đó phục vụ quá trình duy trì sim của nhà sản xuất
 		"CCID":"8984048000700052211",						// 
@@ -111,8 +111,10 @@ b. Bản tin nhận cấu hình về
 														// 2 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
 	"K_J1":1,											// Hệ số chia tỉ lệ của xung, phải lớn hơn 0
 	"MeterIndicator_J1":7649,							// Hệ số offset của số nước
-
 	
+	"FlowCal":1,										// Chọn chế độ tính lưu lượng trung bình 1 giờ hoặc hiệu 2 lần đo, 1 =  trung bình, 0 =  hiệu
+														// Công thức với giá trị Flowcal = 0 : =>> FlowSpeed = (Flow sau - Flow trước)
+														// Flowcal = 1 : =>> FlowSpeed = (Flow sau - Flow trước)/thời gian giữa 2 lần đo
 	// Phần dữ liệu này liên quan đến cảm biến xung thứ 2, tương tự cảm biến xung số 1
 	"K_J2":1,
 	"Input_J2":0,
@@ -196,20 +198,20 @@ a. Bản tin gửi lên
 		"ID":"G1-860262050130983",						// ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
 		"Ip1":16843009,								// Giá trị cảm biên xung quay chiều thuận
 		"Ip1_J1_D":0,									// Giá trị cảm biến xung quay chiều ngược
-		"FwFlw1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
-		"RsvFlw1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
-		"FwIdx1":16843009,								// Forward index của cảm biến xung số 1
-		"RsvIdx1":16843009,							// Reserve index của cảm biến xung số 1
-		"MinFwFlw1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinRsvFlw1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxFwFlw1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxRsvFlw1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
+		"ForwardFlow1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
+		"ReserveFlow1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
+		"ForwardIndex1":16843009,								// Forward index của cảm biến xung số 1
+		"ReserveIndex1":16843009,							// Reserve index của cảm biến xung số 1
+		"MinForwardFlow1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReserveFlow1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReserveFlow1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
 		
 		"Ip2":0.00,									// Giá trị input 4-20mA ở cổng số 1
-		"PA1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"MinPA1":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h
-		"MaxPA1":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h
+		"Pressure1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10Pressure), khi dòng điện lớn hơn 20mA thì tính là 10Pressure
+		"MinPressure1":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h
+		"MaxPressure1":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h
 		
 		"Out2":4.12,									// Giá trị đầu ra 4-20mA
 		
@@ -226,10 +228,10 @@ a. Bản tin gửi lên
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U1_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
 		"Rg1_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinFwFlw1":1234,									// Giá trị min forward flow
-		"MbMaxFwFlw1":1234,									// Giá trị max forward flow
-		"MbMinRsvFlw1":1234,								// Giá trị min reserve flow
-		"MbMaxRsvFlw1":1234,								// Giá trị max reserve flow
+		"MbMinForwardFlow1":1234,									// Giá trị min forward flow
+		"MbMaxForwardFlow1":1234,									// Giá trị max forward flow
+		"MbMinReserveFlow1":1234,								// Giá trị min reserve flow
+		"MbMaxReserveFlow1":1234,								// Giá trị max reserve flow
 		
 		// Phần dữ liệu này là của modbus của slave thứ 2
 		"SlID2":8,											// Địa chỉ slave thứ 2
@@ -238,10 +240,10 @@ a. Bản tin gửi lên
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U2_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
 		"Rg2_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinFwFlw2":1234,									// Giá trị min forward flow
-		"MbMaxFwFlw2":1234,									// Giá trị max forward flow
-		"MbMinRsvFlw2":1234,								// Giá trị min reserve flow
-		"MbMaxRsvFlw2":1234,									// Giá trị max reserve flow
+		"MbMinForwardFlow2":1234,									// Giá trị min forward flow
+		"MbMaxForwardFlow2":1234,									// Giá trị max forward flow
+		"MbMinReserveFlow2":1234,								// Giá trị min reserve flow
+		"MbMaxReserveFlow2":1234,									// Giá trị max reserve flow
 		
 		
 		"SIM":"860262050130983",							// SIM và CCID là 2 thông số để tra cứu sim, từ đó phục vụ quá trình duy trì sim của nhà sản xuất
@@ -268,7 +270,9 @@ b. Bản tin nhận cấu hình về
 														// 2 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
 	"K":1,												// Hệ số chia tỉ lệ của xung, phải lớn hơn 0
 	"MeterIndicator":7649,								// Hệ số offset của số nước
-
+	"FlowCal":1,										// Chọn chế độ tính lưu lượng trung bình 1 giờ hoặc hiệu 2 lần đo, 1 =  trung bình, 0 =  hiệu
+														// Công thức với giá trị Flowcal = 0 : =>> FlowSpeed = (Flow sau - Flow trước)
+														// Flowcal = 1 : =>> FlowSpeed = (Flow sau - Flow trước)/thời gian giữa 2 lần đo
 
 	// Phần này dành cho cấu hình input4-20mA có cho phép đọc hay không
 	"Input2":1,										// Cho phép đọc input 4-20mA cổng số 1
@@ -315,6 +319,7 @@ b. Bản tin nhận cấu hình về
 	"Auto_config":1,									// Thời gian định kì thiết bị hỏi các thông số cấu hình của "default", đơn vị giờ
 	"BatLevel":1,										// Giá trị cài đặt ngưỡng pin yếu, đơn vị %, khoảng giá trị 0-100
 	"Delay":10,											// Khoảng thời gian delay gửi tin lên server khi thiết bị thức dậy, đơn vị giây
+
 
 	// Các thông tin sau dành để cập nhật phần mềm
 	// Thiết bị chỉ cập nhật khi cả 3 thông số dưới đây thoả mãn

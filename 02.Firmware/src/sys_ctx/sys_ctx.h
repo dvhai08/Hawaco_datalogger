@@ -7,8 +7,11 @@
 #define SYS_CTX_BUFFER_STATE_BUSY 1       // Trang thai dang them du lieu
 #define SYS_CTX_BUFFER_STATE_IDLE 2       // Trang thai cho
 #define SYS_CTX_BUFFER_STATE_PROCESSING 3 // Trang thai du lieu dang duoc xu ly
+#ifdef DTG01
 #define SYS_CTX_SMALL_BUFFER_SIZE (1024)
-
+#else
+#define SYS_CTX_SMALL_BUFFER_SIZE (1024+128)
+#endif
 typedef struct
 {
     uint8_t buffer[SYS_CTX_SMALL_BUFFER_SIZE];

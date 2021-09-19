@@ -1,0 +1,89 @@
+<!DOCTYPE CrossStudio_Session_File>
+<session>
+ <Bookmarks/>
+ <Breakpoints groups="Breakpoints" active_group="Breakpoints"/>
+ <ExecutionProfileWindow/>
+ <FrameBufferWindow>
+  <FrameBufferWindow bufferHeight="-1" addressSpace="" addressText="" bufferWidth="-1"/>
+ </FrameBufferWindow>
+ <Memory1/>
+ <Memory2/>
+ <Memory3/>
+ <Memory4/>
+ <Project>
+  <ProjectSessionItem path="DTG02"/>
+  <ProjectSessionItem path="DTG02;DTG02"/>
+  <ProjectSessionItem path="DTG02;DTG02;app_backup"/>
+  <ProjectSessionItem path="DTG02;DTG02;app_cli"/>
+  <ProjectSessionItem path="DTG02;DTG02;app_flash"/>
+  <ProjectSessionItem path="DTG02;DTG02;app_md5"/>
+  <ProjectSessionItem path="DTG02;DTG02;app_rtc"/>
+  <ProjectSessionItem path="DTG02;DTG02;Application/User/Core"/>
+  <ProjectSessionItem path="DTG02;DTG02;Drivers/STM32L0xx_HAL_Driver"/>
+  <ProjectSessionItem path="DTG02;DTG02;gsm"/>
+  <ProjectSessionItem path="DTG02;DTG02;jig"/>
+  <ProjectSessionItem path="DTG02;DTG02;measurement"/>
+  <ProjectSessionItem path="DTG02;DTG02;modbus_master"/>
+  <ProjectSessionItem path="DTG02;DTG02;ota_update"/>
+  <ProjectSessionItem path="DTG02;DTG02;server_msg"/>
+  <ProjectSessionItem path="DTG02;DTG02;umm_malloc"/>
+ </Project>
+ <Register1/>
+ <Register2/>
+ <Register3/>
+ <Register4/>
+ <Threads>
+  <ThreadsWindow showLists=""/>
+ </Threads>
+ <TraceWindow>
+  <Trace enabled="Yes"/>
+ </TraceWindow>
+ <Watch1>
+  <Watches active="1" update="Never"/>
+ </Watch1>
+ <Watch2>
+  <Watches active="0" update="Never"/>
+ </Watch2>
+ <Watch3>
+  <Watches active="0" update="Never"/>
+ </Watch3>
+ <Watch4>
+  <Watches active="0" update="Never"/>
+ </Watch4>
+ <Files>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="220" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/Jig/jig.c" selected="0" top="211" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="80" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Core/Src/adc.c" selected="0" top="91" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="151" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/gsm/gsm_sms.c" selected="0" top="134" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="35" useTextEdit="1" openedFrom="E:/Work/Project/BYT-Hawaco-GW/02.Firmware/src/gsm/gsm_sms.c" useBinaryEdit="0" left="0" path="../../src/gsm/gsm.h" selected="0" top="0" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="4" y="173" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/gsm/gsm_data_layer.c" selected="1" top="157" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="317" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/umm_malloc-1.0.1/src/umm_malloc.c" selected="0" top="300" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="1" y="116" useTextEdit="1" openedFrom="E:/Work/Project/BYT-Hawaco-GW/02.Firmware/src/umm_malloc-1.0.1/src/umm_malloc.c" useBinaryEdit="0" left="0" path="../../src/umm_malloc-1.0.1/src/umm_malloc_cfg.h" selected="0" top="56" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="222" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_ll_tim.c" selected="0" top="203" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="55" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/gsm/gsm_utilities.c" selected="0" top="55" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="367" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/measurement/measure_input.c" selected="0" top="351" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="30" y="81" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/modbus_master/modbus_memory.c" selected="0" top="64" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="637" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_flash_ex.c" selected="0" top="619" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="17" y="191" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_cortex.c" selected="0" top="172" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="25" y="1053" useTextEdit="1" openedFrom="E:/Work/Project/BYT-Hawaco-GW/02.Firmware/DTG02/Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_cortex.c" useBinaryEdit="0" left="0" path="../Drivers/CMSIS/Include/core_cm0plus.h" selected="0" top="1048" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="277" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/gsm/gsm_http.c" selected="0" top="261" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="236" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_cli/app_cli.c" selected="0" top="219" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="47" y="1288" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Inc/stm32l0xx_ll_rcc.h" selected="0" top="1273" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="32" y="424" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Core/Src/usart.c" selected="0" top="405" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="89" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_bkup/app_bkup.c" selected="0" top="72" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="139" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/measurement/control_output.c" selected="0" top="122" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="163" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_md5/app_md5.c" selected="0" top="147" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="127" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Core/Src/spi.c" selected="0" top="143" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="489" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_cli/app_shell.c" selected="0" top="472" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="33" y="1300" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_spi_flash/app_spi_flash.c" selected="0" top="1290" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="910" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rtc.c" selected="0" top="893" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="1036" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rtc_ex.c" selected="0" top="1019" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="10" y="765" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/server_msg/server_msg.c" selected="0" top="758" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="57" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/ota_update/ota_update.c" selected="0" top="40" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="92" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/app_rtc/app_rtc.c" selected="0" top="76" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="102" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/gsm/gsm_hardware_layer.c" selected="0" top="86" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="2" y="113" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Core/Src/main.c" selected="0" top="97" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="38" y="202" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../../src/modbus_master/modbus_master.c" selected="0" top="387" codecName=""/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="338" useTextEdit="1" openedFrom="" useBinaryEdit="0" left="0" path="../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rcc.c" selected="0" top="376" codecName=""/>
+ </Files>
+ <ARMCrossStudioWindow activeProject="DTG02" fileDialogDefaultFilter="*.c;*.cpp;*.cxx;*.cc;*.h;*.hpp;*.hxx" autoConnectTarget="J-Link" buildConfiguration="DTG02 External" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="" debugSearchPath="" autoConnectCapabilities="3199"/>
+</session>

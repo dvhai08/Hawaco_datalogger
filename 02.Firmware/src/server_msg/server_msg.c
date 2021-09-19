@@ -17,7 +17,7 @@
 
 static app_eeprom_config_data_t *m_eeprom_config = NULL; //app_eeprom_read_config_data();
 static sys_ctx_t *m_ctx = NULL;// sys_ctx();
-	
+static uint8_t process_flow_speed_enable(char *buffer);
 static bool poll_server = 0;
 // "Server":"https://123.com" 
 static void process_server_addr_change(char *buffer)
@@ -310,6 +310,24 @@ uint8_t process_input_config(char *buffer)
     return new_cfg;
 }
 
+static uint8_t process_flow_speed_enable(char *buffer)
+{
+   	uint8_t new_cfg = 0;
+    char *cal = strstr(buffer, "\"FlowCal\":");
+    if (cal)
+    {
+        cal += strlen("\"FlowCal\":");
+        uint32_t enable = gsm_utilities_get_number_from_string(strlen("\"FlowCal\":"), cal) ? 1 : 0;
+        if (enable != m_eeprom_config->io_enable.name.calculate_flow_speed)
+        {
+            m_eeprom_config->io_enable.name.calculate_flow_speed = enable;
+            DEBUG_INFO("Flow cal %u\r\n", enable);
+            new_cfg = 1;
+        }
+    }
+    return new_cfg;
+}
+
 static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 {
 	uint8_t new_cfg = 0;
@@ -322,7 +340,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
         {
             new_cfg++;   
             m_eeprom_config->offset[0] = offset;
-            DEBUG_WARN("PWM 1 offset changed to %u\r\n", offset);
+            DEBUG_WARN("PWM1 offset changed to %u\r\n", offset);
             measure_input_reset_counter(0);
 			measure_input_reset_indicator(0, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
@@ -827,6 +845,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
         DEBUG_INFO("Delay changed to %us\r\n", delay);
         has_new_cfg++;
     }
+    
+    // Process flow speed mode
+    has_new_cfg += process_flow_speed_enable(buffer);
 	
 	// Server addr changed
 	process_server_addr_change(buffer);

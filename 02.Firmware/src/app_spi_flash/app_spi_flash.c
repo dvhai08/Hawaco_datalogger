@@ -826,6 +826,7 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
 
 uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
 {
+    DEBUG_INFO("Find res in range 0x%08X-0x%08X\r\n", begin_addr, end_addr);
     uint32_t size_struct = sizeof(app_spi_flash_data_t);
     app_spi_flash_data_t *tmp = umm_calloc(1, size_struct);
     if (tmp == NULL)
@@ -901,6 +902,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
 		}
 		else if (scan_all_flash)
 		{
+            DEBUG_INFO("Scan all flash\r\n");
 			// If we didnot seen error message from m_resend_data_in_flash_addr to m_wr_addr
 			// Scan once more 2 sector
 			// =>> if scan data from 0 -> write pointer 
@@ -909,7 +911,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
             uint32_t next_addr = m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE;
             if (next_addr > APP_SPI_FLASH_SIZE)
             {
-                next_addr = APP_SPI_FLASH_SIZE;
+                next_addr = APP_SPI_FLASH_SIZE;        // jump to the first page
             }
 			tmp_addr = find_retransmission_message(m_wr_addr, next_addr);
 			if (tmp_addr != 0)

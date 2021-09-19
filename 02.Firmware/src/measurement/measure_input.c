@@ -53,6 +53,7 @@
 
 
 #define ALWAYS_SAVE_DATA_TO_FLASH               1
+#define CALCULATE_FLOW_SPEED                    1
 
 typedef measure_input_counter_t backup_pulse_data_t;
 
@@ -335,20 +336,32 @@ void measure_input_measure_wakeup_to_get_data()
     sys_ctx()->peripheral_running.name.adc = 1;
 }
 
+
+
 void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 {
 	if (index == 0)
 	{
+        memset(&m_measure_data.counter[0], 0, sizeof(measure_input_counter_t));
 		m_measure_data.counter[0].indicator = new_indicator;
-        m_measure_data.counter[0].reserve_counter = 0;
+        
 		m_pulse_counter_in_backup[0].indicator = new_indicator;
+        m_pulse_counter_in_backup[0].total_reserve = 0;
+        m_pulse_counter_in_backup[0].total_reserve_index = 0;
+		m_pulse_counter_in_backup[0].total_forward_index = 0;
+        m_pulse_counter_in_backup[0].total_forward = 0;
 	}
 #ifndef DTG01
     else
     {
+        memset(&m_measure_data.counter[1], 0, sizeof(measure_input_counter_t));
 		m_measure_data.counter[1].indicator = new_indicator;
-        m_measure_data.counter[1].reserve_counter = 0;
+        
 		m_pulse_counter_in_backup[1].indicator = new_indicator;
+        m_pulse_counter_in_backup[1].total_reserve = 0;
+        m_pulse_counter_in_backup[1].total_reserve_index = 0;
+		m_pulse_counter_in_backup[1].total_forward_index = 0;
+        m_pulse_counter_in_backup[1].total_forward = 0;
     }
 #endif
     memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
@@ -733,14 +746,20 @@ void measure_input_task(void)
                     if (diff)
                     {
                         // Forward direction
+                        // speed = (counter - pre_counter)/diff (hour)
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
                                                                                                         - m_pre_pulse_counter_in_backup[counter_index].real_counter);
-                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f/(float)diff;
-                        
+                        if (eeprom_cfg->io_enable.name.calculate_flow_speed)
+                        {
+                            m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f/(float)diff;
+                        }                            
                         // Reserve direction
-                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
-                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].real_counter);
-                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600000.0f/(float)diff;
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].reserve_counter 
+                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].reserve_counter);
+                        if (eeprom_cfg->io_enable.name.calculate_flow_speed)
+                        {
+                            m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600000.0f/(float)diff;
+                        }
                         
                         // min-max of forward/reserve direction flow speed
                         // If value is invalid =>> Initialize new value
