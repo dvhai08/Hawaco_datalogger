@@ -348,7 +348,7 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 		m_pulse_counter_in_backup[0].indicator = new_indicator;
         m_pulse_counter_in_backup[0].total_reserve = 0;
         m_pulse_counter_in_backup[0].total_reserve_index = 0;
-		m_pulse_counter_in_backup[0].total_forward_index = 0;
+		m_pulse_counter_in_backup[0].total_forward_index = new_indicator;
         m_pulse_counter_in_backup[0].total_forward = 0;
 	}
 #ifndef DTG01
@@ -360,7 +360,7 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
 		m_pulse_counter_in_backup[1].indicator = new_indicator;
         m_pulse_counter_in_backup[1].total_reserve = 0;
         m_pulse_counter_in_backup[1].total_reserve_index = 0;
-		m_pulse_counter_in_backup[1].total_forward_index = 0;
+		m_pulse_counter_in_backup[1].total_forward_index = new_indicator;
         m_pulse_counter_in_backup[1].total_forward = 0;
     }
 #endif
