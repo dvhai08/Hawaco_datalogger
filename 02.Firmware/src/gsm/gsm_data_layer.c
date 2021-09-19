@@ -432,19 +432,7 @@ void gsm_manager_tick(void)
                 DEBUG_INFO("We use alternative server %s\r\n", server_addr);
 			}
 			// Peridic update config data from server
-			if (sys_ctx()->status.poll_broadcast_msg_from_server)
-			{	
-                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
-                        POLL_CONFIG_URL, 
-                        server_addr);
-                cfg.on_event_cb = gsm_http_event_cb;
-                cfg.action = GSM_HTTP_ACTION_GET;
-                cfg.big_file_for_ota = 0;
-                gsm_http_start(&cfg);
-                GSM_DONT_NEED_HTTP_GET();
-			}
-			// If device not need to ota update =>> Enter mode get data from server
-			else if (!sys_ctx()->status.enter_ota_update
+			if (!sys_ctx()->status.enter_ota_update
 				&& !ctx->status.try_new_server)
             {
                 snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
@@ -457,6 +445,18 @@ void gsm_manager_tick(void)
                 gsm_http_start(&cfg);
                 GSM_DONT_NEED_HTTP_GET();
             }
+            else if (sys_ctx()->status.poll_broadcast_msg_from_server)
+			{	
+                snprintf(cfg.url, GSM_HTTP_MAX_URL_SIZE, 
+                        POLL_CONFIG_URL, 
+                        server_addr);
+                cfg.on_event_cb = gsm_http_event_cb;
+                cfg.action = GSM_HTTP_ACTION_GET;
+                cfg.big_file_for_ota = 0;
+                gsm_http_start(&cfg);
+                GSM_DONT_NEED_HTTP_GET();
+			}
+			// If device not need to ota update =>> Enter mode get data from server
 			else if (ctx->status.new_server && ctx->status.try_new_server)		// Try new server address
 			{
 				DEBUG_INFO("Try new server\r\n");
@@ -773,7 +773,6 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         }
         else
         {
-            gsm_change_hw_polling_interval(5);
             gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm);
         }
 	}
@@ -782,6 +781,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
     case 12:
     {
         DEBUG_INFO("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
+        gsm_change_hw_polling_interval(5);
 		uint8_t *ccid_buffer = (uint8_t*)gsm_get_sim_ccid();
         gsm_utilities_get_sim_ccid(resp_buffer, ccid_buffer, 20);
         DEBUG_INFO("SIM CCID: %s\r\n", ccid_buffer);
@@ -799,6 +799,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 13:
         DEBUG_INFO("CPIN: %s\r\n", (char *)resp_buffer);
+        gsm_change_hw_polling_interval(5);
         gsm_hw_send_at_cmd("AT+QIDEACT=1\r\n", "OK\r\n", "", 3000, 1, gsm_at_cb_power_on_gsm);
         break;
 #if UNLOCK_BAND == 0        // o lan dau tien active sim, voi module ec200 thi phai active band, ec20 thi ko can
@@ -1378,15 +1379,16 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%u,",
                                                 i+1,
                                                 msg->counter[i].total_forward);
-            total_length += sprintf((char *)(ptr + total_length), "\"ReserveFlow%u\":%u,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%u,",
                                                 i+1,
                                                 msg->counter[i].total_reserve);
         }
+        
         else
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%u,",
                                                 msg->counter[i].total_forward);
-            total_length += sprintf((char *)(ptr + total_length), "\"ReserveFlow\":%u,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%u,",
                                                 msg->counter[i].total_reserve);
 
         }
@@ -1397,7 +1399,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex%u\":%u,",
                                                 i+1,
                                                 msg->counter[i].total_forward_index);
-            total_length += sprintf((char *)(ptr + total_length), "\"ReserveIndex%u\":%u,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex%u\":%u,",
                                                 i+1,
                                                 msg->counter[i].total_reserve_index);
         }
@@ -1405,10 +1407,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex\":%u,",
                                                 msg->counter[i].total_forward_index);
-            total_length += sprintf((char *)(ptr + total_length), "\"ReserveIndex\":%u,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",
                                                 msg->counter[i].total_reserve_index);
-
         }
+        DEBUG_WARN("Reverse index %u\r\n", msg->counter[i].total_reserve_index);
         
         if (msg->counter[i].flow_avg_cycle_send_web.valid)
         {
@@ -1425,11 +1427,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
             
                 // min max reserve flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinReserveFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow%u\":%.2f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min);
                 
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxReserveFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow%u\":%.2f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
             }
@@ -1443,10 +1445,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
             
                 // min max reserve flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinReserveFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow\":%.2f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min);
                 
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxReserveFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow\":%.2f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
 
             }
@@ -1535,13 +1537,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Total forward flow
     total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow1\":%u,",                                    
                                         msg->counter[0].total_forward);
-    total_length += sprintf((char *)(ptr + total_length), "\"ReserveFlow1\":%u,",                                        
+    total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow1\":%u,",                                        
                                         msg->counter[0].total_reserve);
     
     // Total forward/reserve index : tong luu luong tich luy thuan/nguoc
     total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex1\":%u,",                                        
                                         msg->counter[0].total_forward_index);
-    total_length += sprintf((char *)(ptr + total_length), "\"ReserveIndex\":%u,",                                       
+    total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",                                       
                                         msg->counter[0].total_reserve_index);
     
     if (msg->counter[0].flow_avg_cycle_send_web.valid)
@@ -1555,10 +1557,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                         msg->counter[0].flow_avg_cycle_send_web.forward_flow_max);
     
         // min max reserve flow
-        total_length += sprintf((char *)(ptr + total_length), "\"MinReserveFlow1\":%.2f,",                                           
+        total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow1\":%.2f,",                                           
                                             msg->counter[0].flow_avg_cycle_send_web.reserve_flow_min);
         
-        total_length += sprintf((char *)(ptr + total_length), "\"MaxReserveFlow1\":%.2f,",                                           
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow1\":%.2f,",                                           
                                             msg->counter[0].flow_avg_cycle_send_web.reserve_flow_max);
     }
 
@@ -1628,14 +1630,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             // Min reserve flow
             if (msg->rs485[index].min_max.min_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReserveFlow%u\":%d,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%d,", 
                                                                 index+1, msg->rs485[index].min_max.min_reserve_flow.type_int);
             }
             
             // Max reserve flow
             if (msg->rs485[index].min_max.max_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReserveFlow%u\":%u,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%u,", 
                                                                 index+1, msg->rs485[index].min_max.max_reserve_flow.type_int);
             }
         }
@@ -1787,6 +1789,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             DEBUG_INFO("Found retransmission data\r\n");                
             // Copy old pulse counter from spi flash to temp variable
             static measure_input_perpheral_data_t tmp;
+            memset(&tmp, 0, sizeof(measure_input_perpheral_data_t));
             for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
             {
                 memcpy(&tmp.counter[i], 
@@ -2169,7 +2172,10 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             app_spi_flash_write_data(wr_data);
             m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         }
-        
+        if (m_retransmision_data_in_flash)
+        {
+            m_retransmision_data_in_flash = NULL;
+        }
         umm_free(wr_data);
         m_sensor_msq = NULL;
     }

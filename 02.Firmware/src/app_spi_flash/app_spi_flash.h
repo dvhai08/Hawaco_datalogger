@@ -53,7 +53,7 @@ void app_spi_flash_initialize(void);
  * @brief       Estimate write address
  * @param[in]   flash_full : Flash full or not
  */
-uint32_t app_flash_estimate_next_write_addr(bool *flash_full);
+uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_page);
 
 /*!
  * @brief       Dump all valid data

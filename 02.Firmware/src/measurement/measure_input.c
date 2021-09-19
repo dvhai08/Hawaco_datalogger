@@ -365,6 +365,7 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
     }
 #endif
     memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
+    app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
 }
 
 void measure_input_reset_k(uint8_t index, uint32_t new_k)
@@ -396,7 +397,7 @@ void measure_input_reset_counter(uint8_t index)
     else
     {
         m_pulse_counter_in_backup[1].real_counter = 0;
-        m_pulse_counter_in_backup[1].real_counter = 0;
+        m_pulse_counter_in_backup[1].reserve_counter = 0;
     }
 #endif
     app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
@@ -753,7 +754,7 @@ void measure_input_task(void)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f/(float)diff;
                         }                            
-                        // Reserve direction
+                        // Reverse direction
                         m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].reserve_counter 
                                                                                                         - m_pre_pulse_counter_in_backup[counter_index].reserve_counter);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
@@ -934,7 +935,15 @@ void measure_input_task(void)
                     {
                         if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
                         {
-                            DEBUG_INFO("Store data to flash\r\n");
+                            DEBUG_WARN("Store data to flash with reserve index %u %u\r\n", 
+                                        m_sensor_msq[i].counter[0].total_reserve_index,
+                                        m_sensor_msq[i].counter[1].total_reserve_index);
+                            
+                            DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n", 
+                                        m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter, 
+                                        m_pulse_counter_in_backup[1].real_counter, m_pulse_counter_in_backup[1].reserve_counter);
+                            
+
                             memcpy(&m_sensor_msq[i], &m_measure_data, sizeof(measure_input_perpheral_data_t));
                             measure_input_save_all_data_to_flash();
                             break;
@@ -967,7 +976,7 @@ void measure_input_initialize(void)
     reserve_flow_max_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
     
 #ifndef DTG01
-    memset(m_pulse_counter_in_backup, 1, sizeof(m_pulse_counter_in_backup));
+    memset(m_pulse_counter_in_backup, 0, sizeof(m_pulse_counter_in_backup));
 	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
 	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
 	m_measure_data.counter[1].k = eeprom_cfg->k[1];
@@ -1120,7 +1129,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                                                                                 + m_pulse_counter_in_backup[input->port].indicator;
                     m_pulse_counter_in_backup[input->port].real_counter++;
                 }
-                else    // Reserver counter
+                else    // Reverser counter
                 {
                     DEBUG_WARN("[PWM]---\r\n");
                     m_pulse_counter_in_backup[input->port].real_counter--;

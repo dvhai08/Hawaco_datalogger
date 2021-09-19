@@ -172,12 +172,12 @@ void gsm_hw_layer_run(void)
             char *p = strstr((char *)(m_gsm_hardware.atc.recv_buff.buffer), "CME ERROR: ");
             if (p && strstr(p, "\r\n"))
             {
-                DEBUG_VERBOSE("%s", p);
-                if (m_gsm_hardware.atc.send_at_callback)
-                {
-                    m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.buffer);
-                }
-                m_gsm_hardware.atc.timeout_atc_ms = 0;
+//                DEBUG_VERBOSE("%s", p);
+//                if (m_gsm_hardware.atc.send_at_callback)
+//                {
+//                    m_gsm_hardware.atc.send_at_callback(GSM_EVENT_ERROR, m_gsm_hardware.atc.recv_buff.buffer);
+//                }
+//                m_gsm_hardware.atc.timeout_atc_ms = 0;
             }
         }
     }

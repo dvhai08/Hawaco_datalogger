@@ -22,18 +22,6 @@ void app_bkup_init(void)
 
 }
 
-#ifdef GD32E10X
-uint16_t app_bkup_read_data(bkp_data_register_enum regAddr)
-{
-
-	return bkp_data_read(regAddr);
-}
-
-void app_bkup_write_data(bkp_data_register_enum regAddr, uint16_t data)
-{
-	bkp_data_write(regAddr, data);
-}
-#endif /* GD32E10X */
 
 void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 {
@@ -44,11 +32,13 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 	
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, val);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter[0].real_counter);
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter[0].reserve_counter);
-#if defined(DTG02) || defined(DTG02V2)
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter[1].real_counter);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter[0].reserve_counter);
+    
+#ifndef DTG01
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter[1].real_counter);
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR4, counter[1].reserve_counter);
 #endif
+    
     // Debug
     uint32_t tmp[4];
     tmp[0] = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR1);
@@ -61,8 +51,8 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
     LL_RTC_EnableWriteProtection(RTC);
 #ifndef DTG01
     if (counter[0].real_counter != tmp[0]
-		|| counter[0].reserve_counter != tmp[2]
-        || counter[1].real_counter != tmp[1]
+		|| counter[0].reserve_counter != tmp[1]
+        || counter[1].real_counter != tmp[2]
         || counter[1].reserve_counter != tmp[3])
 	{
 		valid = 0;
@@ -93,17 +83,17 @@ void app_bkup_read_pulse_counter(measure_input_counter_t *counter)
     if ((RTC_BACKUP_VALID_DATA & 0x0000FFFF) == backup)
 	{
         counter[0].real_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR1);
-		counter[0].reserve_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR3);
-#if defined(DTG02) || defined(DTG02V2)
+		counter[0].reserve_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
+#ifndef DTG01
+		counter[1].real_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR3);
 		counter[1].reserve_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR4);
-		counter[1].real_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
 #endif
 	}
 	else
 	{
 		counter[0].real_counter = 0;
 		counter[0].reserve_counter = 0;
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
 		counter[1].reserve_counter = 0;
 		counter[1].real_counter = 0;
 #endif

@@ -165,7 +165,7 @@ void app_spi_flash_initialize(void)
     if (m_flash_is_good)
     {
         bool flash_status;
-        uint32_t addr = app_flash_estimate_next_write_addr(&flash_status);
+        uint32_t addr = app_flash_estimate_next_write_addr(&flash_status, false);
 		// If flash full =>> erase first block and set write addr = first_page
 		if (flash_status)
 		{
@@ -756,7 +756,7 @@ static uint8_t flash_check_first_run(void)
     return 1;
 }
 
-uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
+uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_page)
 {
     *flash_full = false;
     bool cont = true;
@@ -807,7 +807,8 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full)
                 else
                 {
                     next_page = m_wr_addr / SPI_FLASH_SECTOR_SIZE;
-                    if (next_page != current_page)
+                    if (next_page != current_page
+                        && erase_next_page)
                     {
                         DEBUG_ERROR("Erase sector 4K %u\r\n", next_page);
                         flash_erase_sector_4k(next_page);
@@ -844,10 +845,12 @@ uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
                 && tmp->crc == crc)
             {
                 umm_free(tmp);
+                DEBUG_INFO("Valid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
                 return begin_addr;
             }
             else
             {
+                DEBUG_VERBOSE("Invalid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
                 begin_addr += size_struct;
             }
         }
@@ -856,7 +859,7 @@ uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
             begin_addr += size_struct;
         }
 
-        if (begin_addr >= end_addr) // No more error found
+        if (begin_addr > end_addr) // No more error found
         {
             umm_free(tmp);
             return 0;
@@ -1024,12 +1027,13 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
 //        DEBUG_ERROR("Flash init error, ignore write msg\r\n");
         return;
     }
+    uint32_t struct_size = sizeof(app_spi_flash_data_t);
     app_spi_flash_data_t rd_data;
 //    wr_data->header_overlap_detect = APP_FLASH_DATA_HEADER_KEY;
 //    while (1)
     {
         bool flash_full;
-        uint32_t addr = app_flash_estimate_next_write_addr(&flash_full);
+        uint32_t addr = app_flash_estimate_next_write_addr(&flash_full, true);
 
 		
 		// Flash full, erase first block and set write_addr = first page
@@ -1046,7 +1050,7 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
         // Check the next write address overlap to the next sector
         // =>> Erase next sector if needed
         uint32_t expect_write_sector = addr/SPI_FLASH_SECTOR_SIZE;
-        uint32_t expect_next_sector = (addr+sizeof(app_spi_flash_data_t))/SPI_FLASH_SECTOR_SIZE;
+        uint32_t expect_next_sector = (addr+struct_size)/SPI_FLASH_SECTOR_SIZE;
         if (expect_next_sector != expect_write_sector)
         {
             DEBUG_INFO("Consider erase next sector\r\n");
@@ -1061,10 +1065,10 @@ void app_spi_flash_write_data(app_spi_flash_data_t *wr_data)
             }
         }
         
-		wr_data->crc = utilities_calculate_crc32((uint8_t *)wr_data, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
-        flash_write_bytes(addr, (uint8_t *)wr_data, sizeof(app_spi_flash_data_t));
-        flash_read_bytes(addr, (uint8_t *)&rd_data, sizeof(app_spi_flash_data_t));
-        if (memcmp(wr_data, &rd_data, sizeof(app_spi_flash_data_t)))
+		wr_data->crc = utilities_calculate_crc32((uint8_t *)wr_data, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
+        flash_write_bytes(addr, (uint8_t *)wr_data, struct_size);
+        flash_read_bytes(addr, (uint8_t *)&rd_data, struct_size);
+        if (memcmp(wr_data, &rd_data, struct_size))
         {
             DEBUG_ERROR("Write flash error at addr 0x%08X\r\n", addr);
         }
@@ -1143,7 +1147,7 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
         else
         {
 			/* Doan nay ko biet viet tieng anh kieu gi 
-				1. Khi ma kich truoc cua struct nam tren 2 page =>> Neu ta xoa page di thi se bi mat data o struct ke tiep
+				1. Khi ma kich truoc cua struct nam tren 2 page =>> Neu ta xoa page tiep thep di thi se bi mat data o struct ke tiep
 					=>> Ta phai copy lai data cua page, sau do ghi lai data struct dau tien, giu lai data cua struct tiep theo
 			*/
 			
@@ -1217,8 +1221,13 @@ bool app_spi_flash_get_stored_data(uint32_t addr, app_spi_flash_data_t *rd_data,
 
 bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
 {
-    flash_read_bytes(m_last_write_data_addr, (uint8_t *)last_data, sizeof(app_spi_flash_data_t));
-    if (last_data->valid_flag  == APP_FLASH_VALID_DATA_KEY)
+    uint32_t struct_size = sizeof(app_spi_flash_data_t);
+    
+    flash_read_bytes(m_last_write_data_addr, (uint8_t *)last_data, struct_size);
+    uint32_t crc = utilities_calculate_crc32((uint8_t *)last_data, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
+    
+    if (last_data->valid_flag == APP_FLASH_VALID_DATA_KEY
+        && last_data->crc == crc)
     {
         return true;
     }

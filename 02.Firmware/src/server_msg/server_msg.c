@@ -22,20 +22,20 @@ static bool poll_server = 0;
 // "Server":"https://123.com" 
 static void process_server_addr_change(char *buffer)
 {
-    char *server_update = strstr(buffer, "ServerUpdate\":1");
+    char *server_update = strstr(buffer, "\"ServerUpdate\":1");
     if (server_update)
     {
         poll_server = true;
     }
     
-	buffer = strstr(buffer, "Server\":");
+	buffer = strstr(buffer, "\"Server\":");
 	if (buffer == NULL)
 	{
 		return;
 	}
 	
     
-    buffer += strlen("Server\":");
+    buffer += strlen("\"Server\":");
     uint8_t tmp[APP_EEPROM_MAX_SERVER_ADDR_LENGTH] = {0};
     if (poll_server &&
         gsm_utilities_copy_parameters(buffer, (char*)tmp, '"', '"')
@@ -663,7 +663,7 @@ static uint8_t process_modbus_register_config(char *buffer)
                 }
             }
             
-            sprintf(search_str, "ReserveFlow_%u\":", slave_count+1);
+            sprintf(search_str, "ReverseFlow_%u\":", slave_count+1);
             char *p_reserve_flow = strstr(buffer, search_str);
             if (p_reserve_flow)
             {
@@ -673,7 +673,7 @@ static uint8_t process_modbus_register_config(char *buffer)
                 {
                     new_cfg++;
                     m_eeprom_config->rs485[slave_count].reserve_flow_reg = reserve_flow_reg;
-                    DEBUG_INFO("Reserve flow changed to %u\r\n", reserve_flow_reg);
+                    DEBUG_INFO("Reverse flow changed to %u\r\n", reserve_flow_reg);
                 }
             }
 		}
