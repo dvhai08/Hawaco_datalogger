@@ -23,10 +23,11 @@
 /* USER CODE BEGIN 0 */
 #include "app_debug.h"
 #include <stdbool.h>
+#include "gsm.h"
 
 #define TIME_FREQ       8000000
 bool m_dac_started = false;
-volatile uint32_t m_reload_value = 7999;     // 1khz
+volatile uint32_t m_reload_value = 1999;     // 5khz
 
 /* USER CODE END 0 */
 
@@ -50,7 +51,7 @@ void MX_TIM2_Init(void)
   /* USER CODE END TIM2_Init 1 */
   TIM_InitStruct.Prescaler = 0;
   TIM_InitStruct.CounterMode = LL_TIM_COUNTERMODE_UP;
-  TIM_InitStruct.Autoreload = 4095;
+  TIM_InitStruct.Autoreload = m_reload_value;
   TIM_InitStruct.ClockDivision = LL_TIM_CLOCKDIVISION_DIV1;
   LL_TIM_Init(TIM2, &TIM_InitStruct);
   LL_TIM_DisableARRPreload(TIM2);
@@ -114,7 +115,7 @@ void tim_pwm_start(void)
 
 void tim_pwm_output_percent(uint32_t thoughsand)
 {
-//	DEBUG_PRINTF("Set PWM percent %u%%o\r\n", thoughsand);
+	DEBUG_INFO("Set PWM percent %u%%o\r\n", thoughsand);
 	if (m_dac_started == false)
 	{
 		m_dac_started = true;

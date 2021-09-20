@@ -55,6 +55,10 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
 
+#ifdef DTG02V2
+static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv);
+#endif /* DTG02V2 */
+
 static const shell_command_context_t cli_command_table[] = 
 {
     {"reset",           "\treset: reset system\r\n",                            cli_reset_system,                           0},   
@@ -63,6 +67,9 @@ static const shell_command_context_t cli_command_table[] =
 //    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
 //    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
+#ifdef DTG02V2
+    {"420duty",         "\t420duty : Output pwm duty\r\n",                      cli_output_pwm_duty,                        1},
+#endif
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
 //    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
@@ -216,6 +223,17 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
                                                                 atoi(argv[2]));
 	return 0;
 }
+#ifdef DTG02V2
+extern void set_pwm_duty(uint32_t duty);
+static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv)
+{
+	app_eeprom_config_data_t *cfg = app_eeprom_read_config_data();
+    uint32_t value = atoi(argv[1]);
+    set_pwm_duty(value);
+//    DEBUG_INFO("Set duty %u\r\n", value);
+	return 0;
+}
+#endif /* DTG02V2 */
 
 static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char **argv)
 {

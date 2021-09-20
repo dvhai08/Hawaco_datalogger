@@ -22,7 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #define EXT_FLASH_HSPI      SPI2
-
+#define SPI_TIMEOUT     20000
 /* USER CODE END 0 */
 
 /* SPI2 init function */
@@ -95,11 +95,12 @@ void MX_SPI2_Init(void)
 /* USER CODE BEGIN 1 */
 uint8_t spi_flash_transmit(uint8_t ch)
 {
+    volatile uint32_t SPI_TIMEOUT = 20000;
     LL_SPI_TransmitData8(EXT_FLASH_HSPI, ch);
-    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0);
+    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0 && timeout--);
     
-    
-    while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_HSPI) == 0);
+    timeout = SPI_TIMEOUT;
+    while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_HSPI) == 0 && timeout--);
     return LL_SPI_ReceiveData8(EXT_FLASH_HSPI);
 }
 

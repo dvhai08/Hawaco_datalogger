@@ -159,21 +159,7 @@ void SysTick_Handler(void)
 	if (led_blink_delay > 0)
 	{
         LED1(1);
-		led_blink_delay--;
-		if (led_blink_delay == 0)
-		{
-#ifdef DTG01
-			if (!LL_GPIO_IsInputPinSet(SW1_GPIO_Port, SW1_Pin))
-			{
-				if (gsm_data_layer_is_module_sleeping())
-				{
-					gsm_set_wakeup_now();
-                    sys_ctx_t *ctx = sys_ctx();
-                    ctx->peripheral_running.name.gsm_running = 1;
-				}
-			}
-#endif
-		}
+		--led_blink_delay;
 	}
     
     if (ota_update_timeout_ms != -1)
@@ -195,30 +181,30 @@ void SysTick_Handler(void)
 		jig_timeout_ms--;
 	}
 	// Delay timeout after pulse interrupt, recheck input pulse counter
-	if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick)
+	if (recheck_input_pulse[MEASURE_INPUT_PORT_2].tick)
 	{
-		if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick-- == 1)
+		if (recheck_input_pulse[MEASURE_INPUT_PORT_2].tick-- == 1)
 		{			
 				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_1;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
+				input.port = MEASURE_INPUT_PORT_2;
+				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin);
+				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type;
 				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
 				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
 				measure_input_pulse_irq(&input);	
 		}			
 	}
 	
-	if (recheck_input_pulse[MEASURE_INPUT_PORT_0].tick)
+	if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick)
 	{
-		if (recheck_input_pulse[MEASURE_INPUT_PORT_0].tick-- == 1)
+		if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick-- == 1)
 		{
 				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_0;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type;
-				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
-				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
+				input.port = MEASURE_INPUT_PORT_1;
+				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
+				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
+				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
 				measure_input_pulse_irq(&input);	
 		}			
 	}
@@ -269,7 +255,7 @@ void EXTI0_1_IRQHandler(void)
 	if (gsm_data_layer_is_module_sleeping())
 	{
 		measure_input_measure_wakeup_to_get_data();
-		gsm_set_wakeup_now();
+		gsm_wakeup_now();
 		sys_ctx_t *ctx = sys_ctx();
 		ctx->peripheral_running.name.gsm_running = 1;
 	}
@@ -293,8 +279,8 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_7);
     /* USER CODE BEGIN LL_EXTI_LINE_7 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_0].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_7 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_8) != RESET)
@@ -302,8 +288,8 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
     /* USER CODE BEGIN LL_EXTI_LINE_8 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
@@ -311,8 +297,8 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_9 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_14) != RESET)
@@ -320,8 +306,8 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_14);
     /* USER CODE BEGIN LL_EXTI_LINE_14 */
 	  // PULSE PWM
-	  recheck_input_pulse[MEASURE_INPUT_PORT_0].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_0].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
@@ -334,7 +320,7 @@ void EXTI4_15_IRQHandler(void)
   */
 void DMA1_Channel2_3_IRQHandler(void)
 {
-	/* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
+  /* USER CODE BEGIN DMA1_Channel2_3_IRQn 0 */
 	if(LL_DMA_IsActiveFlag_TC2(DMA1))
 	{
 		LL_DMA_ClearFlag_TC2(DMA1);
@@ -398,13 +384,13 @@ void USART1_IRQHandler(void)
     
     if (LL_USART_IsActiveFlag_ORE(USART1))
     {
-        DEBUG_ERROR("Frame error\r\n");
+        DEBUG_ERROR("GSM UART FE\r\n");
         LL_USART_ClearFlag_FE(USART1);
     }
     
     if (LL_USART_IsActiveFlag_NE(USART1))
     {
-        DEBUG_ERROR("Noise error\r\n");
+        DEBUG_ERROR("GSM UART NE\r\n");
         LL_USART_ClearFlag_NE(USART1);
     }
   /* USER CODE END USART1_IRQn 0 */
@@ -421,20 +407,20 @@ void LPUART1_IRQHandler(void)
   /* USER CODE BEGIN LPUART1_IRQn 0 */
     if (LL_USART_IsActiveFlag_ORE(LPUART1))
     {
-        DEBUG_INFO("LPUART1 OVR\r\n");
+        DEBUG_INFO("485 OVR\r\n");
         uint32_t tmp = LPUART1->RDR;
-        LL_USART_ClearFlag_ORE(USART1);
+        LL_USART_ClearFlag_ORE(LPUART1);
     }
     
     if (LL_USART_IsActiveFlag_FE(LPUART1))
     {
-        DEBUG_INFO("FE\r\n");
+        DEBUG_INFO("485 FE\r\n");
         LL_USART_ClearFlag_FE(LPUART1);
     }
     
     if (LL_USART_IsActiveFlag_NE(LPUART1))
     {
-        DEBUG_INFO("NE\r\n");
+        DEBUG_INFO("485 NE\r\n");
         LL_USART_ClearFlag_NE(LPUART1);
     }
 	
@@ -455,7 +441,6 @@ void LPUART1_IRQHandler(void)
 	if (LL_USART_IsEnabledIT_IDLE(LPUART1) && LL_USART_IsActiveFlag_IDLE(LPUART1)) 
     {
         LL_USART_ClearFlag_IDLE(LPUART1);        /* Clear IDLE line flag */
-		measure_input_rs485_idle_detect();
     }
   /* USER CODE END LPUART1_IRQn 0 */
   /* USER CODE BEGIN LPUART1_IRQn 1 */

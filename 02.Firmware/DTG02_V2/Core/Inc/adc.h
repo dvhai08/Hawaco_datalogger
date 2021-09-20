@@ -48,7 +48,6 @@ typedef struct
 /* USER CODE END Includes */
 
 /* USER CODE BEGIN Private defines */
-#define VREFINT_CAL_ADDR                0x1FFFF7BA  /* datasheet p. 19 */
 #define VREFINT_CAL                     ((uint16_t*) VREFINT_CAL_ADDR)
 
 /* USER CODE END Private defines */

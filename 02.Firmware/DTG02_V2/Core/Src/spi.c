@@ -23,6 +23,7 @@
 /* USER CODE BEGIN 0 */
 #define EXT_FLASH_SPI	SPI2
 #define EXT_FLASH_IRQn	SPI2_IRQn
+#define SPI_TIMEOUT     20000
 /* USER CODE END 0 */
 
 /* SPI2 init function */
@@ -87,7 +88,7 @@ void MX_SPI2_Init(void)
   LL_SPI_Init(SPI2, &SPI_InitStruct);
   LL_SPI_SetStandard(SPI2, LL_SPI_PROTOCOL_MOTOROLA);
   /* USER CODE BEGIN SPI2_Init 2 */
-
+  LL_SPI_Enable(SPI2);
   /* USER CODE END SPI2_Init 2 */
 
 }
@@ -95,11 +96,12 @@ void MX_SPI2_Init(void)
 /* USER CODE BEGIN 1 */
 uint8_t spi_flash_transmit(uint8_t ch)
 {
+    volatile uint32_t timeout = SPI_TIMEOUT;
     LL_SPI_TransmitData8(EXT_FLASH_SPI, ch);
-    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_SPI) == 0);
+    while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_SPI) == 0 && timeout--);
     
-    
-    while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_SPI) == 0);
+    timeout = SPI_TIMEOUT;
+    while (LL_SPI_IsActiveFlag_RXNE(EXT_FLASH_SPI) == 0 && timeout--);
     return LL_SPI_ReceiveData8(EXT_FLASH_SPI);
 }
 

@@ -75,10 +75,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CIRIN0_Pin LL_GPIO_PIN_0
-#define CIRIN0_GPIO_Port GPIOH
-#define CIRIN1_Pin LL_GPIO_PIN_1
+#define CIRIN1_Pin LL_GPIO_PIN_0
 #define CIRIN1_GPIO_Port GPIOH
+#define CIRIN2_Pin LL_GPIO_PIN_1
+#define CIRIN2_GPIO_Port GPIOH
 #define OPTOIN1_Pin LL_GPIO_PIN_0
 #define OPTOIN1_GPIO_Port GPIOC
 #define ADC_VBAT_Pin LL_GPIO_PIN_1

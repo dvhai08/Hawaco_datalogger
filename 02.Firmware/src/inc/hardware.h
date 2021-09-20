@@ -126,9 +126,10 @@
 												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
 										}	
 #else
+// 4.2V provice power for GSM and 4-20mA ouput
 #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
 												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-											else if ((GSM_IS_PWR_EN() == 0))	\
+											else if (gsm_data_layer_is_module_sleeping())	\
 												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
 										}	
 #define ENABLE_SYS_4V2(x)				{	if (x) \
