@@ -1373,7 +1373,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 									i+1,
 									temp_counter);
         
-        temp_counter = msg->counter[i].reserve_counter / msg->counter[i].k /* + msg->counter[i].indicator */;
+        temp_counter = msg->counter[i].reverse_counter / msg->counter[i].k /* + msg->counter[i].indicator */;
         total_length += sprintf((char *)(ptr + total_length), "\"Input1_J%u_D\":%u,",
                                         i+1,
                                         temp_counter);
@@ -1383,18 +1383,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%u,",
                                                 i+1,
-                                                msg->counter[i].flow_forward);
+                                                msg->counter[i].fw_flow);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%u,",
                                                 i+1,
-                                                msg->counter[i].flow_reserve);
+                                                msg->counter[i].reverse_flow);
         }
         
         else
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%u,",
-                                                msg->counter[i].flow_forward);
+                                                msg->counter[i].fw_flow);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%u,",
-                                                msg->counter[i].flow_reserve);
+                                                msg->counter[i].reverse_flow);
 
         }
             
@@ -1418,17 +1418,17 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         
         if (msg->counter[i].flow_avg_cycle_send_web.valid)
         {
-                    
+            // Min max   
             if (i)
             {
                 // min max forward flow
                 total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow%u\":%.2f,",
                                                 i+1,
-                                                msg->counter[i].flow_avg_cycle_send_web.forward_flow_min);
+                                                msg->counter[i].flow_avg_cycle_send_web.fw_flow_min);
             
                 total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow%u\":%.2f,",
                                                 i+1,
-                                                msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
+                                                msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
             
                 // min max reserve flow
                 total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow%u\":%.2f,",
@@ -1444,10 +1444,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             {
                 // min max forward flow
                 total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow\":%.2f,",
-                                                msg->counter[i].flow_avg_cycle_send_web.forward_flow_min);
+                                                msg->counter[i].flow_avg_cycle_send_web.fw_flow_min);
             
                 total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow\":%.2f,",
-                                                msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
+                                                msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
             
                 // min max reserve flow
                 total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow\":%.2f,",
@@ -1457,8 +1457,28 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
 
             }
-            DEBUG_WARN("Send to server Min-max fw flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.forward_flow_min,
-                                                        msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
+            
+            // Hour
+            if (i)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum%u\":%.2f,",
+                                                    i+1,
+                                                    msg->counter[i].flow_avg_cycle_send_web.fw_flow_sum);
+                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum%u\":%.2f,",
+                                                    i+1,
+                                                    msg->counter[i].flow_avg_cycle_send_web.reverse_flow_sum);
+            }
+            
+            else
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum\":%.2f,",
+                                                    msg->counter[i].flow_avg_cycle_send_web.fw_flow_sum);
+                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum\":%.2f,",
+                                                    msg->counter[i].flow_avg_cycle_send_web.reverse_flow_sum);
+
+            }
+            DEBUG_WARN("Send to server Min-max fw flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.fw_flow_min,
+                                                        msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
                 
             DEBUG_WARN("Send to server Min-max resv flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min,
                                                         msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
@@ -1540,7 +1560,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
                               temp_counter); //so xung
     
-    temp_counter = msg->counter[0].reserve_counter / msg->counter[0].k + msg->counter[0].indicator;
+    temp_counter = msg->counter[0].reverse_counter / msg->counter[0].k + msg->counter[0].indicator;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1_J1_D\":%u,",
                                 temp_counter);
 	
@@ -1560,11 +1580,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     {
         // min max forward flow
         total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow1\":%.2f,",
-                                        msg->counter[0].flow_avg_cycle_send_web.forward_flow_min);
+                                        msg->counter[0].flow_avg_cycle_send_web.fw_flow_min);
     
         total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow1\":%.2f,",
                                         
-                                        msg->counter[0].flow_avg_cycle_send_web.forward_flow_max);
+                                        msg->counter[0].flow_avg_cycle_send_web.fw_flow_max);
     
         // min max reserve flow
         total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow1\":%.2f,",                                           

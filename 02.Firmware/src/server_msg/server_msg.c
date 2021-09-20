@@ -346,7 +346,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
 			counter[0].real_counter = 0;
-			counter[0].reserve_counter = 0;
+			counter[0].reverse_counter = 0;
             app_bkup_write_pulse_counter(&counter[0]);
 			(*factor_change) |= (1 << 0);
         }
@@ -365,7 +365,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 			measure_input_reset_indicator(1, offset);
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			counter[1].real_counter = 0;
-			counter[1].reserve_counter = 0;
+			counter[1].reverse_counter = 0;
             app_bkup_write_pulse_counter(&counter[0]);
 			(*factor_change) |= (1 << 1);
         }
@@ -420,7 +420,7 @@ static uint8_t process_meter_indicator(char *buffer, uint8_t *factor_change)
 			measure_input_counter_t counter[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 			app_bkup_read_pulse_counter(&counter[0]);
 			counter[0].real_counter = 0;
-			counter[0].reserve_counter = 0;
+			counter[0].reverse_counter = 0;
 			
             app_bkup_write_pulse_counter(&counter[0]);
             (*factor_change) |= (1 << 0);
@@ -655,11 +655,11 @@ static uint8_t process_modbus_register_config(char *buffer)
             {
                 p_fw_flow += strlen(search_str);
                 uint32_t fw_flow_reg = gsm_utilities_get_number_from_string(0, p_fw_flow);
-                if (fw_flow_reg && fw_flow_reg != m_eeprom_config->rs485[slave_count].forward_flow_reg)
+                if (fw_flow_reg && fw_flow_reg != m_eeprom_config->rs485[slave_count].fw_flow_reg)
                 {
                     new_cfg++;
                     DEBUG_INFO("Forward flow changed to %u\r\n", fw_flow_reg);
-                    m_eeprom_config->rs485[slave_count].forward_flow_reg = fw_flow_reg;
+                    m_eeprom_config->rs485[slave_count].fw_flow_reg = fw_flow_reg;
                 }
             }
             
@@ -881,13 +881,13 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
             if (factor_change & 0x01)		// 0x01 mean we need to store new data of pulse counter[0] to eeprom
             {
                 data.counter[0].real_counter = 0;
-                data.counter[0].reserve_counter = 0;
+                data.counter[0].reverse_counter = 0;
             }
 #ifndef DTG01
             if (factor_change & 0x02)		// 0x02 mean we need to store new data of pulse counter[1] to eeprom
             {
                 data.counter[1].real_counter = 0;
-                data.counter[1].reserve_counter = 0;
+                data.counter[1].reverse_counter = 0;
             }
 #endif
             data.timestamp = app_rtc_get_counter();

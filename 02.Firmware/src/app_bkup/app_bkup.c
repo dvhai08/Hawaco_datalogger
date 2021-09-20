@@ -32,11 +32,11 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
 	
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, val);
     HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR1, counter[0].real_counter);
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter[0].reserve_counter);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR2, counter[0].reverse_counter);
     
 #ifndef DTG01
 	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR3, counter[1].real_counter);
-	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR4, counter[1].reserve_counter);
+	HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR4, counter[1].reverse_counter);
 #endif
     
     // Debug
@@ -51,15 +51,15 @@ void app_bkup_write_pulse_counter(measure_input_counter_t *counter)
     LL_RTC_EnableWriteProtection(RTC);
 #ifndef DTG01
     if (counter[0].real_counter != tmp[0]
-		|| counter[0].reserve_counter != tmp[1]
+		|| counter[0].reverse_counter != tmp[1]
         || counter[1].real_counter != tmp[2]
-        || counter[1].reserve_counter != tmp[3])
+        || counter[1].reverse_counter != tmp[3])
 	{
 		valid = 0;
 	}
 #else
 	if (counter[0].real_counter != tmp[0]
-		|| counter[0].reserve_counter != tmp[2])
+		|| counter[0].reverse_counter != tmp[2])
 	{
 		valid = 0;
 	}
@@ -83,18 +83,18 @@ void app_bkup_read_pulse_counter(measure_input_counter_t *counter)
     if ((RTC_BACKUP_VALID_DATA & 0x0000FFFF) == backup)
 	{
         counter[0].real_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR1);
-		counter[0].reserve_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
+		counter[0].reverse_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR2);
 #ifndef DTG01
 		counter[1].real_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR3);
-		counter[1].reserve_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR4);
+		counter[1].reverse_counter = HAL_RTCEx_BKUPRead(&hrtc, LL_RTC_BKP_DR4);
 #endif
 	}
 	else
 	{
 		counter[0].real_counter = 0;
-		counter[0].reserve_counter = 0;
+		counter[0].reverse_counter = 0;
 #ifndef DTG01
-		counter[1].reserve_counter = 0;
+		counter[1].reverse_counter = 0;
 		counter[1].real_counter = 0;
 #endif
         backup = 0;

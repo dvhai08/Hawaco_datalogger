@@ -109,7 +109,7 @@ void jig_start(void)
 					for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 					{
 						jig_print("Pulse[%u] value %u-%u\r\n", i+1, pulse_counter_in_backup[i].real_counter, 
-                                                                    pulse_counter_in_backup[i].reserve_counter);
+                                                                    pulse_counter_in_backup[i].reverse_counter);
 					}
 					
 					// Test input and outout

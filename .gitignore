@@ -62,3 +62,6 @@ DTG02/MDK-ARM/JLinkLog.txt
 *.iex
 *.lnp
 *.dbgconf
+*.Bak
+*.scvd
+02.Firmware/DTG02_V2/MDK-ARM/JLinkSettings.ini

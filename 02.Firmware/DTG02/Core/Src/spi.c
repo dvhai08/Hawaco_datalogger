@@ -95,7 +95,7 @@ void MX_SPI2_Init(void)
 /* USER CODE BEGIN 1 */
 uint8_t spi_flash_transmit(uint8_t ch)
 {
-    volatile uint32_t SPI_TIMEOUT = 20000;
+    volatile uint32_t timeout = SPI_TIMEOUT;
     LL_SPI_TransmitData8(EXT_FLASH_HSPI, ch);
     while (LL_SPI_IsActiveFlag_TXE(EXT_FLASH_HSPI) == 0 && timeout--);
     

@@ -64,7 +64,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            28000    // ( ~16s)
+#define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
 #define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
@@ -333,7 +333,7 @@ int main(void)
 	{
 		RS485_POWER_EN(1);
 		usart_lpusart_485_control(1);
-        if (LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) == 0)
+        if (LL_GPIO_IsInputPinSet(WKUP1_GPIO_Port, WKUP1_Pin) == 0)
         {
             uint32_t now = sys_get_ms();
             static uint32_t m_last_blink = 0;

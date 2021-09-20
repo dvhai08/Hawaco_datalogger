@@ -336,17 +336,19 @@ typedef struct
 {
 	measure_input_rs485_sub_register_t sub_register[RS485_MAX_SUB_REGISTER];
     measure_input_rs485_min_max_t min_max;
-    uint16_t forward_flow_reg;
+    uint16_t fw_flow_reg;
     uint16_t reserve_flow_reg;
     uint8_t slave_addr;
 } __attribute__((packed)) measure_input_modbus_register_t;
 
 typedef struct
 {
-    float forward_flow_min;
-    float forward_flow_max;
+    float fw_flow_min;
+    float fw_flow_max;
     float reserve_flow_min;
     float reserve_flow_max;
+    float fw_flow_sum;
+    float reverse_flow_sum;
     uint8_t valid;
 } __attribute__((packed)) flow_hour_t;
 
@@ -360,12 +362,12 @@ typedef struct
 typedef struct
 {
 	int32_t real_counter;       // gia tri do khi da tinh ca xung am duong
-    int32_t reserve_counter;
+    int32_t reverse_counter;
     int32_t total_forward;
     int32_t total_reserve;
     
-    uint32_t flow_forward;          // Toc do quay thuan
-    uint32_t flow_reserve;          // Toc do quay nguoc
+    uint32_t fw_flow;          // Toc do quay thuan
+    uint32_t reverse_flow;          // Toc do quay nguoc
     
     float flow_speed_forward_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
     float flow_speed_reserve_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
