@@ -28,6 +28,8 @@
 #define MODEM_DIAL 5
 #define MODEM_HANGUP 6
 
+#define TIMEZONE        0
+
 #define __GSM_SLEEP_MODE__ 1
 #define __USED_HTTP__ 0
 

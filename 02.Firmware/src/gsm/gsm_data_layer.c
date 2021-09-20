@@ -35,7 +35,7 @@
 
 #include "usart.h"
 #include "app_rtc.h"
-#define TIMEZONE        0
+
 
 #define UNLOCK_BAND     1
 #define CUSD_ENABLE     0
@@ -145,7 +145,6 @@ void gsm_wakeup_periodically(void)
 //    DEBUG_VERBOSE("Current sec %us\r\n", current_sec);
     if (current_sec >= estimate_wakeup_time)
     {
-        measure_input_monitor_min_max_in_cycle_send_web();
         if (gsm_data_layer_is_module_sleeping())
         {
             gsm_change_state(GSM_STATE_WAKEUP);
@@ -234,12 +233,13 @@ void gsm_manager_tick(void)
 			char *p = msg;
 			rtc_date_time_t time;
 			app_rtc_get_time(&time);
-			p += sprintf(p, "%04u/%02u/%02u %02u:%02u: ",
+			p += sprintf(p, "%04u/%02u/%02u %02u:%02u GMT%d: ",
 							time.year + 2000,
 							time.month,
 							time.day,
 							time.hour,
-							time.minute);
+							time.minute,
+                            TIMEZONE);
 			p += sprintf(p, "Thiet bi %s %s %s", VERSION_CONTROL_DEVICE, gsm_get_module_imei(), "dang ki hoa mang");
 			ctx->status.total_sms_in_24_hour++;
 			gsm_send_sms((char*)eeprom_cfg->phone, msg);
@@ -339,10 +339,10 @@ void gsm_manager_tick(void)
 			
 			if (ready_to_sleep)
 			{
-                DEBUG_INFO("Poll default config\r\n");
 				uint32_t current_sec = app_rtc_get_counter();
 				if (current_sec >= ctx->status.next_time_get_data_from_server)
 				{
+                    DEBUG_INFO("Poll default config\r\n");
                     // Estimate next time polling server config
 					ctx->status.next_time_get_data_from_server = current_sec/ 3600 + app_eeprom_read_config_data()->poll_config_interval_hour;
                     ctx->status.next_time_get_data_from_server *= 3600;
@@ -706,29 +706,29 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         break;
 
     case 5:
-        DEBUG_INFO("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set URC port: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+QCFG=\"urc/ri/smsincoming\",\"pulse\",2000\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 6:
-        DEBUG_INFO("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set URC ringtype: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CNMI=2,1,0,0,0\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
     
     case 7:
-        DEBUG_INFO("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Config SMS event report: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CMGF=1\r\n", "", "OK\r\n", 1000, 10, gsm_at_cb_power_on_gsm);
         break;
 
     case 8:
-        DEBUG_INFO("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
+        DEBUG_VERBOSE("Set SMS text mode: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
         // gsm_hw_send_at_cmd("AT+CMGD=1,4\r\n", "	if (eeprom_cfg->io_enable.name.input_4_20ma_0_enable)OK\r\n", "", 2000, 5, gsm_at_cb_power_on_gsm);
         //gsm_hw_send_at_cmd("AT+CNUM\r\n", "", "OK\r\n", 2000, 5, gsm_at_cb_power_on_gsm);
         break;
 
     case 9:
-        DEBUG_INFO("AT CNUM: %s, %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
+        DEBUG_VERBOSE("AT CNUM: %s, %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
 										(char*)resp_buffer);
 //        DEBUG_INFO("Delete all SMS: %s\r\n", (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]");
         gsm_hw_send_at_cmd("AT+CGSN\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
@@ -754,7 +754,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
                 sprintf((char*)imei_buffer, "%s", "860262050127815");
             }
         }
-        gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 10, gsm_at_cb_power_on_gsm);
+        gsm_hw_send_at_cmd("AT+CIMI\r\n", "OK\r\n", "", 1000, 5, gsm_at_cb_power_on_gsm);
 	}
         break;
 
@@ -783,10 +783,15 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         DEBUG_INFO("Get SIM IMEI: %s\r\n", (char *)resp_buffer);
         gsm_change_hw_polling_interval(5);
 		uint8_t *ccid_buffer = (uint8_t*)gsm_get_sim_ccid();
-        gsm_utilities_get_sim_ccid(resp_buffer, ccid_buffer, 20);
-        DEBUG_INFO("SIM CCID: %s\r\n", ccid_buffer);
         if (strlen((char*)ccid_buffer) < 10)
         {
+            gsm_utilities_get_sim_ccid(resp_buffer, ccid_buffer, 20);
+        }
+        DEBUG_INFO("SIM CCID: %s\r\n", ccid_buffer);
+        static uint32_t retry = 0;
+        if (strlen((char*)ccid_buffer) < 10 && retry < 2)
+        {
+            retry++;
             gsm_hw_send_at_cmd("AT+QCCID\r\n", "QCCID", "OK\r\n", 1000, 3, gsm_at_cb_power_on_gsm); 
             gsm_manager.step = 11;
         }
@@ -1378,18 +1383,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%u,",
                                                 i+1,
-                                                msg->counter[i].total_forward);
+                                                msg->counter[i].flow_forward);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%u,",
                                                 i+1,
-                                                msg->counter[i].total_reserve);
+                                                msg->counter[i].flow_reserve);
         }
         
         else
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%u,",
-                                                msg->counter[i].total_forward);
+                                                msg->counter[i].flow_forward);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%u,",
-                                                msg->counter[i].total_reserve);
+                                                msg->counter[i].flow_reserve);
 
         }
             
@@ -1410,7 +1415,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",
                                                 msg->counter[i].total_reserve_index);
         }
-        DEBUG_WARN("Reverse index %u\r\n", msg->counter[i].total_reserve_index);
         
         if (msg->counter[i].flow_avg_cycle_send_web.valid)
         {
@@ -1434,6 +1438,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                 total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow%u\":%.2f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
+                
             }
             else
             {
@@ -1452,6 +1457,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
 
             }
+            DEBUG_WARN("Send to server Min-max fw flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.forward_flow_min,
+                                                        msg->counter[i].flow_avg_cycle_send_web.forward_flow_max);
+                
+            DEBUG_WARN("Send to server Min-max resv flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min,
+                                                        msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
         }
           
         
@@ -1677,7 +1687,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #endif    
     // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":%s,", gsm_get_sim_imei());
-	total_length += sprintf((char *)(ptr + total_length), "\"CCID\":%s,", gsm_get_sim_ccid());
+	total_length += sprintf((char *)(ptr + total_length), "\"CCID\":\"%s\",", gsm_get_sim_ccid());
     
     // Uptime
 //    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);

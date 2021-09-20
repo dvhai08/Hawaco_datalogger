@@ -688,15 +688,15 @@ static void info_task(void *arg)
             p += sprintf(p, "IN%u-%u,", i+1, measure_input_current_data()->input_on_off[i]);
         }
         
-		if (gsm_data_layer_is_module_sleeping())
-		{
-			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
-						adc->vdda_mv,
-						adc->bat_mv, adc->bat_percent, 
-						adc->vin_24,
-						tmp,
-						adc->temp);
-		}
+//		if (gsm_data_layer_is_module_sleeping())
+//		{
+//			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
+//						adc->vdda_mv,
+//						adc->bat_mv, adc->bat_percent, 
+//						adc->vin_24,
+//						tmp,
+//						adc->temp);
+//		}
 #if TEST_CRC32
 		uint32_t crc;
 		static const char *feed_str0 ="12345";

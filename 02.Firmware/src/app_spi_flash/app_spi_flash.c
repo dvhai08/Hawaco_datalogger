@@ -827,7 +827,6 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_pa
 
 uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
 {
-    DEBUG_INFO("Find res in range 0x%08X-0x%08X\r\n", begin_addr, end_addr);
     uint32_t size_struct = sizeof(app_spi_flash_data_t);
     app_spi_flash_data_t *tmp = umm_calloc(1, size_struct);
     if (tmp == NULL)
@@ -845,7 +844,7 @@ uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
                 && tmp->crc == crc)
             {
                 umm_free(tmp);
-                DEBUG_INFO("Valid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
+                DEBUG_VERBOSE("Valid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
                 return begin_addr;
             }
             else
@@ -1177,10 +1176,10 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
             memcpy(page_data + sector_offset, (uint8_t *)rd_data + write_data_in_current_page_size, size_remain_write_to_next_sector);
             
             
-            DEBUG_INFO("1 - Copy %u bytes at offset %u\r\n", write_data_in_current_page_size, sector_offset);
+            DEBUG_VERBOSE("1 - Copy %u bytes at offset %u\r\n", write_data_in_current_page_size, sector_offset);
             if (size_remain_write_to_next_sector)
             {
-                DEBUG_WARN("Erase sector %u\r\n", next_sector * SPI_FLASH_SECTOR_SIZE);
+                DEBUG_WARN("Erase sector %u\r\n", next_sector);
                 flash_erase_sector_4k(next_sector); 
                 flash_write_bytes(next_sector * SPI_FLASH_SECTOR_SIZE, page_data, SPI_FLASH_SECTOR_SIZE);
             }

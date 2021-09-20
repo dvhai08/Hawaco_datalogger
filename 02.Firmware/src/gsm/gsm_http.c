@@ -28,12 +28,14 @@ static char m_http_cmd_buffer[256];
 static gsm_http_data_t post_rx_data;
 static bool m_renew_config_ssl = true;
 static bool m_renew_apn = true;
+#if OTA_VERSION == 0
 static uint32_t m_start_download_timestamp;
+static int32_t m_file_handle = -1;
+#endif
 
 static void gsm_http_query(gsm_response_event_t event, void *response_buffer);
 static int32_t m_http_read_big_file_step = 0;
 static int32_t m_ssl_step = -1;
-static int32_t m_file_handle = -1;
 static void setup_http_ssl(gsm_response_event_t event, void *response_buffer)
 {
     if (!m_renew_config_ssl)
@@ -155,7 +157,9 @@ void gsm_http_download_big_file(gsm_response_event_t event, void *response_buffe
         {
             m_total_bytes_recv = 0;
             m_http_read_big_file_step = 0;
+#if OTA_VERSION == 0
 			m_file_handle = -1;
+#endif
             m_http_cfg.on_event_cb(GSM_HTTP_GET_EVENT_FINISH_FAILED, &m_total_bytes_recv);
             return;
         }
@@ -317,7 +321,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
         case 1: // Allow to output HTTP response header
         {
-            DEBUG_INFO("Set PDP context as 1 : %s, response %s\r\n",
+            DEBUG_VERBOSE("Set PDP context as 1 : %s, response %s\r\n",
                          (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                          (char*)response_buffer);
             if (m_http_cfg.action == GSM_HTTP_ACTION_GET)
@@ -354,7 +358,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
         
         case 2:
         {
-            DEBUG_INFO("request/response header : %s, response %s\r\n",
+            DEBUG_VERBOSE("request/response header : %s, response %s\r\n",
                          (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                          (char*)response_buffer);
 //            if (event != GSM_EVENT_OK)
@@ -420,7 +424,7 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
 
         case 3:
         {
-            DEBUG_INFO("Config http header : %s, response %s\r\n", 
+            DEBUG_VERBOSE("Config http header : %s, response %s\r\n", 
                                                 (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]", 
                                                 (char*)response_buffer);
             if (m_renew_apn)
@@ -654,7 +658,9 @@ void gsm_http_query(gsm_response_event_t event, void *response_buffer)
                                                 1, 
                                                 gsm_http_download_big_file); // Close a GPRS context.
                             m_http_read_big_file_step = 0;
+#if OTA_VERSION == 0
                             m_start_download_timestamp = gsm_get_current_tick();
+#endif
                             m_total_bytes_recv = 0;
                         }
                     }

@@ -116,6 +116,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
         
 		for (uint32_t slave_count = 0; slave_count < RS485_MAX_SLAVE_ON_BUS; slave_count++)
 		{
+            uint16_t delay_modbus = 1000;
 			for (uint32_t sub_reg_idx = 0; sub_reg_idx < RS485_MAX_SUB_REGISTER; sub_reg_idx++)
 			{
 				if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid == 0)
@@ -150,7 +151,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 					{
 						uint8_t result;
 						
-						modbus_master_reset(1000);
+						modbus_master_reset(delay_modbus);
 						uint32_t halfword_quality = 1;
 						if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT
 							|| eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
@@ -167,6 +168,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 						if (result != MODBUS_MASTER_OK)		// Read data error
 						{
 							DEBUG_ERROR("Modbus read input register failed\r\n");
+                            delay_modbus = 200;     // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time 
 							register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 							modbus_master_clear_response_buffer();
 							ctx->error_not_critical.detail.rs485_err = 1;
@@ -317,7 +319,7 @@ void measure_input_pulse_counter_poll(void)
 				ptr);
 #else
 								
-	DEBUG_INFO("Counter (%u-%u), (%u-%u), real value %s\r\n", 
+        DEBUG_INFO("Counter(0-1) : (%u-%u), (%u-%u), real value %s\r\n", 
 				m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reserve_counter,
 				m_pulse_counter_in_backup[1].real_counter, m_pulse_counter_in_backup[1].reserve_counter,
 				ptr);
@@ -587,7 +589,7 @@ void measure_input_task(void)
             uint32_t next_min = (estimate_measure_timestamp/60);
             next_min %= 60;
             
-            DEBUG_WARN("[%02u:%02u] Next measurement tick is %02u:%u\r\n", now.hour, now.minute, next_hour, next_min);
+            DEBUG_WARN("[%02u:%02u] Next measurement tick is %02u:%02u\r\n", now.hour, now.minute, next_hour, next_min);
             
             // Process rs485
             process_rs485(&m_measure_data.rs485[0]);
@@ -747,16 +749,23 @@ void measure_input_task(void)
                     if (diff)
                     {
                         // Forward direction
-                        // speed = (counter - pre_counter)/diff (hour)
-                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].real_counter 
-                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].real_counter);
+                        // speed = ((counter  forward - pre_counter forward)/k)/diff (hour)
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].flow_forward 
+                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].flow_forward);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k; 
+                        
+                        DEBUG_VERBOSE("Diff forward%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f/(float)diff;
-                        }                            
+                        }            
+                        
                         // Reverse direction
-                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (m_pulse_counter_in_backup[counter_index].reserve_counter 
-                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].reserve_counter);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].flow_reserve 
+                                                                                                        - m_pre_pulse_counter_in_backup[counter_index].flow_reserve);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
+                        
+                        DEBUG_VERBOSE("Diff reserve%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600000.0f/(float)diff;
@@ -764,17 +773,14 @@ void measure_input_task(void)
                         
                         // min-max of forward/reserve direction flow speed
                         // If value is invalid =>> Initialize new value
+                        // If min max value is invalid =>> Copy the first data
                         if (forward_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
                             || forward_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
                         {
                             forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                             forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
-                        }
-                        if (forward_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
-                            || forward_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
-                        {
-                            forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
-                            forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+                            DEBUG_WARN("Set MinFwFlow%u - %.2f\r\n", counter_index, forward_flow_max_in_cycle_send_web[counter_index]);
+                            DEBUG_WARN("Set MaxFwFlow%u - %.2f\r\n", counter_index, forward_flow_min_in_cycle_send_web[counter_index]);
                         }
                         
                         if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
@@ -782,12 +788,8 @@ void measure_input_task(void)
                         {
                             reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
                             reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
-                        }
-                        if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE
-                            || reserve_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)        
-                        {
-                            reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
-                            reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+                            DEBUG_WARN("Set MaxRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_max_in_cycle_send_web[counter_index]);
+                            DEBUG_WARN("Set MixRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_min_in_cycle_send_web[counter_index]);
                         }
                         
                         // Compare old value and new value to determite new min-max value
@@ -796,12 +798,14 @@ void measure_input_task(void)
                         {
                             forward_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                         }
+                        DEBUG_INFO("[Temporaty] MinFlow%u - %.2f\r\n", counter_index, forward_flow_min_in_cycle_send_web[counter_index]);
                         
                         // 1.2 Forward direction max value
                         if (forward_flow_max_in_cycle_send_web[counter_index] < m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup)        
                         {
                             forward_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                         }
+                        DEBUG_INFO("[Temporaty] MaxFlow%u - %.2f\r\n", counter_index, forward_flow_max_in_cycle_send_web[counter_index]);
                         
                         // 2.1 reserve direction min value
                         if (reserve_flow_min_in_cycle_send_web[counter_index] > m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup)        
@@ -820,6 +824,7 @@ void measure_input_task(void)
                     }
                     else        // invalid value, should never get there
                     {
+                        DEBUG_ERROR("Shoud never get there\r\n");
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = 0;
                         m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = 0;
                     }
@@ -835,8 +840,22 @@ void measure_input_task(void)
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_min = forward_flow_min_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = reserve_flow_max_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = reserve_flow_min_in_cycle_send_web[counter_index];
+                            
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 1; 
                             
+                            DEBUG_WARN("Cycle send web counter %u: Min max fw flow %.2f %.2f\r\n", counter_index, 
+                                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_max,
+                                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_min);
+                
+                            DEBUG_WARN("Cycle send web counter %u: Min max resv flow %.2f %.2f\r\n", counter_index,
+                                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max,
+                                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min);
+                            
+                            // Clean min max value
+                            forward_flow_max_in_cycle_send_web[counter_index] = FLOW_INVALID_VALUE;
+                            forward_flow_min_in_cycle_send_web[counter_index] = FLOW_INVALID_VALUE;
+                            reserve_flow_max_in_cycle_send_web[counter_index] = FLOW_INVALID_VALUE;
+                            reserve_flow_min_in_cycle_send_web[counter_index] = FLOW_INVALID_VALUE;
                         }
                         else        // Mark invalid, we dont need to send data to server
                         {
@@ -846,11 +865,26 @@ void measure_input_task(void)
 
                                                
                     // Copy current value to prev value
-                    memcpy(m_pre_pulse_counter_in_backup, m_pulse_counter_in_backup, sizeof(m_pulse_counter_in_backup));
+                    memcpy(&m_pre_pulse_counter_in_backup[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(backup_pulse_data_t));
                     
                     // Copy current measure counter to message queue variable
                     memcpy(&m_measure_data.counter[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(measure_input_counter_t));
                     
+                    __disable_irq(); // counter ext interrupt maybe happen, disable for isr safe
+                    if (m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid)
+                    {
+                        // Clean all data after 1 cycle send web, next time we will measure again
+                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_max = FLOW_INVALID_VALUE;
+                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.forward_flow_min = FLOW_INVALID_VALUE;
+                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = FLOW_INVALID_VALUE;
+                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = FLOW_INVALID_VALUE;
+                        m_pulse_counter_in_backup[counter_index].flow_forward = 0;
+                        m_pre_pulse_counter_in_backup[counter_index].flow_forward = 0;
+                        m_pulse_counter_in_backup[counter_index].flow_reserve  = 0;
+                        m_pre_pulse_counter_in_backup[counter_index].flow_reserve = 0;
+                    }
+                    __enable_irq();
+                    // Mark as invalid data
                     m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 0;
                     
                     DEBUG_VERBOSE("PWM%u %u\r\n", counter_index, m_measure_data.counter[counter_index].real_counter);
@@ -935,7 +969,7 @@ void measure_input_task(void)
                     {
                         if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
                         {
-                            DEBUG_WARN("Store data to flash with reserve index %u %u\r\n", 
+                            DEBUG_VERBOSE("Store data to flash with reserve index %u %u\r\n", 
                                         m_sensor_msq[i].counter[0].total_reserve_index,
                                         m_sensor_msq[i].counter[1].total_reserve_index);
                             
@@ -976,7 +1010,6 @@ void measure_input_initialize(void)
     reserve_flow_max_in_cycle_send_web[0] = FLOW_INVALID_VALUE;
     
 #ifndef DTG01
-    memset(m_pulse_counter_in_backup, 0, sizeof(m_pulse_counter_in_backup));
 	m_pulse_counter_in_backup[1].k = eeprom_cfg->k[1];
 	m_pulse_counter_in_backup[1].indicator = eeprom_cfg->offset[1];
 	m_measure_data.counter[1].k = eeprom_cfg->k[1];
@@ -1117,14 +1150,16 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
         if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
         {
                     // Increase total forward counter
-            m_pulse_counter_in_backup[input->port].total_forward++;
+            
             m_is_pulse_trigger = 1;
             if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_PLUS_DIR_MIN)
             {
                 // If direction current level = direction on forward level
                 if (eeprom_cfg->dir_level == input->dir_level)
                 {
-                    DEBUG_INFO("[PWM%u]+++ \r\n", input->port);
+                    DEBUG_VERBOSE("[PWM%u]+++ \r\n", input->port);
+                    m_pulse_counter_in_backup[input->port].total_forward++;
+                    m_pulse_counter_in_backup[input->port].flow_forward++;
                     m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward/m_pulse_counter_in_backup[input->port].k
                                                                                 + m_pulse_counter_in_backup[input->port].indicator;
                     m_pulse_counter_in_backup[input->port].real_counter++;
@@ -1132,6 +1167,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 else    // Reverser counter
                 {
                     DEBUG_WARN("[PWM]---\r\n");
+                    m_pulse_counter_in_backup[input->port].flow_reserve++;
                     m_pulse_counter_in_backup[input->port].real_counter--;
                     m_pulse_counter_in_backup[input->port].total_reserve++;
                     m_pulse_counter_in_backup[input->port].total_reserve_index = m_pulse_counter_in_backup[input->port].total_reserve
@@ -1141,7 +1177,9 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             }
             else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
             {
-                DEBUG_INFO("[PWM] +++++++\r\n");
+                DEBUG_VERBOSE("[PWM] +++++++\r\n");
+                m_pulse_counter_in_backup[input->port].total_forward++;
+                m_pulse_counter_in_backup[input->port].total_forward++;
                             // Calculate total forward index
                 m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward/m_pulse_counter_in_backup[input->port].k
                                                                                 + m_pulse_counter_in_backup[input->port].indicator;
@@ -1280,10 +1318,6 @@ void measure_input_delay_delay_measure_input_4_20ma(uint32_t ms)
     measure_input_turn_on_in_4_20ma_power = ms;
 }
 
-void measure_input_monitor_min_max_in_cycle_send_web(void)
-{
-    
-}
 
 uint32_t measure_input_get_next_time_wakeup(void)
 {
