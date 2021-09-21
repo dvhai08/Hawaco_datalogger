@@ -255,7 +255,7 @@ void sys_delay_ms(uint32_t ms)
         LL_IWDG_ReloadCounter(IWDG);
 #endif
 //		__WFI();	// hardfault when exit from stopmode
-		if (HAL_GetTick() - current_tick >= (uint32_t)ms)
+		if (uwTick - current_tick >= (uint32_t)ms)
 		{
 			break;
 		}

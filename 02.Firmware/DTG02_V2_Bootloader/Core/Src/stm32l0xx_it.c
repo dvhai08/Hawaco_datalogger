@@ -37,20 +37,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-typedef struct
-{
-    uint32_t last_exti;
-} input_ext_isr_t;
-extern volatile int32_t ota_update_timeout_ms;
 /* USER CODE END TD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define EXIT_INPUT0_TIMESTAMP_INDEX 0
-#ifdef DTG2
-#define EXIT_INPUT1_TIMESTAMP_INDEX 1
-#endif
-#define RECHECK_PULSE_ISR_TIMEOUT_MS	3
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
