@@ -30,7 +30,6 @@
 #include "ota_update.h"
 #include "app_rtc.h"
 #include "app_spi_flash.h"
-#include "spi.h"
 #include "umm_malloc_cfg.h"
 #include "gsm_filefs.h"
 #include "usart.h"

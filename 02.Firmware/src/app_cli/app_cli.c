@@ -147,8 +147,9 @@ void app_cli_start()
 /* Reset System */
 static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **argv)
 {
-//    DEBUG_PRINTF("System reset\r\n");
+    DEBUG_PRINTF("System reset\r\n");
     NVIC_SystemReset();
+    while (1);
     return 0;
 }
 

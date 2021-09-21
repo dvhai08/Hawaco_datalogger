@@ -53,8 +53,6 @@ static bool m_usart1_is_enabled = true;
 static volatile size_t m_old_usart1_dma_rx_pos;
 /* USER CODE END 0 */
 
-/* LPUART1 init function */
-
 /* USART1 init function */
 
 void MX_USART1_UART_Init(void)

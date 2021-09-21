@@ -901,7 +901,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
                                                                 // Lazy solution : do not update time from 17h
         {
             static uint32_t update_counter = 0;
-            if ((update_counter % 24) == 0)
+            if ((update_counter % 48) == 0)
             {
                 app_rtc_set_counter(&time);
             }

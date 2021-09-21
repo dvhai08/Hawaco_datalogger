@@ -96,6 +96,22 @@
 										LL_GPIO_SetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
 								}								
 
+#define TRANS_1_TOGGLE()      	{   \
+										LL_GPIO_TogglePin(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin);	\
+								}	
+
+#define TRANS_2_TOGGLE()      	{   \
+										LL_GPIO_TogglePin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);	\
+								}	
+
+#define TRANS_3_TOGGLE()      	{   \
+										LL_GPIO_TogglePin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);	\
+								}	
+
+#define TRANS_4_TOGGLE()      	{   \
+										LL_GPIO_TogglePin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);	\
+								}	
+                                
 #define TRANS_IS_OUTPUT_HIGH()		(LL_GPIO_IsOutputPinSet(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin) ? 0 : 1)
 #define TRANS_1_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin) ? 0 : 1)
 #define TRANS_2_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin) ? 0 : 1)

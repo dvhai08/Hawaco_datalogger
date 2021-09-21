@@ -521,10 +521,13 @@ void measure_input_task(void)
     }
         
 #ifndef DTG01
-    TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
-    TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
-    TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
-    TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
+    if (sys_ctx()->status.is_enter_test_mode == 0)
+    {
+        TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
+        TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
+        TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
+        TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
+    }
     
     // Get input and output on/off value
 	m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;

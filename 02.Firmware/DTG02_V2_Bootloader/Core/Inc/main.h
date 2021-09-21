@@ -30,14 +30,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
 
-#include "stm32l0xx_ll_adc.h"
-#include "stm32l0xx_ll_crc.h"
 #include "stm32l0xx_ll_iwdg.h"
-#include "stm32l0xx_ll_lpuart.h"
-#include "stm32l0xx_ll_rcc.h"
-#include "stm32l0xx_ll_spi.h"
-#include "stm32l0xx_ll_tim.h"
 #include "stm32l0xx_ll_usart.h"
+#include "stm32l0xx_ll_rcc.h"
 #include "stm32l0xx_ll_system.h"
 #include "stm32l0xx_ll_gpio.h"
 #include "stm32l0xx_ll_exti.h"
@@ -116,13 +111,9 @@ void Error_Handler(void);
 #define RS485_TX_GPIO_Port GPIOB
 #define EXT_FLASH_CS_Pin LL_GPIO_PIN_12
 #define EXT_FLASH_CS_GPIO_Port GPIOB
-#define EXT_FLASH_SCK_Pin LL_GPIO_PIN_13
-#define EXT_FLASH_SCK_GPIO_Port GPIOB
 #define PULSE_PWM1_Pin LL_GPIO_PIN_14
 #define PULSE_PWM1_GPIO_Port GPIOB
 #define PULSE_PWM1_EXTI_IRQn EXTI4_15_IRQn
-#define EXT_FLASH_MOSI_Pin LL_GPIO_PIN_15
-#define EXT_FLASH_MOSI_GPIO_Port GPIOB
 #define GSM_EN_Pin LL_GPIO_PIN_6
 #define GSM_EN_GPIO_Port GPIOC
 #define PULSE_DIR1_Pin LL_GPIO_PIN_7

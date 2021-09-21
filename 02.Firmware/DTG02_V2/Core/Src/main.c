@@ -676,6 +676,29 @@ static void info_task(void *arg)
 #endif
         i = 5;
 	}
+    
+    static uint8_t m_last_input[4];
+    bool led_blink = 0;
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        if (m_last_input[i] != measure_input_current_data()->input_on_off[i])
+        {
+            led_blink = 1;
+        }
+        m_last_input[i] = measure_input_current_data()->input_on_off[i];
+    }
+    
+    if (led_blink)
+    {
+        LED1(1);
+        sys_delay_ms(5);
+        LED1(0);
+    }
+    TRANS_1_TOGGLE();
+    TRANS_2_TOGGLE();
+    TRANS_3_TOGGLE();
+    TRANS_4_TOGGLE();
+        
     if (i++ > 4)
 	{
 		i = 0;
