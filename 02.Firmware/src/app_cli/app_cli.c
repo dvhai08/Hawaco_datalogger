@@ -55,7 +55,7 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
 
-#ifdef DTG02V2
+#if 0
 static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv);
 #endif /* DTG02V2 */
 
@@ -67,7 +67,7 @@ static const shell_command_context_t cli_command_table[] =
 //    {"sms",             "\tsms : Send sms\r\n",                                 cli_send_sms,                               3},
 //    {"ota",             "\tota : Do an ota update\r\n",                         cli_ota_update,                             1},
 	{"420out",          "\t420out : Output 4-20mA\r\n",                         cli_output_4_20ma,                          2},
-#ifdef DTG02V2
+#if 0
     {"420duty",         "\t420duty : Output pwm duty\r\n",                      cli_output_pwm_duty,                        1},
 #endif
 	{"test",            "\ttest : enter/exit test mode\r\n",                    cli_enter_test_mode,                        1},
@@ -223,7 +223,7 @@ static int32_t cli_output_4_20ma(p_shell_context_t context, int32_t argc, char *
                                                                 atoi(argv[2]));
 	return 0;
 }
-#ifdef DTG02V2
+#if 0
 extern void set_pwm_duty(uint32_t duty);
 static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv)
 {

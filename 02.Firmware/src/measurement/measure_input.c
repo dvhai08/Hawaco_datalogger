@@ -171,6 +171,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             delay_modbus = 200;     // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time 
 							register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 							modbus_master_clear_response_buffer();
+                            m_485_min_max[slave_count].max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                            m_485_min_max[slave_count].min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                            m_485_min_max[slave_count].min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                            m_485_min_max[slave_count].max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
 							ctx->error_not_critical.detail.rs485_err = 1;
 						}
 						else		// Read data ok
@@ -596,6 +600,7 @@ void measure_input_task(void)
             // Process rs485
             process_rs485(&m_measure_data.rs485[0]);
             
+//            DEBUG_INFO("ADC start\r\n");
             // ADC conversion
             adc_start();
 
@@ -875,6 +880,11 @@ void measure_input_task(void)
                     memcpy(&m_measure_data.counter[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(measure_input_counter_t));
                     
                     __disable_irq(); // counter ext interrupt maybe happen, disable for isr safe
+                    m_pulse_counter_in_backup[counter_index].fw_flow = 0;
+                    m_pre_pulse_counter_in_backup[counter_index].fw_flow = 0;
+                    m_pulse_counter_in_backup[counter_index].reverse_flow  = 0;
+                    m_pre_pulse_counter_in_backup[counter_index].reverse_flow = 0;
+                    
                     if (m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid)
                     {
                         // Clean all data after 1 cycle send web, next time we will measure again
@@ -882,10 +892,6 @@ void measure_input_task(void)
                         m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min = FLOW_INVALID_VALUE;
                         m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = FLOW_INVALID_VALUE;
                         m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = FLOW_INVALID_VALUE;
-                        m_pulse_counter_in_backup[counter_index].fw_flow = 0;
-                        m_pre_pulse_counter_in_backup[counter_index].fw_flow = 0;
-                        m_pulse_counter_in_backup[counter_index].reverse_flow  = 0;
-                        m_pre_pulse_counter_in_backup[counter_index].reverse_flow = 0;
                         m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum = 0.0f;
                         m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum = 0.0f;
                     }

@@ -208,7 +208,10 @@ int main(void)
 	eeprom_cfg->io_enable.name.output_4_20ma_timeout_100ms = 100;
 	control_output_dac_enable(1000000);
     system->status.is_enter_test_mode = 1;
-    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_0_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_1_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_2_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_3_enable = 1;
 #endif     
 #if TEST_INPUT_4_20_MA
     eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
@@ -690,7 +693,7 @@ static void info_task(void *arg)
             p += sprintf(p, "IN%u-%u,", i+1, measure_input_current_data()->input_on_off[i]);
         }
         
-		if (gsm_data_layer_is_module_sleeping() ||sys_ctx()->status.is_enter_test_mode)
+		if (gsm_data_layer_is_module_sleeping() || sys_ctx()->status.is_enter_test_mode)
 		{
 			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin %umV, 4-20mA %s temp %u\r\n",
 						adc->vdda_mv,

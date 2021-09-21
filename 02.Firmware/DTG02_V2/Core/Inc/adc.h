@@ -36,7 +36,7 @@ typedef struct
 	uint32_t vin_24;			// 24V input
 	uint32_t vdda_mv;			// VDDA in mv
 	uint32_t vref_int;
-#ifdef DTG02
+#ifndef DTG01
 	float in_4_20ma_in[4];		// 4.5mA =>> convert to 45
 #else
 	float in_4_20ma_in[1];		// 4.5mA =>> convert to 45

@@ -25,8 +25,13 @@
 #include "app_sync.h"
 #include "adc.h"
 #include "tim.h"
+#include "gsm.h"
 
+#ifndef DTG02V2
 #define VREG                        4890
+#else
+#define VREG                        4096
+#endif
 #define USE_LOOKUP_TABLE            0
 
 typedef struct
@@ -124,9 +129,13 @@ void control_output_dac_enable(uint32_t ms)
 		uint16_t voltage = 600 + 150 * (cfg->io_enable.name.output_4_20ma_value - 4); //mV
 		dac_value = voltage * 4095 / adc_get_input_result()->vdda_mv;
 #else
-		uint32_t thoughsand = 0;
-		int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
+        uint32_t thoughsand = 0;
+#ifndef DTG02V2
+        int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 		uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
+#else
+        uint32_t set_mv = cfg->output_4_20ma *125;      // dung hoi tai sao
+#endif
 		thoughsand = set_mv * 1000 / VREG;
 		tim_pwm_output_percent(thoughsand);
         if (m_last_mv != set_mv)
@@ -201,8 +210,12 @@ void control_ouput_task(void)
 			* DAC: 0.6-3V () <=> 4-20mA output -> 1mA <=> 0.15V
 			*/
 			uint32_t thoughsand = 0;
-			int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
+#ifndef DTG02V2
+            int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 			uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
+#else
+            uint32_t set_mv = cfg->output_4_20ma *125;      // dung hoi tai sao
+#endif
 			thoughsand = set_mv * 1000 / VREG;		// output VREG pwm voltage is 4890mv
 			tim_pwm_output_percent(thoughsand);
 #endif

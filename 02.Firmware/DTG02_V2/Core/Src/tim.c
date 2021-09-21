@@ -113,9 +113,14 @@ void tim_pwm_start(void)
 	MX_TIM2_Init();
 }
 
+static uint32_t m_pre_pwm = 0;
 void tim_pwm_output_percent(uint32_t thoughsand)
 {
-	DEBUG_INFO("Set PWM percent %u%%o\r\n", thoughsand);
+    if (m_pre_pwm != thoughsand)
+    {
+        m_pre_pwm = thoughsand;
+        DEBUG_INFO("Set PWM percent %u%%o\r\n", thoughsand);
+    }
 	if (m_dac_started == false)
 	{
 		m_dac_started = true;

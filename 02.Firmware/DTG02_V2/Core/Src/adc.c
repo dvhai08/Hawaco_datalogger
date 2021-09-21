@@ -591,7 +591,7 @@ void adc_convert(void)
     }
 //    DEBUG_VERBOSE("[IN0 4-20] %umv, offset %umv\r\n", m_adc_raw_data[V_INPUT_0_4_20MA_CHANNEL_INDEX], offset_input_4_20ma_mv[0]); 
     
-#ifdef DTG02
+#if 1
     // Channel 1
     m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX] = m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095;
     if (m_is_the_first_time 
@@ -661,7 +661,7 @@ void adc_convert(void)
         sys_delay_ms(100);
     }
 
-#ifdef DTG02
+#if 1
     if (m_is_the_first_time == false)
     {
         m_adc_input.in_4_20ma_in[1] = look_up_current(m_adc_raw_data[V_INPUT_1_4_20MA_CHANNEL_INDEX]);
