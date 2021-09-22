@@ -96,6 +96,9 @@ void MX_GPIO_Init(void)
   LL_GPIO_SetOutputPin(EXT_FLASH_CS_GPIO_Port, EXT_FLASH_CS_Pin);
 
   /**/
+  LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);
+
+  /**/
   GPIO_InitStruct.Pin = LL_GPIO_PIN_13;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;

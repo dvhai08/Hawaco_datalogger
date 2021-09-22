@@ -27,7 +27,7 @@
 
 #define TIME_FREQ       8000000
 bool m_dac_started = false;
-volatile uint32_t m_reload_value = 1999;     // 5khz
+volatile uint32_t m_reload_value = 2999;     // 5khz
 
 /* USER CODE END 0 */
 

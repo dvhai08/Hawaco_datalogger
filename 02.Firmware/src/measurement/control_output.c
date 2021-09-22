@@ -33,7 +33,7 @@
 #define VREG                        4096
 #endif
 #define USE_LOOKUP_TABLE            0
-
+#define K_V_I                       (122.5f)
 typedef struct
 {
     uint32_t current_ma_mil_100;		// 4ma =>> 400
@@ -134,7 +134,7 @@ void control_output_dac_enable(uint32_t ms)
         int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 		uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
 #else
-        uint32_t set_mv = cfg->output_4_20ma *125;      // dung hoi tai sao
+        uint32_t set_mv = (uint32_t)(cfg->output_4_20ma *K_V_I);      // dung hoi tai sao
 #endif
 		thoughsand = set_mv * 1000 / VREG;
 		tim_pwm_output_percent(thoughsand);
@@ -214,7 +214,7 @@ void control_ouput_task(void)
             int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 			uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
 #else
-            uint32_t set_mv = cfg->output_4_20ma *125;      // dung hoi tai sao
+            uint32_t set_mv = (cfg->output_4_20ma *K_V_I);      // dung hoi tai sao
 #endif
 			thoughsand = set_mv * 1000 / VREG;		// output VREG pwm voltage is 4890mv
 			tim_pwm_output_percent(thoughsand);

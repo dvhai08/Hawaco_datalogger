@@ -524,6 +524,7 @@ int main(void)
 	}
 	else if (system->status.is_enter_test_mode == 0)
 	{
+        button_factory_timeout = 0;
 		usart_lpusart_485_control(0);
 	}
 	
