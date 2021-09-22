@@ -65,10 +65,9 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
-#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
-#define TEST_OUTPUT_4_20MA                              0
+#define TEST_OUTPUT_4_20MA                              1
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
@@ -76,10 +75,12 @@
 #define TEST_CRC32										0
 #define CLI_ENABLE                                      1
 #define GSM_ENABLE										1
+#define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+
 
 /* USER CODE END PM */
 
@@ -129,6 +130,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 	__enable_irq();
+    
 	MX_CRC_Init();
 	app_eeprom_init();
 	app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
@@ -177,9 +179,6 @@ int main(void)
     LED1(0);
         
 //	DEBUG_RAW(RTT_CTRL_CLEAR);
-#if 0
-    gpio_config_input_as_wakeup_source();
-#endif
     system->peripheral_running.name.flash_running = 1;
     system->peripheral_running.name.rs485_running = 1;
 #if CLI_ENABLE
@@ -240,6 +239,13 @@ int main(void)
     {
         gsm_change_state(GSM_STATE_SLEEP);
     }
+#else       // chi xay ra voi dtg02
+    if (adc_get_input_result()->vin_24 < 5000 
+        && !gsm_data_layer_is_module_sleeping()
+        && sys_get_ms() > 15000)       // neu dien ap Vin < 16V =>> ko bat gsm. 15s delay cho adc start
+    {
+        gsm_change_state(GSM_STATE_SLEEP);
+    }
 #endif
 	control_ouput_task();
 	measure_input_task();
@@ -285,7 +291,6 @@ int main(void)
 	}
     
     if (!eeprom_cfg->io_enable.name.rs485_en
-        && system->status.is_enter_test_mode == 0
 		&& system->status.timeout_wait_message_sync_data == 0)
     {
         system->peripheral_running.name.rs485_running = 0;
@@ -517,7 +522,7 @@ int main(void)
             jig_release_memory();
         }
 	}
-	else
+	else if (system->status.is_enter_test_mode == 0)
 	{
 		usart_lpusart_485_control(0);
 	}
@@ -641,6 +646,7 @@ void sys_delay_ms(uint32_t ms)
 
 static void info_task(void *arg)
 {	
+    
 	static uint32_t i = 0;
     sys_ctx_t *system = sys_ctx();
     

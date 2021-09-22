@@ -149,7 +149,6 @@ static int32_t cli_reset_system(p_shell_context_t context, int32_t argc, char **
 {
     DEBUG_PRINTF("System reset\r\n");
     NVIC_SystemReset();
-    while (1);
     return 0;
 }
 

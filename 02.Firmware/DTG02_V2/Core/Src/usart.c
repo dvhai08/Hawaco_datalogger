@@ -519,13 +519,8 @@ void usart_lpusart_485_send(uint8_t *data, uint32_t length)
 	for (uint32_t i = 0; i < length; i++)
 	{
 		LL_LPUART_TransmitData8(LPUART1, data[i]);
-		while (0 == LL_LPUART_IsActiveFlag_TXE(LPUART1));
+		while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1));
 	}
-	
-	while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1))
-    {
-        
-    }
 	
 	RS485_DIR_RX();
 }

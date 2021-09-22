@@ -53,7 +53,7 @@ void jig_start(void)
 	m_jig_buffer.rx_idx = 0;
 	m_jig_buffer.tx_ptr = umm_malloc(JIG_RS485_RX485_TX_BUFFER_SIZE);
 	m_jig_buffer.rx_ptr = umm_malloc(JIG_RS485_RX485_RX_BUFFER_SIZE);
-#if 0	
+#if 1	
 	RS485_POWER_EN(1);
 	usart_lpusart_485_control(1);
 	sys_delay_ms(200);
@@ -91,7 +91,7 @@ void jig_start(void)
 				{
 					jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
 					jig_print("Vin24v: %u\r\n", adc_result->vin_24);
-#if defined(DTG02) || defined(DTG02V2)
+#ifndef DTG01
 					for (uint32_t i = 0; i < 4; i++)
 #else
 					for (uint32_t i = 0; i < 1; i++)

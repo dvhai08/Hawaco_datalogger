@@ -277,7 +277,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
         RS485_POWER_EN(0);  
         sys_delay_ms(1000);
     }
-    else if (ctx->status.is_enter_test_mode == 0)
+    else if (ctx->status.is_enter_test_mode)
     {
         do_stop = false;
     }
@@ -622,6 +622,16 @@ void measure_input_task(void)
             
             // Put data to msq
             adc_retval = adc_get_input_result();
+#ifdef DTG02V2
+            if (adc_retval->bat_mv > 4150)
+            {
+                LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);     // neu pin day thi ko sac nua
+            }
+            else if (adc_retval->bat_mv < 3800)
+            {
+                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);       // Neu 
+            }
+#endif
             
             if (ctx->status.is_enter_test_mode == 0)
             {                
