@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "hardware.h"
 
-#define DEFAULT_SERVER_ADDR             "http://14.232.244.235:8080"
+#define DEFAULT_SERVER_ADDR             "http://14.232.244.235:8084"
 
 
 /**

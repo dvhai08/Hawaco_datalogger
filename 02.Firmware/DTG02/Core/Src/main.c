@@ -512,6 +512,7 @@ int main(void)
 	else
 	{
 		usart_lpusart_485_control(0);
+        button_factory_timeout = 0;
 	}
 	
 	    

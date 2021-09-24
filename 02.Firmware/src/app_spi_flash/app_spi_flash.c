@@ -1284,7 +1284,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
  
 uint32_t app_spi_flash_dump_to_485(void)
 {
-	if (!m_flash_is_good)
+if (!m_flash_is_good)
 	{
 		return false;
 	}
@@ -1304,7 +1304,7 @@ uint32_t app_spi_flash_dump_to_485(void)
 	{
 		LED1_TOGGLE();
 		flash_read_bytes(addr, (uint8_t*)rd, struct_size);
-		uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
+		uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
         if (rd->valid_flag == APP_FLASH_VALID_DATA_KEY 
 			&& rd->crc == crc)
 		{
@@ -1324,19 +1324,19 @@ uint32_t app_spi_flash_dump_to_485(void)
 	
 	addr = SPI_FLASH_PAGE_SIZE;
     uint32_t len = 0;
+#ifdef DTG01
+		static char ptr[(512)+256];
+#else
+		static char ptr[256];
+#endif
     
 	if (total)
 	{
-#ifdef DTG01
-		char *ptr = umm_malloc(512);
-#else
-		char *ptr = umm_malloc(1024+256);
-#endif
 		while (1)
 		{
 			len = 0;
 			flash_read_bytes(addr, (uint8_t*)rd, struct_size);
-			uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, sizeof(app_spi_flash_data_t) - CRC32_SIZE);		// 4 mean size of CRC32
+			uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
 			if (rd->valid_flag == APP_FLASH_VALID_DATA_KEY 
 				&& rd->crc == crc)
 			{
@@ -1346,8 +1346,10 @@ uint32_t app_spi_flash_dump_to_485(void)
 				len += sprintf(ptr+len, "\"Timestamp\":%u,", rd->timestamp);
 				len += sprintf((char *)(ptr + len), "\"BatteryLevel\":%u,", rd->vbat_precent);	
 				len += sprintf((char *)(ptr + len), "\"Temperature\":%d,", rd->temp);
-				
-#ifdef DTG02
+                
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
+#ifndef DTG01
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
 				// Counter
 				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
@@ -1363,6 +1365,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 					len += sprintf((char *)(ptr + len), "\"Input1_J%u_D\":%u,",
 														i+1,
 														rd->counter[i].reverse_counter/rd->counter[i].k /* + rd->counter[i].indicator */);
+                    usart_lpusart_485_send((uint8_t*)ptr, len);
+                    len = 0;
 				}
 				
 				// Build input 4-20ma
@@ -1374,7 +1378,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 														rd->input_4_20mA[2]); // dau vao 4-20mA 0
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_4\":%.3f,", 
 													rd->input_4_20mA[3]); // dau vao 4-20mA 0
-				
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
 				// Build input on/off digital
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 																		1,
@@ -1389,7 +1394,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 														4,
 														rd->on_off.name.input_on_off_3);
-								
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;				
 				// Build output on/off
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	1,
@@ -1403,7 +1409,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	4,
 																	rd->on_off.name.output_on_off_3);  //dau ra on/off 
-				
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
 #else
 				if (rd->counter[0].k == 0)
 				{
@@ -1414,15 +1421,20 @@ uint32_t app_spi_flash_dump_to_485(void)
 				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->counter[0].reverse_counter/rd->counter[0].k + rd->counter[0].indicator);
 				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->counter[0].reverse_counter);
 				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
 #endif
 				
 				// output 4-20mA
 				len += sprintf((char *)(ptr + len), "\"Output4_20\":%.3f,", rd->output_4_20mA[0]);   // dau ra 4-20mA 0
-				
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
 				//485			
 				for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 				{
 					len += sprintf((char *)(ptr + len), "\"SlaveID%u\":%u,", index+1, rd->rs485[index].slave_addr);
+                    usart_lpusart_485_send((uint8_t*)ptr, len);
+                    len = 0;
 					for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
 					{
 						if (rd->rs485[index].sub_register[sub_idx].read_ok
@@ -1447,6 +1459,8 @@ uint32_t app_spi_flash_dump_to_485(void)
 							}
 							len += sprintf((char *)(ptr + len), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "-1");
 						}	
+                        usart_lpusart_485_send((uint8_t*)ptr, len);
+                        len = 0;
 					}
 				}
 				
@@ -1457,8 +1471,9 @@ uint32_t app_spi_flash_dump_to_485(void)
 				}
 				len += sprintf(ptr+len, "%s", "}");
 				usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
 				ptr[len] = 0;
-				DEBUG_INFO("%s", ptr);
+//				DEBUG_INFO("%s", ptr);
 			}
 //			else
 //			{
@@ -1477,43 +1492,56 @@ uint32_t app_spi_flash_dump_to_485(void)
 				break;
 			}
 		}
-		umm_free(ptr);
+//		umm_free(ptr);
 	}
 	
-	umm_free(rd);
 	
-    char *config = umm_malloc(1024);     // TODO check malloc result
+    char *config = ptr;     // TODO check malloc result
     len = 0;
     
     app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-    len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "{\"Server0\":\"%s\",", eeprom_cfg->server_addr[0]);
-    len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "\"Server1\":\"%s\",", eeprom_cfg->server_addr[1]);
+    len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "{\"Svr0\":\"%s\",", eeprom_cfg->server_addr[0]);
+    len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "\"Svr1\":\"%s\",", eeprom_cfg->server_addr[1]);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
     len += sprintf((char *)(config + len), "\"CycleSendWeb\":%u,", eeprom_cfg->send_to_server_interval_ms/1000/60);
     len += sprintf((char *)(config + len), "\"DelaySendToServer\":%u,", eeprom_cfg->send_to_server_delay_s);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
     len += sprintf((char *)(config + len), "\"Cyclewakeup\":%u,", eeprom_cfg->measure_interval_ms/1000/60);
     len += sprintf((char *)(config + len), "\"MaxSmsOneday\":%u,", eeprom_cfg->max_sms_1_day);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
+
     len += sprintf((char *)(config + len), "\"Phone\":\"%s\",", eeprom_cfg->phone);
-    len += sprintf((char *)(config + len), "\"PollConfig\":%u,", eeprom_cfg->poll_config_interval_hour);
-    len += sprintf((char *)(config + len), "\"DirLevel\":%u,", eeprom_cfg->dir_level);
+    len += sprintf((char *)(config + len), "\"PollCfg\":%u,", eeprom_cfg->poll_config_interval_hour);
+    len += sprintf((char *)(config + len), "\"DirLvl\":%u,", eeprom_cfg->dir_level);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
+
     for (uint32_t i = 0; i < APP_EEPROM_METER_MODE_MAX_ELEMENT; i++)
     {
         len += sprintf((char *)(config + len), "\"K%u\":%u,", i+1, eeprom_cfg->k[i]);
         len += sprintf((char *)(config + len), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
         len += sprintf((char *)(config + len), "\"MeterIndicator%u\":%u,", i+1, eeprom_cfg->offset[i]);
+        usart_lpusart_485_send((uint8_t*)ptr, len);
+        len = 0;
     }
     
-    len += sprintf((char *)(config + len), "\"OutputIO_0\":%u,", eeprom_cfg->io_enable.name.output0);
-    len += sprintf((char *)(config + len), "\"OutputIO_1\":%u,", eeprom_cfg->io_enable.name.output1);
-    len += sprintf((char *)(config + len), "\"OutputIO_2\":%u,", eeprom_cfg->io_enable.name.output2);
-    len += sprintf((char *)(config + len), "\"OutputIO_3\":%u,", eeprom_cfg->io_enable.name.output3);
-    len += sprintf((char *)(config + len), "\"Input0\":%u,", eeprom_cfg->io_enable.name.input0);
-    len += sprintf((char *)(config + len), "\"Input1\":%u,", eeprom_cfg->io_enable.name.input1);
-    len += sprintf((char *)(config + len), "\"Input2\":%u,", eeprom_cfg->io_enable.name.input2);
-    len += sprintf((char *)(config + len), "\"Input3\":%u,", eeprom_cfg->io_enable.name.input3);
-    
+    len += sprintf((char *)(config + len), "\"OptIO_0\":%u,", eeprom_cfg->io_enable.name.output0);
+    len += sprintf((char *)(config + len), "\"OptIO_1\":%u,", eeprom_cfg->io_enable.name.output1);
+    len += sprintf((char *)(config + len), "\"OptIO_2\":%u,", eeprom_cfg->io_enable.name.output2);
+    len += sprintf((char *)(config + len), "\"OptIO_3\":%u,", eeprom_cfg->io_enable.name.output3);
+    len += sprintf((char *)(config + len), "\"Ip0\":%u,", eeprom_cfg->io_enable.name.input0);
+    len += sprintf((char *)(config + len), "\"Ip1\":%u,", eeprom_cfg->io_enable.name.input1);
+    len += sprintf((char *)(config + len), "\"Ip2\":%u,", eeprom_cfg->io_enable.name.input2);
+    len += sprintf((char *)(config + len), "\"Ip3\":%u,", eeprom_cfg->io_enable.name.input3);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
+
 //    len += sprintf((char *)(config + len), "\"SOS\":%u,", eeprom_cfg->io_enable.name.sos);
     len += sprintf((char *)(config + len), "\"Warning\":%u,", eeprom_cfg->io_enable.name.warning);
-    len += sprintf((char *)(config + len), "\"485_EN\":%u,", eeprom_cfg->io_enable.name.rs485_en);
+    len += sprintf((char *)(config + len), "\"485_E\":%u,", eeprom_cfg->io_enable.name.rs485_en);
     if (eeprom_cfg->io_enable.name.rs485_en)
     {
         for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
@@ -1525,38 +1553,49 @@ uint32_t app_spi_flash_dump_to_485(void)
 					uint32_t slave_addr = eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].read_ok = 0;
 					continue;
 				}
-                len += sprintf((char *)(config + len), "\"485_%u_Slave\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].slave_addr);
-                len += sprintf((char *)(config + len), "\"485_%u_Reg\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr);
-                len += snprintf((char *)(config + len), 6, "\"485_%u_Unit\":\"%s\",", slave_idx, (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
+                len += sprintf((char *)(config + len), "\"485_%u_Sl\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].slave_addr);
+                len += sprintf((char *)(config + len), "\"485_%u_Rg\":%u,", slave_idx, eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].register_addr);
+                len += snprintf((char *)(config + len), 6, "\"485_%u_U\":\"%s\",", slave_idx, (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
+                usart_lpusart_485_send((uint8_t*)ptr, len);
+                len = 0;
+
 			}
 		}
     }
     
-    len += sprintf((char *)(config + len), "\"input4_20mA_0\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_0_enable);
+    len += sprintf((char *)(config + len), "\"ip4_20mA_0\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_0_enable);
 #ifndef DTG01
-    len += sprintf((char *)(config + len), "\"input4_20mA_1\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_1_enable);
-    len += sprintf((char *)(config + len), "\"input4_20mA_2\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_2_enable);
-    len += sprintf((char *)(config + len), "\"input4_20mA_3\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_3_enable);
+    len += sprintf((char *)(config + len), "\"ip4_20mA_1\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_1_enable);
+    len += sprintf((char *)(config + len), "\"ip4_20mA_2\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_2_enable);
+    len += sprintf((char *)(config + len), "\"ip4_20mA_3\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_3_enable);
+
 #endif
-    len += sprintf((char *)(config + len), "\"Output4_20mA_En\":%u,", eeprom_cfg->io_enable.name.output_4_20ma_enable);
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
+
+    len += sprintf((char *)(config + len), "\"Ot4_20mA_En\":%u,", eeprom_cfg->io_enable.name.output_4_20ma_enable);
     if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
     {
-        len += sprintf((char *)(config + len), "\"Output4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
+        len += sprintf((char *)(config + len), "\"Ot4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
     }
     
     len += sprintf((char *)(config + len), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     len += sprintf((char *)(config + len), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
-    len += sprintf((char *)(config + len), "\"FactoryServer\":\"%s\",", app_eeprom_read_factory_data()->server);
+    
+    usart_lpusart_485_send((uint8_t*)ptr, len);
+    len = 0;
+
+    len += sprintf((char *)(config + len), "\"Fsv\":\"%s\",", app_eeprom_read_factory_data()->server);
     
     len--;      // Skip ','
     len += sprintf((char *)(config + len), "%s", "}");     
     usart_lpusart_485_send((uint8_t*)config, len);
     
-    umm_free(config);
+//    umm_free(config);
     
 	usart_lpusart_485_control(false);
 	RS485_POWER_EN(0);
-
+	umm_free(rd);
 	LED1(0);
 #ifdef DTG01
 	LED2(0);
