@@ -244,6 +244,7 @@ void usart1_control(bool enable)
 		// DEBUG_PRINTF("UART state : no changed\r\n");
 		return;
 	}
+
 	
 	m_usart1_is_enabled = enable;
 	
@@ -472,6 +473,7 @@ void usart_lpusart_485_control(bool enable)
     {
         return;
     }
+    DEBUG_INFO("LPUSART %s\r\n", enable ? "true" : "false");
     
     if (!enable)
     {
@@ -522,7 +524,7 @@ void usart_lpusart_485_send(uint8_t *data, uint32_t length)
 		while (0 == LL_LPUART_IsActiveFlag_TC(LPUART1));
 	}
 	
-//	RS485_DIR_RX();
+	RS485_DIR_RX();
 }
 
 /* USER CODE END 1 */
