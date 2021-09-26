@@ -33,29 +33,29 @@ thiết bị nhận được sẽ response lại chuỗi "Hawaco.Datalogger.Ping
     /* Modbus  */
 
     "SlaveID1" : 3,                         // Địa chỉ slave
-	"Register1_1": 64,
+	"Rg1_1": 64,
 	"Unit1_1":"m3/s",
 
-	"Register1_2": 339,
+	"Rg1_2": 339,
 	"Unit1_2":"jun",
 
-	"Register1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
+	"Rg1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
 	"Unit1_3":"m3/s",
 
-	"Register1_4": 12.3,	
+	"Rg1_4": 12.3,	
 	"Unit1_4":"jun",                        // Đơn vị tính 
 				
     "SlaveID2" : 4,                         // Địa chỉ slave
-	"Register2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
+	"Rg2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
 	"Unit2_1":"kg",
 
-	"Register2_2": 0,
+	"Rg2_2": 0,
 	"Unit2_2":"1it",
     
-    "Register2_3": 0.0000,
+    "Rg2_3": 0.0000,
 	"Unit2_3":"kg",
 	
-    "Register2_4": 0,
+    "Rg2_4": 0,
     "Unit2_4":"lit",
 
     /* Hết modbus */
@@ -81,29 +81,29 @@ thiết bị nhận được sẽ response lại chuỗi "Hawaco.Datalogger.Ping
     /* Modbus  */
 
     "SlaveID1" : 3,                         // Địa chỉ slave
-	"Register1_1": 64,
+	"Rg1_1": 64,
 	"Unit1_1":"m3/s",
 
-	"Register1_2": 339,
+	"Rg1_2": 339,
 	"Unit1_2":"jun",
 
-	"Register1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
+	"Rg1_3": 64,                      // Các trường Register_x_y có thể là số int hoặc float, Nếu modbus đọc lỗi thì giá trị là FFFF cái này do server yêu cầu, kiểu int hay float cũng là server yêu cầu
 	"Unit1_3":"m3/s",
 
-	"Register1_4": 12.3,	
+	"Rg1_4": 12.3,	
 	"Unit1_4":"jun",                        // Đơn vị tính 
 				
     "SlaveID2" : 4,                         // Địa chỉ slave
-	"Register2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
+	"Rg2_1": 0.0000,                  // Lưu ý, nêu server k cài đặt modbus thì các trường này sẽ ko có ở json
 	"Unit2_1":"kg",
 
-	"Register2_2": 0,
+	"Rg2_2": 0,
 	"Unit2_2":"1it",
     
-    "Register2_3": 0.0000,
+    "Rg2_3": 0.0000,
 	"Unit2_3":"kg",
 	
-    "Register2_4": 0,
+    "Rg2_4": 0,
     "Unit2_4":"lit",
 
     /* Hết modbus */

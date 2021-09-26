@@ -67,11 +67,11 @@
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
 #define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
-#define TEST_OUTPUT_4_20MA                              1
+#define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							0
+#define TEST_DEVICE_NEVER_SLEEP							1
 #define TEST_CRC32										0
 #define CLI_ENABLE                                      1
 #define GSM_ENABLE										1

@@ -24,7 +24,7 @@ static gsm_http_config_t m_http_cfg;
 static uint8_t m_http_step = 0;
 static uint32_t m_total_bytes_recv = 0;
 static uint32_t m_content_length = 0;
-static char m_http_cmd_buffer[256];
+static char m_http_cmd_buffer[128];
 static gsm_http_data_t post_rx_data;
 static bool m_renew_config_ssl = true;
 static bool m_renew_apn = true;

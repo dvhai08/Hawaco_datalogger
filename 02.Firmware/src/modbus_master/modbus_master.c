@@ -4,7 +4,7 @@
 static uint8_t m_slave_addr;                            ///< Modbus slave (1..255) initialized in begin()
 static uint16_t m_read_addr;                      ///< slave register from which to read
 static uint16_t m_read_qty;                          ///< quantity of words to read
-static uint16_t m_response_buffer[MODBUS_MASTER_MAX_BUFFER_SIZE]; ///< buffer to store Modbus slave response; read via GetResponseBuffer()
+uint16_t m_response_buffer[MODBUS_MASTER_MAX_BUFFER_SIZE]; ///< buffer to store Modbus slave response; read via GetResponseBuffer()
 static uint16_t m_wr_addr;                     ///< slave register to which to write
 static uint16_t m_wr_qty;                         ///< quantity of words to write
 static uint16_t m_transmit_buffer[MODBUS_MASTER_MAX_BUFFER_SIZE]; ///< buffer containing data to transmit to Modbus slave; set via SetTransmitBuffer()

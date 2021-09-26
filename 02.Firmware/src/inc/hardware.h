@@ -309,8 +309,8 @@
 
 #define FLOW_INVALID_VALUE                  (-1.0f)
 #define INPUT_4_20MA_INVALID_VALUE          (-1.0f)
-#define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
-//#define INPUT_485_INVALID_INT_VALUE         (-1)    
+//#define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
+#define INPUT_485_INVALID_INT_VALUE         (-1)    
 
 #define FAKE_MIN_MAX_DATA                   (0)
 #define USE_SYNC_DRV                        (0)
@@ -325,10 +325,17 @@ typedef union
 	uint8_t raw;
 } __attribute__((packed)) measure_input_rs485_data_type_t;
 
+typedef union
+{
+    float float_val;
+    int32_t int32_val;
+    uint8_t raw[4];
+} __attribute__((packed)) measure_input_rs485_float_uint32_t;
+
 typedef struct
 {
 	uint16_t register_addr;
-	uint32_t value;
+	measure_input_rs485_float_uint32_t value;
 	measure_input_rs485_data_type_t data_type;
 	uint8_t unit[APP_EEPROM_MAX_UNIT_NAME_LENGTH];
 	int8_t read_ok;
@@ -336,15 +343,17 @@ typedef struct
 
 typedef union
 {
-    float type_float;
+    int32_t type_int;
     uint8_t raw[4];
 } __attribute__((packed)) min_max_485_type_t;
 typedef struct
 {
     min_max_485_type_t min_forward_flow;
     min_max_485_type_t max_forward_flow;
-    min_max_485_type_t min_reserve_flow;
-    min_max_485_type_t max_reserve_flow;
+    min_max_485_type_t min_reverse_flow;
+    min_max_485_type_t max_reverse_flow;
+    min_max_485_type_t reverse_flow;
+    min_max_485_type_t forward_flow;
     uint8_t valid;
 } __attribute__((packed)) measure_input_rs485_min_max_t;
 typedef struct

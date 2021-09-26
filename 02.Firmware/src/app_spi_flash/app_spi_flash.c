@@ -887,24 +887,24 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
 		}
 		else if (scan_all_flash)
 		{
-            DEBUG_INFO("Scan all flash\r\n");
-			// If we didnot seen error message from m_resend_data_in_flash_addr to m_wr_addr
-			// Scan once more 2 sector
-			// =>> if scan data from 0 -> write pointer 
-			// -> we not found anythings
-			// Use full when flash overflow
-            uint32_t next_addr = m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE;
-            if (next_addr > APP_SPI_FLASH_SIZE)
-            {
-                next_addr = APP_SPI_FLASH_SIZE;        // jump to the first page
-            }
-			tmp_addr = find_retransmission_message(m_wr_addr, next_addr);
-			if (tmp_addr != 0)
-			{
-				DEBUG_INFO("Found flash overflow\r\n");
-				m_resend_data_in_flash_addr = tmp_addr;
-				*found_error = true;
-			}
+               DEBUG_INFO("Scan all flash\r\n");
+               // If we didnot seen error message from m_resend_data_in_flash_addr to m_wr_addr
+               // Scan once more 2 sector
+               // =>> if scan data from 0 -> write pointer 
+               // -> we not found anythings
+               // Use full when flash overflow
+               uint32_t next_addr = m_wr_addr + 2*SPI_FLASH_SECTOR_SIZE;
+               if (next_addr > APP_SPI_FLASH_SIZE)
+               {
+                    next_addr = APP_SPI_FLASH_SIZE;        // jump to the first page
+               }
+               tmp_addr = find_retransmission_message(m_wr_addr, next_addr);
+               if (tmp_addr != 0)
+               {
+                    DEBUG_INFO("Found flash overflow\r\n");
+                    m_resend_data_in_flash_addr = tmp_addr;
+                    *found_error = true;
+               }
 		}
     }
     else // Write addr < read addr =>> buffer full =>> Scan 2 step
@@ -1428,11 +1428,11 @@ uint32_t app_spi_flash_dump_to_485(void)
 							if (rd.rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
 								|| rd.rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
 							{
-								len += sprintf((char *)(ptr + len), "%u,", rd.rs485[index].sub_register[sub_idx].value);
+								len += sprintf((char *)(ptr + len), "%u,", rd.rs485[index].sub_register[sub_idx].value.int32_val);
 							}
 							else
 							{
-								len += sprintf((char *)(ptr + len), "%.4f,", (float)rd.rs485[index].sub_register[sub_idx].value);
+								len += sprintf((char *)(ptr + len), "%.2f,", (float)rd.rs485[index].sub_register[sub_idx].value.float_val);
 							}
 						}
 						else if (rd.rs485[index].sub_register[sub_idx].data_type.name.valid)
