@@ -46,13 +46,14 @@ bool jig_is_in_test_mode(void)
 	return m_jig_in_test_mode;
 }
 
-
+static char m_jig_buffer_tx[JIG_RS485_RX485_TX_BUFFER_SIZE];
+static char m_jig_buffer_rx[JIG_RS485_RX485_RX_BUFFER_SIZE];
 
 void jig_start(void)
 {
 	m_jig_buffer.rx_idx = 0;
-	m_jig_buffer.tx_ptr = umm_malloc(JIG_RS485_RX485_TX_BUFFER_SIZE);
-	m_jig_buffer.rx_ptr = umm_malloc(JIG_RS485_RX485_RX_BUFFER_SIZE);
+	m_jig_buffer.tx_ptr = m_jig_buffer_tx;
+	m_jig_buffer.rx_ptr = m_jig_buffer_rx;
 #if 1	
 	RS485_POWER_EN(1);
 	usart_lpusart_485_control(1);
@@ -181,8 +182,8 @@ void jig_start(void)
 			sys_delay_ms(2);
 		}
 	}
-	umm_free(m_jig_buffer.rx_ptr);
-	umm_free(m_jig_buffer.tx_ptr);
+//	umm_free(m_jig_buffer.rx_ptr);
+//	umm_free(m_jig_buffer.tx_ptr);
 	m_jig_buffer.rx_ptr = NULL;
 	m_jig_buffer.tx_ptr = NULL;
 #endif
@@ -205,13 +206,13 @@ bool jig_found_cmd_sync_data_to_host(void)
 {
 	if (m_jig_buffer.rx_ptr == NULL)
 	{
-		m_jig_buffer.rx_ptr = umm_calloc(JIG_RS485_RX485_RX_BUFFER_SIZE, 1);
+		m_jig_buffer.rx_ptr = m_jig_buffer_rx;
+        memset(m_jig_buffer_rx, 0, sizeof(m_jig_buffer_rx));
 		m_jig_buffer.rx_ptr[0] = 0;
 	}
 	
 	if (strstr((char*)m_jig_buffer.rx_ptr, "Hawaco.Datalogger.PingMessage"))
 	{
-		umm_free(m_jig_buffer.rx_ptr); 
         m_jig_buffer.rx_ptr = NULL;
 		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
 		return true;
@@ -292,8 +293,9 @@ void jig_release_memory(void)
 {
 	if (m_jig_buffer.rx_ptr)
 	{
-		umm_free(m_jig_buffer.rx_ptr); 
         m_jig_buffer.rx_ptr = NULL;
+        memset(m_jig_buffer_rx, 0, sizeof(m_jig_buffer_rx));
+        memset(m_jig_buffer_tx, 0, sizeof(m_jig_buffer_tx));
 		memset(&m_jig_buffer, 0, sizeof(m_jig_buffer));
 	}
 }

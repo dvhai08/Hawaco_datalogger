@@ -54,10 +54,11 @@ static void process_server_addr_change(char *buffer)
         {
             if (m_ctx->status.new_server)
             {
-                umm_free(m_ctx->status.new_server);
+//                umm_free(m_ctx->status.new_server);
                 m_ctx->status.new_server = NULL;
             }
-			m_ctx->status.new_server = umm_malloc(APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+            static char new_server[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
+			m_ctx->status.new_server = new_server;
 			if (m_ctx->status.new_server)
 			{
 				m_ctx->status.try_new_server = 2;

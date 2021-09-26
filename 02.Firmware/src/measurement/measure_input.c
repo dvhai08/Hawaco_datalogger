@@ -171,10 +171,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             delay_modbus = 200;     // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time 
 							register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
 							modbus_master_clear_response_buffer();
-                            m_485_min_max[slave_count].max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-                            m_485_min_max[slave_count].min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-                            m_485_min_max[slave_count].min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-                            m_485_min_max[slave_count].max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                            m_485_min_max[slave_count].max_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                            m_485_min_max[slave_count].min_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                            m_485_min_max[slave_count].min_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                            m_485_min_max[slave_count].max_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
 							ctx->error_not_critical.detail.rs485_err = 1;
 						}
 						else		// Read data ok
@@ -200,8 +200,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT) // If data type is float
                                     {
                                         // Neu chua dc khoi tao min max =>> khoi tao gia tri min max
-                                        if (m_485_min_max[slave_on_bus].min_forward_flow.type_int == INPUT_485_INVALID_INT_VALUE
-                                            || m_485_min_max[slave_on_bus].min_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        if (m_485_min_max[slave_on_bus].min_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                         {
                                             m_485_min_max[slave_on_bus].min_forward_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
@@ -213,15 +212,14 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     }
                                     else        // Data type is int
                                     {
-                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_int == INPUT_485_INVALID_INT_VALUE
-                                            || m_485_min_max[slave_on_bus].max_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                         {
-                                            m_485_min_max[slave_on_bus].max_forward_flow.type_int = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                            m_485_min_max[slave_on_bus].max_forward_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
                                         
-                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_int < (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        if (m_485_min_max[slave_on_bus].max_forward_flow.type_float < (float)register_value[slave_count].sub_register[sub_reg_idx].value)
                                         {
-                                            m_485_min_max[slave_on_bus].max_forward_flow.type_int = (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                            m_485_min_max[slave_on_bus].max_forward_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
                                     }
                                         
@@ -231,8 +229,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT) // If data type is float
                                     {
                                         // Neu chua dc khoi tao min max =>> khoi tao gia tri min max
-                                        if (m_485_min_max[slave_on_bus].min_reserve_flow.type_int == INPUT_485_INVALID_INT_VALUE
-                                            || m_485_min_max[slave_on_bus].min_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        if (m_485_min_max[slave_on_bus].min_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                         {
                                             m_485_min_max[slave_on_bus].min_reserve_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
@@ -244,15 +241,14 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     }
                                     else    // Data type is int
                                     {
-                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_int == INPUT_485_INVALID_INT_VALUE
-                                            || m_485_min_max[slave_on_bus].max_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
+                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                         {
-                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_int = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
                                         
-                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_int < (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value)
+                                        if (m_485_min_max[slave_on_bus].max_reserve_flow.type_float < (float)register_value[slave_count].sub_register[sub_reg_idx].value)
                                         {
-                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_int = (int32_t)register_value[slave_count].sub_register[sub_reg_idx].value;
+                                            m_485_min_max[slave_on_bus].max_reserve_flow.type_float = (float)register_value[slave_count].sub_register[sub_reg_idx].value;
                                         }
                                     }
                                 }
@@ -412,14 +408,10 @@ void measure_input_reset_counter(uint8_t index)
 
 void measure_input_save_all_data_to_flash(void)
 {
-    app_spi_flash_data_t *spi_flash_store_data = umm_malloc(sizeof(app_spi_flash_data_t));
-    if (spi_flash_store_data == NULL)
-    {
-        DEBUG_WARN("Malloc spi data failed\r\n");
-        NVIC_SystemReset();
-    }
+    static app_spi_flash_data_t spi_flash_store_data;
+
     sys_ctx_t *ctx = sys_ctx();
-    spi_flash_store_data->resend_to_server_flag = 0;
+    spi_flash_store_data.resend_to_server_flag = 0;
 
     for (uint32_t j = 0; j < MEASUREMENT_MAX_MSQ_IN_RAM; j++)
     {
@@ -429,8 +421,8 @@ void measure_input_save_all_data_to_flash(void)
 			// 4-20mA input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
 			{
-				spi_flash_store_data->input_4_20mA[i] = m_sensor_msq[j].input_4_20mA[i];
-                memcpy(&spi_flash_store_data->input_4_20ma_cycle_send_web[i], 
+				spi_flash_store_data.input_4_20mA[i] = m_sensor_msq[j].input_4_20mA[i];
+                memcpy(&spi_flash_store_data.input_4_20ma_cycle_send_web[i], 
                         &m_sensor_msq[j].input_4_20ma_cycle_send_web[i], 
                         sizeof(input_4_20ma_min_max_hour_t));
 			}
@@ -438,34 +430,34 @@ void measure_input_save_all_data_to_flash(void)
 			// Meter input
 			for (uint32_t i = 0; i < APP_FLASH_NB_OF_METER_INPUT; i++)
 			{
-				memcpy(&spi_flash_store_data->counter[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
+				memcpy(&spi_flash_store_data.counter[i], &m_sensor_msq[j].counter[i], sizeof(measure_input_counter_t));
 			}			
 			
 #ifndef DTG01
 			// On/off
-			spi_flash_store_data->on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
-			spi_flash_store_data->on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
-			spi_flash_store_data->on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
-			spi_flash_store_data->on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
-			spi_flash_store_data->on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
-			spi_flash_store_data->on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
-			spi_flash_store_data->on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
-			spi_flash_store_data->on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
+			spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
+			spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
+			spi_flash_store_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
+			spi_flash_store_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+			spi_flash_store_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
+			spi_flash_store_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
+			spi_flash_store_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
+			spi_flash_store_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
 #endif
-			spi_flash_store_data->output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
+			spi_flash_store_data.output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
 			
-			spi_flash_store_data->timestamp = m_sensor_msq[j].measure_timestamp;
-			spi_flash_store_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
-			spi_flash_store_data->resend_to_server_flag = 0;
-			spi_flash_store_data->vbat_mv = m_sensor_msq[j].vbat_mv;
-			spi_flash_store_data->vbat_precent = m_sensor_msq[j].vbat_percent;
-			spi_flash_store_data->temp = m_sensor_msq[j].temperature;
-            spi_flash_store_data->csq_percent = m_sensor_msq[j].csq_percent;
+			spi_flash_store_data.timestamp = m_sensor_msq[j].measure_timestamp;
+			spi_flash_store_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+			spi_flash_store_data.resend_to_server_flag = 0;
+			spi_flash_store_data.vbat_mv = m_sensor_msq[j].vbat_mv;
+			spi_flash_store_data.vbat_precent = m_sensor_msq[j].vbat_percent;
+			spi_flash_store_data.temp = m_sensor_msq[j].temperature;
+            spi_flash_store_data.csq_percent = m_sensor_msq[j].csq_percent;
 			
 			// 485
 			for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
 			{
-				memcpy(&spi_flash_store_data->rs485[nb_485_device], 
+				memcpy(&spi_flash_store_data.rs485[nb_485_device], 
                         &m_sensor_msq[j].rs485[nb_485_device], 
                         sizeof(measure_input_modbus_register_t));
 			}
@@ -477,12 +469,10 @@ void measure_input_save_all_data_to_flash(void)
 				app_spi_flash_wakeup();
 				ctx->peripheral_running.name.flash_running = 1;
 			}
-			app_spi_flash_write_data(spi_flash_store_data);
+			app_spi_flash_write_data(&spi_flash_store_data);
 			m_sensor_msq[j].state = MEASUREMENT_QUEUE_STATE_IDLE;
 		}
     }   
-    
-    umm_free(spi_flash_store_data);
 }
 
 uint32_t estimate_measure_timestamp = 0;
@@ -946,11 +936,11 @@ void measure_input_task(void)
                 {
                      for (uint32_t slave_index = 0; slave_index < RS485_MAX_SLAVE_ON_BUS; slave_index++)
                      {
-                        m_measure_data.rs485[slave_index].min_max.min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-                        m_measure_data.rs485[slave_index].min_max.max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.min_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.max_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         
-                        m_measure_data.rs485[slave_index].min_max.min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-                        m_measure_data.rs485[slave_index].min_max.max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.min_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.max_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_measure_data.rs485[slave_index].min_max.valid = 0;
                      }
              
@@ -1057,10 +1047,10 @@ void measure_input_initialize(void)
     // Reset 485 register min - max
     for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
     {
-        m_485_min_max[i].min_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-        m_485_min_max[i].max_forward_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-        m_485_min_max[i].min_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
-        m_485_min_max[i].max_reserve_flow.type_int = INPUT_485_INVALID_INT_VALUE;
+        m_485_min_max[i].min_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+        m_485_min_max[i].max_forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+        m_485_min_max[i].min_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+        m_485_min_max[i].max_reserve_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
         
     }
 	

@@ -763,14 +763,11 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_pa
     while (cont)
     {
         uint32_t size_struct = sizeof(app_spi_flash_data_t);
-        app_spi_flash_data_t *tmp = umm_calloc(1, size_struct);
-        if (tmp == NULL)
-        {
-            NVIC_SystemReset();
-        }
+        static app_spi_flash_data_t tmp;
+        memset(&tmp, 0, sizeof(tmp));
         // DEBUG_INFO("Current write addr 0x%08X\r\n", m_wr_addr);
-        flash_read_bytes(m_wr_addr, (uint8_t *)tmp, size_struct);
-        if (tmp->valid_flag == APP_FLASH_VALID_DATA_KEY)
+        flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, size_struct);
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
         {
             m_last_write_data_addr = m_wr_addr;
             m_wr_addr += size_struct;
@@ -782,13 +779,9 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_pa
         }
         else
         {
-            app_spi_flash_data_t *empty = umm_calloc(1, size_struct);
-            if (empty == NULL)
-            {
-                NVIC_SystemReset();
-            }
-            memset(empty, 0xFF, size_struct);
-            if (memcmp(tmp, empty, size_struct) == 0)
+            app_spi_flash_data_t empty;
+            memset(&empty, 0xFF, size_struct);
+            if (memcmp(&tmp, &empty, size_struct) == 0)
             {
                 cont = false;
             }
@@ -816,9 +809,7 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_pa
                     }
                 }
             }
-            umm_free(empty);
         }
-        umm_free(tmp);
     }
     
     DEBUG_INFO("Write addr 0x%08X\r\n", m_wr_addr);
@@ -828,28 +819,24 @@ uint32_t app_flash_estimate_next_write_addr(bool *flash_full, bool erase_next_pa
 uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
 {
     uint32_t size_struct = sizeof(app_spi_flash_data_t);
-    app_spi_flash_data_t *tmp = umm_calloc(1, size_struct);
-    if (tmp == NULL)
-    {
-        NVIC_SystemReset();
-    };
+    static app_spi_flash_data_t tmp;
+    memset(&tmp, 0, size_struct);
 
     while (1)
     {
-        flash_read_bytes(begin_addr, (uint8_t *)tmp, size_struct);
-        if (tmp->valid_flag == APP_FLASH_VALID_DATA_KEY)
+        flash_read_bytes(begin_addr, (uint8_t *)&tmp, size_struct);
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY)
         {
-            uint32_t crc = utilities_calculate_crc32((uint8_t *)tmp, size_struct - CRC32_SIZE);		// 4 mean size of CRC32
-            if (tmp->resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG
-                && tmp->crc == crc)
+            uint32_t crc = utilities_calculate_crc32((uint8_t *)&tmp, size_struct - CRC32_SIZE);		// 4 mean size of CRC32
+            if (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG
+                && tmp.crc == crc)
             {
-                umm_free(tmp);
-                DEBUG_VERBOSE("Valid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
+                DEBUG_VERBOSE("Valid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp.crc, crc);
                 return begin_addr;
             }
             else
             {
-                DEBUG_VERBOSE("Invalid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp->crc, crc);
+                DEBUG_VERBOSE("Invalid crc at addr 0x%08x, crc %u-%u\r\n", begin_addr, tmp.crc, crc);
                 begin_addr += size_struct;
             }
         }
@@ -860,7 +847,6 @@ uint32_t find_retransmission_message(uint32_t begin_addr, uint32_t end_addr)
 
         if (begin_addr > end_addr) // No more error found
         {
-            umm_free(tmp);
             return 0;
         }
     }
@@ -871,23 +857,20 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
 {
     uint32_t tmp_addr;
     uint32_t size_struct = sizeof(app_spi_flash_data_t);
-    app_spi_flash_data_t *tmp = umm_calloc(1, size_struct);
-    if (tmp == NULL)
-    {
-        NVIC_SystemReset();
-    };
+    app_spi_flash_data_t tmp;;
+    memset(&tmp, 0, size_struct);
     
     *found_error = false;
     DEBUG_INFO("Resend addr 0x%08X, write addr 0x%08X\r\n", m_resend_data_in_flash_addr, m_wr_addr);
     if (m_resend_data_in_flash_addr == m_wr_addr) // Neu read = write =>> check current page status
     {
-        flash_read_bytes(m_wr_addr, (uint8_t *)tmp, size_struct);
+        flash_read_bytes(m_wr_addr, (uint8_t *)&tmp, size_struct);
 		
 		// Neu packet error
-		uint32_t crc = utilities_calculate_crc32((uint8_t *)tmp, size_struct - CRC32_SIZE);		// 4 mean size of CRC32
-        if (tmp->valid_flag == APP_FLASH_VALID_DATA_KEY 
-            && (tmp->resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
-			&& tmp->crc == crc)
+		uint32_t crc = utilities_calculate_crc32((uint8_t *)&tmp, size_struct - CRC32_SIZE);		// 4 mean size of CRC32
+        if (tmp.valid_flag == APP_FLASH_VALID_DATA_KEY 
+            && (tmp.resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
+			&& tmp.crc == crc)
         {
             m_resend_data_in_flash_addr = m_wr_addr;
             *found_error = true;
@@ -928,7 +911,8 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
          // Step 1 : scan from read addr to max addr
          // Step 2 : scan from SPI_FLASH_PAGE_SIZE to write addr
     {
-        tmp_addr = find_retransmission_message(m_resend_data_in_flash_addr, m_wr_addr);
+
+        tmp_addr = find_retransmission_message(m_resend_data_in_flash_addr, APP_SPI_FLASH_SIZE - 2 * size_struct);
         if (tmp_addr != 0)
         {
             m_resend_data_in_flash_addr = tmp_addr;
@@ -936,7 +920,7 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
         }
         else
         {
-            tmp_addr = find_retransmission_message(SPI_FLASH_PAGE_SIZE, m_wr_addr);
+            tmp_addr = find_retransmission_message(SPI_FLASH_PAGE_SIZE, m_wr_addr);     // scan from page 0 to current write addr
             if (tmp_addr != 0)
             {
                 *found_error = true;
@@ -949,7 +933,6 @@ uint32_t app_spi_flash_estimate_current_read_addr(bool *found_error, bool scan_a
         }
     }
     
-    umm_free(tmp);
     return m_resend_data_in_flash_addr;
 }
 
@@ -1107,7 +1090,8 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
         rd_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG; // mark no need to retransmission
 		
 		/* Alloc memory for 1 page flash data */
-        uint8_t *page_data = umm_malloc(SPI_FLASH_SECTOR_SIZE); // Readback page data, maybe stack overflow
+        static uint8_t m_page_data[4096];
+        uint8_t *page_data = m_page_data; // Readback page data, maybe stack overflow
         if (page_data == NULL)
         {
             DEBUG_ERROR("Malloc flash page size, no memory\r\n");
@@ -1193,14 +1177,14 @@ bool app_flash_get_data(uint32_t read_addr, app_spi_flash_data_t *rd_data, bool 
         if (rd_data->resend_to_server_flag != APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG)
         {
             DEBUG_ERROR("Remark flash error\r\n");
-            umm_free(page_data);
+//            umm_free(page_data);
             return false;
         }
         else
         {
             DEBUG_INFO("Remark flash success at addr 0x%08X\r\n", read_addr);
         }
-        umm_free(page_data);
+//        umm_free(page_data);
         return true;
     }
 
@@ -1284,7 +1268,7 @@ bool app_spi_flash_get_lastest_data(app_spi_flash_data_t *last_data)
  
 uint32_t app_spi_flash_dump_to_485(void)
 {
-if (!m_flash_is_good)
+    if (!m_flash_is_good)
 	{
 		return false;
 	}
@@ -1298,15 +1282,15 @@ if (!m_flash_is_good)
 	uint32_t total = 0, packet_num = 0;
 	uint32_t struct_size = sizeof(app_spi_flash_data_t);
 	
-	app_spi_flash_data_t *rd = (app_spi_flash_data_t*)umm_malloc(struct_size);
+	static app_spi_flash_data_t rd;
 
 	for (;;)
 	{
 		LED1_TOGGLE();
-		flash_read_bytes(addr, (uint8_t*)rd, struct_size);
-		uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
-        if (rd->valid_flag == APP_FLASH_VALID_DATA_KEY 
-			&& rd->crc == crc)
+		flash_read_bytes(addr, (uint8_t*)&rd, struct_size);
+		uint32_t crc = utilities_calculate_crc32((uint8_t *)&rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
+        if (rd.valid_flag == APP_FLASH_VALID_DATA_KEY 
+			&& rd.crc == crc)
 		{
 			total++;
 		}
@@ -1335,17 +1319,17 @@ if (!m_flash_is_good)
 		while (1)
 		{
 			len = 0;
-			flash_read_bytes(addr, (uint8_t*)rd, struct_size);
-			uint32_t crc = utilities_calculate_crc32((uint8_t *)rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
-			if (rd->valid_flag == APP_FLASH_VALID_DATA_KEY 
-				&& rd->crc == crc)
+			flash_read_bytes(addr, (uint8_t*)&rd, struct_size);
+			uint32_t crc = utilities_calculate_crc32((uint8_t *)&rd, struct_size - CRC32_SIZE);		// 4 mean size of CRC32
+			if (rd.valid_flag == APP_FLASH_VALID_DATA_KEY 
+				&& rd.crc == crc)
 			{
 				packet_num++;
 				// Build message
 				len += sprintf(ptr+len, "{\"TotalPacket\":%u,\"CurrentPacket\":%u,", total, packet_num);
-				len += sprintf(ptr+len, "\"Timestamp\":%u,", rd->timestamp);
-				len += sprintf((char *)(ptr + len), "\"BatteryLevel\":%u,", rd->vbat_precent);	
-				len += sprintf((char *)(ptr + len), "\"Temperature\":%d,", rd->temp);
+				len += sprintf(ptr+len, "\"Timestamp\":%u,", rd.timestamp);
+				len += sprintf((char *)(ptr + len), "\"BatteryLevel\":%u,", rd.vbat_precent);	
+				len += sprintf((char *)(ptr + len), "\"Temperature\":%d,", rd.temp);
                 
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;
@@ -1355,107 +1339,107 @@ if (!m_flash_is_good)
 				for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 				{
 					// Build input pulse counter
-					if (rd->counter[i].k == 0)
+					if (rd.counter[i].k == 0)
 					{
-						rd->counter[i].k = 1;
+						rd.counter[i].k = 1;
 					}
 					len += sprintf((char *)(ptr + len), "\"Input1_J%u\":%u,",
 												i+1,
-												rd->counter[i].real_counter/rd->counter[i].k + rd->counter[i].indicator);
+												rd.counter[i].real_counter/rd.counter[i].k + rd.counter[i].indicator);
 					len += sprintf((char *)(ptr + len), "\"Input1_J%u_D\":%u,",
 														i+1,
-														rd->counter[i].reverse_counter/rd->counter[i].k /* + rd->counter[i].indicator */);
+														rd.counter[i].reverse_counter/rd.counter[i].k /* + rd.counter[i].indicator */);
                     usart_lpusart_485_send((uint8_t*)ptr, len);
                     len = 0;
 				}
 				
 				// Build input 4-20ma
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_1\":%.3f,", 
-														rd->input_4_20mA[0]); // dau vao 4-20mA 0
+														rd.input_4_20mA[0]); // dau vao 4-20mA 0
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_2\":%.3f,", 
-														rd->input_4_20mA[1]); // dau vao 4-20mA 0
+														rd.input_4_20mA[1]); // dau vao 4-20mA 0
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_3\":%.3f,", 
-														rd->input_4_20mA[2]); // dau vao 4-20mA 0
+														rd.input_4_20mA[2]); // dau vao 4-20mA 0
 				len += sprintf((char *)(ptr + len), "\"Input1_J3_4\":%.3f,", 
-													rd->input_4_20mA[3]); // dau vao 4-20mA 0
+													rd.input_4_20mA[3]); // dau vao 4-20mA 0
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;
 				// Build input on/off digital
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 																		1,
-																		rd->on_off.name.input_on_off_0);
+																		rd.on_off.name.input_on_off_0);
 
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 														2,
-														rd->on_off.name.input_on_off_1);
+														rd.on_off.name.input_on_off_1);
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 														3,
-														rd->on_off.name.input_on_off_2);
+														rd.on_off.name.input_on_off_2);
 				len += sprintf((char *)(ptr + len), "\"Input1_J9_%u\":%u,", 
 														4,
-														rd->on_off.name.input_on_off_3);
+														rd.on_off.name.input_on_off_3);
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;				
 				// Build output on/off
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	1,
-																	rd->on_off.name.output_on_off_0);  //dau ra on/off 
+																	rd.on_off.name.output_on_off_0);  //dau ra on/off 
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	2,
-																	rd->on_off.name.output_on_off_1);  //dau ra on/off 	
+																	rd.on_off.name.output_on_off_1);  //dau ra on/off 	
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	3,
-																	rd->on_off.name.output_on_off_2);  //dau ra on/off 
+																	rd.on_off.name.output_on_off_2);  //dau ra on/off 
 				len += sprintf((char *)(ptr + len), "\"Output%u\":%u,", 
 																	4,
-																	rd->on_off.name.output_on_off_3);  //dau ra on/off 
+																	rd.on_off.name.output_on_off_3);  //dau ra on/off 
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;
 #else
-				if (rd->counter[0].k == 0)
+				if (rd.counter[0].k == 0)
 				{
-					rd->counter[0].k = 1;
+					rd.counter[0].k = 1;
 				}
 				len += sprintf((char *)(ptr + len), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
-				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd->counter[0].real_counter/rd->counter[0].k + rd->counter[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd->counter[0].reverse_counter/rd->counter[0].k + rd->counter[0].indicator);
-				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd->counter[0].reverse_counter);
-				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd->input_4_20mA[0]);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1\":%u,", rd.counter[0].real_counter/rd.counter[0].k + rd.counter[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_J1_D\":%u,", rd.counter[0].reverse_counter/rd.counter[0].k + rd.counter[0].indicator);
+				len += sprintf((char *)(ptr + len), "\"Input1_R\":%u,", rd.counter[0].reverse_counter);
+				len += sprintf((char *)(ptr + len), "\"Inputl_J3_1\":%.3f,", rd.input_4_20mA[0]);
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;
 #endif
 				
 				// output 4-20mA
-				len += sprintf((char *)(ptr + len), "\"Output4_20\":%.3f,", rd->output_4_20mA[0]);   // dau ra 4-20mA 0
+				len += sprintf((char *)(ptr + len), "\"Output4_20\":%.3f,", rd.output_4_20mA[0]);   // dau ra 4-20mA 0
                 usart_lpusart_485_send((uint8_t*)ptr, len);
                 len = 0;
 				//485			
 				for (uint32_t index = 0; index < RS485_MAX_SLAVE_ON_BUS; index++)
 				{
-					len += sprintf((char *)(ptr + len), "\"SlaveID%u\":%u,", index+1, rd->rs485[index].slave_addr);
+					len += sprintf((char *)(ptr + len), "\"SlaveID%u\":%u,", index+1, rd.rs485[index].slave_addr);
                     usart_lpusart_485_send((uint8_t*)ptr, len);
                     len = 0;
 					for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
 					{
-						if (rd->rs485[index].sub_register[sub_idx].read_ok
-							&& rd->rs485[index].sub_register[sub_idx].data_type.name.valid)
+						if (rd.rs485[index].sub_register[sub_idx].read_ok
+							&& rd.rs485[index].sub_register[sub_idx].data_type.name.valid)
 						{
 							len += sprintf((char *)(ptr + len), "\"Register%u_%u\":", index+1, sub_idx+1);
-							if (rd->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
-								|| rd->rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
+							if (rd.rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT16 
+								|| rd.rs485[index].sub_register[sub_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
 							{
-								len += sprintf((char *)(ptr + len), "%u,", rd->rs485[index].sub_register[sub_idx].value);
+								len += sprintf((char *)(ptr + len), "%u,", rd.rs485[index].sub_register[sub_idx].value);
 							}
 							else
 							{
-								len += sprintf((char *)(ptr + len), "%.4f,", (float)rd->rs485[index].sub_register[sub_idx].value);
+								len += sprintf((char *)(ptr + len), "%.4f,", (float)rd.rs485[index].sub_register[sub_idx].value);
 							}
 						}
-						else if (rd->rs485[index].sub_register[sub_idx].data_type.name.valid)
+						else if (rd.rs485[index].sub_register[sub_idx].data_type.name.valid)
 						{
-							if (strlen((char*)rd->rs485[index].sub_register[sub_idx].unit))
+							if (strlen((char*)rd.rs485[index].sub_register[sub_idx].unit))
 							{
-								len += sprintf((char *)(ptr + len), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, rd->rs485[index].sub_register[sub_idx].unit);
+								len += sprintf((char *)(ptr + len), "\"Unit%u_%u\":\"%s\",", index+1, sub_idx+1, rd.rs485[index].sub_register[sub_idx].unit);
 							}
 							len += sprintf((char *)(ptr + len), "\"Register%u_%u\":%s,", index+1, sub_idx+1, "-1");
 						}	
@@ -1594,8 +1578,7 @@ if (!m_flash_is_good)
 //    umm_free(config);
     
 	usart_lpusart_485_control(false);
-	RS485_POWER_EN(0);
-	umm_free(rd);
+	RS485_POWER_EN(0);;
 	LED1(0);
 #ifdef DTG01
 	LED2(0);

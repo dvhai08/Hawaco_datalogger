@@ -21,7 +21,7 @@
 #include "gsm_http.h"
 #include "server_msg.h"
 #include "app_queue.h"
-#include "umm_malloc.h"
+//#include "umm_malloc.h"
 #include "app_bkup.h"
 #include "app_eeprom.h"
 #include "measure_input.h"
@@ -1628,9 +1628,9 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    total_length += sprintf((char *)(ptr + total_length), "\"WarningLevel\":\"%s\",", alarm_str);
     total_length += sprintf((char *)(ptr + total_length), "\"BatteryLevel\":%d,", msg->vbat_percent);
     total_length += sprintf((char *)(ptr + total_length), "\"Vbat\":%u,", msg->vbat_mv);
-#ifndef DTG01    // DTG02 : Vinput 24V
-    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.1f,", msg->vin_mv/1000);
-#endif    
+//#ifndef DTG01    // DTG02 : Vinput 24V
+//    total_length += sprintf((char *)(ptr + total_length), "\"Vin\":%.1f,", msg->vin_mv/1000);
+//#endif    
     // Temperature
 	total_length += sprintf((char *)(ptr + total_length), "\"Temperature\":%d,", msg->temperature);
     
@@ -1644,31 +1644,31 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         if (msg->rs485[index].min_max.valid)
         {
             // Min forward flow
-            if (msg->rs485[index].min_max.min_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.min_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinForwardFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.min_forward_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinForwardFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.min_forward_flow.type_float);
             }
             
             // Max forward flow
-            if (msg->rs485[index].min_max.max_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.max_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxForwardFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.max_forward_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxForwardFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.max_forward_flow.type_float);
             }
             
             // Min reserve flow
-            if (msg->rs485[index].min_max.min_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.min_reserve_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.min_reserve_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.min_reserve_flow.type_float);
             }
             
             // Max reserve flow
-            if (msg->rs485[index].min_max.max_reserve_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.max_reserve_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%u,", 
-                                                                index+1, msg->rs485[index].min_max.max_reserve_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.max_reserve_flow.type_float);
             }
         }
 
@@ -1889,15 +1889,17 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             if (m_last_http_msg)
             {
-                umm_free(m_last_http_msg);
+//                umm_free(m_last_http_msg);
                 m_last_http_msg = NULL;
                 m_malloc_count--;
             }
             
 #ifdef DTG01
-            m_last_http_msg = (char*)umm_malloc(1024);
+            static char m_http_mem[1024];
+            m_last_http_msg = m_http_mem;
 #else
-            m_last_http_msg = (char*)umm_malloc(1024+256);
+            static char m_http_mem[1024+512];
+            m_last_http_msg = m_http_mem;
 #endif
             if (m_last_http_msg)
             {
@@ -1951,7 +1953,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 			sprintf((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], "%s", ctx->status.new_server);
 			ctx->status.try_new_server = 0;
 			
-			umm_free(ctx->status.new_server);
+//			umm_free(ctx->status.new_server);
 			ctx->status.new_server = NULL;
 			
 			app_eeprom_save_config();		// Store current config into eeprom
@@ -2005,65 +2007,59 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         if (m_last_http_msg)
         {
             m_malloc_count--;
-            umm_free(m_last_http_msg);
+//            umm_free(m_last_http_msg);
             m_last_http_msg = NULL;
         }
         LED1(0);
         
         // Read data from ext flash
-        app_spi_flash_data_t *wr_data = (app_spi_flash_data_t*)umm_malloc(sizeof(app_spi_flash_data_t));
-        // Check malloc return value
-        if (wr_data == NULL)
-        {
-            DEBUG_INFO("Malloc failed\r\n");
-            NVIC_SystemReset();
-        }
+        static app_spi_flash_data_t wr_data;
         
         // Mark flag we dont need to send data to server
-        wr_data->resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
+        wr_data.resend_to_server_flag = APP_FLASH_DONT_NEED_TO_SEND_TO_SERVER_FLAG;
         
         // Copy 4-20mA input
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data->input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
-            memcpy(&wr_data->input_4_20ma_cycle_send_web[i], 
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            memcpy(&wr_data.input_4_20ma_cycle_send_web[i], 
                     &m_sensor_msq->input_4_20ma_cycle_send_web[i], 
                     sizeof(input_4_20ma_min_max_hour_t));
         }
         
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 		{
-			memcpy(&wr_data->counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+			memcpy(&wr_data.counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
 		}
         
 		// on/off
-		wr_data->on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
 #if defined(DTG02) || defined(DTG02V2)
-		wr_data->on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
-		wr_data->on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
-		wr_data->on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-		wr_data->on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
-		wr_data->on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
-		wr_data->on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
-		wr_data->on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif		
 		// 4-20mA output
 		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
 		{
-			wr_data->output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
 		}
 		
-        wr_data->csq_percent = m_sensor_msq->csq_percent;
-        wr_data->timestamp = m_sensor_msq->measure_timestamp;
-        wr_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
-        wr_data->vbat_mv = m_sensor_msq->vbat_mv;
-        wr_data->vbat_precent = m_sensor_msq->vbat_percent;
-        wr_data->temp = m_sensor_msq->temperature;
+        wr_data.csq_percent = m_sensor_msq->csq_percent;
+        wr_data.timestamp = m_sensor_msq->measure_timestamp;
+        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data.temp = m_sensor_msq->temperature;
         
         // Copy 485 data
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
-			memcpy(&wr_data->rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
 		}
         
         // Wakeup flash if needed
@@ -2076,8 +2072,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         
         // Commit data and release memory
-        app_spi_flash_write_data(wr_data);
-        umm_free(wr_data);
+        app_spi_flash_write_data(&wr_data);
         
         m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         m_sensor_msq = NULL;
@@ -2135,60 +2130,57 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         if (m_last_http_msg)
         {
             m_malloc_count--;
-            umm_free(m_last_http_msg);
+//            umm_free(m_last_http_msg);
             m_last_http_msg = NULL;
         }
         
-        app_spi_flash_data_t *wr_data = (app_spi_flash_data_t*)umm_malloc(sizeof(app_spi_flash_data_t));
-        if (wr_data == NULL)
-        {
-            NVIC_SystemReset();
-        }
-        wr_data->resend_to_server_flag = 0;
+        static app_spi_flash_data_t wr_data;;
+
+        wr_data.resend_to_server_flag = 0;
 		
 		// Input 4-20mA
         for (uint32_t i = 0; i < APP_FLASH_NB_OFF_4_20MA_INPUT; i++)
         {
-            wr_data->input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
-            memcpy(&wr_data->input_4_20ma_cycle_send_web[i], 
+            wr_data.input_4_20mA[i] = m_sensor_msq->input_4_20mA[i];
+            memcpy(&wr_data.input_4_20ma_cycle_send_web[i], 
                     &m_sensor_msq->input_4_20ma_cycle_send_web[i], 
                     sizeof(input_4_20ma_min_max_hour_t));
         }
 		
 		for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
         {
-			memcpy(&wr_data->counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
+			memcpy(&wr_data.counter[i], &m_sensor_msq->counter[i], sizeof(measure_input_counter_t));
         }
       
-        wr_data->timestamp = m_sensor_msq->measure_timestamp;
-        wr_data->valid_flag = APP_FLASH_VALID_DATA_KEY;
-        wr_data->vbat_mv = m_sensor_msq->vbat_mv;
-        wr_data->vbat_precent = m_sensor_msq->vbat_percent;
-        wr_data->temp = m_sensor_msq->temperature;
-        wr_data->csq_percent = m_sensor_msq->csq_percent;
+        wr_data.timestamp = m_sensor_msq->measure_timestamp;
+        wr_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
+        wr_data.vbat_mv = m_sensor_msq->vbat_mv;
+        wr_data.vbat_precent = m_sensor_msq->vbat_percent;
+        wr_data.temp = m_sensor_msq->temperature;
+        wr_data.csq_percent = m_sensor_msq->csq_percent;
 		
 		// on/off
-		wr_data->on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
+		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
 #if defined(DTG02) || defined(DTG02V2)
-		wr_data->on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
-		wr_data->on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
-		wr_data->on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-		wr_data->on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
-		wr_data->on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
-		wr_data->on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
-		wr_data->on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
+		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
+		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif
 		
 		// Output 4-20mA
 		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
 		{
-			wr_data->output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
+			wr_data.output_4_20mA[i] = m_sensor_msq->output_4_20mA[i];
 		}
 		
 		// 485
 		for (uint32_t i = 0; i < RS485_MAX_SLAVE_ON_BUS; i++)
 		{
-			memcpy(&wr_data->rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
+			memcpy(&wr_data.rs485[i], &m_sensor_msq->rs485[i], sizeof(measure_input_modbus_register_t));
 		}
         
         if (!ctx->peripheral_running.name.flash_running)
@@ -2199,14 +2191,14 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         if (m_sensor_msq->state != MEASUREMENT_QUEUE_STATE_IDLE)
         {
-            app_spi_flash_write_data(wr_data);
+            app_spi_flash_write_data(&wr_data);
             m_sensor_msq->state = MEASUREMENT_QUEUE_STATE_IDLE;
         }
         if (m_retransmision_data_in_flash)
         {
             m_retransmision_data_in_flash = NULL;
         }
-        umm_free(wr_data);
+
         m_sensor_msq = NULL;
     }
     case GSM_HTTP_GET_EVENT_FINISH_FAILED:
@@ -2226,7 +2218,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		if (ctx->status.try_new_server && ctx->status.new_server)
 		{
 			ctx->status.try_new_server = 0;
-			umm_free(ctx->status.new_server);
+//			umm_free(ctx->status.new_server);
 			ctx->status.new_server = NULL;
 			DEBUG_ERROR("Try new server failed\r\n");
 		}
@@ -2234,7 +2226,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         if (m_last_http_msg)
         {
             m_malloc_count--;
-            umm_free(m_last_http_msg);
+//            umm_free(m_last_http_msg);
 //            DEBUG_ERROR("Free um memory, malloc count[%u]\r\n", m_malloc_count);
             m_last_http_msg = NULL;
         }
@@ -2276,7 +2268,7 @@ void gsm_mnr_task(void *arg)
             if (m_last_http_msg)
             {
                 m_malloc_count--;
-                umm_free(m_last_http_msg);
+//                umm_free(m_last_http_msg);
                 m_last_http_msg = NULL;
             }
         

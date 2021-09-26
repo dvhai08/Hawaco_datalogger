@@ -479,7 +479,7 @@ void adc_stop(void)
 static uint8_t convert_vin_to_percent(uint32_t vin)
 {
 #define VIN_MAX 13800
-#define VIN_MIN 10000
+#define VIN_MIN 10500
 
     if (vin >= VIN_MAX)
         return 100;
