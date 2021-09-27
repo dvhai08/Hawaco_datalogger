@@ -65,7 +65,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
-#define DEBUG_LOW_POWER                                 1
+#define DEBUG_LOW_POWER                                 0
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
