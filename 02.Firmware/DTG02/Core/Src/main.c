@@ -67,7 +67,7 @@
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							1
+#define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
 #define CLI_ENABLE                                      1
 #define GSM_ENABLE										1

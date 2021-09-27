@@ -33,7 +33,7 @@
 #include "app_spi_flash.h"
 #include "spi.h"
 #include "modbus_master.h"
-#include "umm_malloc.h"
+//#include "umm_malloc.h"
 
 #define VBAT_DETECT_HIGH_MV 9000
 #define STORE_MEASURE_INVERVAL_SEC 30
@@ -1207,15 +1207,16 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 // If direction current level = direction on forward level
                 if (eeprom_cfg->dir_level == input->dir_level)
                 {
-                    DEBUG_WARN("[PWM%u]+++ \r\n", input->port);
+//                    DEBUG_WARN("[PWM%u]+++ \r\n", input->port);
                     m_pulse_counter_in_backup[input->port].total_forward++;
                     m_pulse_counter_in_backup[input->port].fw_flow++;
-                    m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward / m_pulse_counter_in_backup[input->port].k + m_pulse_counter_in_backup[input->port].indicator;
+                    m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward / m_pulse_counter_in_backup[input->port].k 
+                                                                                    + m_pulse_counter_in_backup[input->port].indicator;
                     m_pulse_counter_in_backup[input->port].real_counter++;
                 }
                 else // Reverser counter
                 {
-                    DEBUG_WARN("[PWM]---\r\n");
+//                    DEBUG_WARN("[PWM]---\r\n");
                     m_pulse_counter_in_backup[input->port].reverse_flow++;
                     m_pulse_counter_in_backup[input->port].real_counter--;
                     m_pulse_counter_in_backup[input->port].total_reserve++;
@@ -1225,7 +1226,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             }
             else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
             {
-                DEBUG_INFO("[PWM] +++++++\r\n");
+//                DEBUG_INFO("[PWM] +++++++\r\n");
                 m_pulse_counter_in_backup[input->port].total_forward++;
                 m_pulse_counter_in_backup[input->port].total_forward++;
                 // Calculate total forward index
@@ -1244,7 +1245,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
         }
         else
         {
-            DEBUG_WARN("PWM Noise\r\n");
+//            DEBUG_WARN("PWM Noise\r\n");
         }
     }
     else if (input->new_data_type == MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN)

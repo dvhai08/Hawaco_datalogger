@@ -10,7 +10,7 @@
 #define DEBUG_LEVEL_WARN        3
 #define DEBUG_LEVEL_ERROR       4
 
-#define DEBUG_LEVEL             DEBUG_LEVEL_INFO  
+#define DEBUG_LEVEL             DEBUG_LEVEL_VERBOSE  
 
 #include "SEGGER_RTT.h"
 #if 1

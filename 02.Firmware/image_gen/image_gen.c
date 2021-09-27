@@ -64,8 +64,8 @@ int main(int argc, char **argv)
     {
         if (strstr(argv[1], "help"))
         {
-            printf("Please use format [input_file_name.bin header firmware_version hardware_version output_file_name]\r\n", argc);
-            printf("Example mcu.bin DTG01 0.0.1 0.0.2 release.bin\r\n");
+            printf("Please use format [input_file_name.bin    header       firmware_version hardware_version  output_file_name]\r\n", argc);
+            printf("Example               mcu.bin         DTG01/DTG02/G2V2  0.0.1             0.0.2            release.bin\r\n");
             return 0;
         }
     }

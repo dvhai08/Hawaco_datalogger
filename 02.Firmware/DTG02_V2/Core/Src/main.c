@@ -65,13 +65,13 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define WAKEUP_RESET_WDT_IN_LOW_POWER_MODE            37000    // ( ~16s)
-#define DEBUG_LOW_POWER                                 0
+#define DEBUG_LOW_POWER                                 1
 #define DISABLE_GPIO_ENTER_LOW_POWER_MODE               0
 #define TEST_OUTPUT_4_20MA                              0
 #define TEST_RS485                                      0
 #define TEST_INPUT_4_20_MA                              0
 #define TEST_BACKUP_REGISTER                            0
-#define TEST_DEVICE_NEVER_SLEEP							1
+#define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
 #define CLI_ENABLE                                      1
 #define GSM_ENABLE										1
@@ -384,7 +384,7 @@ int main(void)
         }
         else
         {
-            button_factory_timeout = sys_get_ms();
+            button_factory_timeout = 0;
             do_factory_reset = false;
         }
         
@@ -441,51 +441,52 @@ int main(void)
             
             app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
             len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "{\"Server0\":\"%s\",", eeprom_cfg->server_addr[0]);
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += snprintf((char *)(config + len), APP_EEPROM_MAX_SERVER_ADDR_LENGTH, "\"Server1\":\"%s\",", eeprom_cfg->server_addr[1]);
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += sprintf((char *)(config + len), "\"CycleSendWeb\":%u,", eeprom_cfg->send_to_server_interval_ms/1000/60);
             len += sprintf((char *)(config + len), "\"DelaySendToServer\":%u,", eeprom_cfg->send_to_server_delay_s);
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += sprintf((char *)(config + len), "\"Cyclewakeup\":%u,", eeprom_cfg->measure_interval_ms/1000/60);
             len += sprintf((char *)(config + len), "\"MaxSmsOneday\":%u,", eeprom_cfg->max_sms_1_day);
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += sprintf((char *)(config + len), "\"Phone\":\"%s\",", eeprom_cfg->phone);
             len += sprintf((char *)(config + len), "\"PollConfig\":%u,", eeprom_cfg->poll_config_interval_hour);
             len += sprintf((char *)(config + len), "\"DirLevel\":%u,", eeprom_cfg->dir_level);
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             for (uint32_t i = 0; i < APP_EEPROM_METER_MODE_MAX_ELEMENT; i++)
             {
                 len += sprintf((char *)(config + len), "\"K%u\":%u,", i+1, eeprom_cfg->k[i]);
                 len += sprintf((char *)(config + len), "\"M%u\":%u,", i+1, eeprom_cfg->meter_mode[i]);
                 len += sprintf((char *)(config + len), "\"MeterIndicator%u\":%u,", i+1, eeprom_cfg->offset[i]);
-                len = 0;
                 usart_lpusart_485_send((uint8_t*)config, len);
+                len = 0;
             }
             
             len += sprintf((char *)(config + len), "\"OutputIO_0\":%u,", eeprom_cfg->io_enable.name.output0);
             len += sprintf((char *)(config + len), "\"OutputIO_1\":%u,", eeprom_cfg->io_enable.name.output1);
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
+            
             len += sprintf((char *)(config + len), "\"OutputIO_2\":%u,", eeprom_cfg->io_enable.name.output2);
             len += sprintf((char *)(config + len), "\"OutputIO_3\":%u,", eeprom_cfg->io_enable.name.output3);
             len += sprintf((char *)(config + len), "\"Input0\":%u,", eeprom_cfg->io_enable.name.input0);
             len += sprintf((char *)(config + len), "\"Input1\":%u,", eeprom_cfg->io_enable.name.input1);
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             len += sprintf((char *)(config + len), "\"Input2\":%u,", eeprom_cfg->io_enable.name.input2);
             len += sprintf((char *)(config + len), "\"Input3\":%u,", eeprom_cfg->io_enable.name.input3);
             
@@ -493,8 +494,8 @@ int main(void)
             len += sprintf((char *)(config + len), "\"Warning\":%u,", eeprom_cfg->io_enable.name.warning);
             len += sprintf((char *)(config + len), "\"485_EN\":%u,", eeprom_cfg->io_enable.name.rs485_en);
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             if (eeprom_cfg->io_enable.name.rs485_en)
             {
                 for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
@@ -519,8 +520,8 @@ int main(void)
                                                 slave_idx, 
                                                 (char*)eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].unit);
                         
-                        len = 0;
                         usart_lpusart_485_send((uint8_t*)config, len);
+                        len = 0;
                     }
                 }
             }
@@ -532,8 +533,8 @@ int main(void)
             len += sprintf((char *)(config + len), "\"input4_20mA_3\":%u,", eeprom_cfg->io_enable.name.input_4_20ma_3_enable);
         #endif
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += sprintf((char *)(config + len), "\"Output4_20mA_En\":%u,", eeprom_cfg->io_enable.name.output_4_20ma_enable);
             if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
@@ -541,14 +542,15 @@ int main(void)
                 len += sprintf((char *)(config + len), "\"Output4_20mA_Val\":%.3f,", eeprom_cfg->output_4_20ma);
             }
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
             
             len += sprintf((char *)(config + len), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
             len += sprintf((char *)(config + len), "\"HW\":\"%s\",", VERSION_CONTROL_HW);
             
-            len = 0;
             usart_lpusart_485_send((uint8_t*)config, len);
+            len = 0;
+            
             len += sprintf((char *)(config + len), "\"FactoryServer\":\"%s\",", app_eeprom_read_factory_data()->server);
             
             len--;      // Skip ','

@@ -159,7 +159,7 @@
           <Type>0</Type>
           <LineNumber>114</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134272932</Address>
+          <Address>134273068</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -185,6 +185,22 @@
           <Filename>../Drivers/CMSIS/Include/core_cm0plus.h</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\DTG02_V2\../Drivers/CMSIS/Include/core_cm0plus.h\985</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>89</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>134302090</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\src\ota_update\flash_if.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\DTG02_V2\../../src/ota_update/flash_if.c\89</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -451,7 +467,7 @@
 
   <Group>
     <GroupName>Drivers/STM32L0xx_HAL_Driver</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -959,7 +975,7 @@
 
   <Group>
     <GroupName>app_debug</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
