@@ -65,3 +65,4 @@ DTG02/MDK-ARM/JLinkLog.txt
 *.Bak
 *.scvd
 02.Firmware/DTG02_V2/MDK-ARM/JLinkSettings.ini
+02.Firmware/DTG01_Bootloader/MDK-ARM/JLinkLog.txt
