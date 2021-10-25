@@ -8,13 +8,13 @@
 #endif
 #ifdef DTG02
 #define VERSION_CONTROL_DEVICE			"DTG2"
-#define VERSION_CONTROL_FW				"0.2.5"
+#define VERSION_CONTROL_FW				"0.2.6"
 #define VERSION_CONTROL_HW				"0.0.1"
 #endif
 
 #ifdef DTG02V2
 #define VERSION_CONTROL_DEVICE			"DTG2"
-#define VERSION_CONTROL_FW				"0.0.3"
+#define VERSION_CONTROL_FW				"0.0.4"
 #define VERSION_CONTROL_HW				"0.0.2"
 #endif
 
