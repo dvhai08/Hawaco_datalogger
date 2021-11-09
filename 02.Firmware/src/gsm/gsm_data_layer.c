@@ -900,12 +900,13 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 			&& time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
                                                                 // Lazy solution : do not update time from 17h
         {
-            static uint32_t update_counter = 0;
-            if ((update_counter % 48) == 0)
+            static uint32_t m_last_time_update = 0;
+            if (m_last_time_update == 0
+                || (app_rtc_get_counter() - m_last_time_update >= (uint32_t)(3600*12)))
             {
                 app_rtc_set_counter(&time);
+                m_last_time_update = app_rtc_get_counter();
             }
-            update_counter++;
         }
         gsm_hw_send_at_cmd("AT+CSQ\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
     }
