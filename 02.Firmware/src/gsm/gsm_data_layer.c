@@ -741,7 +741,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         if (strlen((char*)imei_buffer) < 14)
         {
             gsm_utilities_get_imei(resp_buffer, (uint8_t *)imei_buffer, 16);
-            DEBUG_INFO("Get GSM IMEI: %s\r\n", imei_buffer);
+            DEBUG_WARN("Get GSM IMEI: %s\r\n", imei_buffer);
             imei_buffer = (uint8_t*)gsm_get_module_imei();
             if (strlen((char*)imei_buffer) < 15)
             {
@@ -889,7 +889,7 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 
     case 22:
     {
-        DEBUG_INFO("Query CCLK: %s,%s\r\n",
+        DEBUG_WARN("Query CCLK: %s,%s\r\n",
                      (event == GSM_EVENT_OK) ? "[OK]" : "[FAIL]",
                      (char *)resp_buffer);
         rtc_date_time_t time;

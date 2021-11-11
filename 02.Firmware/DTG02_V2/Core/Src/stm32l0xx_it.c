@@ -185,13 +185,13 @@ void SysTick_Handler(void)
 	{
 		if (recheck_input_pulse[MEASURE_INPUT_PORT_2].tick-- == 1)
 		{			
-				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_2;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type;
-				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
-				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
-				measure_input_pulse_irq(&input);	
+            measure_input_water_meter_input_t input;
+            input.port = MEASURE_INPUT_PORT_2;
+            input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin);
+            input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type;
+            input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN2_GPIO_Port, PWMIN2_Pin) ? 1 : 0;
+            input.dir_level = LL_GPIO_IsInputPinSet(DIRIN2_GPIO_Port, DIRIN2_Pin) ? 1 : 0;
+            measure_input_pulse_irq(&input);	
 		}			
 	}
 	
@@ -199,13 +199,13 @@ void SysTick_Handler(void)
 	{
 		if (recheck_input_pulse[MEASURE_INPUT_PORT_1].tick-- == 1)
 		{
-				measure_input_water_meter_input_t input;
-				input.port = MEASURE_INPUT_PORT_1;
-				input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-				input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
-				input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
-				input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
-				measure_input_pulse_irq(&input);	
+            measure_input_water_meter_input_t input;
+            input.port = MEASURE_INPUT_PORT_1;
+            input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+            input.new_data_type = recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type;
+            input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
+            input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
+            measure_input_pulse_irq(&input);	
 		}			
 	}
 	

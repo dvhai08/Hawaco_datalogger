@@ -236,6 +236,7 @@
 
 
 #if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02)
 #define MEASURE_INPUT_PORT_1						0
 #define MEASURE_INPUT_PORT_2		                1
 #define NUMBER_OF_INPUT_4_20MA						4
@@ -243,6 +244,16 @@
 #define	NUMBER_OF_INPUT_ON_OFF						4
 #define NUMBER_OF_OUTPUT_ON_OFF						4
 #define NUMBER_OF_OUTPUT_4_20MA                     1
+#elif defined(DTG02V2)
+#define MEASURE_INPUT_PORT_1						1
+#define MEASURE_INPUT_PORT_2		                0
+#define NUMBER_OF_INPUT_4_20MA						4
+#define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
+#define	NUMBER_OF_INPUT_ON_OFF						4
+#define NUMBER_OF_OUTPUT_ON_OFF						4
+#define NUMBER_OF_OUTPUT_4_20MA                     1
+#endif
+
 #else
 #define MEASURE_INPUT_PORT_1						0
 #define MEASURE_INPUT_PORT_2		                1

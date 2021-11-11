@@ -48,7 +48,7 @@
 #if CHECK_BOTH_INPUT_EDGE
 #define PULSE_MINMUM_WITDH_MS 30
 #else
-#define PULSE_MINMUM_WITDH_MS 100
+#define PULSE_MINMUM_WITDH_MS 2
 #endif
 
 #define ALWAYS_SAVE_DATA_TO_FLASH 1
@@ -1242,6 +1242,14 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
                 m_pulse_counter_in_backup[input->port].total_forward_index = 0;
                 m_pulse_counter_in_backup[input->port].total_forward = 0;
             }
+            else if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_PWM_F_PWM_R)
+            {
+                    m_pulse_counter_in_backup[input->port].total_forward++;
+                    m_pulse_counter_in_backup[input->port].fw_flow++;
+                    m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward / m_pulse_counter_in_backup[input->port].k 
+                                                                                    + m_pulse_counter_in_backup[input->port].indicator;
+                    m_pulse_counter_in_backup[input->port].real_counter++;
+            }
         }
         else
         {
@@ -1265,14 +1273,14 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             m_begin_pulse_timestamp[input->port].subsecond_dir = m_end_pulse_timestamp[input->port].subsecond_dir;
             if (m_pull_diff[input->port] > PULSE_MINMUM_WITDH_MS)
             {
-                DEBUG_VERBOSE("[DIR]++++\r\n");
-                if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE || eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
-                {
-                    m_pulse_counter_in_backup[input->port].reverse_counter = 0;
-                    m_pulse_counter_in_backup[input->port].total_reserve_index = 0;
-                    m_pulse_counter_in_backup[input->port].total_reserve = 0;
-                }
-                else
+//                DEBUG_VERBOSE("[DIR]++++\r\n");
+//                if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE || eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
+//                {
+//                    m_pulse_counter_in_backup[input->port].reverse_counter = 0;
+//                    m_pulse_counter_in_backup[input->port].total_reserve_index = 0;
+//                    m_pulse_counter_in_backup[input->port].total_reserve = 0;
+//                }
+//                else
                 {
                     m_pulse_counter_in_backup[input->port].total_reserve++;
                     m_pulse_counter_in_backup[input->port].reverse_counter++;
