@@ -138,7 +138,7 @@ void MX_GPIO_Init(void)
 
   /**/
   GPIO_InitStruct.Pin = CHARGE_EN_Pin;
-  GPIO_InitStruct.Mode = LL_GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(CHARGE_EN_GPIO_Port, &GPIO_InitStruct);
 

@@ -1505,11 +1505,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                     msg->counter[i].flow_avg_cycle_send_web.reverse_flow_sum);
 
             }
-            DEBUG_WARN("Send to server Min-max fw flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.fw_flow_min,
-                                                        msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
-                
-            DEBUG_WARN("Send to server Min-max resv flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min,
-                                                        msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
+//            DEBUG_WARN("Send to server Min-max fw flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.fw_flow_min,
+//                                                        msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
+//                
+//            DEBUG_WARN("Send to server Min-max resv flow%u %.2f %.2f\r\n", i+1, msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min,
+//                                                        msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
         }
           
         
@@ -1770,7 +1770,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #endif    
     // Sim imei
     total_length += sprintf((char *)(ptr + total_length), "\"SIM\":%s,", gsm_get_sim_imei());
-	total_length += sprintf((char *)(ptr + total_length), "\"CCID\":\"%s\",", gsm_get_sim_ccid());
+	// total_length += sprintf((char *)(ptr + total_length), "\"CCID\":\"%s\",", gsm_get_sim_ccid());
     
     // Uptime
 //    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);

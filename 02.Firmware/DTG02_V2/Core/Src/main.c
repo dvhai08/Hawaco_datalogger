@@ -211,7 +211,10 @@ int main(void)
     eeprom_cfg->io_enable.name.input_4_20ma_3_enable = 1;
 #endif     
 #if TEST_INPUT_4_20_MA
-    eeprom_cfg->io_enable.name.input_4_20ma_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_0_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_1_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_2_enable = 1;
+    eeprom_cfg->io_enable.name.input_4_20ma_3_enable = 1;
     system->status.is_enter_test_mode = 1;
 #endif
 //    DEBUG_INFO("Server addr %s\r\n", eeprom_cfg->server_addr);

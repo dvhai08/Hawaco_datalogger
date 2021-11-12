@@ -818,16 +818,16 @@ void measure_input_task(void)
                         {
                             fw_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                             fw_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
-                            DEBUG_WARN("Set MinFwFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
-                            DEBUG_WARN("Set MaxFwFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
+                            DEBUG_VERBOSE("Set MinFwFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
+                            DEBUG_VERBOSE("Set MaxFwFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
                         }
 
                         if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE || reserve_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)
                         {
                             reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
                             reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
-                            DEBUG_WARN("Set MaxRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_max_in_cycle_send_web[counter_index]);
-                            DEBUG_WARN("Set MixRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_min_in_cycle_send_web[counter_index]);
+                            DEBUG_VERBOSE("Set MaxRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_max_in_cycle_send_web[counter_index]);
+                            DEBUG_VERBOSE("Set MixRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_min_in_cycle_send_web[counter_index]);
                         }
 
                         // Compare old value and new value to determite new min-max value
@@ -836,14 +836,14 @@ void measure_input_task(void)
                         {
                             fw_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                         }
-                        DEBUG_INFO("[Temporaty] MinFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
+                        DEBUG_VERBOSE("[Temporaty] MinFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
 
                         // 1.2 Forward direction max value
                         if (fw_flow_max_in_cycle_send_web[counter_index] < m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup)
                         {
                             fw_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                         }
-                        DEBUG_INFO("[Temporaty] MaxFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
+                        DEBUG_VERBOSE("[Temporaty] MaxFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
 
                         // 2.1 reserve direction min value
                         if (reserve_flow_min_in_cycle_send_web[counter_index] > m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup)
@@ -880,11 +880,11 @@ void measure_input_task(void)
 
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 1;
 
-                            DEBUG_WARN("Cycle send web counter %u: Min max fw flow %.2f %.2f\r\n", counter_index,
+                            DEBUG_VERBOSE("Cycle send web counter %u: Min max fw flow %.2f %.2f\r\n", counter_index,
                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_max,
                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min);
 
-                            DEBUG_WARN("Cycle send web counter %u: Min max resv flow %.2f %.2f\r\n", counter_index,
+                            DEBUG_VERBOSE("Cycle send web counter %u: Min max resv flow %.2f %.2f\r\n", counter_index,
                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max,
                                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min);
 
