@@ -515,6 +515,10 @@ void measure_input_save_all_data_to_flash(void)
     }
 }
 
+#ifdef DTG02V2
+extern uint32_t last_time_monitor_vin_when_battery_low;
+#endif
+
 uint32_t estimate_measure_timestamp = 0;
 void measure_input_task(void)
 {
@@ -627,6 +631,9 @@ void measure_input_task(void)
 
             //            DEBUG_INFO("ADC start\r\n");
             // ADC conversion
+#ifdef DTG02V2
+            last_time_monitor_vin_when_battery_low = 0;
+#endif
             adc_start();
 
             if (m_this_is_the_first_time)
@@ -651,7 +658,7 @@ void measure_input_task(void)
             }
             else if (adc_retval->bat_mv < 3800)
             {
-                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // Neu
+                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
             }
 #endif
 
@@ -662,7 +669,7 @@ void measure_input_task(void)
                 m_measure_data.vbat_percent = adc_retval->bat_percent;
 
 #ifndef DTG01
-                m_measure_data.vin_mv = adc_retval->vin_24;
+                m_measure_data.vin_mv = adc_retval->vin;
 #endif
                 //                app_bkup_read_pulse_counter(&m_measure_data.counter[0]);
 
@@ -938,7 +945,7 @@ void measure_input_task(void)
                     // 485
                     for (uint32_t slave_index = 0; slave_index < RS485_MAX_SLAVE_ON_BUS; slave_index++)
                     {
-                        // copy min, max value, fowrward-reverse flow value
+                        // copy min, max value, forward-reverse flow value
                         m_measure_data.rs485[slave_index].min_max.min_forward_flow = m_485_min_max[slave_index].min_forward_flow;
                         m_measure_data.rs485[slave_index].min_max.max_forward_flow = m_485_min_max[slave_index].max_forward_flow;
 

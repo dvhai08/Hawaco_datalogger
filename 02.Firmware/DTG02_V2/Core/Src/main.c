@@ -105,6 +105,7 @@ volatile uint32_t led_blink_delay = 0;
 void sys_config_low_power_mode(void);
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+volatile uint32_t last_time_monitor_vin_when_battery_low = 0;
 /* USER CODE END 0 */
 
 /**
@@ -165,6 +166,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 //	HAL_ADC
 //    __HAL_DBGMCU_FREEZE_IWDG();     // stop watchdog in debug mode
+    LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // Enable battery charge
     ENABLE_INPUT_4_20MA_POWER(0);
     RS485_POWER_EN(0);
     for (uint32_t i = 0; i < 4; i++)
@@ -222,6 +224,7 @@ int main(void)
 	jig_start();
     static uint32_t button_factory_timeout = 0;
     bool do_factory_reset = false;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -234,20 +237,7 @@ int main(void)
 #if GSM_ENABLE
 	gsm_hw_layer_run();
 #endif
-      
-#if TEST_POWER_ALWAYS_TURN_OFF_GSM
-    if (!gsm_data_layer_is_module_sleeping())
-    {
-        gsm_change_state(GSM_STATE_SLEEP);
-    }
-#else       // chi xay ra voi dtg02
-    if (adc_get_input_result()->vin_24 < 5000 
-        && !gsm_data_layer_is_module_sleeping()
-        && sys_get_ms() > 15000)       // neu dien ap Vin < 16V =>> ko bat gsm. 15s delay cho adc start
-    {
-        gsm_change_state(GSM_STATE_SLEEP);
-    }
-#endif
+
 	control_ouput_task();
 	measure_input_task();
 #if CLI_ENABLE
@@ -259,6 +249,28 @@ int main(void)
       static volatile uint32_t m_last_tick = 0;
       if (sys_get_ms() - m_last_tick >= (uint32_t)1000)
       {
+                
+#if TEST_POWER_ALWAYS_TURN_OFF_GSM
+    if (!gsm_data_layer_is_module_sleeping())
+    {
+        gsm_change_state(GSM_STATE_SLEEP);
+    }
+#else       // chi xay ra voi dtg02
+    if (adc_get_input_result()->vin > 5000)
+    {
+      last_time_monitor_vin_when_battery_low = 0;
+    }
+    else if (adc_get_input_result()->vin < 5000 
+        && !gsm_data_layer_is_module_sleeping()
+        && last_time_monitor_vin_when_battery_low > (uint32_t)10)       // neu dien ap Vin < 16V =>> ko bat gsm. 15s delay cho adc start
+    {
+        last_time_monitor_vin_when_battery_low = 0;
+        LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);     // ko chon phep sac
+        gsm_change_state(GSM_STATE_SLEEP);
+    }
+#endif
+    
+          last_time_monitor_vin_when_battery_low++;
           m_last_tick = sys_get_ms();
           gsm_mnr_task(NULL);
           info_task(NULL);
@@ -297,7 +309,6 @@ int main(void)
         system->peripheral_running.name.rs485_running = 0;
         usart_lpusart_485_control(0);
     }
-
     
 #ifdef DTG01
     if (!eeprom_cfg->io_enable.name.input_4_20ma_enable)
@@ -769,7 +780,7 @@ static void info_task(void *arg)
 			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin %umV, 4-20mA %s temp %u\r\n",
 						adc->vdda_mv,
 						adc->bat_mv, adc->bat_percent, 
-						adc->vin_24,
+						adc->vin,
 						tmp,
 						adc->temp);
 		}
@@ -906,7 +917,7 @@ void sys_config_low_power_mode(void)
 #ifdef DTG01
 		LED2(1);
 #endif
-		sys_delay_ms(5);
+		sys_delay_ms(3);
 
 #ifdef WDT_ENABLE
         LL_IWDG_ReloadCounter(IWDG);

@@ -33,6 +33,7 @@
 
 #define ADC_INPUT_4_20MA_MIN_OFFSET_MV  27
 #define ADC_INPUT_4_20MA_MAX_OFFSET_MV  150
+#define ADC_VIN_DIODE_OFFSET            220
 
 enum { NUM_CURRENT_LOOK_UP = sizeof(lookup_table_4_20ma_input) / sizeof(input_4_20ma_lookup_t) };
 
@@ -569,8 +570,12 @@ void adc_convert(void)
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
     
     /* ADC Vin 24V */
-	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
-    m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin_24);
+	m_adc_input.vin = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
+    if (m_adc_input.vin > 1000)
+    {
+        m_adc_input.vin += ADC_VIN_DIODE_OFFSET;
+    }
+    m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin);
     /* Get 4-20mA input channel to mv */
     
     // Channel 0

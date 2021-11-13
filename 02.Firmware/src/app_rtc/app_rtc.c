@@ -6,7 +6,7 @@
 
 extern RTC_HandleTypeDef hrtc;
 
-static uint32_t rtc_struct_to_counter(rtc_date_time_t *t)
+uint32_t rtc_struct_to_counter(rtc_date_time_t *t)
 {
     static const uint8_t days_in_month[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     uint16_t i;

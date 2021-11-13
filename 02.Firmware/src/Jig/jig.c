@@ -91,7 +91,7 @@ void jig_start(void)
 				if (count % 25 == 0)
 				{
 					jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
-					jig_print("Vin24v: %u\r\n", adc_result->vin_24);
+					jig_print("Vin24v: %u\r\n", adc_result->vin);
 #ifndef DTG01
 					for (uint32_t i = 0; i < 4; i++)
 #else

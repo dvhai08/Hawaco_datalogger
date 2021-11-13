@@ -78,6 +78,7 @@ extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 extern volatile uint32_t jig_timeout_ms;
 extern volatile uint8_t *jig_rs485_rx_buffer;
 extern volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
+extern volatile uint32_t last_time_monitor_vin_when_battery_low;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -254,6 +255,7 @@ void EXTI0_1_IRQHandler(void)
 	sys_ctx()->status.timeout_wait_message_sync_data = 15000;	
 	if (gsm_data_layer_is_module_sleeping())
 	{
+        last_time_monitor_vin_when_battery_low = 0;
 		measure_input_measure_wakeup_to_get_data();
 		gsm_wakeup_now();
 		sys_ctx_t *ctx = sys_ctx();

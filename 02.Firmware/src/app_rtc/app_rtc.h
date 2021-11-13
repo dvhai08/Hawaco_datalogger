@@ -44,4 +44,10 @@ bool app_rtc_get_time(rtc_date_time_t *time);
  */
 uint32_t app_rtc_get_subsecond_counter(void);
 
+/*!
+ * @brief          Convert rtc date time to unix counter
+ * @retval         RTC counter
+ */
+uint32_t rtc_struct_to_counter(rtc_date_time_t *t);
+
 #endif /* APP_RTC_H */

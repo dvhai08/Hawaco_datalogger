@@ -794,6 +794,7 @@ static void info_task(void *arg)
 			}
 		}
 	}
+    
 }
 
 void sys_turn_on_led(uint32_t delay_ms)

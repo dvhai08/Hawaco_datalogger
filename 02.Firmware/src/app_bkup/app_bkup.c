@@ -99,7 +99,7 @@ void app_bkup_read_pulse_counter(measure_input_counter_t *counter)
 #endif
         backup = 0;
 		HAL_RTCEx_BKUPWrite(&hrtc, LL_RTC_BKP_DR0, 0);
-		DEBUG_WARN("No data in backup\r\n");
+//		DEBUG_WARN("No data in backup\r\n");
 	}
 #else
     counter[0].forward = m_counter[0].forward;

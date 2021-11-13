@@ -53,7 +53,7 @@
 
 extern gsm_manager_t gsm_manager;
 static char m_at_cmd_buffer[128];
-
+static uint8_t hard_reset_step = 0;
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_read_sms(gsm_response_event_t event, void *resp_buffer);
 void gsm_at_cb_send_sms(gsm_response_event_t event, void *resp_buffer);
@@ -75,6 +75,7 @@ static app_spi_flash_data_t *m_retransmision_data_in_flash;
 uint32_t m_wake_time = 0;
 static uint32_t m_send_time = 0;
 static bool m_post_failed = false;
+
 #if GSM_SMS_ENABLE
 bool m_do_read_sms = false;
 
@@ -597,6 +598,7 @@ void gsm_change_state(gsm_state_t new_state)
     case GSM_STATE_SLEEP:
     {
         DEBUG_RAW("SLEEP\r\n");
+        hard_reset_step = 0;
         m_post_failed = false;
         sys_ctx_t *ctx = sys_ctx();
         ctx->peripheral_running.name.gsm_running = 0;
@@ -675,6 +677,30 @@ void do_unlock_band(gsm_response_event_t event, void *resp_buffer)
     m_unlock_band_step++;
 }
 #endif /* UNLOCK_BAND */
+
+uint32_t make_counter(rtc_date_time_t *time)
+{
+    uint32_t counter;
+    counter = rtc_struct_to_counter(time);
+    counter += (946681200 + 3600);
+    return counter;
+}
+
+bool need_update_time(uint32_t new_counter, uint32_t current_counter)
+{
+    DEBUG_WARN("New counter %u, current counter %u\r\n", new_counter, current_counter);
+    static uint32_t m_last_time_update = 0;
+    if (m_last_time_update == 0
+        || (current_counter - m_last_time_update >= (uint32_t)(3600*12))
+        || ((new_counter >= current_counter) && (new_counter - current_counter >= (uint32_t)60))
+        || ((new_counter < current_counter) && (current_counter - new_counter >= (uint32_t)60)))
+    {
+        DEBUG_WARN("Update time\r\n");
+        m_last_time_update = new_counter;
+        return true;
+    }
+    return false;
+}
 
 void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
 {
@@ -895,20 +921,36 @@ void gsm_at_cb_power_on_gsm(gsm_response_event_t event, void *resp_buffer)
         rtc_date_time_t time;
         gsm_utilities_parse_timestamp_buffer((char *)resp_buffer, &time);
         time.hour += TIMEZONE;
+        static uint32_t retry = 0;
         if (time.year > 20 
 			&& time.year < 40 
 			&& time.hour < 24) // if 23h40 =>> time.hour += 7 = 30h =>> invalid
                                                                 // Lazy solution : do not update time from 17h
         {
-            static uint32_t m_last_time_update = 0;
-            if (m_last_time_update == 0
-                || (app_rtc_get_counter() - m_last_time_update >= (uint32_t)(3600*12)))
+            retry = 0;
+            uint32_t new_counter = make_counter(&time);
+            uint32_t current_counter = app_rtc_get_counter();
+            if (need_update_time(new_counter, current_counter))
             {
                 app_rtc_set_counter(&time);
-                m_last_time_update = app_rtc_get_counter();
             }
         }
-        gsm_hw_send_at_cmd("AT+CSQ\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
+        else
+        {
+            retry++;
+        }
+        if (retry == 0 || retry > 5)
+        {
+            gsm_change_hw_polling_interval(5);
+            gsm_hw_send_at_cmd("AT+CSQ\r\n", "", "OK\r\n", 1000, 5, gsm_at_cb_power_on_gsm);
+        }
+        else
+        {
+            DEBUG_WARN("Re-sync clock\r\n");
+            gsm_hw_send_at_cmd("AT+CCLK?\r\n", "+CCLK:", "OK\r\n", 1200, 5, gsm_at_cb_power_on_gsm);
+            gsm_manager.step = 21;
+            gsm_change_hw_polling_interval(1000);
+        }
     }
     break;
 
@@ -1007,10 +1049,9 @@ void gsm_at_cb_exit_sleep(gsm_response_event_t event, void *resp_buffer)
 */
 void gsm_hard_reset(void)
 {
-    static uint8_t step = 0;
-    DEBUG_INFO("GSM hard reset step %d\r\n", step);
+    DEBUG_INFO("GSM hard reset step %d\r\n", hard_reset_step);
 
-    switch (step)
+    switch (hard_reset_step)
     {
     case 0: // Power off // add a lot of delay in power off state, due to reserve time for measurement sensor data
             // If vbat is low, sensor data will be incorrect
@@ -1018,18 +1059,18 @@ void gsm_hard_reset(void)
         GSM_PWR_EN(0);
         GSM_PWR_RESET(1);
         GSM_PWR_KEY(0);
-        step++;
+        hard_reset_step++;
         break;
     
     case 1:
         GSM_PWR_RESET(0);
         DEBUG_INFO("Gsm power on\r\n");
         GSM_PWR_EN(1);
-        step++;
+        hard_reset_step++;
         break;
 
     case 2:
-        step++;
+        hard_reset_step++;
         break;
 
     case 3:
@@ -1037,23 +1078,23 @@ void gsm_hard_reset(void)
         DEBUG_INFO("Pulse power key\r\n");
         /* Tao xung |_| de Power On module, min 1s  */
         GSM_PWR_KEY(1);
-        step++;
+        hard_reset_step++;
         break;
 
     case 4:
         GSM_PWR_KEY(0);
         GSM_PWR_RESET(0);
         gsm_manager.timeout_after_reset = 90;
-        step++;
+        hard_reset_step++;
         break;
 
     case 5:
     case 6:
-        step++;
+        hard_reset_step++;
         break;
     
     case 7:
-        step = 0;
+        hard_reset_step = 0;
         gsm_change_state(GSM_STATE_POWER_ON);
         break;
     
@@ -1776,14 +1817,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    total_length += sprintf((char *)(ptr + total_length), "\"Uptime\":%u,", m_wake_time);
     total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
     DEBUG_INFO("Send time %u, ts %u\r\n", m_send_time, msg->measure_timestamp);
-	
+
+#ifdef DTG02V2
+    total_length += sprintf((char *)(ptr + total_length), "\"charge\":%u,", LL_GPIO_IsOutputPinSet(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin) ? 1 : 0);
+#endif	
+    
 //	// Release date
 //	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
 	
 //    total_length += sprintf((char *)(ptr + total_length), "\"FacSVR\":\"%s\",", app_eeprom_read_factory_data()->server);
 	
-    // Firmware and hardware
-    total_length += sprintf((char *)(ptr + total_length), "\"RstReason\":%u,", hardware_manager_get_reset_reason()->value);
+//    // Firmware and hardware
+//    total_length += sprintf((char *)(ptr + total_length), "\"RstReason\":%u,", hardware_manager_get_reset_reason()->value);
     total_length += sprintf((char *)(ptr + total_length), "\"FW\":\"%s\",", VERSION_CONTROL_FW);
     total_length += sprintf((char *)(ptr + total_length), "\"HW\":\"%s\"}}", VERSION_CONTROL_HW);
     
