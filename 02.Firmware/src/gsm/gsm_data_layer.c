@@ -108,7 +108,8 @@ static float convert_input_4_20ma_to_pressure(float current)
         return 10.0f;       // 10Pressure
     }
     
-    return (0.625f*current - 2.5f);
+    // x10 bar
+    return (6.25f*current - 25.0f);
 }
 
 void gsm_wakeup_periodically(void)
