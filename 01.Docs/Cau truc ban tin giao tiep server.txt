@@ -1,39 +1,39 @@
 1. Thiết bị DTG02
 a. Bản tin gửi lên
 {
-	"ts":1631847363000,								// Đây là timestamp lúc đo cảm biến, tính bằng milisecond
+	"ts":1631847363000,								        // Đây là timestamp lúc đo cảm biến, tính bằng milisecond
 	"values":{
-		"Error":"cir 1,cir 2,pin yeu,rs485",			// Trạng thái lỗi hệ thống
-		"Timestamp":1631847363,						// Đây là timestamp lúc đo cảm biến, tính bằng second, ở lần đầu tiên khi bật nguồn, giá trị này sẽ không hợp lệ
-														// Nguyên nhân là do thiết bị chưa cập nhật được thời gian qua internet
+		"Error":"cir 1,cir 2,pin yeu,rs485",			    // Trạng thái lỗi hệ thống
+		"Timestamp":1631847363,						        // Đây là timestamp lúc đo cảm biến, tính bằng second, ở lần đầu tiên khi bật nguồn, giá trị này sẽ không hợp lệ
+														    // Nguyên nhân là do thiết bị chưa cập nhật được thời gian qua internet
 		
-		"ID":"G2-860262050130983",						// ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
-		"Input1_J1":16843009,							// Giá trị cảm biên xung quay chiều thuận
-		"Input1_J1_D":0,								// Giá trị cảm biến xung quay chiều ngược
-		"ForwardFlow1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
+		"ID":"G2-860262050130983",						    // ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
+		"Input1_J1":16843009,							    // Giá trị cảm biên xung quay chiều thuận
+		"Input1_J1_D":0,								    // Giá trị cảm biến xung quay chiều ngược
+		"ForwardFlow1":16843009,							// Forward flow của đầu vào cảm biến xung số 1
 		"ReverseFlow1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
-		"ForwardIndex1":16843009,								// Forward index của cảm biến xung số 1
+		"ForwardIndex1":16843009,							// Forward index của cảm biến xung số 1
 		"ReverseIndex1":16843009,							// Reserve index của cảm biến xung số 1
-		"MinForwardFlow1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinReverseFlow1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxForwardFlow1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxReverseFlow1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
+		"MinForwardFlow1":123.4,							// Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReverseFlow1":123.4,							// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow1":123.4,							// Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReverseFlow1":123.4,							// Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
 		"Input1_J2":123456,
 		"Input1_J2_D":0,
-		"ForwardFlow2":16843009,								// Forward flow của đầu vào cảm biến xung số 2
+		"ForwardFlow2":16843009,							// Forward flow của đầu vào cảm biến xung số 2
 		"ReverseFlow2":16843009,							// Reserve flow của đầu vào cảm biến xung số 2
-		"ForwardIndex2":16843009,								// Forward index của cảm biến xung số 2
+		"ForwardIndex2":16843009,							// Forward index của cảm biến xung số 2
 		"ReverseIndex2":16843009,							// Reserve index của cảm biến xung số 2
-		"MinForwardFlow2":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinReverseFlow2":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxForwardFlow2":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxReverseFlow2":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
+		"MinForwardFlow2":123.4,							// Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReverseFlow2":123.4,							// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow2":123.4,							// Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReverseFlow2":123.4,							// Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
-		"Input1_J3_1":0.00,								// Giá trị input 4-20mA ở cổng số 1
-		"Input1_J3_2":0.00,								// Giá trị input 4-20mA ở cổng số 2
-		"Input1_J3_3":0.00,								// Giá trị input 4-20mA ở cổng số 3	
-		"Input1_J3_4":0.00,								// Giá trị input 4-20mA ở cổng số 4
+		"Input1_J3_1":0.00,								    // Giá trị input 4-20mA ở cổng số 1
+		"Input1_J3_2":0.00,								    // Giá trị input 4-20mA ở cổng số 2
+		"Input1_J3_3":0.00,								    // Giá trị input 4-20mA ở cổng số 3	
+		"Input1_J3_4":0.00,								    // Giá trị input 4-20mA ở cổng số 4
 		"Pressure1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
 		"Pressure2":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 2, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
 		"Pressure3":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 3, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
@@ -57,39 +57,39 @@ a. Bản tin gửi lên
 		"Output3":1,										// Giá trị đầu ra output số (1 hoặc 0) thứ 3
 		"Output4":1,										// Giá trị đầu ra output số (1 hoặc 0) thứ 4
 		
-		"SignalStrength":61,							// Cường độ sóng tính theo %, công thức qui đổi CSQ (10-31) = (0-100%)
-		"BatteryLevel":0,								// Giá trị điện áp đầu vào acqui tính theo phần trăm
-		"Vbat":3945,								    // Giá trị điện áp pin nội tính theo đơn vị mV
-		"Temperature":26,										// Giá trị nhiệt độ
+		"SignalStrength":61,							    // Cường độ sóng tính theo %, công thức qui đổi CSQ (10-31) = (0-100%)
+		"BatteryLevel":0,								    // Giá trị điện áp đầu vào acqui tính theo phần trăm
+		"Vbat":3945,								        // Giá trị điện áp pin nội tính theo đơn vị mV
+		"Temperature":26,									// Giá trị nhiệt độ
 		
 		// Phần dữ liệu này là của modbus của slave thứ 1
 		"SlID1":8,											// Địa chỉ slave thứ 1
 		"U1_1":"m3/s",										// Đơn vị tính của thanh ghi modbus thứ 1, chiều dài tối đa 5 kí tự
-		"Rg1_1":"FFFF",									// Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"Rg1_1":"FFFF",									    // Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U1_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
-		"Rg1_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinForwardFlow1":1234,									// Giá trị min forward flow
-		"MbMaxForwardFlow1":1234,									// Giá trị max forward flow
-		"MbMinReverseFlow1":1234,								// Giá trị min reserve flow
-		"MbMaxReverseFlow1":1234,								// Giá trị max reserve flow
+		"Rg1_2":"FFFF",									    // Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"MbMinForwardFlow1":1234,							// Giá trị min forward flow
+		"MbMaxForwardFlow1":1234,							// Giá trị max forward flow
+		"MbMinReverseFlow1":1234,							// Giá trị min reserve flow
+		"MbMaxReverseFlow1":1234,							// Giá trị max reserve flow
 	
 		// Phần dữ liệu này là của modbus của slave thứ 2
 		"SlID2":8,											// Địa chỉ slave thứ 2
 		"U2_1":"m3/s",										// Đơn vị tính của thanh ghi modbus thứ 1, chiều dài tối đa 5 kí tự
-		"Rg2_1":"FFFF",									// Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"Rg2_1":"FFFF",									    // Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U2_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
-		"Rg2_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinForwardFlow2":1234,									// Giá trị min forward flow
-		"MbMaxForwardFlow2":1234,									// Giá trị max forward flow
-		"MbMinReverseFlow2":1234,								// Giá trị min reserve flow
-		"MbMaxReverseFlow2":1234,								// Giá trị max reserve flow
+		"Rg2_2":"FFFF",									    // Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"MbMinForwardFlow2":1234,							// Giá trị min forward flow
+		"MbMaxForwardFlow2":1234,							// Giá trị max forward flow
+		"MbMinReverseFlow2":1234,						    // Giá trị min reserve flow
+		"MbMaxReverseFlow2":1234,							// Giá trị max reserve flow
 		
 		"SIM":"860262050130983",							// SIM và CCID là 2 thông số để tra cứu sim, từ đó phục vụ quá trình duy trì sim của nhà sản xuất
 		"CCID":"8984048000700052211",						// 
 		
-		"Uptime":3,										// Số lần thức dậy của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
+		"Uptime":3,										    // Số lần thức dậy của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
 		"Sendtime":34,										// Số lần gửi bản tin của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
 		
 		"FW":"0.1.5",										// Phiên bản phần mềm hiện tại
@@ -99,17 +99,17 @@ a. Bản tin gửi lên
 
 b. Bản tin nhận cấu hình về
 {
-	"CycleSendWeb":3,									// Đây là chu kì thức dậy gửi dữ liệu lên server, đơn vị phút
-	"Cyclewakeup":1,									// Đây là chu kì thức dậy đo đạc các thông số cảm biến, đơn vị phút
+	"CycleSendWeb":3,									    // Đây là chu kì thức dậy gửi dữ liệu lên server, đơn vị phút
+	"Cyclewakeup":1,									    // Đây là chu kì thức dậy đo đạc các thông số cảm biến, đơn vị phút
 	
-	"IMEI":"860262050125777",							// Trường này không cần đến, bỏ đi
+	"IMEI":"860262050125777",							    // Trường này không cần đến, bỏ đi
 	
 	// Phần dữ liệu này liên quan đến cảm biến xung thứ 1, công thức [số nước = Xung / K + Offset]
-	"Input_J1":1,										// Cấu hình chế độ hoạt động cảm biến xung
-														// 0 = tắt, 1 = chế độ chân PWM thì tăng xung, DIR thì giảm xung
-														// 2 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
-	"K_J1":1,											// Hệ số chia tỉ lệ của xung, phải lớn hơn 0
-	"MeterIndicator_J1":7649,							// Hệ số offset của số nước
+	"Input_J1":1,										    // Cấu hình chế độ hoạt động cảm biến xung
+														    // 0 = tắt, 1 = chế độ chân PWM thì tăng xung, DIR thì giảm xung
+														    // 2 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
+	"K_J1":1,											    // Hệ số chia tỉ lệ của xung, phải lớn hơn 0
+	"MeterIndicator_J1":7649,							    // Hệ số offset của số nước
 
 	
 	// Phần dữ liệu này liên quan đến cảm biến xung thứ 2, tương tự cảm biến xung số 1
@@ -119,134 +119,134 @@ b. Bản tin nhận cấu hình về
 	
 	
 	// Phần dữ liệu này là đầu ra on/off của thiết bị
-	"Outputput1":1,										// 4 giá trị của lần lượt đầu ra 1-4 digital của thiết bị
+	"Outputput1":1,										    // 4 giá trị của lần lượt đầu ra 1-4 digital của thiết bị
 	"Outputput2":1,
 	"Outputput3":1,
 	"Outputput4":1,
 	
 	// Phần này dành cho cấu hình input4-20mA có cho phép đọc hay không
-	"Input_J3_1":1,										// Cho phép đọc input 4-20mA cổng số 1
-	"Input_J3_2":1,										// Cho phép đọc input 4-20mA cổng số 2
-	"Input_J3_3":1,										// Cho phép đọc input 4-20mA cổng số 3
-	"Input_J3_4":1,										// Cho phép đọc input 4-20mA cổng số 4
+	"Input_J3_1":1,										    // Cho phép đọc input 4-20mA cổng số 1
+	"Input_J3_2":1,										    // Cho phép đọc input 4-20mA cổng số 2
+	"Input_J3_3":1,										    // Cho phép đọc input 4-20mA cổng số 3
+	"Input_J3_4":1,										    // Cho phép đọc input 4-20mA cổng số 4
 	
 	
-	"Outputput4_20":0,									// Giá trị cài đặt đầu ra 4-20mA
+	"Outputput4_20":0,									    // Giá trị cài đặt đầu ra 4-20mA
 	
-	"RS485":1,											// Có cho phép modbus hoạt động hay không, 1 = cho phép, 0 = tắt modbus
+	"RS485":1,											    // Có cho phép modbus hoạt động hay không, 1 = cho phép, 0 = tắt modbus
 	
 	// Phần dữ liệu này là của slave thứ 1
-	"ID485_1":8,										// Giá trị địa chỉ modbus của Slave thứ 1
-	"Register_1_1":30108,								// Giá trị thanh ghi modbus thứ 1
-	"Register_1_2":30110,								// Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
-	"Type_1_1":"int32",								// Giá trị thanh ghi modbus thứ 2
-	"Type_1_2":"int32",								// Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_1_1":"m3/s",									// Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
-	"Unit_1_2":"jun",									// // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
-	"ForwardFlow_1":1234,								// Giá trị tốc độ nước quay thuận
-	"ForwardFlow_1":1234,								// Giá trị tốc độ nước quay ngược
+	"ID485_1":8,										    // Giá trị địa chỉ modbus của Slave thứ 1
+	"Register_1_1":30108,								    // Giá trị thanh ghi modbus thứ 1
+	"Register_1_2":30110,								    // Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
+	"Type_1_1":"int32",								        // Giá trị thanh ghi modbus thứ 2
+	"Type_1_2":"int32",								        // Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_1_1":"m3/s",									    // Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
+	"Unit_1_2":"jun",									    // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
+	"ForwardFlow_1":1234,								    // Giá trị tốc độ nước quay thuận
+	"ForwardFlow_1":1234,								    // Giá trị tốc độ nước quay ngược
 
 	
 	// Phần dữ liệu này là của slave thứ 2
-	"ID485_2":8,										// Giá trị địa chỉ modbus của Slave thứ 2	
-	"Register_2_1":30112,								// Giá trị thanh ghi modbus thứ 1
-	"Type_2_1":"float",								// Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_2_1":"kg",									// Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
-	"Register_2_2":30113,								// Giá trị thanh ghi modbus thứ 2
-	"Type_2_2":"int16",								// Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_2_2":"lit",									// Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
-	"ForwardFlow_1":1234,								// Giá trị thanh ghi tốc độ nước quay thuận
-	"ReserveFlow_1":1234,								// Giá trị thanh ghi tốc độ nước quay ngược
+	"ID485_2":8,										    // Giá trị địa chỉ modbus của Slave thứ 2	
+	"Register_2_1":30112,								    // Giá trị thanh ghi modbus thứ 1
+	"Type_2_1":"float",								        // Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_2_1":"kg",									    // Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
+	"Register_2_2":30113,								    // Giá trị thanh ghi modbus thứ 2
+	"Type_2_2":"int16",								        // Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_2_2":"lit",									    // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
+	"ForwardFlow_1":1234,								    // Giá trị thanh ghi tốc độ nước quay thuận
+	"ReserveFlow_1":1234,								    // Giá trị thanh ghi tốc độ nước quay ngược
 					
 	// Phần này dùng trong trường hợp thay thế server
-	"Server":"http://222.252.52.34:8080",				// Phần này là địa chỉ server muốn thiết bị kết nối đến, phải bắt buộc bằng http hoặc https
-	"ServerUpdate":1,									// Cho phép thiết bị kết nối đến server mới hay không, 1 = cho phép, 0 = không cho phép
+	"Server":"http://222.252.52.34:8080",				    // Phần này là địa chỉ server muốn thiết bị kết nối đến, phải bắt buộc bằng http hoặc https
+	"ServerUpdate":1,									    // Cho phép thiết bị kết nối đến server mới hay không, 1 = cho phép, 0 = không cho phép
 	
 	// Các thông tin sau dành để cảnh báo
-	"SOS":"0942018895",								// Số điện thoại để nhắn tin khi có cảnh báo, độ dài (9-12) kí tự
-	"Warning":1,										// Có cho phép cảnh báo hay không, 1 = cho phép, 0 = không cho phép
+	"SOS":"0942018895",								        // Số điện thoại để nhắn tin khi có cảnh báo, độ dài (9-12) kí tự
+	"Warning":1,										    // Có cho phép cảnh báo hay không, 1 = cho phép, 0 = không cho phép
 	
-	"Type":"G2",										// Giá trị này không dùng
+	"Type":"G2",										    // Giá trị này không dùng
 	
-	"MaxSms1Day":1,										// Số tin nhắn  SMS tối đa thiết bị được gửi tin 1 ngày
-	"Auto_config":1,									// Thời gian định kì thiết bị hỏi các thông số cấu hình của "default", đơn vị giờ
-	"BatLevel":1,										// Giá trị cài đặt ngưỡng pin yếu, đơn vị %, khoảng giá trị 0-100
-	"Delay":10,											// Khoảng thời gian delay gửi tin lên server khi thiết bị thức dậy, đơn vị giây
+	"MaxSms1Day":1,										    // Số tin nhắn  SMS tối đa thiết bị được gửi tin 1 ngày
+	"Auto_config":1,									    // Thời gian định kì thiết bị hỏi các thông số cấu hình của "default", đơn vị giờ
+	"BatLevel":1,										    // Giá trị cài đặt ngưỡng pin yếu, đơn vị %, khoảng giá trị 0-100
+	"Delay":10,											    // Khoảng thời gian delay gửi tin lên server khi thiết bị thức dậy, đơn vị giây
 
 	// Các thông tin sau dành để cập nhật phần mềm
 	// Thiết bị chỉ cập nhật khi cả 3 thông số dưới đây thoả mãn
-	"Link":"http://radiotech.vn:2602/DTG02_016.bin",	// Đây là URL để thiết bị download firmware cập nhật từ xa, khuyến nghị dùng http thay cho https
-	"Hardware":"0.0.1",								// Phiển bản phần cứng dành để cập nhật phần mềm từ xa, 
-														// chỉ cho phép cập nhật khi phiên bản phần cứng giống với phiển bản của thiết bị														
-	"Version":"0.1.6",									// Phiên bản phần mềm sẽ cập nhật, phiển bản mới phải lớn hơn phiên bản cũ
-	"Update":0,										// 1 =  cho phép cập nhật, 0 = không cho phép
+	"Link":"http://radiotech.vn:2602/DTG02_016.bin",	    // Đây là URL để thiết bị download firmware cập nhật từ xa, khuyến nghị dùng http thay cho https
+	"Hardware":"0.0.1",								        // Phiển bản phần cứng dành để cập nhật phần mềm từ xa, 
+														    // chỉ cho phép cập nhật khi phiên bản phần cứng giống với phiển bản của thiết bị														
+	"Version":"0.1.6",									    // Phiên bản phần mềm sẽ cập nhật, phiển bản mới phải lớn hơn phiên bản cũ
+	"Update":0,										        // 1 =  cho phép cập nhật, 0 = không cho phép
 }
 
 
 2. Với thiết bị DTG01
 a. Bản tin gửi lên
 {
-	"ts":1631847363000,								// Đây là timestamp lúc đo cảm biến, tính bằng milisecond
+	"ts":1631847363000,								        // Đây là timestamp lúc đo cảm biến, tính bằng milisecond
 	"values":{
-		"Error":"cir 1,cir 2,pin yeu,rs485",			// Trạng thái lỗi hệ thống
-		"Timestamp":1631847363,						// Đây là timestamp lúc đo cảm biến, tính bằng second, ở lần đầu tiên khi bật nguồn, giá trị này sẽ không hợp lệ
-														// Nguyên nhân là do thiết bị chưa cập nhật được thời gian qua internet
+		"Error":"cir 1,cir 2,pin yeu,rs485",			    // Trạng thái lỗi hệ thống
+		"Timestamp":1631847363,						        // Đây là timestamp lúc đo cảm biến, tính bằng second, ở lần đầu tiên khi bật nguồn, giá trị này sẽ không hợp lệ
+														    // Nguyên nhân là do thiết bị chưa cập nhật được thời gian qua internet
 		
-		"ID":"G1-860262050130983",						// ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
-		"Input1":16843009,								// Giá trị cảm biên xung quay chiều thuận
-		"Input1_J1_D":0,									// Giá trị cảm biến xung quay chiều ngược
-		"ForwardFlow1":16843009,								// Forward flow của đầu vào cảm biến xung số 1
-		"ReverseFlow1":16843009,							// Reserve flow của đầu vào cảm biến xung số 1
-		"ForwardIndex1":16843009,								// Forward index của cảm biến xung số 1
-		"ReverseIndex1":16843009,							// Reserve index của cảm biến xung số 1
-		"MinForwardFlow1":123.4,								// Giá trị nhỏ nhất của Flow forward ở cổng số 1
-		"MinReverseFlow1":123.4,								// Giá trị nhỏ nhất của Flow reserve ở cổng số 1
-		"MaxForwardFlow1":123.4,								// Giá trị lớn nhất của Flow forward ở cổng số 1
-		"MaxReverseFlow1":123.4,								// Giá trị lớn nhất của Flow reserve ở cổng số 1
-		
-		
-		"Input2":0.00,									// Giá trị input 4-20mA ở cổng số 1
-		"Pressure1":0.00,									// Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
-		"MinPressure1":1.2,									// Giá trị 4-20mA input nhỏ nhất trong 1h
-		"MaxPressure1":1.2,									// Giá trị 4-20mA input lớn nhất trong 1h
-		
-		"Output2":4.12,									// Giá trị đầu ra 4-20mA
+		"ID":"G1-860262050130983",						    // ID của thiết bị, cấu trúc G1/G2/G2V2 - IMEI của mạch, IMEI chính là token gửi lên Web
+		"Input1":16843009,								    // Giá trị cảm biên xung quay chiều thuận
+		"Input1_J1_D":0,								    // Giá trị cảm biến xung quay chiều ngược
+		"ForwardFlow1":16843009,						    // Forward flow của đầu vào cảm biến xung số 1
+		"ReverseFlow1":16843009,						    // Reserve flow của đầu vào cảm biến xung số 1
+		"ForwardIndex1":16843009,						    // Forward index của cảm biến xung số 1
+		"ReverseIndex1":16843009,						    // Reserve index của cảm biến xung số 1
+		"MinForwardFlow1":123.4,						    // Giá trị nhỏ nhất của Flow forward ở cổng số 1
+		"MinReverseFlow1":123.4,						    // Giá trị nhỏ nhất của Flow reserve ở cổng số 1
+		"MaxForwardFlow1":123.4,						    // Giá trị lớn nhất của Flow forward ở cổng số 1
+		"MaxReverseFlow1":123.4,						    // Giá trị lớn nhất của Flow reserve ở cổng số 1
 		
 		
-		"SignalStrength":61,							// Cường độ sóng tính theo %, công thức qui đổi CSQ (10-31) = (0-100%)
-		"BatteryLevel":0,								// Giá trị điện áp đầu vào acqui tính theo phần trăm
-		"Vbat":3945,								    // Giá trị điện áp pin nội tính theo đơn vị mV
-		"T":26,										// Giá trị nhiệt độ
+		"Input2":0.00,									    // Giá trị input 4-20mA ở cổng số 1
+		"Pressure1":0.00,								    // Giá trị input 4-20mA qui đổi sang áp suất ở cổng số 1, công thức (4-20mA) = (0-10PA), khi dòng điện lớn hơn 20mA thì tính là 10PA
+		"MinPressure1":1.2,								    // Giá trị 4-20mA input nhỏ nhất trong 1h
+		"MaxPressure1":1.2,								    // Giá trị 4-20mA input lớn nhất trong 1h
+		
+		"Output2":4.12,									    // Giá trị đầu ra 4-20mA
+		
+		
+		"SignalStrength":61,							    // Cường độ sóng tính theo %, công thức qui đổi CSQ (10-31) = (0-100%)
+		"BatteryLevel":0,								    // Giá trị điện áp đầu vào acqui tính theo phần trăm
+		"Vbat":3945,								        // Giá trị điện áp pin nội tính theo đơn vị mV
+		"T":26,										        // Giá trị nhiệt độ
 		
 		// Phần dữ liệu này là của modbus của slave thứ 1
 		"SlID1":8,											// Địa chỉ slave thứ 1
 		"U1_1":"m3/s",										// Đơn vị tính của thanh ghi modbus thứ 1, chiều dài tối đa 5 kí tự
-		"Rg1_1":"FFFF",									// Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"Rg1_1":"FFFF",									    // Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U1_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
-		"Rg1_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinForwardFlow1":1234,									// Giá trị min forward flow
-		"MbMaxForwardFlow1":1234,									// Giá trị max forward flow
-		"MbMinReverseFlow1":1234,								// Giá trị min reserve flow
-		"MbMaxReverseFlow1":1234,								// Giá trị max reserve flow
+		"Rg1_2":"FFFF",									    // Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"MbMinForwardFlow1":1234,							// Giá trị min forward flow
+		"MbMaxForwardFlow1":1234,							// Giá trị max forward flow
+		"MbMinReverseFlow1":1234,							// Giá trị min reserve flow
+		"MbMaxReverseFlow1":1234,							// Giá trị max reserve flow
 		
 		// Phần dữ liệu này là của modbus của slave thứ 2
 		"SlID2":8,											// Địa chỉ slave thứ 2
 		"U2_1":"m3/s",										// Đơn vị tính của thanh ghi modbus thứ 1, chiều dài tối đa 5 kí tự
-		"Rg2_1":"FFFF",									// Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"Rg2_1":"FFFF",									    // Giá trị thanh ghi modbus thứ 1, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
 															// Trong trường hợp có dữ liệu thì kết quả có dạng "Rg1_1":12345
 		"U2_2":"jun",										// Đơn vị tính của thanh ghi modbus thứ 2, chiều dài tối đa 5 kí tự
-		"Rg2_2":"FFFF",									// Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
-		"MbMinForwardFlow2":1234,									// Giá trị min forward flow
-		"MbMaxForwardFlow2":1234,									// Giá trị max forward flow
-		"MbMinReverseFlow2":1234,								// Giá trị min reserve flow
-		"MbMaxReverseFlow2":1234,									// Giá trị max reserve flow
+		"Rg2_2":"FFFF",									    // Giá trị thanh ghi modbus thứ 2, "FFFF" mang hàm ý không hợp lệ, có thể thiết bị 485 không có kết nối
+		"MbMinForwardFlow2":1234,							// Giá trị min forward flow
+		"MbMaxForwardFlow2":1234,							// Giá trị max forward flow
+		"MbMinReverseFlow2":1234,							// Giá trị min reserve flow
+		"MbMaxReverseFlow2":1234,							// Giá trị max reserve flow
 		
 		
 		"SIM":"860262050130983",							// SIM và CCID là 2 thông số để tra cứu sim, từ đó phục vụ quá trình duy trì sim của nhà sản xuất
 		"CCID":"8984048000700052211",						// 
 		
-		"Uptime":3,										// Số lần thức dậy của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
+		"Uptime":3,										    // Số lần thức dậy của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
 		"Sendtime":34,										// Số lần gửi bản tin của thiết bị, lưu ý số lần này sẽ bị mất khi thiết bị reset hoặc mất nguồn
 		
 		"FW":"0.1.5",										// Phiên bản phần mềm hiện tại
@@ -256,72 +256,74 @@ a. Bản tin gửi lên
 
 b. Bản tin nhận cấu hình về
 {
-	"CycleSendWeb":3,									// Đây là chu kì thức dậy gửi dữ liệu lên server, đơn vị phút
-	"Cyclewakeup":1,									// Đây là chu kì thức dậy đo đạc các thông số cảm biến, đơn vị phút
+	"CycleSendWeb":3,									    // Đây là chu kì thức dậy gửi dữ liệu lên server, đơn vị phút
+	"Cyclewakeup":1,									    // Đây là chu kì thức dậy đo đạc các thông số cảm biến, đơn vị phút
 	
-	"IMEI":"860262050125777",							// Trường này không cần đến, bỏ đi
+	"IMEI":"860262050125777",							    // Trường này không cần đến, bỏ đi
 	
 	// Phần dữ liệu này liên quan đến cảm biến xung thứ 1, công thức [số nước = Xung / K + Offset]
-	"InputMode0":1,										// Cấu hình chế độ hoạt động cảm biến xung
-														// 0 = tắt, 1 = chế độ chân PWM thì tăng xung, DIR thì giảm xung
-														// 2 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
-	"K":1,												// Hệ số chia tỉ lệ của xung, phải lớn hơn 0
-	"MeterIndicator":7649,								// Hệ số offset của số nước
+	"InputMode0":1,										    // Cấu hình chế độ hoạt động cảm biến xung
+														    // 0 = tắt, 1 = chế độ chân PWM thì tăng xung, DIR thì giảm xung, 2 = che do xung PWM only-dir khong quan tam
+														    // 3 = chế độ PWM thì tăng xung thuận, DIR tăng xung nghịch, gửi cả 2 giá trị thuận nghịch lên server
+	"K":1,												    // Hệ số chia tỉ lệ của xung, phải lớn hơn 0
+	"MeterIndicator":7649,								    // Hệ số offset của số nước
 
 
 	// Phần này dành cho cấu hình input4-20mA có cho phép đọc hay không
-	"Input2":1,										// Cho phép đọc input 4-20mA cổng số 1
+	"Input2":1,										        // Cho phép đọc input 4-20mA cổng số 1
 	
 	
-	"Outputput2":0,										// Giá trị cài đặt đầu ra 4-20mA
+	"Outputput2":0,										    // Giá trị cài đặt đầu ra 4-20mA
 	
-	"RS485":1,											// Có cho phép modbus hoạt động hay không, 1 = cho phép, 0 = tắt modbus
+	"RS485":1,											    // Có cho phép modbus hoạt động hay không, 1 = cho phép, 0 = tắt modbus
 	
 	// Phần dữ liệu này là của slave thứ 1
-	"ID485_1":8,										// Giá trị địa chỉ modbus của Slave thứ 1
-	"Register_1_1":30108,								// Giá trị thanh ghi modbus thứ 1
-	"Register_1_2":30110,								// Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
-	"Type_1_1":"int32",									// Giá trị thanh ghi modbus thứ 2
-	"Type_1_2":"int32",									// Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_1_1":"m3/s",									// Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
-	"Unit_1_2":"jun",									// // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
-	"ForwardFlow_1":1234,								// Giá trị tốc độ nước quay thuận
-	"ForwardFlow_1":1234,								// Giá trị tốc độ nước quay ngược
+	"ID485_1":8,										    // Giá trị địa chỉ modbus của Slave thứ 1
+	"Register_1_1":30108,								    // Giá trị thanh ghi modbus thứ 1
+	"Register_1_2":30110,								    // Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
+    "Register_1_3":30108,								    // Giá trị thanh ghi modbus thứ 3
+	"Register_1_4":30110,								    // Kiểu dữ liệu thanh ghi modbus thứ 4, hỗ trợ 3 kiểu (int16, int32, float)
+	"Type_1_1":"int32",									    // Giá trị thanh ghi modbus thứ 2
+	"Type_1_2":"int32",									    // Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_1_1":"m3/s",									    // Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
+	"Unit_1_2":"jun",									    // // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
+	"ForwardFlow_1":1234,								    // Giá trị tốc độ nước quay thuận
+	"ReserveFlow_1":1234,								    // Giá trị tốc độ nước quay ngược
 
 	
 	// Phần dữ liệu này là của slave thứ 2
-	"ID485_2":8,										// Giá trị địa chỉ modbus của Slave thứ 2	
-	"Register_2_1":30112,								// Giá trị thanh ghi modbus thứ 1
-	"Type_2_1":"float",								// Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_2_1":"kg",									// Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
-	"Register_2_2":30113,								// Giá trị thanh ghi modbus thứ 2
-	"Type_2_2":"int16",								// Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
-	"Unit_2_2":"lit",									// Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
-	"ForwardFlow_1":1234,								// Giá trị thanh ghi tốc độ nước quay thuận
-	"ReserveFlow_1":1234,								// Giá trị thanh ghi tốc độ nước quay ngược
+	"ID485_2":8,										    // Giá trị địa chỉ modbus của Slave thứ 2	
+	"Register_2_1":30112,								    // Giá trị thanh ghi modbus thứ 1
+	"Type_2_1":"float",								        // Kiểu dữ liệu thanh ghi modbus thứ 1, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_2_1":"kg",									    // Đơn vị tính của thanh ghi modbus thứ 1, tối đa 5 kí tự
+	"Register_2_2":30113,								    // Giá trị thanh ghi modbus thứ 2
+	"Type_2_2":"int16",								        // Kiểu dữ liệu thanh ghi modbus thứ 2, hỗ trợ 3 kiểu (int16, int32, float)
+	"Unit_2_2":"lit",									    // Đơn vị tính của thanh ghi modbus thứ 2, tối đa 5 kí tự
+	"ForwardFlow_1":1234,								    // Giá trị thanh ghi tốc độ nước quay thuận
+	"ReserveFlow_1":1234,								    // Giá trị thanh ghi tốc độ nước quay ngược
 					
 	// Phần này dùng trong trường hợp thay thế server
-	"Server":"http://222.252.52.34:8080",				// Phần này là địa chỉ server muốn thiết bị kết nối đến, phải bắt buộc bằng http hoặc https
-	"ServerUpdate":1,									// Cho phép thiết bị kết nối đến server mới hay không, 1 = cho phép, 0 = không cho phép
+	"Server":"http://222.252.52.34:8080",				    // Phần này là địa chỉ server muốn thiết bị kết nối đến, phải bắt buộc bằng http hoặc https
+	"ServerUpdate":1,									    // Cho phép thiết bị kết nối đến server mới hay không, 1 = cho phép, 0 = không cho phép
 	
 	// Các thông tin sau dành để cảnh báo
-	"SOS":"0942018895",									// Số điện thoại để nhắn tin khi có cảnh báo, độ dài (9-12) kí tự
-	"Warning":1,										// Có cho phép cảnh báo hay không, 1 = cho phép, 0 = không cho phép
+	"SOS":"0942018895",									    // Số điện thoại để nhắn tin khi có cảnh báo, độ dài (9-12) kí tự
+	"Warning":1,										    // Có cho phép cảnh báo hay không, 1 = cho phép, 0 = không cho phép
 	
-	"Type":"G2",										// Giá trị này không dùng
+	"Type":"G2",										    // Giá trị này không dùng
 	
-	"MaxSms1Day":1,										// Số tin nhắn  SMS tối đa thiết bị được gửi tin 1 ngày
-	"Auto_config":1,									// Thời gian định kì thiết bị hỏi các thông số cấu hình của "default", đơn vị giờ
-	"BatLevel":1,										// Giá trị cài đặt ngưỡng pin yếu, đơn vị %, khoảng giá trị 0-100
-	"Delay":10,											// Khoảng thời gian delay gửi tin lên server khi thiết bị thức dậy, đơn vị giây
+	"MaxSms1Day":1,										    // Số tin nhắn  SMS tối đa thiết bị được gửi tin 1 ngày
+	"Auto_config":1,									    // Thời gian định kì thiết bị hỏi các thông số cấu hình của "default", đơn vị giờ
+	"BatLevel":1,										    // Giá trị cài đặt ngưỡng pin yếu, đơn vị %, khoảng giá trị 0-100
+	"Delay":10,											    // Khoảng thời gian delay gửi tin lên server khi thiết bị thức dậy, đơn vị giây
 
 	// Các thông tin sau dành để cập nhật phần mềm
 	// Thiết bị chỉ cập nhật khi cả 3 thông số dưới đây thoả mãn
-	"Link":"http://radiotech.vn:2602/DTG02_016.bin",	// Đây là URL để thiết bị download firmware cập nhật từ xa, khuyến nghị dùng http thay cho https
-	"Hardware":"0.0.1",									// Phiển bản phần cứng dành để cập nhật phần mềm từ xa, 
-														// chỉ cho phép cập nhật khi phiên bản phần cứng giống với phiển bản của thiết bị														
-	"Version":"0.1.6",									// Phiên bản phần mềm sẽ cập nhật, phiển bản mới phải lớn hơn phiên bản cũ
-	"Update":0,											// 1 =  cho phép cập nhật, 0 = không cho phép
+	"Link":"http://radiotech.vn:2602/DTG02_016.bin",	    // Đây là URL để thiết bị download firmware cập nhật từ xa, khuyến nghị dùng http thay cho https
+	"Hardware":"0.0.1",									    // Phiển bản phần cứng dành để cập nhật phần mềm từ xa, 
+														    // chỉ cho phép cập nhật khi phiên bản phần cứng giống với phiển bản của thiết bị														
+	"Version":"0.1.6",									    // Phiên bản phần mềm sẽ cập nhật, phiển bản mới phải lớn hơn phiên bản cũ
+	"Update":0,											    // 1 =  cho phép cập nhật, 0 = không cho phép
 }
 
 3. Cách cài đặt địa chỉ server mặc định của nhà sản xuất

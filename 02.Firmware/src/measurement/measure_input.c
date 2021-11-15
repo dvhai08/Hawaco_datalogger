@@ -160,15 +160,26 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                         }
 
                         DEBUG_INFO("MB id %u, offset %u, size %u\r\n", slave_addr, register_addr, halfword_quality);
-                        result = modbus_master_read_input_register(slave_addr,
+                        for (uint32_t i = 0; i < 2; i++)
+                        {
+                            result = modbus_master_read_input_register(slave_addr,
                                                                    register_addr,
                                                                    halfword_quality);
+                            if (result != MODBUS_MASTER_OK) // Read data error
+                            {
+                                sys_delay_ms(delay_modbus);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
                         register_value[slave_count].slave_addr = slave_addr;
 
                         if (result != MODBUS_MASTER_OK) // Read data error
                         {
                             DEBUG_ERROR("Modbus read input register failed code %d\r\n", result);
-                            delay_modbus = 200; // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time
+                            delay_modbus = 100; // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time
                             register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
                             modbus_master_clear_response_buffer();
                             
@@ -389,8 +400,8 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
         m_measure_data.counter[0].indicator = new_indicator;
 
         m_pulse_counter_in_backup[0].indicator = new_indicator;
-        m_pulse_counter_in_backup[0].total_reserve = 0;
-        m_pulse_counter_in_backup[0].total_reserve_index = 0;
+        m_pulse_counter_in_backup[0].total_reverse = 0;
+        m_pulse_counter_in_backup[0].total_reverse_index = 0;
         m_pulse_counter_in_backup[0].total_forward_index = new_indicator;
         m_pulse_counter_in_backup[0].total_forward = 0;
     }
@@ -401,8 +412,8 @@ void measure_input_reset_indicator(uint8_t index, uint32_t new_indicator)
         m_measure_data.counter[1].indicator = new_indicator;
 
         m_pulse_counter_in_backup[1].indicator = new_indicator;
-        m_pulse_counter_in_backup[1].total_reserve = 0;
-        m_pulse_counter_in_backup[1].total_reserve_index = 0;
+        m_pulse_counter_in_backup[1].total_reverse = 0;
+        m_pulse_counter_in_backup[1].total_reverse_index = 0;
         m_pulse_counter_in_backup[1].total_forward_index = new_indicator;
         m_pulse_counter_in_backup[1].total_forward = 0;
     }
@@ -1025,8 +1036,8 @@ void measure_input_task(void)
                     if (m_sensor_msq[i].state == MEASUREMENT_QUEUE_STATE_IDLE)
                     {
                         DEBUG_VERBOSE("Store data to flash with reserve index %u %u\r\n",
-                                      m_sensor_msq[i].counter[0].total_reserve_index,
-                                      m_sensor_msq[i].counter[1].total_reserve_index);
+                                      m_sensor_msq[i].counter[0].total_reverse_index,
+                                      m_sensor_msq[i].counter[1].total_reverse_index);
 
                         DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n",
                                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reverse_counter,
@@ -1123,6 +1134,15 @@ void measure_input_initialize(void)
             m_pulse_counter_in_backup[0].reverse_counter = last_data.counter[0].reverse_counter;
             save = true;
         }
+        
+        if (save)
+        {
+            m_pulse_counter_in_backup[0].total_forward = last_data.counter[0].total_forward;
+            m_pulse_counter_in_backup[0].total_forward_index = last_data.counter[0].total_forward_index;
+            m_pulse_counter_in_backup[0].total_reverse = last_data.counter[0].total_reverse;
+            m_pulse_counter_in_backup[0].total_reverse_index = last_data.counter[0].total_reverse_index;
+        }
+        
 #ifndef DTG01
         if (last_data.counter[1].real_counter > m_pulse_counter_in_backup[1].real_counter)
         {
@@ -1141,6 +1161,15 @@ void measure_input_initialize(void)
             //            DEBUG_VERBOSE("Save new data from flash\r\n");
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
+        
+        if (save)
+        {
+            m_pulse_counter_in_backup[1].total_forward = last_data.counter[1].total_forward;
+            m_pulse_counter_in_backup[1].total_forward_index = last_data.counter[1].total_forward_index;
+            m_pulse_counter_in_backup[1].total_reverse = last_data.counter[1].total_reverse;
+            m_pulse_counter_in_backup[1].total_reverse_index = last_data.counter[1].total_reverse_index;
+        }
+        
         DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n",
                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reverse_counter,
                    m_pulse_counter_in_backup[1].real_counter, m_pulse_counter_in_backup[1].reverse_counter);
@@ -1226,8 +1255,8 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 //                    DEBUG_WARN("[PWM]---\r\n");
                     m_pulse_counter_in_backup[input->port].reverse_flow++;
                     m_pulse_counter_in_backup[input->port].real_counter--;
-                    m_pulse_counter_in_backup[input->port].total_reserve++;
-                    m_pulse_counter_in_backup[input->port].total_reserve_index = m_pulse_counter_in_backup[input->port].total_reserve / m_pulse_counter_in_backup[input->port].k;
+                    m_pulse_counter_in_backup[input->port].total_reverse++;
+                    m_pulse_counter_in_backup[input->port].total_reverse_index = m_pulse_counter_in_backup[input->port].total_reverse / m_pulse_counter_in_backup[input->port].k;
                 }
                 m_pulse_counter_in_backup[input->port].reverse_counter = 0;
             }
@@ -1284,14 +1313,14 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
 //                if (eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_DISABLE || eeprom_cfg->meter_mode[input->port] == APP_EEPROM_METER_MODE_ONLY_PWM)
 //                {
 //                    m_pulse_counter_in_backup[input->port].reverse_counter = 0;
-//                    m_pulse_counter_in_backup[input->port].total_reserve_index = 0;
-//                    m_pulse_counter_in_backup[input->port].total_reserve = 0;
+//                    m_pulse_counter_in_backup[input->port].total_reverse_index = 0;
+//                    m_pulse_counter_in_backup[input->port].total_reverse = 0;
 //                }
 //                else
                 {
-                    m_pulse_counter_in_backup[input->port].total_reserve++;
+                    m_pulse_counter_in_backup[input->port].total_reverse++;
                     m_pulse_counter_in_backup[input->port].reverse_counter++;
-                    m_pulse_counter_in_backup[input->port].total_reserve_index = m_pulse_counter_in_backup[input->port].total_reserve / m_pulse_counter_in_backup[input->port].k;
+                    m_pulse_counter_in_backup[input->port].total_reverse_index = m_pulse_counter_in_backup[input->port].total_reverse / m_pulse_counter_in_backup[input->port].k;
                 }
             }
             else

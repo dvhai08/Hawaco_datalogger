@@ -396,19 +396,19 @@ typedef struct
 
 typedef struct
 {
-	int32_t real_counter;       // gia tri do khi da tinh ca xung am duong
+	int32_t real_counter;           // gia tri do khi da tinh ca xung am duong
     int32_t reverse_counter;
     int32_t total_forward;
-    int32_t total_reserve;
+    int32_t total_reverse;
     
-    uint32_t fw_flow;          // Toc do quay thuan
+    uint32_t fw_flow;               // Toc do quay thuan
     uint32_t reverse_flow;          // Toc do quay nguoc
     
     float flow_speed_forward_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
     float flow_speed_reserve_agv_cycle_wakeup;             // Trung binh toc do giua 2 lan do 
     
     uint32_t total_forward_index;       // So nuoc thuan da tinh khi chia cho k + offset
-    uint32_t total_reserve_index;       // so nuoc nghich da tinh sau khi chia cho k (ko co offset)
+    uint32_t total_reverse_index;       // so nuoc nghich da tinh sau khi chia cho k (ko co offset)
     
     flow_hour_t flow_avg_cycle_send_web;        // Trung binh toc do giua 2 lan thuc day gui data len web
     

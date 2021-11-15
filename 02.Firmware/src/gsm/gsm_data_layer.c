@@ -1459,14 +1459,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                 msg->counter[i].total_forward_index);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex%u\":%u,",
                                                 i+1,
-                                                msg->counter[i].total_reserve_index);
+                                                msg->counter[i].total_reverse_index);
         }
         else
         {
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex\":%u,",
                                                 msg->counter[i].total_forward_index);
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",
-                                                msg->counter[i].total_reserve_index);
+                                                msg->counter[i].total_reverse_index);
         }
         
         if (msg->counter[i].flow_avg_cycle_send_web.valid)
@@ -1478,14 +1478,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                     msg->counter[i].total_forward_index);
                 total_length += sprintf((char *)(ptr + total_length), "\"RvsIdxHour%u\":%u,",
                                                     i+1,
-                                                    msg->counter[i].total_reserve_index);
+                                                    msg->counter[i].total_reverse_index);
             }
             else
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"FwIdxHour\":%u,",
                                                     msg->counter[i].total_forward_index);
                 total_length += sprintf((char *)(ptr + total_length), "\"RvsIdxHour\":%u,",
-                                                    msg->counter[i].total_reserve_index);
+                                                    msg->counter[i].total_reverse_index);
             }
         
             // Min max   
@@ -1647,7 +1647,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex1\":%u,",                                        
                                         msg->counter[0].total_forward_index);
     total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",                                       
-                                        msg->counter[0].total_reserve_index);
+                                        msg->counter[0].total_reverse_index);
     
     if (msg->counter[0].flow_avg_cycle_send_web.valid)
     {
