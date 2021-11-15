@@ -66,6 +66,7 @@ bool ota_update_write_next(uint8_t *data, uint32_t length)
         if (!p)
         {
             DEBUG_ERROR("Wrong firmware header\r\n");
+            NVIC_SystemReset();
             return false;
         }
 		

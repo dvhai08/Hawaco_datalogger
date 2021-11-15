@@ -25,6 +25,7 @@
 #include "app_spi_flash.h"
 #include "tim.h"
 #include "spi.h"
+#include "measure_input.h"
 
 #if PRINTF_OVER_RTT
 int rtt_custom_printf(const char *format, ...)
@@ -55,6 +56,7 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **argv);
+static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **argv);
 #if 0
 static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv);
 #endif /* DTG02V2 */
@@ -74,8 +76,9 @@ static const shell_command_context_t cli_command_table[] =
 //    {"flash",           "\tflash : Flash test\r\n",                             cli_flash_test,                             2},
 //    {"485",             "\t485 : Test rs485\r\n",                               cli_rs485_test,                             0},
     {"pwm",             "\tpwm : Test pwm\r\n",                                 cli_pwm_test,                               1},
-    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
-    {"float",          "\tFloat to hexa\r\n",                                     cli_dump_float,                        1},
+    {"pulse",           "\tpulse : Fake pulse event\r\n",                       cli_fake_pulse,                               0},
+//    {"server",          "\tSet server\r\n",                                     cli_set_server_test,                        1},
+//    {"float",          "\tFloat to hexa\r\n",                                     cli_dump_float,                        1},
 };
 
 void app_cli_puts(uint8_t *buf, uint32_t len)
@@ -334,6 +337,19 @@ static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **ar
     int32_t tmp = atoi(argv[1]);
     DEBUG_WARN("Int32 %ld, value 0x%08X\r\n", tmp, *(int32_t*)&tmp);
     return 0;
+}
+
+static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **argv)
+{
+    measure_input_water_meter_input_t input;
+    input.port = MEASURE_INPUT_PORT_1;
+    input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
+    input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
+    input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
+    input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+    measure_input_pulse_irq(&input);
+    return 0;
+    
 }
 
 #endif /* APP_CLI_ENABLE */

@@ -1638,13 +1638,13 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                 temp_counter);
 	
     // Total forward flow
-    total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow1\":%u,",                                    
+    total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%u,",                                    
                                         msg->counter[0].total_forward);
-    total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow1\":%u,",                                        
-                                        msg->counter[0].total_reserve);
+    total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%u,",                                        
+                                        msg->counter[0].total_reverse);
     
     // Total forward/reserve index : tong luu luong tich luy thuan/nguoc
-    total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex1\":%u,",                                        
+    total_length += sprintf((char *)(ptr + total_length), "\"ForwardIndex\":%u,",                                        
                                         msg->counter[0].total_forward_index);
     total_length += sprintf((char *)(ptr + total_length), "\"ReverseIndex\":%u,",                                       
                                         msg->counter[0].total_reverse_index);
@@ -1652,18 +1652,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     if (msg->counter[0].flow_avg_cycle_send_web.valid)
     {
         // min max forward flow
-        total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow1\":%.2f,",
+        total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow\":%.2f,",
                                         msg->counter[0].flow_avg_cycle_send_web.fw_flow_min);
     
-        total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow1\":%.2f,",
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow\":%.2f,",
                                         
                                         msg->counter[0].flow_avg_cycle_send_web.fw_flow_max);
     
         // min max reserve flow
-        total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow1\":%.2f,",                                           
+        total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow\":%.2f,",                                           
                                             msg->counter[0].flow_avg_cycle_send_web.reserve_flow_min);
         
-        total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow1\":%.2f,",                                           
+        total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow\":%.2f,",                                           
                                             msg->counter[0].flow_avg_cycle_send_web.reserve_flow_max);
     }
 
@@ -1910,9 +1910,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         }
         else
         {
-            #if OTA_VERSION == 0
+#if OTA_VERSION == 0
             ota_update_write_next((uint8_t*)get_data->data, get_data->data_length);
-            #endif
+#endif
         }
     }
     break;

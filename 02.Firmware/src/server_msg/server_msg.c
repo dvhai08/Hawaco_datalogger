@@ -853,10 +853,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 	// Server addr changed
 	process_server_addr_change(buffer);
 	
-	
-	// OTA update
-	process_ota_update(buffer);
-    
+	    
 	// Modbus register configuration
 	has_new_cfg += process_modbus_register_config(buffer);
 	
@@ -909,6 +906,9 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 		app_eeprom_save_config();
 	}
 	
+    // OTA update
+	process_ota_update(buffer);
+    
     *new_config = has_new_cfg;
 }
 

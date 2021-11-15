@@ -727,7 +727,7 @@ static void info_task(void *arg)
 			DEBUG_INFO("vdda %umv, bat_mv %u-%u, vin-24 %umV, 4-20mA %s temp %u\r\n",
 						adc->vdda_mv,
 						adc->bat_mv, adc->bat_percent, 
-						adc->vin_24,
+						adc->vin,
 						tmp,
 						adc->temp);
 		}

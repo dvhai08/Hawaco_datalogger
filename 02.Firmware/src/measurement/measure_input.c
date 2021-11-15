@@ -1137,11 +1137,13 @@ void measure_input_initialize(void)
         
         if (save)
         {
-            m_pulse_counter_in_backup[0].total_forward = last_data.counter[0].total_forward;
-            m_pulse_counter_in_backup[0].total_forward_index = last_data.counter[0].total_forward_index;
-            m_pulse_counter_in_backup[0].total_reverse = last_data.counter[0].total_reverse;
-            m_pulse_counter_in_backup[0].total_reverse_index = last_data.counter[0].total_reverse_index;
+            DEBUG_INFO("Restore value from flash\r\n");
         }
+        
+        m_pulse_counter_in_backup[0].total_forward = last_data.counter[0].total_forward;
+        m_pulse_counter_in_backup[0].total_forward_index = last_data.counter[0].total_forward_index;
+        m_pulse_counter_in_backup[0].total_reverse = last_data.counter[0].total_reverse;
+        m_pulse_counter_in_backup[0].total_reverse_index = last_data.counter[0].total_reverse_index;
         
 #ifndef DTG01
         if (last_data.counter[1].real_counter > m_pulse_counter_in_backup[1].real_counter)
@@ -1162,13 +1164,10 @@ void measure_input_initialize(void)
             app_bkup_write_pulse_counter(&m_pulse_counter_in_backup[0]);
         }
         
-        if (save)
-        {
-            m_pulse_counter_in_backup[1].total_forward = last_data.counter[1].total_forward;
-            m_pulse_counter_in_backup[1].total_forward_index = last_data.counter[1].total_forward_index;
-            m_pulse_counter_in_backup[1].total_reverse = last_data.counter[1].total_reverse;
-            m_pulse_counter_in_backup[1].total_reverse_index = last_data.counter[1].total_reverse_index;
-        }
+        m_pulse_counter_in_backup[1].total_forward = last_data.counter[1].total_forward;
+        m_pulse_counter_in_backup[1].total_forward_index = last_data.counter[1].total_forward_index;
+        m_pulse_counter_in_backup[1].total_reverse = last_data.counter[1].total_reverse;
+        m_pulse_counter_in_backup[1].total_reverse_index = last_data.counter[1].total_reverse_index;
         
         DEBUG_INFO("Pulse counter in BKP: %u-%u, %u-%u\r\n",
                    m_pulse_counter_in_backup[0].real_counter, m_pulse_counter_in_backup[0].reverse_counter,
