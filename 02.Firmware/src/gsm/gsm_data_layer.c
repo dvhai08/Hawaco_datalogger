@@ -1355,7 +1355,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
     if (found_rs485_err)
     {
-        total_length += sprintf((char *)(ptr + total_length), "%s", "rs485,");
+        total_length += sprintf((char *)(ptr + total_length), "rs485-%u,", measure_input_485_error_code);
     }
 
 	// Cam bien
@@ -1819,9 +1819,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
     DEBUG_INFO("Send time %u, ts %u\r\n", m_send_time, msg->measure_timestamp);
 
-#ifdef DTG02V2
+#ifdef DTG02V2 
     total_length += sprintf((char *)(ptr + total_length), "\"charge\":%u,", LL_GPIO_IsOutputPinSet(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin) ? 1 : 0);
 #endif	
+    app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
+    if (factory->baudrate.baudrate_valid_key == EEPROM_BAUD_VALID)
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"baud\":%u,", factory->baudrate.value);
+    }
+    else
+    {
+        total_length += sprintf((char *)(ptr + total_length), "\"baud\":%u,", APP_EEPROM_DEFAULT_BAUD);
+    }
     
 //	// Release date
 //	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);

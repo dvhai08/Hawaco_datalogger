@@ -98,6 +98,8 @@ static float input_4_20ma_max_value[NUMBER_OF_INPUT_4_20MA];
 static measure_input_rs485_min_max_t m_485_min_max[RS485_MAX_SLAVE_ON_BUS];
 static int32_t mb_fw_flow_index[RS485_MAX_SLAVE_ON_BUS];
 static int32_t mb_rvs_flow_index[RS485_MAX_SLAVE_ON_BUS];
+uint8_t measure_input_485_error_code = MODBUS_MASTER_OK;
+
 
 static void process_rs485(measure_input_modbus_register_t *register_value)
 {
@@ -149,7 +151,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 
                     case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
                     {
-                        uint8_t result;
+//                        uint8_t result;
 
                         modbus_master_reset(delay_modbus);
                         uint32_t halfword_quality = 1;
@@ -162,10 +164,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                         DEBUG_INFO("MB id %u, offset %u, size %u\r\n", slave_addr, register_addr, halfword_quality);
                         for (uint32_t i = 0; i < 2; i++)
                         {
-                            result = modbus_master_read_input_register(slave_addr,
+                            measure_input_485_error_code = modbus_master_read_input_register(slave_addr,
                                                                    register_addr,
                                                                    halfword_quality);
-                            if (result != MODBUS_MASTER_OK) // Read data error
+                            if (measure_input_485_error_code != MODBUS_MASTER_OK) // Read data error
                             {
                                 sys_delay_ms(delay_modbus);
                             }
@@ -176,9 +178,9 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                         }
                         register_value[slave_count].slave_addr = slave_addr;
 
-                        if (result != MODBUS_MASTER_OK) // Read data error
+                        if (measure_input_485_error_code != MODBUS_MASTER_OK) // Read data error
                         {
-                            DEBUG_ERROR("Modbus read input register failed code %d\r\n", result);
+                            DEBUG_ERROR("Modbus read input register failed code %d\r\n", measure_input_485_error_code);
                             delay_modbus = 100; // if 1 register failed =>> maybe other register will be fail =>> Reduce delay time
                             register_value[slave_count].sub_register[sub_reg_idx].read_ok = 0;
                             modbus_master_clear_response_buffer();

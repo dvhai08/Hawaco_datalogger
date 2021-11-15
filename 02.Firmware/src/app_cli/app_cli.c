@@ -343,10 +343,17 @@ static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **ar
 {
     measure_input_water_meter_input_t input;
     input.port = MEASURE_INPUT_PORT_1;
+#ifdef DTG01
     input.pwm_level = LL_GPIO_IsInputPinSet(PWM_GPIO_Port, PWM_Pin) ? 1 : 0;
     input.dir_level = LL_GPIO_IsInputPinSet(DIR0_GPIO_Port, DIR0_Pin) ? 1 : 0;
     input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
     input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+#else
+    input.pwm_level = LL_GPIO_IsInputPinSet(PULSE_PWM1_GPIO_Port, PULSE_PWM1_Pin) ? 1 : 0;
+    input.dir_level = LL_GPIO_IsInputPinSet(PULSE_DIR1_GPIO_Port, PULSE_DIR1_Pin) ? 1 : 0;
+    input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+    input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+#endif
     measure_input_pulse_irq(&input);
     return 0;
     

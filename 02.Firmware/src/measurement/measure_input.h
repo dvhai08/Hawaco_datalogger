@@ -54,7 +54,7 @@ typedef struct
 	uint8_t state;		// memory queue state
 } measure_input_perpheral_data_t;
 
-
+extern uint8_t measure_input_485_error_code;
 /*!
  * @brief       Init measurement module 
  */

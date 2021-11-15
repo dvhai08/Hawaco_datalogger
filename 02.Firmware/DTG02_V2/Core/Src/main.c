@@ -73,7 +73,7 @@
 #define TEST_BACKUP_REGISTER                            0
 #define TEST_DEVICE_NEVER_SLEEP							0
 #define TEST_CRC32										0
-#define CLI_ENABLE                                      1
+#define CLI_ENABLE                                      0
 #define GSM_ENABLE										1
 #define TEST_POWER_ALWAYS_TURN_OFF_GSM                  0
 /* USER CODE END PD */

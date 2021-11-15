@@ -680,7 +680,21 @@ static uint8_t process_modbus_register_config(char *buffer)
 		}
 	}
     
-       
+    char *baud_str = strstr(buffer, "Baud\":");
+    if (baud_str)
+    {
+        baud_str += strlen("Baud\":");
+        uint32_t baudrate = gsm_utilities_get_number_from_string(0, baud_str);
+        app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
+        if (factory->baudrate.value != baudrate)
+        {
+            app_eeprom_factory_data_t new_data;
+            memcpy(&new_data, factory, sizeof(app_eeprom_factory_data_t));
+            new_data.baudrate.value = baudrate;
+            app_eeprom_save_factory_data(&new_data);
+            new_cfg++;
+        }
+    }
 	return new_cfg;
 }
 

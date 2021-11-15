@@ -25,6 +25,7 @@
 #include "lwrb.h"
 #include "app_debug.h"
 #include "hardware.h"
+#include "app_eeprom.h"
 
 #define DEBUG_USART1_DMA        0
 #define UART1_RX_BUFFER_SIZE    1024
@@ -96,9 +97,14 @@ void MX_LPUART1_UART_Init(void)
   NVIC_EnableIRQ(LPUART1_IRQn);
 
   /* USER CODE BEGIN LPUART1_Init 1 */
-
+    uint32_t baud = 9600;
+    app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
+    if (factory->baudrate.baudrate_valid_key == EEPROM_BAUD_VALID)
+    {
+        baud = factory->baudrate.value;
+    }
   /* USER CODE END LPUART1_Init 1 */
-  LPUART_InitStruct.BaudRate = 9600;
+  LPUART_InitStruct.BaudRate = baud;
   LPUART_InitStruct.DataWidth = LL_LPUART_DATAWIDTH_8B;
   LPUART_InitStruct.StopBits = LL_LPUART_STOPBITS_1;
   LPUART_InitStruct.Parity = LL_LPUART_PARITY_NONE;
