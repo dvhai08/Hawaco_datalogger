@@ -319,25 +319,25 @@ static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv
     return 0;
 }
 
-static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv)
-{
-    DEBUG_INFO("Set server %s\r\n", argv[1]);
-    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
-    memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
-    sprintf((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], "%s", argv[1]);
+//static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    DEBUG_INFO("Set server %s\r\n", argv[1]);
+//    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+//    memset(eeprom_cfg->server_addr[APP_EEPROM_MAIN_SERVER_ADDR_INDEX], 0, APP_EEPROM_MAX_SERVER_ADDR_LENGTH);
+//    sprintf((char*)eeprom_cfg->server_addr[APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX], "%s", argv[1]);
 
-    app_eeprom_save_config();		// Store current config into eeprom
-//    DEBUG_INFO("Set new server addr success\r\n");
+//    app_eeprom_save_config();		// Store current config into eeprom
+////    DEBUG_INFO("Set new server addr success\r\n");
 
-    return 0;
-}
+//    return 0;
+//}
 
-static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **argv)
-{
-    int32_t tmp = atoi(argv[1]);
-    DEBUG_WARN("Int32 %ld, value 0x%08X\r\n", tmp, *(int32_t*)&tmp);
-    return 0;
-}
+//static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **argv)
+//{
+//    int32_t tmp = atoi(argv[1]);
+//    DEBUG_WARN("Int32 %ld, value 0x%08X\r\n", tmp, *(int32_t*)&tmp);
+//    return 0;
+//}
 
 static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **argv)
 {

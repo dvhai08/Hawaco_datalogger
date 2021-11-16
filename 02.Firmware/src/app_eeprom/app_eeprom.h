@@ -10,6 +10,8 @@
 #define EEPROM_BAUD_115200              115200
 #define APP_EEPROM_DEFAULT_BAUD         EEPROM_BAUD_9600
 #define EEPROM_BAUD_VALID               0x58
+#define EEPROM_MODBUS_MSB_FIRST         0
+#define EEPROM_MODBUS_LSB_FIRST         1
 
 /**
  * \defgroup        App eeprom
@@ -95,7 +97,8 @@ typedef struct
 {
     uint8_t server[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
     app_eeprom_rs485_baudrate_t baudrate;
-    uint8_t reserve[28];
+    uint8_t byte_order;
+    uint8_t reserve[27];
     uint32_t crc;
 } __attribute__((packed)) app_eeprom_factory_data_t;
 

@@ -695,6 +695,22 @@ static uint8_t process_modbus_register_config(char *buffer)
             new_cfg++;
         }
     }
+    
+    char *bytes_order = strstr(buffer, "\"Bytes\":");
+    if (bytes_order)
+    {
+        bytes_order += strlen("\"Bytes\":");
+        uint32_t order = gsm_utilities_get_number_from_string(0, bytes_order);
+        app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
+        if (factory->byte_order != order)
+        {
+            app_eeprom_factory_data_t new_data;
+            memcpy(&new_data, factory, sizeof(app_eeprom_factory_data_t));
+            new_data.byte_order = order;
+            app_eeprom_save_factory_data(&new_data);
+            new_cfg++;
+        }
+    }
 	return new_cfg;
 }
 

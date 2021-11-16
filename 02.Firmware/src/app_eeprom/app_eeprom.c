@@ -148,6 +148,7 @@ void app_eeprom_factory_data_initialize(void)
         memset(&new_data, 0, sizeof(app_eeprom_factory_data_t));
         new_data.baudrate.baudrate_valid_key = EEPROM_BAUD_VALID;
         new_data.baudrate.value = APP_EEPROM_DEFAULT_BAUD;
+        new_data.byte_order = EEPROM_MODBUS_MSB_FIRST;
         memcpy(new_data.server, DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
         app_eeprom_save_factory_data(&new_data);
     }

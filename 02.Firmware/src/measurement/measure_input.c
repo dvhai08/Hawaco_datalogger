@@ -206,10 +206,19 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
         
                             if (halfword_quality == 2)
                             {
-                                // Byte order : Float, int32 (2-1,4-3)
-                                // int16 2 - 1
-                                uint32_t tmp = modbus_master_get_response_buffer(1);
-                                register_value[slave_count].sub_register[sub_reg_idx].value.int32_val |= (tmp << 16);
+                                app_eeprom_factory_data_t *factory_cfg = app_eeprom_read_factory_data();
+                                if (factory_cfg->byte_order == EEPROM_MODBUS_LSB_FIRST)
+                                {
+                                    // Byte order : Float, int32 (2-1,4-3)
+                                    // int16 2 - 1
+                                    uint32_t tmp = modbus_master_get_response_buffer(1);
+                                    register_value[slave_count].sub_register[sub_reg_idx].value.int32_val |= (tmp << 16);
+                                }
+                                else
+                                {
+                                    register_value[slave_count].sub_register[sub_reg_idx].value.int32_val <<= 16;
+                                    register_value[slave_count].sub_register[sub_reg_idx].value.int32_val |= modbus_master_get_response_buffer(1);
+                                }
                                 DEBUG_RAW("\r\nInt32 register =>> %08X\r\n", register_value[slave_count].sub_register[sub_reg_idx].value);
                             }
                             //							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr,
