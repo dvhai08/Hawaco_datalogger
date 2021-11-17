@@ -54,8 +54,8 @@ static int32_t cli_enter_test_mode(p_shell_context_t context, int32_t argc, char
 //static int32_t cli_flash_test(p_shell_context_t context, int32_t argc, char **argv);
 //static int32_t cli_rs485_test(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_pwm_test(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
-static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_set_server_test(p_shell_context_t context, int32_t argc, char **argv);
+//static int32_t cli_dump_float(p_shell_context_t context, int32_t argc, char **argv);
 static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **argv);
 #if 0
 static int32_t cli_output_pwm_duty(p_shell_context_t context, int32_t argc, char **argv);

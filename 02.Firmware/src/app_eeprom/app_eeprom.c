@@ -14,7 +14,7 @@
 
 app_eeprom_config_data_t m_cfg;
 static void app_eeprom_factory_data_initialize(void);
-
+uint32_t sys_pulse_ms = EEPROM_RECHECK_PULSE_TIMEOUT_MS;
 void app_eeprom_init(void)
 {
     app_eeprom_config_data_t *tmp = (app_eeprom_config_data_t*)EEPROM_STORE_DATA_ADDR;
@@ -142,7 +142,8 @@ void app_eeprom_factory_data_initialize(void)
 {
     app_eeprom_factory_data_t *factory_data = app_eeprom_read_factory_data(); 
     uint32_t crc = utilities_calculate_crc32((uint8_t*)factory_data, sizeof(app_eeprom_factory_data_t) - CRC32_SIZE);        // last 4 bytes old is crc
-    if (crc != factory_data->crc || (factory_data->baudrate.baudrate_valid_key != EEPROM_BAUD_VALID))
+    if (crc != factory_data->crc || (factory_data->baudrate.baudrate_valid_key != EEPROM_BAUD_VALID)
+        || (factory_data->pulse_valid_key != EEPROM_PULSE_VALID))
     {
         app_eeprom_factory_data_t new_data;
         memset(&new_data, 0, sizeof(app_eeprom_factory_data_t));
@@ -150,7 +151,13 @@ void app_eeprom_factory_data_initialize(void)
         new_data.baudrate.value = APP_EEPROM_DEFAULT_BAUD;
         new_data.byte_order = EEPROM_MODBUS_MSB_FIRST;
         memcpy(new_data.server, DEFAULT_SERVER_ADDR, strlen(DEFAULT_SERVER_ADDR));
+        new_data.pulse_valid_key = EEPROM_PULSE_VALID;
+        new_data.pulse_ms = EEPROM_RECHECK_PULSE_TIMEOUT_MS;
         app_eeprom_save_factory_data(&new_data);
+    }
+    else
+    {
+        sys_pulse_ms = factory_data->pulse_ms;
     }
 }
 

@@ -595,11 +595,11 @@ static uint8_t process_modbus_register_config(char *buffer)
 				// Get RS485 data type
 				temp = RS485_DATA_TYPE_INT16;
 				m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
-				if (strstr(rs485_type_str, "\"int32\","))
+				if (strstr(rs485_type_str, "\"int32\""))
 				{
 					temp = RS485_DATA_TYPE_INT32;
 				}
-				else if (strstr(rs485_type_str, "\"float\","))
+				else if (strstr(rs485_type_str, "\"float\""))
 				{
 					temp = RS485_DATA_TYPE_FLOAT;
 				}
@@ -712,6 +712,29 @@ static uint8_t process_modbus_register_config(char *buffer)
         }
     }
 	return new_cfg;
+}
+
+extern uint32_t sys_pulse_ms;
+static uint8_t process_pulse_config(char *buffer)
+{
+    uint8_t new_cfg = 0;
+    char *pulse_cfg = strstr(buffer, "\"pulse\":");
+    if (pulse_cfg)
+    {
+        pulse_cfg += strlen("\"pulse\":");
+        uint32_t pulse_ms = gsm_utilities_get_number_from_string(0, pulse_cfg);
+        app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
+        if (factory->pulse_ms != pulse_ms)
+        {
+            app_eeprom_factory_data_t new_data;
+            memcpy(&new_data, factory, sizeof(app_eeprom_factory_data_t));
+            new_data.pulse_ms = pulse_ms;
+            app_eeprom_save_factory_data(&new_data);
+            sys_pulse_ms = pulse_ms;
+            new_cfg++;
+        }
+    } 
+    return new_cfg;
 }
 
 /**
@@ -887,6 +910,8 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 	// Modbus register configuration
 	has_new_cfg += process_modbus_register_config(buffer);
 	
+    has_new_cfg += process_pulse_config(buffer);
+    
     //Luu config moi
     if (has_new_cfg && sys_ctx()->status.try_new_server == 0)
     {

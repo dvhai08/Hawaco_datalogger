@@ -4,15 +4,16 @@
 #include <stdint.h>
 #include "hardware.h"
 
-#define DEFAULT_SERVER_ADDR             "http://14.232.244.235:8084"
-#define EEPROM_BAUD_9600                9600
-#define EEPROM_BAUD_19200               19200
-#define EEPROM_BAUD_115200              115200
-#define APP_EEPROM_DEFAULT_BAUD         EEPROM_BAUD_9600
-#define EEPROM_BAUD_VALID               0x58
-#define EEPROM_MODBUS_MSB_FIRST         0
-#define EEPROM_MODBUS_LSB_FIRST         1
-
+#define DEFAULT_SERVER_ADDR                 "http://14.232.244.235:8084"
+#define EEPROM_BAUD_9600                    9600
+#define EEPROM_BAUD_19200                   19200
+#define EEPROM_BAUD_115200                  115200
+#define APP_EEPROM_DEFAULT_BAUD             EEPROM_BAUD_9600
+#define EEPROM_BAUD_VALID                   0x58
+#define EEPROM_PULSE_VALID                  0x61
+#define EEPROM_MODBUS_MSB_FIRST             0
+#define EEPROM_MODBUS_LSB_FIRST             1
+#define EEPROM_RECHECK_PULSE_TIMEOUT_MS     5
 /**
  * \defgroup        App eeprom
  * \brief           Store device config into internal eeprom
@@ -98,7 +99,9 @@ typedef struct
     uint8_t server[APP_EEPROM_MAX_SERVER_ADDR_LENGTH];
     app_eeprom_rs485_baudrate_t baudrate;
     uint8_t byte_order;
-    uint8_t reserve[27];
+    uint8_t pulse_valid_key;
+    uint16_t pulse_ms;
+    uint8_t reserve[24];
     uint32_t crc;
 } __attribute__((packed)) app_eeprom_factory_data_t;
 

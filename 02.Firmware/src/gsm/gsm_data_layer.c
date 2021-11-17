@@ -1832,7 +1832,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //        total_length += sprintf((char *)(ptr + total_length), "\"baud\":%u,", APP_EEPROM_DEFAULT_BAUD);
 //    }
 
-    total_length += sprintf((char *)(ptr + total_length), "\"bytes\":%u,", factory->byte_order);
+//    total_length += sprintf((char *)(ptr + total_length), "\"bytes\":%u,", factory->byte_order);
+    total_length += sprintf((char *)(ptr + total_length), "\"pulse\":%u,", factory->pulse_ms);
     
 //	// Release date
 //	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
