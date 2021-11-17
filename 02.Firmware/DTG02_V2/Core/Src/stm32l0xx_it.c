@@ -51,7 +51,7 @@ extern volatile int32_t ota_update_timeout_ms;
 #ifdef DTG2
 #define EXIT_INPUT1_TIMESTAMP_INDEX 1
 #endif
-#define RECHECK_PULSE_ISR_TIMEOUT_MS	3
+//#define RECHECK_PULSE_ISR_TIMEOUT_MS	3
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -79,6 +79,7 @@ extern volatile uint32_t jig_timeout_ms;
 extern volatile uint8_t *jig_rs485_rx_buffer;
 extern volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 extern volatile uint32_t last_time_monitor_vin_when_battery_low;
+extern uint32_t sys_pulse_ms;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -281,7 +282,7 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_7);
     /* USER CODE BEGIN LL_EXTI_LINE_7 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_7 */
   }
@@ -290,7 +291,7 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
     /* USER CODE BEGIN LL_EXTI_LINE_8 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_8 */
   }
@@ -299,7 +300,7 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
 	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_9 */
   }
@@ -308,7 +309,7 @@ void EXTI4_15_IRQHandler(void)
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_14);
     /* USER CODE BEGIN LL_EXTI_LINE_14 */
 	  // PULSE PWM
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = RECHECK_PULSE_ISR_TIMEOUT_MS;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_14 */
   }
