@@ -664,6 +664,22 @@ static uint8_t process_modbus_register_config(char *buffer)
                 }
             }
             
+            sprintf(search_str, "MbMethod_%u\":", slave_count+1);   // TODO handle modbus flow calculate method for multi device
+                                                                    // Due to my laziness, i dont handle this
+            char *p_mb_method = strstr(buffer, search_str);
+            
+            if (p_mb_method)
+            {
+                p_mb_method += strlen(search_str);
+                uint32_t fw_flow_method = gsm_utilities_get_number_from_string(0, p_mb_method);
+                if (fw_flow_method != m_eeprom_config->io_enable.name.modbus_cal_method)
+                {
+                    new_cfg++;
+//                    DEBUG_INFO("Forward flow method to %u\r\n", fw_flow_method);
+                    m_eeprom_config->io_enable.name.modbus_cal_method = fw_flow_method ? 1 : 0;
+                }
+            }
+            
             sprintf(search_str, "ReverseFlow_%u\":", slave_count+1);
             char *p_reserve_flow = strstr(buffer, search_str);
             if (p_reserve_flow)

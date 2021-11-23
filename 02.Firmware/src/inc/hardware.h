@@ -366,6 +366,8 @@ typedef struct
     min_max_485_type_t max_reverse_flow;
     min_max_485_type_t reverse_flow;
     min_max_485_type_t forward_flow;
+    min_max_485_type_t forward_flow_sum;
+    min_max_485_type_t reverse_flow_sum;
     uint8_t valid;
 } __attribute__((packed)) measure_input_rs485_min_max_t;
 typedef struct

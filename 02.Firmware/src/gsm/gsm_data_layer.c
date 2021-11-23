@@ -1720,7 +1720,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             uint32_t tmp_len = total_length;
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
-            total_length += sprintf((char *)(ptr + total_length), "\"MbForwardFlow%u\":%.2f,", 
+            total_length += sprintf((char *)(ptr + total_length), "\"MbFwFl%u\":%.2f,", 
                                                             index+1, msg->rs485[index].min_max.forward_flow.type_float);
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
         }
@@ -1728,7 +1728,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         if (msg->rs485[index].min_max.reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
         {
             uint32_t tmp_len = total_length;
-            total_length += sprintf((char *)(ptr + total_length), "\"MbReverseFlow%u\":%.2f,", 
+            total_length += sprintf((char *)(ptr + total_length), "\"MbRvsFlw%u\":%.2f,", 
                                                             index+1, msg->rs485[index].min_max.reverse_flow.type_float);
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
         }
@@ -1740,7 +1740,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             if (msg->rs485[index].min_max.min_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinForwardFlow%u\":%.2f,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinFwFl%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.min_forward_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
@@ -1749,7 +1749,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             if (msg->rs485[index].min_max.max_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxForwardFlow%u\":%.2f,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxFwFl%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.max_forward_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
@@ -1758,7 +1758,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             if (msg->rs485[index].min_max.min_reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%.2f,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinRvsFl%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.min_reverse_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
@@ -1767,14 +1767,21 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             if (msg->rs485[index].min_max.max_reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%.2f,", 
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxRvsFl%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.max_reverse_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
+            
+            // Forward flow sum
+            total_length += sprintf((char *)(ptr + total_length), "\"MbFwFlSum%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.forward_flow_sum.type_float);
+            // Reverse flow sum
+            total_length += sprintf((char *)(ptr + total_length), "\"MbRvsFwSum%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.reverse_flow_sum.type_float);
         }
 
         // Value
-        total_length += sprintf((char *)(ptr + total_length), "\"SlID%u\":%u,", index+1, msg->rs485[index].slave_addr);
+//        total_length += sprintf((char *)(ptr + total_length), "\"SlID%u\":%u,", index+1, msg->rs485[index].slave_addr);
         for (uint32_t sub_idx = 0; sub_idx < RS485_MAX_SUB_REGISTER; sub_idx++)
         {
             if (msg->rs485[index].sub_register[sub_idx].read_ok
@@ -1795,7 +1802,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                 {
                     total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
                 }
-                DEBUG_WARN("%s\r\n", (ptr+tmp_len));
+//                DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
             else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
             {

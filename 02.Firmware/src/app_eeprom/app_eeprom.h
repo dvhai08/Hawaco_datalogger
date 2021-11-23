@@ -48,7 +48,8 @@ typedef union
 		uint32_t output_4_20ma_timeout_100ms : 8;  
 	    uint32_t register_sim_status : 1;
         uint32_t calculate_flow_speed : 1;
-		uint32_t reserve : 4;
+        uint32_t modbus_cal_method : 2;
+		uint32_t reserve : 2;
 				
 	} __attribute__((packed)) name;
 	uint32_t value;
