@@ -36,7 +36,7 @@
 #endif
 #ifdef DTG02V2
 #define OTA_UPDATE_DEFAULT_HEADER_DATA_FIRMWARE  "G2V2"
-#define OTA_UPDATE_DEFAULT_HEADER_DATA_HARDWARE  "0.1.4"
+#define OTA_UPDATE_DEFAULT_HEADER_DATA_HARDWARE  "0.1.5"
 #endif
 #define OTA_UPDATE_DEFAULT_HEADER_SIZE  16
 
@@ -47,9 +47,8 @@
 
 
 /**
- *	Bootloader		16KB
- *  Application		80KB
- *  Download		80KB
+ *	Bootloader		32KB
+ *  Application		152KB
  *  OTA info		128 bytes
  */
 

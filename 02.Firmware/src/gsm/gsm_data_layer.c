@@ -1716,20 +1716,20 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         // Min max
         
                     // Min forward flow
-        if (msg->rs485[index].min_max.forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+        if (msg->rs485[index].min_max.forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
         {
             uint32_t tmp_len = total_length;
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
-            total_length += sprintf((char *)(ptr + total_length), "\"MbForwardFlow%u\":%d,", 
-                                                            index+1, msg->rs485[index].min_max.forward_flow.type_int);
+            total_length += sprintf((char *)(ptr + total_length), "\"MbForwardFlow%u\":%.2f,", 
+                                                            index+1, msg->rs485[index].min_max.forward_flow.type_float);
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
         }
         
-        if (msg->rs485[index].min_max.reverse_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+        if (msg->rs485[index].min_max.reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
         {
             uint32_t tmp_len = total_length;
-            total_length += sprintf((char *)(ptr + total_length), "\"MbReverseFlow%u\":%d,", 
-                                                            index+1, msg->rs485[index].min_max.reverse_flow.type_int);
+            total_length += sprintf((char *)(ptr + total_length), "\"MbReverseFlow%u\":%.2f,", 
+                                                            index+1, msg->rs485[index].min_max.reverse_flow.type_float);
             DEBUG_WARN("%s\r\n", (ptr+tmp_len));
         }
         
@@ -1737,38 +1737,38 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         if (msg->rs485[index].min_max.valid)
         {
             // Min forward flow
-            if (msg->rs485[index].min_max.min_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.min_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinForwardFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.min_forward_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinForwardFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.min_forward_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
             
             // Max forward flow
-            if (msg->rs485[index].min_max.max_forward_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.max_forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxForwardFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.max_forward_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxForwardFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.max_forward_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
             
             // Min reserve flow
-            if (msg->rs485[index].min_max.min_reverse_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.min_reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.min_reverse_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMinReverseFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.min_reverse_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
             
             // Max reserve flow
-            if (msg->rs485[index].min_max.max_reverse_flow.type_int != INPUT_485_INVALID_INT_VALUE)
+            if (msg->rs485[index].min_max.max_reverse_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 uint32_t tmp_len = total_length;
-                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%d,", 
-                                                                index+1, msg->rs485[index].min_max.max_reverse_flow.type_int);
+                total_length += sprintf((char *)(ptr + total_length), "\"MbMaxReverseFlow%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.max_reverse_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
         }

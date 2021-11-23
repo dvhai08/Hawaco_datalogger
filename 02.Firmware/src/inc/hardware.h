@@ -320,7 +320,7 @@
 
 #define FLOW_INVALID_VALUE                  (-1.0f)
 #define INPUT_4_20MA_INVALID_VALUE          (-1.0f)
-//#define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
+#define INPUT_485_INVALID_FLOAT_VALUE       (-1.0f)    
 #define INPUT_485_INVALID_INT_VALUE         (-1)    
 
 #define FAKE_MIN_MAX_DATA                   (0)
@@ -354,7 +354,8 @@ typedef struct
 
 typedef union
 {
-    int32_t type_int;
+    int32_t type_int32;
+    float type_float;
     uint8_t raw[4];
 } __attribute__((packed)) min_max_485_type_t;
 typedef struct
