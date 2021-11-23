@@ -326,6 +326,8 @@
 #define FAKE_MIN_MAX_DATA                   (0)
 #define USE_SYNC_DRV                        (0)
 
+#define MEASURE_SUM_MB_FLOW                 0
+
 typedef union
 {
 	struct
@@ -366,8 +368,13 @@ typedef struct
     min_max_485_type_t max_reverse_flow;
     min_max_485_type_t reverse_flow;
     min_max_485_type_t forward_flow;
+#if MEASURE_SUM_MB_FLOW
     min_max_485_type_t forward_flow_sum;
     min_max_485_type_t reverse_flow_sum;
+#endif
+    min_max_485_type_t net_volume_fw;
+    min_max_485_type_t net_volume_reverse;
+    min_max_485_type_t net_volume;
     uint8_t valid;
 } __attribute__((packed)) measure_input_rs485_min_max_t;
 typedef struct
@@ -376,6 +383,9 @@ typedef struct
     measure_input_rs485_min_max_t min_max;
     uint16_t fw_flow_reg;
     uint16_t reserve_flow_reg;
+    uint16_t net_totalizer_fw_reg;
+    uint16_t net_totalizer_reverse_reg;
+    uint16_t net_totalizer_reg;
     uint8_t slave_addr;
 } __attribute__((packed)) measure_input_modbus_register_t;
 

@@ -1771,13 +1771,31 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                                                                 index+1, msg->rs485[index].min_max.max_reverse_flow.type_float);
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
-            
+#if MEASURE_SUM_MB_FLOW           
             // Forward flow sum
             total_length += sprintf((char *)(ptr + total_length), "\"MbFwFlSum%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.forward_flow_sum.type_float);
             // Reverse flow sum
             total_length += sprintf((char *)(ptr + total_length), "\"MbRvsFwSum%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.reverse_flow_sum.type_float);
+#endif
+            if (msg->rs485[index].min_max.net_volume.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbNetFlSum%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.net_volume.type_float);
+            }
+            
+            if (msg->rs485[index].min_max.net_volume_fw.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbNetFwFlSum%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.net_volume_fw.type_float);
+            }
+            
+            if (msg->rs485[index].min_max.net_volume_reverse.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"MbNetRvsFlSum%u\":%.2f,", 
+                                                                index+1, msg->rs485[index].min_max.net_volume_reverse.type_float);
+            }
         }
 
         // Value
@@ -1798,19 +1816,19 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                 {
                     total_length += sprintf((char *)(ptr + total_length), "%.2f,", msg->rs485[index].sub_register[sub_idx].value.float_val);
                 }
-                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
-                {
-                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
-                }
+//                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+//                {
+//                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+//                }
 //                DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }
             else if (msg->rs485[index].sub_register[sub_idx].data_type.name.valid)
             {
                 uint32_t tmp_len = total_length;
-                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
-                {
-                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
-                }
+//                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
+//                {
+//                    total_length += sprintf((char *)(ptr + total_length), "\"U%u_%u\":\"%s\",", index+1, sub_idx+1, msg->rs485[index].sub_register[sub_idx].unit);
+//                }
                 total_length += sprintf((char *)(ptr + total_length), "\"Rg%u_%u\":\"%s\",", index+1, sub_idx+1, "FFFF");
                 DEBUG_WARN("%s\r\n", (ptr+tmp_len));
             }	

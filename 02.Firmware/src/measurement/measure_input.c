@@ -100,6 +100,10 @@ static float input_4_20ma_max_value[NUMBER_OF_INPUT_4_20MA];
 static measure_input_rs485_min_max_t m_485_min_max[RS485_MAX_SLAVE_ON_BUS];
 static float mb_fw_flow_index[RS485_MAX_SLAVE_ON_BUS];
 static float mb_rvs_flow_index[RS485_MAX_SLAVE_ON_BUS];
+static float mb_net_totalizer_fw_flow_index[RS485_MAX_SLAVE_ON_BUS];
+static float mb_net_totalizer_reverse_flow_index[RS485_MAX_SLAVE_ON_BUS];
+static float mb_net_totalizer[RS485_MAX_SLAVE_ON_BUS];
+
 uint8_t measure_input_485_error_code = MODBUS_MASTER_OK;
 
 
@@ -194,9 +198,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             m_485_min_max[slave_count].max_reverse_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                             m_485_min_max[slave_count].forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                             m_485_min_max[slave_count].reverse_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+#if MEASURE_SUM_MB_FLOW
                             m_485_min_max[slave_count].forward_flow_sum.type_float = 0.0f;
                             m_485_min_max[slave_count].reverse_flow_sum.type_float = 0.0f;
-                            
+#endif
                             mb_fw_flow_index[slave_count] = INPUT_485_INVALID_FLOAT_VALUE;;
                             mb_rvs_flow_index[slave_count] = INPUT_485_INVALID_FLOAT_VALUE;
                             
@@ -230,6 +235,48 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type;
                             float current_flow_idx = register_value[slave_count].sub_register[sub_reg_idx].value.float_val;
                             DEBUG_WARN("Flow set %.3f\r\n", current_flow_idx);
+                            
+                            // Get net totalizer forward and reverse value
+                            for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
+                            {
+                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_fw_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                {
+                                    if (mb_net_totalizer_fw_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                                    }
+                                    else
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume_fw.type_float = current_flow_idx - mb_net_totalizer_fw_flow_index[slave_count];
+                                    }
+                                }
+
+                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reverse_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                {
+                                    
+                                    if (mb_net_totalizer_reverse_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                                    }
+                                    else
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume_reverse.type_float = current_flow_idx - mb_net_totalizer_reverse_flow_index[slave_count];
+                                    }
+                                }
+                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                {
+                                    
+                                    if (mb_net_totalizer_reverse_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                                    }
+                                    else
+                                    {
+                                        m_485_min_max[slave_on_bus].net_volume.type_float = current_flow_idx - mb_net_totalizer[slave_count];
+                                    }
+                                }
+                            }
+                            
                             if (eeprom_cfg->io_enable.name.modbus_cal_method)  // ref MODBUS_FLOW_CAL_METHOD
                             {
                                 for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
@@ -260,9 +307,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                         if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT
                                             && data_is_valid) // If data type is float
                                         {
+#if MEASURE_SUM_MB_FLOW
                                             // tinh sum tong so nuoc
                                             m_485_min_max[slave_on_bus].forward_flow_sum.type_float += current_flow_idx;
-                                            
+#endif
                                             // Neu chua dc khoi tao min max =>> khoi tao gia tri min max mac dinh
                                             if (m_485_min_max[slave_on_bus].min_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                             {
@@ -273,7 +321,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             {
                                                 m_485_min_max[slave_on_bus].min_forward_flow.type_float = m_485_min_max[slave_on_bus].forward_flow.type_float;
                                             }
-                                            DEBUG_WARN("Min Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_forward_flow.type_float);
+//                                            DEBUG_WARN("Min Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_forward_flow.type_float);
                                             
                                             // Max
                                             if (m_485_min_max[slave_on_bus].max_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
@@ -289,7 +337,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             DEBUG_WARN("Max Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].max_forward_flow.type_float);
                                         }
                                     }
-                                    else if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
+                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
                                     {
                                         bool data_is_valid = false;
                                         //Min-max
@@ -310,8 +358,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             
                                         if (register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT
                                             && data_is_valid) // If data type is float
-                                        {                        
-                                            m_485_min_max[slave_on_bus].forward_flow_sum.type_float += current_flow_idx;                                            
+                                        {                  
+#if MEASURE_SUM_MB_FLOW                                            
+                                            m_485_min_max[slave_on_bus].forward_flow_sum.type_float += current_flow_idx;     
+#endif                                            
                                             // Neu chua dc khoi tao min max =>> khoi tao gia tri min max
                                             if (m_485_min_max[slave_on_bus].min_reverse_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                             {
@@ -323,7 +373,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                                 m_485_min_max[slave_on_bus].min_reverse_flow.type_float = m_485_min_max[slave_on_bus].reverse_flow.type_float;
                                             }
 
-                                            DEBUG_WARN("Min resv Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_reverse_flow.type_float);
+//                                            DEBUG_WARN("Min resv Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_reverse_flow.type_float);
                                             if (m_485_min_max[slave_on_bus].max_reverse_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
                                             {
                                                 m_485_min_max[slave_on_bus].max_reverse_flow.type_float = m_485_min_max[slave_on_bus].reverse_flow.type_float;
@@ -333,7 +383,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             {
                                                 m_485_min_max[slave_on_bus].max_reverse_flow.type_float = m_485_min_max[slave_on_bus].reverse_flow.type_float;
                                             }
-                                            DEBUG_WARN("Max resv Flow 485 value %ld\r\n", m_485_min_max[slave_on_bus].max_reverse_flow.type_float);
+//                                            DEBUG_WARN("Max resv Flow 485 value %.1f\r\n", m_485_min_max[slave_on_bus].max_reverse_flow.type_float);
                                         }
                                     }
                                 }
@@ -356,7 +406,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                         {
                                              m_485_min_max[slave_on_bus].forward_flow.type_float = current_flow_idx; //
                                              mb_fw_flow_index[slave_count] = current_flow_idx;
-                                             DEBUG_WARN("New flow %.1f\r\n", m_485_min_max[slave_on_bus].forward_flow.type_float);
+//                                             DEBUG_WARN("New flow %.1f\r\n", m_485_min_max[slave_on_bus].forward_flow.type_float);
                                              data_is_valid = true;
                                         }
                                             
@@ -374,7 +424,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             {
                                                 m_485_min_max[slave_on_bus].min_forward_flow.type_float = m_485_min_max[slave_on_bus].forward_flow.type_float;
                                             }
-                                            DEBUG_WARN("Min Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_forward_flow.type_float);
+//                                            DEBUG_WARN("Min Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].min_forward_flow.type_float);
                                             
                                             // Max
                                             if (m_485_min_max[slave_on_bus].max_forward_flow.type_float == INPUT_485_INVALID_FLOAT_VALUE)
@@ -387,10 +437,10 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                                 m_485_min_max[slave_on_bus].max_forward_flow.type_float = m_485_min_max[slave_on_bus].forward_flow.type_float;
                                             }
                                                                                     
-                                            DEBUG_WARN("Max Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].max_forward_flow.type_float);
+//                                            DEBUG_WARN("Max Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].max_forward_flow.type_float);
                                         }
                                     }
-                                    else if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
+                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
                                     {
                                         bool data_is_valid = false;
                                         //Min-max
@@ -431,7 +481,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                             {
                                                 m_485_min_max[slave_on_bus].max_reverse_flow.type_float = m_485_min_max[slave_on_bus].reverse_flow.type_float;
                                             }
-                                            DEBUG_WARN("Max resv Flow 485 value %ld\r\n", m_485_min_max[slave_on_bus].max_reverse_flow.type_float);
+//                                            DEBUG_WARN("Max resv Flow 485 value %.1f\r\n", m_485_min_max[slave_on_bus].max_reverse_flow.type_float);
                                         }
                                     }
                                 }
@@ -1078,7 +1128,6 @@ void measure_input_task(void)
                 if (current_counter >= wakeup_counter)
                 {
                     // Store 485 min - max value
-
                     // 485
                     for (uint32_t slave_index = 0; slave_index < RS485_MAX_SLAVE_ON_BUS; slave_index++)
                     {
@@ -1091,15 +1140,44 @@ void measure_input_task(void)
                         
                         m_measure_data.rs485[slave_index].min_max.forward_flow = m_485_min_max[slave_index].forward_flow;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow = m_485_min_max[slave_index].reverse_flow;
+#if MEASURE_SUM_MB_FLOW
                         if (diff == 0.0f)       // avoid div by zero
                         {
                             diff = 1.0f;
                         }
                         if (m_measure_data.rs485[slave_index].min_max.forward_flow.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {   
+
                             // Convert fo flow in 1 hour, crazy server, fuck
                             m_measure_data.rs485[slave_index].min_max.forward_flow_sum.type_float = m_485_min_max[slave_index].forward_flow_sum.type_float * 3600000.0f / (float)diff;
                             m_measure_data.rs485[slave_index].min_max.reverse_flow_sum.type_float = m_485_min_max[slave_index].reverse_flow_sum.type_float * 3600000.0f / (float)diff;
+                        }
+#endif
+                        if (m_485_min_max[slave_index].net_volume_fw.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = m_485_min_max[slave_index].net_volume_fw.type_float * 3600000.0f / (float)diff;;   
+                        }
+                        else
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        }
+                        
+                        if (m_485_min_max[slave_index].net_volume_reverse.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = m_485_min_max[slave_index].net_volume_reverse.type_float * 3600000.0f / (float)diff;
+                        }
+                        else
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        }
+                        
+                        if (m_485_min_max[slave_index].net_volume.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = m_485_min_max[slave_index].net_volume.type_float* 3600000.0f / (float)diff;
+                        }
+                        else
+                        {
+                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         }
                         
                         m_measure_data.rs485[slave_index].min_max.valid = 1;
@@ -1127,9 +1205,14 @@ void measure_input_task(void)
                         
                         m_measure_data.rs485[slave_index].min_max.forward_flow = m_485_min_max[slave_index].forward_flow;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow = m_485_min_max[slave_index].reverse_flow;
-                        
+#if MEASURE_SUM_MB_FLOW                        
                         m_measure_data.rs485[slave_index].min_max.forward_flow_sum.type_float = 0.0f;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow_sum.type_float = 0.0f;
+#endif 
+                        m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+
                         
                         m_measure_data.rs485[slave_index].min_max.valid = 0;
                     }
@@ -1242,11 +1325,15 @@ void measure_input_initialize(void)
         m_485_min_max[i].max_reverse_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
         m_485_min_max[i].forward_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
         m_485_min_max[i].reverse_flow.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+#if MEASURE_SUM_MB_FLOW
         m_485_min_max[i].forward_flow_sum.type_float = 0.0f;
         m_485_min_max[i].reverse_flow_sum.type_float = 0.0f;
-        
-        mb_fw_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;;
+#endif        
+        mb_fw_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
         mb_rvs_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
+        mb_net_totalizer_fw_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
+        mb_net_totalizer_reverse_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
+        mb_net_totalizer[i] = INPUT_485_INVALID_FLOAT_VALUE;
     }
 
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash

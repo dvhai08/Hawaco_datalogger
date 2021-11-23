@@ -664,6 +664,48 @@ static uint8_t process_modbus_register_config(char *buffer)
                 }
             }
             
+            sprintf(search_str, "NetFl_%u\":", slave_count+1);
+            char *p_net_flow_reg = strstr(buffer, search_str);
+            if (p_net_flow_reg)
+            {
+                p_net_flow_reg += strlen(search_str);
+                uint32_t net_totalizer_reg = gsm_utilities_get_number_from_string(0, p_net_flow_reg);
+                if (net_totalizer_reg && net_totalizer_reg != m_eeprom_config->rs485[slave_count].net_totalizer_reg)
+                {
+                    new_cfg++;
+                    DEBUG_INFO("Forward flow changed to %u\r\n", net_totalizer_reg);
+                    m_eeprom_config->rs485[slave_count].net_totalizer_reg = net_totalizer_reg;
+                }
+            }
+            
+            sprintf(search_str, "NetFwFl_%u\":", slave_count+1);
+            char *p_net_fw_flow_reg = strstr(buffer, search_str);
+            if (p_net_fw_flow_reg)
+            {
+                p_net_fw_flow_reg += strlen(search_str);
+                uint32_t net_totalizer_fw_reg = gsm_utilities_get_number_from_string(0, p_net_fw_flow_reg);
+                if (net_totalizer_fw_reg && net_totalizer_fw_reg != m_eeprom_config->rs485[slave_count].net_totalizer_fw_reg)
+                {
+                    new_cfg++;
+                    DEBUG_INFO("Net forward flow changed to %u\r\n", net_totalizer_fw_reg);
+                    m_eeprom_config->rs485[slave_count].net_totalizer_fw_reg = net_totalizer_fw_reg;
+                }
+            }
+            
+            sprintf(search_str, "NetRvsFl_%u\":", slave_count+1);
+            char *p_net_rvs_flow_reg = strstr(buffer, search_str);
+            if (p_net_rvs_flow_reg)
+            {
+                p_net_rvs_flow_reg += strlen(search_str);
+                uint32_t net_totalizer_reverse_reg = gsm_utilities_get_number_from_string(0, p_net_rvs_flow_reg);
+                if (net_totalizer_reverse_reg && net_totalizer_reverse_reg != m_eeprom_config->rs485[slave_count].net_totalizer_reverse_reg)
+                {
+                    new_cfg++;
+                    DEBUG_INFO("Net reverse flow changed to %u\r\n", net_totalizer_reverse_reg);
+                    m_eeprom_config->rs485[slave_count].net_totalizer_reverse_reg = net_totalizer_reverse_reg;
+                }
+            }
+            
             sprintf(search_str, "MbMethod_%u\":", slave_count+1);   // TODO handle modbus flow calculate method for multi device
                                                                     // Due to my laziness, i dont handle this
             char *p_mb_method = strstr(buffer, search_str);
