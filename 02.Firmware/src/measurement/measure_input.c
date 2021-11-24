@@ -1059,7 +1059,7 @@ void measure_input_task(void)
                                                                     - m_pre_pulse_counter_in_backup[counter_index].fw_flow);
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
 
-                        DEBUG_VERBOSE("Diff forward%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup);
+//                        DEBUG_VERBOSE("Diff forward%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600.0f / (float)diff;
@@ -1072,7 +1072,7 @@ void measure_input_task(void)
                         m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
 //                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
 
-                        DEBUG_VERBOSE("Diff reserve%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup);
+//                        DEBUG_VERBOSE("Diff reserve%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600.0f / (float)diff;
@@ -1141,6 +1141,10 @@ void measure_input_task(void)
                         {
                             float diff_cycle_send_web = (now - m_last_time_measure_data_cycle_send_web);
                             diff_cycle_send_web /= 1000;
+                            if (diff_cycle_send_web == 0)
+                            {
+                                diff_cycle_send_web = 1;
+                            }
                             // Pulse counter
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_max = fw_flow_max_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min = fw_flow_min_in_cycle_send_web[counter_index];
@@ -1244,6 +1248,10 @@ void measure_input_task(void)
 #endif
                         float diff_cycle_send_web = now - m_last_time_measure_data_cycle_send_web;
                         diff_cycle_send_web /= 1000;    // convert ms to sec
+                        if (diff_cycle_send_web == 0)
+                        {
+                            diff_cycle_send_web = 1;
+                        }
                         
                         if (m_485_min_max[slave_index].net_volume_fw.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {

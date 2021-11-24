@@ -1576,16 +1576,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, msg->counter[i].mode);
 	}		
     // Build input 4-20ma
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_1\":%.2f,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_1\":%.1f,", 
                                                                         msg->input_4_20mA[0]); // dau vao 4-20mA 0
-
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_2\":%.2f,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_2\":%.1f,", 
                                                                         msg->input_4_20mA[1]); // dau vao 4-20mA 0
 
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_3\":%.2f,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_3\":%.1f,", 
                                                                         msg->input_4_20mA[2]); // dau vao 4-20mA 0
-
-    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_4\":%.2f,", 
+    total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_4\":%.1f,", 
                                                                         msg->input_4_20mA[3]); // dau vao 4-20mA 0
     
     // Min max 4-20mA         
