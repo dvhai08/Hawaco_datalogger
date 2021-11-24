@@ -395,6 +395,8 @@ typedef struct
     float fw_flow_max;
     float reserve_flow_min;
     float reserve_flow_max;
+    float fw_flow_first_counter;
+    float reverse_flow_first_counter;
     float fw_flow_sum;
     float reverse_flow_sum;
     uint8_t valid;

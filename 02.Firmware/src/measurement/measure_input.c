@@ -234,7 +234,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             //													register_value[slave_count].sub_register[sub_reg_idx].value);
                             register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type;
                             float current_flow_idx = register_value[slave_count].sub_register[sub_reg_idx].value.float_val;
-                            DEBUG_WARN("Flow set %.3f\r\n", current_flow_idx);
+//                            DEBUG_WARN("Flow set %.3f\r\n", current_flow_idx);
                             
                             // Get net totalizer forward and reverse value
                             for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
@@ -248,7 +248,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     }
                                     else
                                     {
-                                        m_485_min_max[slave_on_bus].net_volume_fw.type_float = current_flow_idx - mb_net_totalizer_fw_flow_index[slave_count];
+                                        m_485_min_max[slave_on_bus].net_volume_fw.type_float = current_flow_idx;// - mb_net_totalizer_fw_flow_index[slave_count];
                                     }
                                 }
 
@@ -262,19 +262,20 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     }
                                     else
                                     {
-                                        m_485_min_max[slave_on_bus].net_volume_reverse.type_float = current_flow_idx - mb_net_totalizer_reverse_flow_index[slave_count];
+                                        m_485_min_max[slave_on_bus].net_volume_reverse.type_float = current_flow_idx;// - mb_net_totalizer_reverse_flow_index[slave_count];
                                     }
                                 }
                                 if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
                                 {
                                     
-                                    if (mb_net_totalizer_reverse_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
+                                    if (mb_net_totalizer[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
                                     {
                                         m_485_min_max[slave_on_bus].net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                                        mb_net_totalizer[slave_count] = current_flow_idx;
                                     }
                                     else
                                     {
-                                        m_485_min_max[slave_on_bus].net_volume.type_float = current_flow_idx - mb_net_totalizer[slave_count];
+                                        m_485_min_max[slave_on_bus].net_volume.type_float = current_flow_idx;// - mb_net_totalizer[slave_count];
                                     }
                                 }
                             }
@@ -1034,6 +1035,7 @@ void measure_input_task(void)
                 uint32_t now = sys_get_ms();
                 // Calculate avg flow speed between 2 times measurement data
                 uint32_t diff = (uint32_t)(now - m_last_time_measure_data);
+                static uint32_t m_last_time_measure_data_cycle_send_web;
 
                 // Copy backup data into current measure data
                 bool estimate_time_save_min_max_value = false;
@@ -1046,7 +1048,8 @@ void measure_input_task(void)
                     {
                         // Forward direction
                         // speed = ((counter  forward - pre_counter forward)/k)/diff (hour)
-                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].fw_flow - m_pre_pulse_counter_in_backup[counter_index].fw_flow);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].fw_flow 
+                                                                    - m_pre_pulse_counter_in_backup[counter_index].fw_flow);
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
 
                         DEBUG_VERBOSE("Diff forward%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup);
@@ -1054,12 +1057,13 @@ void measure_input_task(void)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600000.0f / (float)diff;
                         }
-                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
+//                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
 
                         // Reverse direction
-                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].reverse_flow - m_pre_pulse_counter_in_backup[counter_index].reverse_flow);
+                        m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].reverse_flow 
+                                                                                                                - m_pre_pulse_counter_in_backup[counter_index].reverse_flow);
                         m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
-                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
+//                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
 
                         DEBUG_VERBOSE("Diff reserve%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup);
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
@@ -1133,16 +1137,30 @@ void measure_input_task(void)
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min = fw_flow_min_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = reserve_flow_max_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = reserve_flow_min_in_cycle_send_web[counter_index];
-
+                            // Sum counter
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum = (float)m_pulse_counter_in_backup[counter_index].total_forward_index  -
+                                                                                                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_first_counter;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum /= m_pulse_counter_in_backup[counter_index].k;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum *= (3600000.0f / ((float)(now - m_last_time_measure_data_cycle_send_web)));
+                                                                                                    
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_first_counter = (float)m_pulse_counter_in_backup[counter_index].total_forward_index;
+                            
+                            
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum = (float)m_pulse_counter_in_backup[counter_index].total_reverse_index  -
+                                                                                                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_first_counter;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_first_counter = (float)m_pulse_counter_in_backup[counter_index].reverse_flow;
+                            
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum /= m_pulse_counter_in_backup[counter_index].k;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum *= (3600000.0f / ((float)(now - m_last_time_measure_data_cycle_send_web)));
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 1;
 
-                            DEBUG_VERBOSE("Cycle send web counter %u: Min max fw flow %.2f %.2f\r\n", counter_index,
-                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_max,
-                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min);
+//                            DEBUG_VERBOSE("Cycle send web counter %u: Min max fw flow %.2f %.2f\r\n", counter_index,
+//                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_max,
+//                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min);
 
-                            DEBUG_VERBOSE("Cycle send web counter %u: Min max resv flow %.2f %.2f\r\n", counter_index,
-                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max,
-                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min);
+//                            DEBUG_VERBOSE("Cycle send web counter %u: Min max resv flow %.2f %.2f\r\n", counter_index,
+//                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max,
+//                                       m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min);
 
                             // Clean min max value
                             fw_flow_max_in_cycle_send_web[counter_index] = FLOW_INVALID_VALUE;
@@ -1158,7 +1176,7 @@ void measure_input_task(void)
 
                     // Copy current value to prev value
                     memcpy(&m_pre_pulse_counter_in_backup[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(backup_pulse_data_t));
-
+                    
                     // Copy current measure counter to message queue variable
                     memcpy(&m_measure_data.counter[counter_index], &m_pulse_counter_in_backup[counter_index], sizeof(measure_input_counter_t));
 
@@ -1182,7 +1200,7 @@ void measure_input_task(void)
                     // Mark as invalid data
                     m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid = 0;
 
-                    DEBUG_VERBOSE("PWM%u %u\r\n", counter_index, m_measure_data.counter[counter_index].real_counter);
+//                    DEBUG_VERBOSE("PWM%u %u\r\n", counter_index, m_measure_data.counter[counter_index].real_counter);
                 }
 
                 // If current counter >= wakeup counter =>> Send min max to server
@@ -1217,7 +1235,10 @@ void measure_input_task(void)
 #endif
                         if (m_485_min_max[slave_index].net_volume_fw.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {
-                            m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = m_485_min_max[slave_index].net_volume_fw.type_float * 3600000.0f / (float)diff;;   
+                            float prev = m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float;
+                            m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = (prev - mb_net_totalizer_fw_flow_index[slave_index]) * 3600000.0f 
+                                                                                                / ((float)(now - m_last_time_measure_data_cycle_send_web));  
+                            mb_net_totalizer_fw_flow_index[slave_index] = prev;
                         }
                         else
                         {
@@ -1226,7 +1247,10 @@ void measure_input_task(void)
                         
                         if (m_485_min_max[slave_index].net_volume_reverse.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {
-                            m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = m_485_min_max[slave_index].net_volume_reverse.type_float * 3600000.0f / (float)diff;
+                            float prev = m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float;
+                            m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = (prev - mb_net_totalizer_reverse_flow_index[slave_index]) * 3600000.0f 
+                                                                                                    / (float)(now - m_last_time_measure_data_cycle_send_web);
+                            mb_net_totalizer_reverse_flow_index[slave_index] = prev;
                         }
                         else
                         {
@@ -1235,15 +1259,19 @@ void measure_input_task(void)
                         
                         if (m_485_min_max[slave_index].net_volume.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {
-                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = m_485_min_max[slave_index].net_volume.type_float* 3600000.0f / (float)diff;
+                            float prev = m_measure_data.rs485[slave_index].min_max.net_volume.type_float;
+                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = (prev - mb_net_totalizer[slave_index])*3600000.0f 
+                                                                                            / (float)(now - m_last_time_measure_data_cycle_send_web);
+                            mb_net_totalizer[slave_index] = prev;
                         }
                         else
                         {
                             m_measure_data.rs485[slave_index].min_max.net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         }
                         
-                        mb_rvs_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
-                        mb_fw_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
+//                        mb_rvs_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
+//                        mb_fw_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
+//                        mb_net_totalizer[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
@@ -1259,6 +1287,8 @@ void measure_input_task(void)
                         m_measure_data.input_4_20ma_cycle_send_web[i].input4_20ma_max = input_4_20ma_max_value[i];
                         m_measure_data.input_4_20ma_cycle_send_web[i].valid = 1;
                     }
+                    
+                    m_last_time_measure_data_cycle_send_web = now;
                 }
                 else
                 {

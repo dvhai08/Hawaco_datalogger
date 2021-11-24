@@ -1424,30 +1424,43 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         // Total forward flow
         if (i)
         {
-            float tmp = msg->counter[i].fw_flow;
-            tmp /= msg->counter[i].k;
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%.2f,",
                                                 i+1,
-                                                tmp);
+                                                msg->counter[i].flow_speed_forward_agv_cycle_wakeup);
             
-            tmp = msg->counter[i].reverse_flow;
-            tmp /= msg->counter[i].k;
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%.2f,",
                                                 i+1,
-                                                tmp);
+                                                msg->counter[i].flow_speed_reserve_agv_cycle_wakeup);
+            
+//            float tmp = msg->counter[i].fw_flow;
+//            tmp /= msg->counter[i].k;
+//            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%.2f,",
+//                                                i+1,
+//                                                tmp);
+//            
+//            tmp = msg->counter[i].reverse_flow;
+//            tmp /= msg->counter[i].k;
+//            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%.2f,",
+//                                                i+1,
+//                                                tmp);
         }
         
         else
         {
-            float tmp = msg->counter[i].fw_flow;
-            tmp /= msg->counter[i].k;
+//            float tmp = msg->counter[i].fw_flow;
+//            tmp /= msg->counter[i].k;
+//            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%.2f,",
+//                                                tmp);
+//            
+//            tmp = msg->counter[i].reverse_flow;
+//            tmp /= msg->counter[i].k;
+//            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%.2f,",
+//                                                tmp);
             total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%.2f,",
-                                                tmp);
+                                                msg->counter[i].flow_speed_forward_agv_cycle_wakeup);
             
-            tmp = msg->counter[i].reverse_flow;
-            tmp /= msg->counter[i].k;
             total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%.2f,",
-                                                tmp);
+                                                msg->counter[i].flow_speed_reserve_agv_cycle_wakeup);
 
         }
             
@@ -1858,7 +1871,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //    }
 
 //    total_length += sprintf((char *)(ptr + total_length), "\"bytes\":%u,", factory->byte_order);
-    total_length += sprintf((char *)(ptr + total_length), "\"pulse\":%u,", factory->pulse_ms);
+//    total_length += sprintf((char *)(ptr + total_length), "\"pulse\":%u,", factory->pulse_ms);
     
 //	// Release date
 //	total_length += sprintf((char *)(ptr + total_length), "\"Build\":\"%s %s\",", __DATE__, __TIME__);
