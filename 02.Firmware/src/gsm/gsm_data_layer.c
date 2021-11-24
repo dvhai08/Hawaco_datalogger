@@ -1424,11 +1424,11 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         // Total forward flow
         if (i)
         {
-            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%.2f,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow%u\":%.1f,",
                                                 i+1,
                                                 msg->counter[i].flow_speed_forward_agv_cycle_wakeup);
             
-            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%.2f,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow%u\":%.1f,",
                                                 i+1,
                                                 msg->counter[i].flow_speed_reserve_agv_cycle_wakeup);
             
@@ -1456,10 +1456,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //            tmp /= msg->counter[i].k;
 //            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%.2f,",
 //                                                tmp);
-            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%.2f,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlow\":%.1f,",
                                                 msg->counter[i].flow_speed_forward_agv_cycle_wakeup);
             
-            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%.2f,",
+            total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlow\":%.1f,",
                                                 msg->counter[i].flow_speed_reserve_agv_cycle_wakeup);
 
         }
@@ -1505,20 +1505,20 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             if (i)
             {
                 // min max forward flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow%u\":%.1f,",
                                                 i+1,
                                                 msg->counter[i].flow_avg_cycle_send_web.fw_flow_min);
             
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow%u\":%.1f,",
                                                 i+1,
                                                 msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
             
                 // min max reserve flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow%u\":%.1f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min);
                 
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow%u\":%.1f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
                 
@@ -1526,17 +1526,17 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             else
             {
                 // min max forward flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinForwardFlow\":%.1f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.fw_flow_min);
             
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxForwardFlow\":%.1f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.fw_flow_max);
             
                 // min max reserve flow
-                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinReverseFlow\":%.1f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_min);
                 
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxReverseFlow\":%.1f,",
                                                 msg->counter[i].flow_avg_cycle_send_web.reserve_flow_max);
 
             }
@@ -1544,19 +1544,19 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             // Hour
             if (i)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum%u\":%.1f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.fw_flow_sum);
-                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum%u\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum%u\":%.1f,",
                                                     i+1,
                                                     msg->counter[i].flow_avg_cycle_send_web.reverse_flow_sum);
             }
             
             else
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"ForwardFlowSum\":%.1f,",
                                                     msg->counter[i].flow_avg_cycle_send_web.fw_flow_sum);
-                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"ReverseFlowSum\":%.1f,",
                                                     msg->counter[i].flow_avg_cycle_send_web.reverse_flow_sum);
 
             }
@@ -1596,24 +1596,24 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             if (i)
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MinPressure%u\":%.2f,", i+1,
+                total_length += sprintf((char *)(ptr + total_length), "\"MinPressure%u\":%.1f,", i+1,
                                                                             convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_min));
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxPressure%u\":%.2f,", i+1,
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxPressure%u\":%.1f,", i+1,
                                                                             convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_max));
             }
             else
             {
-                total_length += sprintf((char *)(ptr + total_length), "\"MinPressure\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MinPressure\":%.1f,",
                                                                             convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_min));
-                total_length += sprintf((char *)(ptr + total_length), "\"MaxPressure\":%.2f,",
+                total_length += sprintf((char *)(ptr + total_length), "\"MaxPressure\":%.1f,",
                                                                             convert_input_4_20ma_to_pressure(msg->input_4_20ma_cycle_send_web[i].input4_20ma_max));
             }
             
-            total_length += sprintf((char *)(ptr + total_length), "\"PressureHour%u\":%.2f,", i+1,
+            total_length += sprintf((char *)(ptr + total_length), "\"PressureHour%u\":%.1f,", i+1,
                                                                         convert_input_4_20ma_to_pressure(msg->input_4_20mA[i]));
         }
         
-        total_length += sprintf((char *)(ptr + total_length), "\"Pressure%u\":%.2f,", i+1,
+        total_length += sprintf((char *)(ptr + total_length), "\"Pressure%u\":%.1f,", i+1,
                                                                         convert_input_4_20ma_to_pressure(msg->input_4_20mA[i]));
     }      
     
@@ -1636,7 +1636,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     // Build output 4-20ma
 	if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
 	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.2f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
+		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
 	}
 		
 #else	    // DTG01
