@@ -374,7 +374,8 @@ typedef struct
 #endif
     min_max_485_type_t net_volume_fw;
     min_max_485_type_t net_volume_reverse;
-    min_max_485_type_t net_volume;
+    min_max_485_type_t net_speed;
+    min_max_485_type_t net_index;
     uint8_t valid;
 } __attribute__((packed)) measure_input_rs485_min_max_t;
 typedef struct

@@ -274,12 +274,12 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                     
                                     if (mb_net_totalizer[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
                                     {
-                                        m_485_min_max[slave_count].net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                                        m_485_min_max[slave_count].net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                                         mb_net_totalizer[slave_count] = current_flow_idx;
                                     }
                                     else
                                     {
-                                        m_485_min_max[slave_count].net_volume.type_float = current_flow_idx;// - mb_net_totalizer[slave_count];
+                                        m_485_min_max[slave_count].net_speed.type_float = current_flow_idx;// - mb_net_totalizer[slave_count];
                                     }
                                 }
                             }
@@ -966,22 +966,25 @@ void measure_input_task(void)
                     input_4_20ma_min_value[0] = 0;
                 }
 #ifndef DTG01
-
-#if FAKE_MIN_MAX_DATA
-                adc_retval->in_4_20ma_in[1] = (float)adc_retval->bat_mv;
-                adc_retval->in_4_20ma_in[2] = (float)adc_retval->bat_mv;
-                adc_retval->in_4_20ma_in[3] = (float)adc_retval->bat_mv;
-#endif
-
                 if (eeprom_cfg->io_enable.name.input_4_20ma_1_enable)
                 {
                     m_measure_data.input_4_20mA[1] = adc_retval->in_4_20ma_in[1];
+                    if (input_4_20ma_min_value[1] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_min_value[1] = m_measure_data.input_4_20mA[1];
+                    }
+                    if (input_4_20ma_max_value[1] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_max_value[1] = m_measure_data.input_4_20mA[1];
+                    }
+                
                 }
                 else
                 {
                     m_measure_data.input_4_20mA[1] = 0;
                     input_4_20ma_min_value[1] = 0;
                 }
+                                    
                 if (input_4_20ma_min_value[1] > adc_retval->in_4_20ma_in[1])
                 {
                     input_4_20ma_min_value[1] = adc_retval->in_4_20ma_in[1];
@@ -994,6 +997,14 @@ void measure_input_task(void)
                 if (eeprom_cfg->io_enable.name.input_4_20ma_2_enable)
                 {
                     m_measure_data.input_4_20mA[2] = adc_retval->in_4_20ma_in[2];
+                    if (input_4_20ma_min_value[2] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_min_value[2] = m_measure_data.input_4_20mA[2];
+                    }
+                    if (input_4_20ma_max_value[2] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_max_value[2] = m_measure_data.input_4_20mA[2];
+                    }
                 }
                 else
                 {
@@ -1012,6 +1023,14 @@ void measure_input_task(void)
                 if (eeprom_cfg->io_enable.name.input_4_20ma_3_enable)
                 {
                     m_measure_data.input_4_20mA[3] = adc_retval->in_4_20ma_in[3];
+                    if (input_4_20ma_min_value[3] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_min_value[3] = m_measure_data.input_4_20mA[3];
+                    }
+                    if (input_4_20ma_max_value[3] == INPUT_4_20MA_INVALID_VALUE)
+                    {
+                        input_4_20ma_max_value[3] = m_measure_data.input_4_20mA[3];
+                    }
                 }
                 else
                 {
@@ -1277,22 +1296,22 @@ void measure_input_task(void)
                             m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         }
                         // Neu ma gia trin thanh ghi net volume la hop le thi toc so nuoc = (so nuoc sau - truoc) / chu ki
-                        if (m_485_min_max[slave_index].net_volume.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+                        if (m_485_min_max[slave_index].net_speed.type_float != INPUT_485_INVALID_FLOAT_VALUE)
                         {
-                            float prev = m_485_min_max[slave_index].net_volume.type_float;
-                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = (prev - mb_net_totalizer[slave_index])*3600.0f 
+                            float prev = m_485_min_max[slave_index].net_speed.type_float;
+                            m_measure_data.rs485[slave_index].min_max.net_speed.type_float = (prev - mb_net_totalizer[slave_index])*3600.0f 
                                                                                             / diff_cycle_send_web;
                             mb_net_totalizer[slave_index] = prev;
                         }
                         else
                         {
-                            m_measure_data.rs485[slave_index].min_max.net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                            m_measure_data.rs485[slave_index].min_max.net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         }
                         
 //                        mb_rvs_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
 //                        mb_fw_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
 //                        mb_net_totalizer[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
-                        m_485_min_max[slave_index].net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_485_min_max[slave_index].net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         
@@ -1305,6 +1324,9 @@ void measure_input_task(void)
                     {
                         m_measure_data.input_4_20ma_cycle_send_web[i].input4_20ma_min = input_4_20ma_min_value[i];
                         m_measure_data.input_4_20ma_cycle_send_web[i].input4_20ma_max = input_4_20ma_max_value[i];
+                        
+                        input_4_20ma_min_value[i] = INPUT_4_20MA_INVALID_VALUE;
+                        input_4_20ma_max_value[i] = INPUT_4_20MA_INVALID_VALUE;                    
                         m_measure_data.input_4_20ma_cycle_send_web[i].valid = 1;
                     }
                     
@@ -1329,7 +1351,7 @@ void measure_input_task(void)
 #endif 
                         m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
-                        m_measure_data.rs485[slave_index].min_max.net_volume.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_measure_data.rs485[slave_index].min_max.net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
 
                         
                         m_measure_data.rs485[slave_index].min_max.valid = 0;

@@ -1790,10 +1790,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
             total_length += sprintf((char *)(ptr + total_length), "\"MbRvsFwSum%u\":%.2f,", 
                                                                 index+1, msg->rs485[index].min_max.reverse_flow_sum.type_float);
 #endif
-            if (msg->rs485[index].min_max.net_volume.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+            if (msg->rs485[index].min_max.net_speed.type_float != INPUT_485_INVALID_FLOAT_VALUE)
             {
                 total_length += sprintf((char *)(ptr + total_length), "\"MbNetFlSum%u\":%.1f,", 
-                                                                index+1, msg->rs485[index].min_max.net_volume.type_float);
+                                                                index+1, msg->rs485[index].min_max.net_speed.type_float);
             }
             
             if (msg->rs485[index].min_max.net_volume_fw.type_float != INPUT_485_INVALID_FLOAT_VALUE)
