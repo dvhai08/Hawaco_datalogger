@@ -271,7 +271,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                 // Net total
                                 if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
                                 {
-                                    
+                                    m_485_min_max[slave_count].net_index.type_float = current_flow_idx;    // SO NUOC
                                     if (mb_net_totalizer[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
                                     {
                                         m_485_min_max[slave_count].net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
@@ -984,7 +984,7 @@ void measure_input_task(void)
                     m_measure_data.input_4_20mA[1] = 0;
                     input_4_20ma_min_value[1] = 0;
                 }
-                                    
+                
                 if (input_4_20ma_min_value[1] > adc_retval->in_4_20ma_in[1])
                 {
                     input_4_20ma_min_value[1] = adc_retval->in_4_20ma_in[1];
@@ -1252,6 +1252,8 @@ void measure_input_task(void)
                         
                         m_measure_data.rs485[slave_index].min_max.forward_flow = m_485_min_max[slave_index].forward_flow;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow = m_485_min_max[slave_index].reverse_flow;
+                        m_measure_data.rs485[slave_index].min_max.net_index.type_float = m_485_min_max[slave_index].net_index.type_float;
+
 #if MEASURE_SUM_MB_FLOW
                         if (diff == 0.0f)       // avoid div by zero
                         {
@@ -1308,13 +1310,14 @@ void measure_input_task(void)
                             m_measure_data.rs485[slave_index].min_max.net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         }
                         
+                        // Reset value to default
 //                        mb_rvs_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
 //                        mb_fw_flow_index[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
 //                        mb_net_totalizer[slave_index] = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_485_min_max[slave_index].net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
-                        
+                        m_485_min_max[slave_index].net_index.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_measure_data.rs485[slave_index].min_max.valid = 1;
                     }
 
@@ -1345,6 +1348,7 @@ void measure_input_task(void)
                         
                         m_measure_data.rs485[slave_index].min_max.forward_flow = m_485_min_max[slave_index].forward_flow;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow = m_485_min_max[slave_index].reverse_flow;
+                        m_measure_data.rs485[slave_index].min_max.net_index.type_float = m_485_min_max[slave_index].net_index.type_float;
 #if MEASURE_SUM_MB_FLOW                        
                         m_measure_data.rs485[slave_index].min_max.forward_flow_sum.type_float = 0.0f;
                         m_measure_data.rs485[slave_index].min_max.reverse_flow_sum.type_float = 0.0f;
@@ -1352,6 +1356,7 @@ void measure_input_task(void)
                         m_measure_data.rs485[slave_index].min_max.net_volume_fw.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_measure_data.rs485[slave_index].min_max.net_volume_reverse.type_float = INPUT_485_INVALID_FLOAT_VALUE;
                         m_measure_data.rs485[slave_index].min_max.net_speed.type_float = INPUT_485_INVALID_FLOAT_VALUE;
+                        m_485_min_max[slave_index].net_index.type_float = INPUT_485_INVALID_FLOAT_VALUE;
 
                         
                         m_measure_data.rs485[slave_index].min_max.valid = 0;
@@ -1474,6 +1479,7 @@ void measure_input_initialize(void)
         mb_net_totalizer_fw_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
         mb_net_totalizer_reverse_flow_index[i] = INPUT_485_INVALID_FLOAT_VALUE;
         mb_net_totalizer[i] = INPUT_485_INVALID_FLOAT_VALUE;
+        m_485_min_max[i].net_index.type_float = INPUT_485_INVALID_FLOAT_VALUE;
     }
 
     /* Doc gia tri do tu bo nho backup, neu gia tri tu BKP < flash -> lay theo gia tri flash

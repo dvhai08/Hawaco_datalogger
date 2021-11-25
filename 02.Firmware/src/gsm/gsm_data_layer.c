@@ -1807,6 +1807,12 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                 total_length += sprintf((char *)(ptr + total_length), "\"MbNetRvsFlSum%u\":%.1f,", 
                                                                 index+1, msg->rs485[index].min_max.net_volume_reverse.type_float);
             }
+           
+            if (msg->rs485[index].min_max.net_index.type_float != INPUT_485_INVALID_FLOAT_VALUE)
+            {
+                total_length += sprintf((char *)(ptr + total_length), "\"Mbidxhour%u\":%.1f,", 
+                                                                index+1, msg->rs485[index].min_max.net_index.type_float);
+            } 
         }
 
         // Value
