@@ -106,6 +106,92 @@ static inline uint32_t build_device_id(uint32_t offset, char *ptr, char *imei)
     return len;
 }    
 
+static inline uint32_t build_error_code(char *ptr, measure_input_perpheral_data_t *msg)
+{
+    bool found_break_pulse_input = false;
+    char *tmp_ptr = ptr;
+    sys_ctx_t *ctx = sys_ctx();
+    app_eeprom_config_data_t *eeprom_cfg = app_eeprom_read_config_data();
+    
+	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
+	{
+		if (msg->counter[i].cir_break)
+		{
+			found_break_pulse_input = true;
+			tmp_ptr += sprintf(tmp_ptr, "cir %u,", i+1);
+		}
+	}
+	
+	if (found_break_pulse_input)
+	{
+		ctx->error_not_critical.detail.circuit_break = 1;
+	}
+	else
+	{
+		ctx->error_not_critical.detail.circuit_break = 0;
+	}
+	
+
+    // Build error msg
+    if (msg->vbat_percent < eeprom_cfg->battery_low_percent)
+    {
+        tmp_ptr += sprintf(tmp_ptr, "%s", "pin yeu,");
+    }
+    
+	// Flash
+	if (ctx->error_not_critical.detail.flash)
+	{
+		tmp_ptr += sprintf(tmp_ptr, "%s", "flash,");
+	}
+
+	// Nhiet do
+	if (msg->temperature > 60)
+	{
+		tmp_ptr += sprintf(tmp_ptr, "%s", "nhiet cao,");
+	}
+
+	
+	// RS485
+    bool found_rs485_err = false;
+    for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
+    {
+        for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
+        {
+            if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
+            {
+                continue;
+            }
+            if (msg->rs485[slave_idx].sub_register[sub_register_index].read_ok == 0)
+            {
+                found_rs485_err = true;
+                break;
+            }
+        }
+    }
+    
+    if (found_rs485_err)
+    {
+        tmp_ptr += sprintf(tmp_ptr, "rs485-%u,", measure_input_485_error_code);
+    }
+
+	// Cam bien
+	if (ctx->error_critical.detail.sensor_out_of_range)
+	{
+		tmp_ptr += sprintf(tmp_ptr, "%s", "qua nguong,");
+	}
+    
+	if (tmp_ptr[tmp_ptr - ptr - 1] == ',')
+	{
+		tmp_ptr[tmp_ptr - ptr - 1] = 0;
+		tmp_ptr--;		// remove char ','
+	}
+	
+	tmp_ptr += sprintf(tmp_ptr, "%s", "\",");
+    
+    return tmp_ptr - ptr;
+}
+
+
 uint32_t estimate_wakeup_time = 0;
 
 uint32_t gsm_data_layer_get_estimate_wakeup_time_stamp(void)
@@ -1307,7 +1393,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //	measure_input_perpheral_data_t *measure_input = measure_input_current_data();
 //    DEBUG_VERBOSE("Free mem %u bytes\r\n", umm_free_heap_size());
 	sys_ctx_t *ctx = sys_ctx();
-	bool found_break_pulse_input = false;
+
 //	char alarm_str[128];
 //    char *p = alarm_str;
     volatile uint16_t total_length = 0;
@@ -1317,81 +1403,9 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     
     total_length += sprintf((char *)(ptr + total_length), "{\"ts\":%llu,\"values\":", ts);
 	total_length += sprintf((char *)(ptr + total_length), "%s", "{\"Err\":\"");
-
-	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
-	{
-		if (msg->counter[i].cir_break)
-		{
-			found_break_pulse_input = true;
-			total_length += sprintf((char *)(ptr + total_length), "cir %u,", i+1);
-		}
-	}
-	
-	if (found_break_pulse_input)
-	{
-		ctx->error_not_critical.detail.circuit_break = 1;
-	}
-	else
-	{
-		ctx->error_not_critical.detail.circuit_break = 0;
-	}
-	
-
-    // Build error msg
-    if (msg->vbat_percent < eeprom_cfg->battery_low_percent)
-    {
-        total_length += sprintf((char *)(ptr + total_length), "%s", "pin yeu,");
-    }
     
-	// Flash
-	if (ctx->error_not_critical.detail.flash)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "flash,");
-	}
+    total_length += build_error_code(ptr + total_length, msg);
 
-	// Nhiet do
-	if (msg->temperature > 70)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "nhiet cao,");
-	}
-
-	
-	// RS485
-    bool found_rs485_err = false;
-    for (uint32_t slave_idx = 0; slave_idx < RS485_MAX_SLAVE_ON_BUS; slave_idx++)
-    {
-        for (uint32_t sub_register_index = 0; sub_register_index < RS485_MAX_SUB_REGISTER; sub_register_index++)
-        {
-            if (eeprom_cfg->rs485[slave_idx].sub_register[sub_register_index].data_type.name.valid == 0)
-            {
-                continue;
-            }
-            if (msg->rs485[slave_idx].sub_register[sub_register_index].read_ok == 0)
-            {
-                found_rs485_err = true;
-                break;
-            }
-        }
-    }
-    
-    if (found_rs485_err)
-    {
-        total_length += sprintf((char *)(ptr + total_length), "rs485-%u,", measure_input_485_error_code);
-    }
-
-	// Cam bien
-	if (ctx->error_critical.detail.sensor_out_of_range)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "%s", "qua nguong,");
-	}
-	if (ptr[total_length - 1] == ',')
-	{
-		ptr[total_length - 1] = 0;
-		total_length--;		// remove char ','
-	}
-
-	
-	total_length += sprintf((char *)(ptr + total_length), "%s", "\",");
 	
     // Build timestamp
     total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":%u,", msg->measure_timestamp); //second since 1970
