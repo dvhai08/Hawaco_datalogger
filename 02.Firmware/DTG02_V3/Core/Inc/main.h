@@ -75,12 +75,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define CIRIN1_Pin LL_GPIO_PIN_0
-#define CIRIN1_GPIO_Port GPIOH
-#define CIRIN2_Pin LL_GPIO_PIN_1
+#define CIRIN2_Pin LL_GPIO_PIN_0
 #define CIRIN2_GPIO_Port GPIOH
-#define OPTOIN1_Pin LL_GPIO_PIN_0
-#define OPTOIN1_GPIO_Port GPIOC
+#define CIRIN1_Pin LL_GPIO_PIN_1
+#define CIRIN1_GPIO_Port GPIOH
+#define ADC_IO_IN0_Pin LL_GPIO_PIN_0
+#define ADC_IO_IN0_GPIO_Port GPIOC
 #define ADC_VBAT_Pin LL_GPIO_PIN_1
 #define ADC_VBAT_GPIO_Port GPIOC
 #define EXT_FLASH_MISO_Pin LL_GPIO_PIN_2
@@ -96,20 +96,20 @@ void Error_Handler(void);
 #define EN_4_20MA_IN_GPIO_Port GPIOA
 #define OUTPUT_4_20MA_PWM_Pin LL_GPIO_PIN_3
 #define OUTPUT_4_20MA_PWM_GPIO_Port GPIOA
-#define OPTOIN2_Pin LL_GPIO_PIN_4
-#define OPTOIN2_GPIO_Port GPIOA
+#define ADC_IO_IN1_Pin LL_GPIO_PIN_4
+#define ADC_IO_IN1_GPIO_Port GPIOA
 #define ADC_4_20MA_IN3_Pin LL_GPIO_PIN_5
 #define ADC_4_20MA_IN3_GPIO_Port GPIOA
 #define ADC_4_20MA_IN3A6_Pin LL_GPIO_PIN_6
 #define ADC_4_20MA_IN3A6_GPIO_Port GPIOA
 #define ADC_4_20MA_IN1_Pin LL_GPIO_PIN_7
 #define ADC_4_20MA_IN1_GPIO_Port GPIOA
-#define CHARGE_EN_Pin LL_GPIO_PIN_4
-#define CHARGE_EN_GPIO_Port GPIOC
+#define SYS_5V_EN_Pin LL_GPIO_PIN_4
+#define SYS_5V_EN_GPIO_Port GPIOC
 #define ADC_VTEMP_Pin LL_GPIO_PIN_5
 #define ADC_VTEMP_GPIO_Port GPIOC
-#define OPTOIN3_Pin LL_GPIO_PIN_2
-#define OPTOIN3_GPIO_Port GPIOB
+#define OPTOIN2_Pin LL_GPIO_PIN_2
+#define OPTOIN2_GPIO_Port GPIOB
 #define RS485_RX_Pin LL_GPIO_PIN_10
 #define RS485_RX_GPIO_Port GPIOB
 #define RS485_TX_Pin LL_GPIO_PIN_11
@@ -118,30 +118,30 @@ void Error_Handler(void);
 #define EXT_FLASH_CS_GPIO_Port GPIOB
 #define EXT_FLASH_SCK_Pin LL_GPIO_PIN_13
 #define EXT_FLASH_SCK_GPIO_Port GPIOB
-#define PULSE_PWM1_Pin LL_GPIO_PIN_14
-#define PULSE_PWM1_GPIO_Port GPIOB
-#define PULSE_PWM1_EXTI_IRQn EXTI4_15_IRQn
+#define PULSE_PWM2_Pin LL_GPIO_PIN_14
+#define PULSE_PWM2_GPIO_Port GPIOB
+#define PULSE_PWM2_EXTI_IRQn EXTI4_15_IRQn
 #define EXT_FLASH_MOSI_Pin LL_GPIO_PIN_15
 #define EXT_FLASH_MOSI_GPIO_Port GPIOB
 #define GSM_EN_Pin LL_GPIO_PIN_6
 #define GSM_EN_GPIO_Port GPIOC
-#define PULSE_DIR1_Pin LL_GPIO_PIN_7
-#define PULSE_DIR1_GPIO_Port GPIOC
-#define PULSE_DIR1_EXTI_IRQn EXTI4_15_IRQn
-#define PULSE_PWM2_Pin LL_GPIO_PIN_8
-#define PULSE_PWM2_GPIO_Port GPIOC
-#define PULSE_PWM2_EXTI_IRQn EXTI4_15_IRQn
-#define PULSE_DIR2_Pin LL_GPIO_PIN_9
+#define PULSE_DIR2_Pin LL_GPIO_PIN_7
 #define PULSE_DIR2_GPIO_Port GPIOC
 #define PULSE_DIR2_EXTI_IRQn EXTI4_15_IRQn
+#define PULSE_PWM1_Pin LL_GPIO_PIN_8
+#define PULSE_PWM1_GPIO_Port GPIOC
+#define PULSE_PWM1_EXTI_IRQn EXTI4_15_IRQn
+#define PULSE_DIR1_Pin LL_GPIO_PIN_9
+#define PULSE_DIR1_GPIO_Port GPIOC
+#define PULSE_DIR1_EXTI_IRQn EXTI4_15_IRQn
 #define GSM_PWR_KEY_Pin LL_GPIO_PIN_8
 #define GSM_PWR_KEY_GPIO_Port GPIOA
 #define GSM_RX_Pin LL_GPIO_PIN_9
 #define GSM_RX_GPIO_Port GPIOA
 #define GSM_TX_Pin LL_GPIO_PIN_10
 #define GSM_TX_GPIO_Port GPIOA
-#define SYS_4V2_EN_Pin LL_GPIO_PIN_15
-#define SYS_4V2_EN_GPIO_Port GPIOA
+#define CHARGE_EN_Pin LL_GPIO_PIN_15
+#define CHARGE_EN_GPIO_Port GPIOA
 #define TRANS_OUT2_Pin LL_GPIO_PIN_10
 #define TRANS_OUT2_GPIO_Port GPIOC
 #define TRANS_OUT3_Pin LL_GPIO_PIN_11
@@ -150,8 +150,8 @@ void Error_Handler(void);
 #define TRANS_OUT4_GPIO_Port GPIOC
 #define RS485_EN_Pin LL_GPIO_PIN_2
 #define RS485_EN_GPIO_Port GPIOD
-#define OPTOIN4_Pin LL_GPIO_PIN_4
-#define OPTOIN4_GPIO_Port GPIOB
+#define OPTOIN1_Pin LL_GPIO_PIN_4
+#define OPTOIN1_GPIO_Port GPIOB
 #define LED1_Pin LL_GPIO_PIN_5
 #define LED1_GPIO_Port GPIOB
 #define VNTC_Pin LL_GPIO_PIN_6
@@ -205,5 +205,3 @@ void sys_turn_on_led(uint32_t delay_ms);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

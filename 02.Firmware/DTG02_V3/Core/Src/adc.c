@@ -1,3 +1,4 @@
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file    adc.c
@@ -6,17 +7,16 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
-
+/* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "adc.h"
 
@@ -99,14 +99,21 @@ void MX_ADC_Init(void)
   LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOC);
   LL_IOP_GRP1_EnableClock(LL_IOP_GRP1_PERIPH_GPIOA);
   /**ADC GPIO Configuration
+  PC0   ------> ADC_IN10
   PC1   ------> ADC_IN11
   PC3   ------> ADC_IN13
   PA1   ------> ADC_IN1
+  PA4   ------> ADC_IN4
   PA5   ------> ADC_IN5
   PA6   ------> ADC_IN6
   PA7   ------> ADC_IN7
   PC5   ------> ADC_IN15
   */
+  GPIO_InitStruct.Pin = ADC_IO_IN0_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_IO_IN0_GPIO_Port, &GPIO_InitStruct);
+
   GPIO_InitStruct.Pin = ADC_VBAT_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
@@ -121,6 +128,11 @@ void MX_ADC_Init(void)
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
   LL_GPIO_Init(ADC_24V_GPIO_Port, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = ADC_IO_IN1_Pin;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
+  GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
+  LL_GPIO_Init(ADC_IO_IN1_GPIO_Port, &GPIO_InitStruct);
 
   GPIO_InitStruct.Pin = ADC_4_20MA_IN3_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_ANALOG;
@@ -157,6 +169,9 @@ void MX_ADC_Init(void)
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_1);
   /** Configure Regular Channel
   */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_4);
+  /** Configure Regular Channel
+  */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_5);
   /** Configure Regular Channel
   */
@@ -164,6 +179,9 @@ void MX_ADC_Init(void)
   /** Configure Regular Channel
   */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_7);
+  /** Configure Regular Channel
+  */
+  LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_10);
   /** Configure Regular Channel
   */
   LL_ADC_REG_SetSequencerChAdd(ADC1, LL_ADC_CHANNEL_11);
@@ -719,5 +737,3 @@ void adc_convert(void)
 }
 
 /* USER CODE END 1 */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -687,10 +687,10 @@ void sys_delay_ms(uint32_t ms)
 	while (1)
 	{
 #ifdef WDT_ENABLE
-        LL_IWDG_ReloadCounter(IWDG);
+        WRITE_REG(IWDG->KR, LL_IWDG_KEY_RELOAD);
 #endif
 //		__WFI();	// hardfault when exit from stopmode
-		if (HAL_GetTick() - current_tick >= (uint32_t)ms)
+		if (uwTick - current_tick >= (uint32_t)ms)
 		{
 			break;
 		}
@@ -970,4 +970,3 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

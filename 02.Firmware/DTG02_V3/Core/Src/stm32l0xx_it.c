@@ -281,36 +281,36 @@ void EXTI4_15_IRQHandler(void)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_7);
     /* USER CODE BEGIN LL_EXTI_LINE_7 */
-	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+	  // DIR2
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_7 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_8) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_8);
     /* USER CODE BEGIN LL_EXTI_LINE_8 */
-	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+	  // PULSE1
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_9);
     /* USER CODE BEGIN LL_EXTI_LINE_9 */
-	  // PULSE PULSE2
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+	  // DIR1
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
     /* USER CODE END LL_EXTI_LINE_9 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_14) != RESET)
   {
     LL_EXTI_ClearFlag_0_31(LL_EXTI_LINE_14);
     /* USER CODE BEGIN LL_EXTI_LINE_14 */
-	  // PULSE PWM
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
-	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+	  // PULSE PWM2
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
+	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */
@@ -454,4 +454,4 @@ void LPUART1_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
