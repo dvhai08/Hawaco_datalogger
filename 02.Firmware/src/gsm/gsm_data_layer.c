@@ -1900,9 +1900,18 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
     DEBUG_INFO("Send time %u, ts %u\r\n", m_send_time, msg->measure_timestamp);
 
-#if defined(DTG02V2) || defined(DTG02V3)
+#if defined(DTG02V2)
     total_length += sprintf((char *)(ptr + total_length), "\"charge\":%u,", LL_GPIO_IsOutputPinSet(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin) ? 1 : 0);
 #endif	
+#if defined(DTG02V3)
+    uint32_t charge = 0;
+    if (LL_GPIO_IsOutputPinSet(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin) && LL_GPIO_IsOutputPinSet(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin))
+    {
+        charge = 1;
+    }
+    total_length += sprintf((char *)(ptr + total_length), "\"charge\":%u,", charge);
+#endif	
+    
     app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
 //    if (factory->baudrate.baudrate_valid_key == EEPROM_BAUD_VALID)
 //    {

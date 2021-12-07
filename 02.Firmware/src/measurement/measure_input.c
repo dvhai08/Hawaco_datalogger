@@ -925,16 +925,31 @@ void measure_input_task(void)
 
             // Put data to msq
             adc_retval = adc_get_input_result();
-#if defined(DTG02V2) || defined(DTG02V3)
+#if defined(DTG02V2)
             if (adc_retval->bat_mv > 4150)
             {
                 LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
             }
-            else if (adc_retval->bat_mv < 3800)
+            else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
             {
                 LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
             }
-#endif // defined(DTG02V2) || defined(DTG02V3)
+#endif // defined(DTG02V2)
+
+
+#if defined(DTG02V3)
+            if (adc_retval->bat_mv > 4150)
+            {
+                #warning "think about power of 4-20mA output"
+                LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
+            }
+            else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
+            {
+                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
+                LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin); // neu pin day thi ko sac nua
+            }
+#endif // defined(DTG02V2)
+            
 
             if (ctx->status.is_enter_test_mode == 0)
             {
