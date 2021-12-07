@@ -96,7 +96,7 @@ static uint8_t process_output_config(char *buffer)
             DEBUG_INFO("Output1 on/off changed to %u\r\n", out1);
         }
     }
-#if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
     char *output2 = strstr(buffer, "Output2\":");
     if (output2 != NULL)
     {
@@ -307,7 +307,7 @@ uint8_t process_input_config(char *buffer)
         }
     }
 	
-#endif
+#endif // DTG01
     return new_cfg;
 }
 

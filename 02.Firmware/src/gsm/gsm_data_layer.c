@@ -1385,6 +1385,10 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 #ifdef DTG02V2
 	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V2-%s\",", gsm_get_module_imei());
 #endif
+    
+#ifdef DTG02V3
+	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V3-%s\",", gsm_get_module_imei());
+#endif
 	
 #ifdef DTG01
     total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
@@ -1861,7 +1865,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Sendtime\":%u,", ++m_send_time);
     DEBUG_INFO("Send time %u, ts %u\r\n", m_send_time, msg->measure_timestamp);
 
-#ifdef DTG02V2 
+#if defined(DTG02V2) || defined(DTG02V3)
     total_length += sprintf((char *)(ptr + total_length), "\"charge\":%u,", LL_GPIO_IsOutputPinSet(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin) ? 1 : 0);
 #endif	
     app_eeprom_factory_data_t *factory = app_eeprom_read_factory_data();
@@ -2197,13 +2201,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         
 		// on/off
 		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
-#if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+        wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+    #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
 		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
-		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
 		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+    #endif //not define DTG02V3
 		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif		
 		// 4-20mA output
@@ -2324,13 +2330,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		
 		// on/off
 		wr_data.on_off.name.output_on_off_0 = m_sensor_msq->output_on_off[0];
-#if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
+    #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
 		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
+        wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
+    #endif
 		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
-		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
 		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif
 		

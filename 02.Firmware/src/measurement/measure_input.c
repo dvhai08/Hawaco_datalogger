@@ -686,7 +686,7 @@ void measure_input_reset_counter(uint8_t index)
         m_pulse_counter_in_backup[0].real_counter = 0;
         m_pulse_counter_in_backup[0].reverse_counter = 0;
     }
-#if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
     else
     {
         m_pulse_counter_in_backup[1].real_counter = 0;
@@ -728,8 +728,10 @@ void measure_input_save_all_data_to_flash(void)
             // On/off
             spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
             spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
+#ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
             spi_flash_store_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
             spi_flash_store_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+#endif
             spi_flash_store_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
             spi_flash_store_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
             spi_flash_store_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
@@ -765,7 +767,7 @@ void measure_input_save_all_data_to_flash(void)
     }
 }
 
-#ifdef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
 extern uint32_t last_time_monitor_vin_when_battery_low;
 #endif
 
@@ -803,7 +805,7 @@ void measure_input_task(void)
         ctx->peripheral_running.name.high_bat_detect = 0;
     }
 
-#ifndef DTG01
+#ifndef DTG01       // mean DTG2, G2V2, G2V3
     if (sys_ctx()->status.is_enter_test_mode == 0)
     {
         TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
@@ -815,8 +817,10 @@ void measure_input_task(void)
     // Get input and output on/off value
     m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
     m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
+#ifndef DTG02V3     // Chi co G2, G2V2 moi co 2 chan opto input 3,4
     m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
     m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
+#endif
     m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
     m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
     m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
@@ -827,7 +831,7 @@ void measure_input_task(void)
                                                             && (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);
     m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) 
                                                             && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
-#else
+#else       // DTG01
     TRANS_OUTPUT(eeprom_cfg->io_enable.name.output0);
     m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
     m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
@@ -887,9 +891,9 @@ void measure_input_task(void)
 
             //            DEBUG_INFO("ADC start\r\n");
             // ADC conversion
-#ifdef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
             last_time_monitor_vin_when_battery_low = 0;
-#endif
+#endif // defined(DTG02V2) || defined(DTG02V3)
             adc_start();
 
             if (m_this_is_the_first_time)
@@ -907,7 +911,7 @@ void measure_input_task(void)
 
             // Put data to msq
             adc_retval = adc_get_input_result();
-#ifdef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
             if (adc_retval->bat_mv > 4150)
             {
                 LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
@@ -916,7 +920,7 @@ void measure_input_task(void)
             {
                 LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
             }
-#endif
+#endif // defined(DTG02V2) || defined(DTG02V3)
 
             if (ctx->status.is_enter_test_mode == 0)
             {
