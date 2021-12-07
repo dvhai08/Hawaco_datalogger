@@ -130,4 +130,10 @@ void tim_pwm_output_percent(uint32_t thoughsand)
 	TIM2->CCR4 = thoughsand * (m_reload_value+1) / 1000;
 	LL_TIM_EnableCounter(TIM2);
 }
+
+bool tim_is_pwm_active(void)
+{
+    return m_dac_started;
+}
+
 /* USER CODE END 1 */

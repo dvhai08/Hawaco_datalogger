@@ -59,6 +59,9 @@ void tim_pwm_output_percent(uint32_t thoughsand);
  * @param[in]   freq : Frequency
  */
 void tim_pwm_change_freq(uint32_t freq);
+
+bool tim_is_pwm_active(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

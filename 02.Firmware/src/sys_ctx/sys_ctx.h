@@ -39,6 +39,7 @@ typedef struct
 	uint8_t dump_flash;
 	uint32_t total_sms_in_24_hour;
 	uint32_t reset_sms_limit_timeout;
+    uint8_t need_charge;
 } sys_ctx_status_t;
 
 typedef union

@@ -34,6 +34,7 @@
 #include "spi.h"
 #include "modbus_master.h"
 //#include "umm_malloc.h"
+#include "tim.h"
 
 #define VBAT_DETECT_HIGH_MV 9000
 #define STORE_MEASURE_INVERVAL_SEC 30
@@ -940,13 +941,19 @@ void measure_input_task(void)
 #if defined(DTG02V3)
             if (adc_retval->bat_mv > 4150)
             {
-                #warning "think about power of 4-20mA output"
+                sys_ctx()->status.need_charge = 0;
                 LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
+                if (eeprom_cfg->output_4_20ma_enable == 0 || tim_is_pwm_active() == false)
+                {
+                    LL_GPIO_ResetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);
+                }
+                #warning "think about adc output and charge"
             }
             else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
             {
-                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
-                LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin); // neu pin day thi ko sac nua
+                sys_ctx()->status.need_charge = 1;
+                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); 
+                LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);
             }
 #endif // defined(DTG02V2)
             
