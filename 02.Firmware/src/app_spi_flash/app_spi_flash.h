@@ -34,6 +34,10 @@ typedef struct
     input_4_20ma_min_max_hour_t input_4_20ma_cycle_send_web[NUMBER_OF_INPUT_4_20MA];
     
 	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
+#ifdef DTG02V3
+    uint8_t output_4_20ma_enable;
+#endif
+    
     app_spi_flash_on_off_data_t on_off;
 	uint32_t timestamp;		//
     uint8_t csq_percent;

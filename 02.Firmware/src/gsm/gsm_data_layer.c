@@ -85,6 +85,27 @@ void gsm_set_flag_prepare_enter_read_sms_mode(void)
 }
 #endif
 
+static inline uint32_t build_device_id(uint32_t offset, char *ptr, char *imei)
+{
+    uint32_t len = 0;
+#ifdef DTG01
+    len = sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", imei);
+#endif
+    
+#ifdef DTG02    
+    len = sprintf((char *)(ptr + offset), "\"ID\":\"G2-%s\",", imei); 
+#endif  
+
+#ifdef DTG02V2  
+    len = sprintf((char *)(ptr + offset), "\"ID\":\"G2V2-%s\",", imei); 
+#endif  
+
+#ifdef DTG02V3  
+    len = sprintf((char *)(ptr + offset), "\"ID\":\"G2V3-%s\",", imei);
+#endif  
+    return len;
+}    
+
 uint32_t estimate_wakeup_time = 0;
 
 uint32_t gsm_data_layer_get_estimate_wakeup_time_stamp(void)
@@ -1376,38 +1397,20 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     total_length += sprintf((char *)(ptr + total_length), "\"Timestamp\":%u,", msg->measure_timestamp); //second since 1970
     
     int32_t temp_counter;
-
-    // Build ID, phone and id
-#ifdef DTG02
-    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2-%s\",", gsm_get_module_imei());
-#endif
-	
-#ifdef DTG02V2
-	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V2-%s\",", gsm_get_module_imei());
-#endif
     
-#ifdef DTG02V3
-	total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G2V3-%s\",", gsm_get_module_imei());
-#endif
+    total_length += build_device_id(total_length, ptr, gsm_get_module_imei());
+   
 	
-#ifdef DTG01
-    total_length += sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", gsm_get_module_imei());
-	// K : he so chia cua dong ho nuoc, input 1
-	// Offset: Gia tri offset cua dong ho nuoc
-	// Mode : che do hoat dong
-    if (msg->counter[0].k == 0)
-    {
-        DEBUG_ERROR("K is zero\r\n");
-        msg->counter[0].k = 1;
-    }
-	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0, msg->counter[0].k);
-	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0, eeprom_cfg->meter_mode[0]);
-#endif
 
-//    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
-//    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
-//	total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
-#ifndef DTG01
+/*
+    total_length += sprintf((char *)(ptr + total_length), "\"Phone\":\"%s\",", eeprom_cfg->phone);
+    total_length += sprintf((char *)(ptr + total_length), "\"Money\":%d,", 0);
+    total_length += sprintf((char *)(ptr + total_length), "\"Dir\":%u,", eeprom_cfg->dir_level);
+*/
+
+#ifndef DTG01       // G2, G2V2, G2V3
+    
+    // Build all meter input data
 	for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
 	{
 		// Build input pulse counter
@@ -1579,6 +1582,7 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //		//total_length += sprintf((char *)(ptr + total_length), "\"Offset%u\":%u,", i+1, eeprom_cfg->offset[i]);
 //		total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", i+1, msg->counter[i].mode);
 	}		
+    
     // Build input 4-20ma
     total_length += sprintf((char *)(ptr + total_length), "\"Input1_J3_1\":%.1f,", 
                                                                         msg->input_4_20mA[0]); // dau vao 4-20mA 0
@@ -1636,13 +1640,30 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
 //	}
     
     // Build output 4-20ma
-	if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
-	{
-		total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
-	}
-		
+    #ifndef DTG02V3
+        if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
+        {
+            total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
+        }
+    #else       // G2V3 moi cho phan fix bug nay
+        if (msg->output_4_20ma_enable && (msg->output_4_20mA[0] < 4.0f))
+        {
+            total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
+        }
+    #endif
 #else	    // DTG01
 
+    // K : he so chia cua dong ho nuoc, input 1
+	// Offset: Gia tri offset cua dong ho nuoc
+	// Mode : che do hoat dong
+    if (msg->counter[0].k == 0)
+    {
+        DEBUG_ERROR("K is zero\r\n");
+        msg->counter[0].k = 1;
+    }
+	total_length += sprintf((char *)(ptr + total_length), "\"K%u\":%u,", 0, msg->counter[0].k);
+	total_length += sprintf((char *)(ptr + total_length), "\"M%u\":%u,", 0, eeprom_cfg->meter_mode[0]);
+    
     // Build pulse counter
     temp_counter = msg->counter[0].real_counter / msg->counter[0].k + msg->counter[0].indicator;
     total_length += sprintf((char *)(ptr + total_length), "\"Input1\":%u,",
@@ -1900,18 +1921,6 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
     return total_length;
 }
 
-#if GSM_HTTP_CUSTOM_HEADER
-static char m_build_http_post_header[255];
-static char *build_http_header(uint32_t length)
-{
-    sprintf(m_build_http_post_header, "POST /api/v1/%s/telemetry HTTP/1.1\r\n"
-                                      "Host: iot.wilad.vn\r\nContent-Type: text/plain\r\n"
-                                      "Content-Length: %u\r\n\r\n",
-            gsm_get_module_imei(),
-            length);
-    return m_build_http_post_header;
-}
-#endif
 static measure_input_perpheral_data_t *m_sensor_msq;
 
 static void gsm_http_event_cb(gsm_http_event_t event, void *data)
@@ -1921,7 +1930,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
     switch (event)
     {
     case GSM_HTTP_EVENT_START:
-//        DEBUG_VERBOSE("HTTP task started\r\n");
         break;
 
     case GSM_HTTP_EVENT_CONNTECTED:
@@ -2009,7 +2017,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 tmp.output_4_20mA[i] = m_retransmision_data_in_flash->output_4_20mA[i];
             }
             
-//                tmp.csq_percent = 0;
             tmp.csq_percent = m_retransmision_data_in_flash->csq_percent;
             tmp.measure_timestamp = m_retransmision_data_in_flash->timestamp;
             tmp.temperature = m_retransmision_data_in_flash->temp;
@@ -2018,13 +2025,15 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             
             // on/off
             tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
-#if defined (DTG02) || defined (DTG02)
+#if defined (DTG02) || defined (DTG02V2) || defined (DTG02V3)
             tmp.input_on_off[0] = m_retransmision_data_in_flash->on_off.name.input_on_off_0;
             tmp.input_on_off[1] = m_retransmision_data_in_flash->on_off.name.input_on_off_1;
             tmp.output_on_off[1] = m_retransmision_data_in_flash->on_off.name.output_on_off_1;
-            tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
+            #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
+                tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
+                tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
+            #endif
             tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
-            tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
             tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
 #endif
             
@@ -2056,7 +2065,6 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
         {
             if (m_last_http_msg)
             {
-//                umm_free(m_last_http_msg);
                 m_last_http_msg = NULL;
                 m_malloc_count--;
             }
@@ -2078,12 +2086,7 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
                 
                 ((gsm_http_data_t *)data)->data = (uint8_t *)m_last_http_msg;
                 ((gsm_http_data_t *)data)->data_length = strlen(m_last_http_msg);
-#if GSM_HTTP_CUSTOM_HEADER
-                ((gsm_http_data_t *)data)->header = (uint8_t *)build_http_header(m_last_http_msg.length);
-                DEBUG_INFO("Header len %u\r\n", strlen(build_http_header(m_last_http_msg.length)));
-#else
                 ((gsm_http_data_t *)data)->header = (uint8_t *)"";
-#endif
             }
             else
             {
