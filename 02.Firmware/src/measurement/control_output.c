@@ -32,6 +32,7 @@
 #else
 #define VREG                        4096
 #endif
+
 #define USE_LOOKUP_TABLE            0
 #define K_V_I                       (122.5f)
 typedef struct
@@ -130,7 +131,7 @@ void control_output_dac_enable(uint32_t ms)
 		dac_value = voltage * 4095 / adc_get_input_result()->vdda_mv;
 #else
         uint32_t thoughsand = 0;
-#ifndef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
         int32_t offset_mv = 0; // get_offset_mv(cfg->io_enable.name.output_4_20ma_value);
 		uint32_t set_mv = 600 + 150.0f * (cfg->output_4_20ma - 4.0f) - offset_mv;
 #else

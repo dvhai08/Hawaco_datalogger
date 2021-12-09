@@ -26,8 +26,12 @@ typedef struct
     input_4_20ma_min_max_hour_t input_4_20ma_cycle_send_web[NUMBER_OF_INPUT_4_20MA];
     
     // Input on/off
-#ifndef DTG01
+#ifndef DTG01       // DTG2, G2V2, G2V3 has input on/off
 	uint8_t input_on_off[NUMBER_OF_INPUT_ON_OFF];
+#endif
+
+#ifdef DTG02V3
+    uint8_t output_4_20ma_enable;
 #endif
 	
 	// Oupput 	
@@ -51,6 +55,7 @@ typedef struct
 	
 	uint8_t csq_percent;
 	
+    
 	uint8_t state;		// memory queue state
 } measure_input_perpheral_data_t;
 

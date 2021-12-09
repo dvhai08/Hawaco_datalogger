@@ -135,25 +135,41 @@
 
 #define INPUT_POWER_4_20_MA_IS_ENABLE()       (LL_GPIO_IsOutputPinSet(EN_4_20MA_IN_GPIO_Port, EN_4_20MA_IN_Pin) ? 0 : 1)
          
-#ifndef DTG02V2										
-#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
-												LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
-											else	\
-												LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
-										}	
-#else
-// 4.2V provice power for GSM and 4-20mA ouput
-#define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
-												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-											else if (gsm_data_layer_is_module_sleeping())	\
-												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-										}	
-#define ENABLE_SYS_4V2(x)				{	if (x) \
-												LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-											else	\
-												LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
-										}	
-#endif
+#ifdef DTG01										
+    #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
+                                                    LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                                else	\
+                                                    LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                            }	
+#endif  // DTG01
+
+#if defined(DTG02) || defined(DTG02V2)  
+                                        
+    // 4.2V provice power for GSM and 4-20mA ouput
+    #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
+                                                    LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+                                                else if (gsm_data_layer_is_module_sleeping())	\
+                                                    LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+                                            }	
+    #define ENABLE_SYS_4V2(x)				{	if (x) \
+                                                    LL_GPIO_SetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+                                                else	\
+                                                    LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
+                                            }	
+#endif // defined(DTG02) || defined(DTG02V2) 
+
+
+#if defined(DTG02V3)  
+                                        
+    // 4.2V provice power for GSM and 4-20mA ouput
+    #define ENABLE_OUTPUT_4_20MA_POWER(x)	while (0)
+        
+    #define ENABLE_SYS_4V2(x)				{	if (x) \
+                                                    LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);	\
+                                                else	\
+                                                    LL_GPIO_ResetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);	\
+                                            }	
+#endif // defined(DTG02V3) 
 										
 #define RS485_POWER_EN(x)				{	if (x) \
 												LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);	\
@@ -214,10 +230,20 @@
 #define V_NTC_TEMP_CHANNEL_INDEX		    6
 #define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
 #define V_REF_CHANNEL_INDEX                 8
-//#define V_OFFSET_4_20MA_CHANNEL_1_MV        1
-//#define V_OFFSET_4_20MA_CHANNEL_2_MV        1
-//#define V_OFFSET_4_20MA_CHANNEL_3_MV        1
-#endif
+#endif /* DTG02V2 */
+
+#ifdef DTG02V3
+#define ADC_CHANNEL_DMA_COUNT				11
+#define V_INPUT_3_4_20MA_CHANNEL_INDEX		5
+#define VIN_24V_CHANNEL_INDEX				0
+#define V_INPUT_2_4_20MA_CHANNEL_INDEX		1
+#define V_INPUT_1_4_20MA_CHANNEL_INDEX		2
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		3
+#define VBAT_CHANNEL_INDEX					4
+#define V_NTC_TEMP_CHANNEL_INDEX		    6
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
+#define V_REF_CHANNEL_INDEX                 8
+#endif /* DTG02V3 */
 
 #ifdef DTG01
 #define ADC_CHANNEL_DMA_COUNT				6
@@ -230,38 +256,40 @@
 #define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  	4
 #define V_REF_CHANNEL_INDEX						5
 #endif
+
 #define VREF_OFFSET_MV							80
 #define ADC_INPUT_4_20MA_GAIN               	(50.0f)   
 
 
 
-#if defined(DTG02) || defined(DTG02V2)
-#if defined(DTG02)
-#define MEASURE_INPUT_PORT_1						0
-#define MEASURE_INPUT_PORT_2		                1
-#define NUMBER_OF_INPUT_4_20MA						4
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
-#define	NUMBER_OF_INPUT_ON_OFF						4
-#define NUMBER_OF_OUTPUT_ON_OFF						4
-#define NUMBER_OF_OUTPUT_4_20MA                     1
-#elif defined(DTG02V2)
-#define MEASURE_INPUT_PORT_1						1
-#define MEASURE_INPUT_PORT_2		                0
-#define NUMBER_OF_INPUT_4_20MA						4
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
-#define	NUMBER_OF_INPUT_ON_OFF						4
-#define NUMBER_OF_OUTPUT_ON_OFF						4
-#define NUMBER_OF_OUTPUT_4_20MA                     1
-#endif
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
+    #define NUMBER_OF_INPUT_4_20MA						4
+    #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
+    #define NUMBER_OF_OUTPUT_ON_OFF						4
+    #define NUMBER_OF_OUTPUT_4_20MA                     1
+    
+    #if defined(DTG02)
+        #define MEASURE_INPUT_PORT_1						0
+        #define MEASURE_INPUT_PORT_2		                1
+        #define	NUMBER_OF_INPUT_ON_OFF						4
+    #elif defined(DTG02V2)
+        #define MEASURE_INPUT_PORT_1						1
+        #define MEASURE_INPUT_PORT_2		                0
+        #define	NUMBER_OF_INPUT_ON_OFF						4
+    #elif defined(DTG02V3)
+        #define MEASURE_INPUT_PORT_1						0
+        #define MEASURE_INPUT_PORT_2		                1
+        #define	NUMBER_OF_INPUT_ON_OFF						2
+    #endif
+#else   // DTG01
+    #define MEASURE_INPUT_PORT_1						0
+    #define MEASURE_INPUT_PORT_2		                1
+    #define	NUMBER_OF_OUTPUT_ON_OFF						1
+    #define NUMBER_OF_INPUT_4_20MA						1
+    #define NUMBER_OF_OUTPUT_4_20MA                     1
+    #define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
+#endif // defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
 
-#else
-#define MEASURE_INPUT_PORT_1						0
-#define MEASURE_INPUT_PORT_2		                1
-#define	NUMBER_OF_OUTPUT_ON_OFF						1
-#define NUMBER_OF_INPUT_4_20MA						1
-#define NUMBER_OF_OUTPUT_4_20MA                     1
-#define MEASURE_NUMBER_OF_WATER_METER_INPUT			1		
-#endif
 #define MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN         0
 #define MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN         1
 #define MEASUREMENT_MAX_MSQ_IN_RAM                  1
@@ -291,11 +319,13 @@
 #define APP_EEPROM_MAX_NUMBER_OF_SERVER				2
 #define APP_EEPROM_MAIN_SERVER_ADDR_INDEX			0
 #define APP_EEPROM_ALTERNATIVE_SERVER_ADDR_INDEX	(APP_EEPROM_MAX_NUMBER_OF_SERVER-1)
-#if defined(DTG02) || defined(DTG02V2)
-#define APP_EEPROM_NB_OF_INPUT_4_20MA               4
+
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
+    #define APP_EEPROM_NB_OF_INPUT_4_20MA               4
 #else
-#define APP_EEPROM_NB_OF_INPUT_4_20MA               1
-#endif
+    #define APP_EEPROM_NB_OF_INPUT_4_20MA               1
+#endif // defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
+
 #define APP_EEPROM_MAX_UNIT_NAME_LENGTH				6
 
 #define APP_FLASH_VALID_DATA_KEY                    0x12345678               

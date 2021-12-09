@@ -76,7 +76,10 @@ typedef struct
 	measure_input_modbus_register_t rs485[RS485_MAX_SLAVE_ON_BUS];
 	
     float output_4_20ma;
-	
+#ifdef DTG02V3
+    uint8_t output_4_20ma_enable;
+#endif	
+   
 	// Cai dat nguong canh bao cam bien xung
 	uint32_t qmin;
 	uint32_t qmax;

@@ -145,7 +145,7 @@ void jig_start(void)
 					{
 						jig_print("input2 = %u, fail\r\n", output_value);
 					}
-					
+    #ifndef DTG02V3					
 					if (INPUT_ON_OFF_2() == output_value)
 					{
 						jig_print("input3 = %u, pass\r\n", output_value);
@@ -163,8 +163,9 @@ void jig_start(void)
 					{
 						jig_print("input4 = %u, fail\r\n", output_value);
 					}
+    #endif
 					jig_print("-------------\r\n\r\n");
-#endif
+#endif  // DTG01
 				}
 								
 								
