@@ -156,7 +156,7 @@ static uint8_t process_output_config(char *buffer)
         }
     }
 	
-
+#ifndef DTG02V3
     char *output3 = strstr(buffer, "\"Output3\":");
     if (output3 != NULL)
     {
@@ -182,7 +182,8 @@ static uint8_t process_output_config(char *buffer)
 			TRANS_4_OUTPUT(out4);
         }
     }
-    
+#endif  // not define DTG02V3
+
     char *output4_20mA = strstr(buffer, "Output4_20\":");
     if (output4_20mA != NULL)
     {

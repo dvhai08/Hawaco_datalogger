@@ -346,7 +346,6 @@ void adc_start()
     {
         for (uint32_t i = 0; i < ADC_CHANNEL_DMA_COUNT; i++)
         {
-    #ifdef DTG01
             if (i == 0)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
@@ -357,105 +356,44 @@ void adc_start()
             }
             else if (i == 2)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6);
-            }
-            else if (i == 3)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
-            }
-            else if (i == 4)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);   
-                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);                   
-            }
-            else if (i == 5)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT); 
-                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT);   
-            }
-    #endif
-	#ifdef DTG02
-            if (i == 0)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_0);
-            }
-            else if (i == 1)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
-            }
-            else if (i == 2)
-            {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_5);
             }
             else if (i == 3)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6); 
-            }
-            else if (i == 4)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_7);            
-            }
-            else if (i == 5)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11); 
-            }
-            else if (i == 6)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_15); 
-            }
-            else if (i == 7)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);      
-                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);                
-            }
-            else if (i == 8)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT);
-                LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT); 
-            }
-    #endif
-	
-	#ifdef DTG02V3
-            if (i == 0)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_1);
-            }
-            else if (i == 1)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_5);
-            }
-            else if (i == 2)
-            {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_6);
             }
-            else if (i == 3)
+            else if (i == 4)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_7); 
             }
-            else if (i == 4)
-            {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11);            
-            }
             else if (i == 5)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_13); 
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_10);            
             }
             else if (i == 6)
             {
-                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_15); 
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_11);            
             }
             else if (i == 7)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_13); 
+            }
+            else if (i == 8)
+            {
+                LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_15); 
+            }
+            else if (i == 9)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_TEMPSENSOR);      
                 LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_TEMPSENSOR);                
             }
-            else if (i == 8)
+            else if (i == 10)
             {
                 LL_ADC_REG_SetSequencerChannels(ADC1, LL_ADC_CHANNEL_VREFINT);
                 LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(ADC1), LL_ADC_PATH_INTERNAL_VREFINT); 
             }
-    #endif
-			
+
+            
             if (LL_ADC_REG_IsConversionOngoing(ADC1) == 0)
             {
                 LL_ADC_REG_StartConversion(ADC1);
@@ -578,7 +516,7 @@ adc_input_value_t *adc_get_input_result(void)
 
 void adc_convert(void)
 {	
-        // Get VREF and VDDA
+    // Get VREF and VDDA
     m_adc_input.vref_int = *((uint16_t*)0x1FF80078);
 	// m_adc_input.vdda_mv = 3000 * m_adc_input.vref_int/m_adc_raw_data[V_REF_CHANNEL_INDEX] + VREF_OFFSET_MV;
     m_adc_input.vdda_mv = __LL_ADC_CALC_VREFANALOG_VOLTAGE(m_adc_raw_data[V_REF_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
@@ -594,6 +532,15 @@ void adc_convert(void)
         m_adc_input.vin += ADC_VIN_DIODE_OFFSET;
     }
     m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin);
+    
+    // Analog
+    uint32_t tmp = 0;
+    tmp = ADC_VI_ANALOG_INPUT_RESISTOR_DIV*m_adc_raw_data[V_ANALOG_0_INPUT_INDEX]*m_adc_input.vdda_mv/4095;
+    m_adc_input.analog_input_io[0] = tmp;
+    tmp = ADC_VI_ANALOG_INPUT_RESISTOR_DIV*m_adc_raw_data[V_ANALOG_1_INPUT_INDEX]*m_adc_input.vdda_mv/4095;
+    m_adc_input.analog_input_io[1] = tmp;
+    
+    
     /* Get 4-20mA input channel to mv */
     
     // Channel 0
@@ -733,6 +680,8 @@ void adc_convert(void)
     m_adc_input.temp_is_valid = 1;
     m_adc_input.temp = __LL_ADC_CALC_TEMPERATURE(m_adc_input.vdda_mv, m_adc_raw_data[V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX], LL_ADC_RESOLUTION_12B);
 #endif
+    
+    
     m_is_the_first_time = false;
 }
 

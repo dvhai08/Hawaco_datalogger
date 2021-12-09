@@ -739,11 +739,11 @@ void measure_input_save_all_data_to_flash(void)
 #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
             spi_flash_store_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
             spi_flash_store_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+            spi_flash_store_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
+            spi_flash_store_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
 #endif
             spi_flash_store_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
             spi_flash_store_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
-            spi_flash_store_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
-            spi_flash_store_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
 #endif
             
 #ifdef DTG02V3
@@ -768,6 +768,11 @@ void measure_input_save_all_data_to_flash(void)
             spi_flash_store_data.vbat_precent = m_sensor_msq[j].vbat_percent;
             spi_flash_store_data.temp = m_sensor_msq[j].temperature;
             spi_flash_store_data.csq_percent = m_sensor_msq[j].csq_percent;
+            
+            #ifdef DTG02V3
+            spi_flash_store_data.analog_input[0] = m_sensor_msq[j].analog_input[0];
+            spi_flash_store_data.analog_input[0] = m_sensor_msq[j].analog_input[1];
+            #endif
 
             // 485
             for (uint32_t nb_485_device = 0; nb_485_device < RS485_MAX_SLAVE_ON_BUS; nb_485_device++)
@@ -832,8 +837,10 @@ void measure_input_task(void)
     {
         TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
         TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);
-        TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
-        TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
+        #ifndef DTG02V3 // Chi co G2, G2V2 moi co 2 chan opto input 3,4
+            TRANS_3_OUTPUT(eeprom_cfg->io_enable.name.output2);
+            TRANS_4_OUTPUT(eeprom_cfg->io_enable.name.output3);
+        #endif
     }
 
     // Get input and output on/off value
@@ -843,11 +850,12 @@ void measure_input_task(void)
     m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
     m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
 #endif
+    
+#if defined(DTG02) || defined(DTG02V2)  // DTG2 - V3 Khong co tran outout 3,4
     m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
     m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
-    m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
-    m_measure_data.output_on_off[3] = TRANS_4_IS_OUTPUT_HIGH();
-
+#endif
+    
     // Check meter input circuit status
     m_measure_data.counter[MEASURE_INPUT_PORT_2].cir_break = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin) 
                                                             && (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);
@@ -950,11 +958,11 @@ void measure_input_task(void)
             {
                 sys_ctx()->status.need_charge = 0;
                 LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
+                // Tat nguon 5V luon
                 if (eeprom_cfg->output_4_20ma_enable == 0 || tim_is_pwm_active() == false)
                 {
                     LL_GPIO_ResetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);
                 }
-                #warning "think about adc output and charge"
             }
             else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
             {
@@ -970,6 +978,10 @@ void measure_input_task(void)
                 m_measure_data.measure_timestamp = app_rtc_get_counter();
                 m_measure_data.vbat_mv = adc_retval->bat_mv;
                 m_measure_data.vbat_percent = adc_retval->bat_percent;
+#if defined(DTG02V3)
+                m_measure_data.analog_input[0] = adc_retval->analog_input_io[0];
+                m_measure_data.analog_input[0] = adc_retval->analog_input_io[1];
+#endif                
 
 #ifndef DTG01
                 m_measure_data.vin_mv = adc_retval->vin;

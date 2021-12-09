@@ -32,6 +32,7 @@ typedef struct
 
 #ifdef DTG02V3
     uint8_t output_4_20ma_enable;
+    uint16_t analog_input[2];
 #endif
 	
 	// Oupput 	

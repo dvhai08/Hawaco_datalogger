@@ -67,16 +67,16 @@ void MX_GPIO_Init(void)
   LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);
 
   /**/
+  LL_GPIO_SetOutputPin(EN_4_20MA_OUT_POWER_GPIO_Port, EN_4_20MA_OUT_POWER_Pin);
+
+  /**/
   LL_GPIO_ResetOutputPin(GSM_PWR_KEY_GPIO_Port, GSM_PWR_KEY_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin);
 
   /**/
-  LL_GPIO_ResetOutputPin(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin);
-
-  /**/
-  LL_GPIO_ResetOutputPin(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin);
+  LL_GPIO_ResetOutputPin(LED2_GPIO_Port, LED2_Pin);
 
   /**/
   LL_GPIO_ResetOutputPin(RS485_EN_GPIO_Port, RS485_EN_Pin);
@@ -199,20 +199,20 @@ void MX_GPIO_Init(void)
   LL_GPIO_Init(TRANS_OUT2_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = TRANS_OUT3_Pin;
+  GPIO_InitStruct.Pin = LED2_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(TRANS_OUT3_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(LED2_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = TRANS_OUT4_Pin;
+  GPIO_InitStruct.Pin = EN_4_20MA_OUT_POWER_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(TRANS_OUT4_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(EN_4_20MA_OUT_POWER_GPIO_Port, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = RS485_EN_Pin;

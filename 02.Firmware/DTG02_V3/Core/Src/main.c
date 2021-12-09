@@ -755,8 +755,6 @@ static void info_task(void *arg)
     }
     TRANS_1_TOGGLE();
     TRANS_2_TOGGLE();
-    TRANS_3_TOGGLE();
-    TRANS_4_TOGGLE();
         
     if (i++ > 4)
 	{

@@ -115,6 +115,7 @@
 #define TRANS_IS_OUTPUT_HIGH()		(LL_GPIO_IsOutputPinSet(TRANS_OUTPUT_GPIO_Port, TRANS_OUTPUT_Pin) ? 0 : 1)
 #define TRANS_1_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT1_GPIO_Port, TRANS_OUT1_Pin) ? 0 : 1)
 #define TRANS_2_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT2_GPIO_Port, TRANS_OUT2_Pin) ? 0 : 1)
+
 #define TRANS_3_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT3_GPIO_Port, TRANS_OUT3_Pin) ? 0 : 1)
 #define TRANS_4_IS_OUTPUT_HIGH()	(LL_GPIO_IsOutputPinSet(TRANS_OUT4_GPIO_Port, TRANS_OUT4_Pin) ? 0 : 1)
 								
@@ -178,7 +179,11 @@
 #if defined(DTG02V3)  
                                         
     // 4.2V provice power for GSM and 4-20mA ouput
-    #define ENABLE_OUTPUT_4_20MA_POWER(x)	while (0)
+    #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
+                                                    LL_GPIO_ResetOutputPin(EN_4_20MA_OUT_POWER_GPIO_Port, EN_4_20MA_OUT_POWER_Pin);	\
+                                                else	\
+                                                    LL_GPIO_SetOutputPin(EN_4_20MA_OUT_POWER_GPIO_Port, EN_4_20MA_OUT_POWER_Pin);	\
+                                            }
         
     #define ENABLE_SYS_4V2(x)				{	if (x) \
                                                     LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);	\
@@ -214,7 +219,8 @@
 //#define V_OFFSET_4_20MA_CHANNEL_0_MV        1
 #define ADC_VBAT_RESISTOR_DIV				2
 #define ADC_VIN_RESISTOR_DIV				7911
-
+#define ADC_VI_ANALOG_INPUT_RESISTOR_DIV    7667
+                                        
 #ifdef DTG02
 #define ADC_CHANNEL_DMA_COUNT				9
 //#define ADC_VREF							3300
@@ -250,15 +256,20 @@
 
 #ifdef DTG02V3
 #define ADC_CHANNEL_DMA_COUNT				11
-#define V_INPUT_3_4_20MA_CHANNEL_INDEX		5
+#define V_ANALOG_0_INPUT_INDEX              1
+#define V_ANALOG_1_INPUT_INDEX              5
 #define VIN_24V_CHANNEL_INDEX				0
-#define V_INPUT_2_4_20MA_CHANNEL_INDEX		1
-#define V_INPUT_1_4_20MA_CHANNEL_INDEX		2
-#define V_INPUT_0_4_20MA_CHANNEL_INDEX		3
-#define VBAT_CHANNEL_INDEX					4
-#define V_NTC_TEMP_CHANNEL_INDEX		    6
-#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  7
-#define V_REF_CHANNEL_INDEX                 8
+
+#define V_INPUT_3_4_20MA_CHANNEL_INDEX		7
+#define V_INPUT_2_4_20MA_CHANNEL_INDEX		2
+#define V_INPUT_1_4_20MA_CHANNEL_INDEX		3
+#define V_INPUT_0_4_20MA_CHANNEL_INDEX		4
+
+#define VBAT_CHANNEL_INDEX					6
+#define V_NTC_TEMP_CHANNEL_INDEX		    8
+
+#define V_INTERNAL_CHIP_TEMP_CHANNEL_INDEX  9
+#define V_REF_CHANNEL_INDEX                 10
 #endif /* DTG02V3 */
 
 #ifdef DTG01
@@ -281,7 +292,13 @@
 #if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
     #define NUMBER_OF_INPUT_4_20MA						4
     #define MEASURE_NUMBER_OF_WATER_METER_INPUT			2
-    #define NUMBER_OF_OUTPUT_ON_OFF						4
+    
+    #ifdef DTG02V3
+        #define NUMBER_OF_OUTPUT_ON_OFF						2
+    #else
+        #define NUMBER_OF_OUTPUT_ON_OFF						4
+    #endif
+    
     #define NUMBER_OF_OUTPUT_4_20MA                     1
     
     #if defined(DTG02)

@@ -1664,6 +1664,8 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
         {
             total_length += sprintf((char *)(ptr + total_length), "\"Output4_20\":%.1f,", msg->output_4_20mA[0]);   // dau ra 4-20mA
         }
+        total_length += sprintf((char *)(ptr + total_length), "\"Anl0\":%u,", msg->analog_input[0]);
+        total_length += sprintf((char *)(ptr + total_length), "\"Anl1\":%u,", msg->analog_input[1]);          
     #endif
 #else	    // DTG01
 
@@ -2053,6 +2055,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             tmp.vbat_mv = m_retransmision_data_in_flash->vbat_mv;
             tmp.vbat_percent = m_retransmision_data_in_flash->vbat_precent;
             
+            // Analog input
+            #ifdef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
+                tmp.analog_input[0] = m_retransmision_data_in_flash->analog_input[0];
+                tmp.analog_input[1] = m_retransmision_data_in_flash->analog_input[1];
+            #endif
+            
             // on/off
             tmp.output_on_off[0] = m_retransmision_data_in_flash->on_off.name.output_on_off_0;
 #if defined (DTG02) || defined (DTG02V2) || defined (DTG02V3)
@@ -2062,9 +2070,9 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
             #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
                 tmp.input_on_off[2] = m_retransmision_data_in_flash->on_off.name.input_on_off_2;
                 tmp.input_on_off[3] = m_retransmision_data_in_flash->on_off.name.input_on_off_3;
+                tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
+                tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
             #endif
-            tmp.output_on_off[2] = m_retransmision_data_in_flash->on_off.name.output_on_off_2;
-            tmp.output_on_off[3] = m_retransmision_data_in_flash->on_off.name.output_on_off_3;
 #endif
             
             // Modbus
@@ -2238,12 +2246,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-        wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
     #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
+        wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+        wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
 		wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
     #endif //not define DTG02V3
-		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
 #endif		
 		// 4-20mA output
 		for (uint32_t i = 0; i < NUMBER_OF_OUTPUT_4_20MA; i++)
@@ -2367,12 +2375,12 @@ static void gsm_http_event_cb(gsm_http_event_t event, void *data)
 		wr_data.on_off.name.input_on_off_0 = m_sensor_msq->input_on_off[0];
 		wr_data.on_off.name.input_on_off_1 = m_sensor_msq->input_on_off[1];
 		wr_data.on_off.name.output_on_off_1 = m_sensor_msq->output_on_off[1];
-    #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
+    #ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input-output on/off 3-4
 		wr_data.on_off.name.input_on_off_2 = m_sensor_msq->input_on_off[2];
         wr_data.on_off.name.input_on_off_3 = m_sensor_msq->input_on_off[3];
-    #endif
-		wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
+        wr_data.on_off.name.output_on_off_2 = m_sensor_msq->output_on_off[2];
 		wr_data.on_off.name.output_on_off_3 = m_sensor_msq->output_on_off[3];
+    #endif
 #endif
 		
 		// Output 4-20mA

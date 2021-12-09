@@ -36,6 +36,7 @@ typedef struct
 	float output_4_20mA[NUMBER_OF_OUTPUT_4_20MA];
 #ifdef DTG02V3
     uint8_t output_4_20ma_enable;
+    uint16_t analog_input[2];
 #endif
     
     app_spi_flash_on_off_data_t on_off;

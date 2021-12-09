@@ -124,8 +124,11 @@ void jig_start(void)
 #else
 					TRANS_1_OUTPUT(output_value);
 					TRANS_2_OUTPUT(output_value);
-					TRANS_3_OUTPUT(output_value);
-					TRANS_4_OUTPUT(output_value);
+                #ifndef DTG02V3
+                        TRANS_3_OUTPUT(output_value);
+                        TRANS_4_OUTPUT(output_value);
+                #endif
+                    
 					sys_delay_ms(1);
 					
 					if (INPUT_ON_OFF_0() == output_value)
