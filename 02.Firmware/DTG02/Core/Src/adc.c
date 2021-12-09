@@ -523,8 +523,8 @@ void adc_convert(void)
 	m_adc_input.bat_mv = (ADC_VBAT_RESISTOR_DIV*m_adc_raw_data[VBAT_CHANNEL_INDEX]*m_adc_input.vdda_mv/4095);
     
     /* ADC Vin 24V */
-	m_adc_input.vin_24 = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
-    m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin_24);
+	m_adc_input.vin = ((uint32_t)ADC_VIN_RESISTOR_DIV*m_adc_raw_data[VIN_24V_CHANNEL_INDEX]/(uint32_t)1000)*m_adc_input.vdda_mv/4095;
+    m_adc_input.bat_percent = convert_vin_to_percent(m_adc_input.vin);
     /* Get 4-20mA input channel to mv */
     
     // Channel 0

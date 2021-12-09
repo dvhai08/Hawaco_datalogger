@@ -575,10 +575,14 @@ static uint8_t process_modbus_register_config(char *buffer)
 			sprintf(search_str, "Register_%u_%u\":", slave_count+1, sub_reg_idx+1);
 			char *rs485_reg_str = strstr(buffer, search_str);
 			
-			sprintf(search_str, "Type_%u_%u\":", slave_count+1, sub_reg_idx+1);
+			sprintf(search_str, "\"Type_%u_%u\":", slave_count+1, sub_reg_idx+1);
 			char *rs485_type_str = strstr(buffer, search_str);
+            if (rs485_type_str)
+            {
+                rs485_type_str += strlen(search_str);
+            }
 			
-			sprintf(search_str, "Unit_%u_%u\":", slave_count+1, sub_reg_idx+1);
+			sprintf(search_str, "\"Unit_%u_%u\":", slave_count+1, sub_reg_idx+1);
 			char *rs485_unit = strstr(buffer, search_str);
 			
 			if (rs485_id_str && rs485_reg_str && rs485_type_str)
@@ -595,11 +599,11 @@ static uint8_t process_modbus_register_config(char *buffer)
 				// Get RS485 data type
 				temp = RS485_DATA_TYPE_INT16;
 				m_eeprom_config->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.valid = 1;
-				if (strstr(rs485_type_str, "\"int32\""))
+				if (memcmp(rs485_type_str, "\"int32\"", strlen("\"int32\"")) == 0)
 				{
 					temp = RS485_DATA_TYPE_INT32;
 				}
-				else if (strstr(rs485_type_str, "\"float\""))
+				if (memcmp(rs485_type_str, "\"float\"", strlen("\"float\"")) == 0)
 				{
 					temp = RS485_DATA_TYPE_FLOAT;
 				}

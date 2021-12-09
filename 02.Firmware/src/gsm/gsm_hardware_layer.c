@@ -313,6 +313,9 @@ char *gsm_get_sim_ccid(void)
 
 char* gsm_get_module_imei(void)
 {
+//    #warning "Hardcode imei 123456789012345"
+//    return  "123456789012345";
+    
 	return m_gsm_imei;
 }
 

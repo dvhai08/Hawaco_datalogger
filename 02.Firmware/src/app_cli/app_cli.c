@@ -349,10 +349,19 @@ static int32_t cli_fake_pulse(p_shell_context_t context, int32_t argc, char **ar
     input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin);
     input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
 #else
-    input.pwm_level = LL_GPIO_IsInputPinSet(PULSE_PWM1_GPIO_Port, PULSE_PWM1_Pin) ? 1 : 0;
-    input.dir_level = LL_GPIO_IsInputPinSet(PULSE_DIR1_GPIO_Port, PULSE_DIR1_Pin) ? 1 : 0;
-    input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
-    input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+    #if defined(DTG02V2) || defined(DTG02V3)
+        input.pwm_level = LL_GPIO_IsInputPinSet(PULSE_PWM1_GPIO_Port, PULSE_PWM1_Pin) ? 1 : 0;
+        input.dir_level = LL_GPIO_IsInputPinSet(PULSE_DIR1_GPIO_Port, PULSE_DIR1_Pin) ? 1 : 0;
+        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+    #endif
+    #if defined(DTG02)
+        input.pwm_level = LL_GPIO_IsInputPinSet(PWMIN1_GPIO_Port, PWMIN1_Pin) ? 1 : 0;
+        input.dir_level = LL_GPIO_IsInputPinSet(DIRIN1_GPIO_Port, DIRIN1_Pin) ? 1 : 0;
+        input.line_break_detect = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+        input.new_data_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+    #endif
+    
 #endif
     measure_input_pulse_irq(&input);
     return 0;

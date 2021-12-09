@@ -143,7 +143,7 @@
                                             }	
 #endif  // DTG01
 
-#if defined(DTG02) || defined(DTG02V2)  
+#if defined(DTG02V2)  
                                         
     // 4.2V provice power for GSM and 4-20mA ouput
     #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
@@ -156,7 +156,23 @@
                                                 else	\
                                                     LL_GPIO_ResetOutputPin(SYS_4V2_EN_GPIO_Port, SYS_4V2_EN_Pin);	\
                                             }	
-#endif // defined(DTG02) || defined(DTG02V2) 
+#endif // defined(DTG02V2) 
+             
+#if defined(DTG02)
+                                        
+    // 4.2V provice power for GSM and 4-20mA ouput
+    #define ENABLE_OUTPUT_4_20MA_POWER(x)	{	if (x) \
+                                                    LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                                else if (gsm_data_layer_is_module_sleeping())	\
+                                                    LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                            }	
+    #define ENABLE_SYS_4V2(x)				{	if (x) \
+                                                    LL_GPIO_SetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                                else	\
+                                                    LL_GPIO_ResetOutputPin(ENABLE_OUTPUT_4_20MA_GPIO_Port, ENABLE_OUTPUT_4_20MA_Pin);	\
+                                            }	
+#endif // defined(DTG02)                                          
+                                            
 
 
 #if defined(DTG02V3)  

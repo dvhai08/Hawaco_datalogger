@@ -180,9 +180,9 @@ static inline uint32_t build_error_code(char *ptr, measure_input_perpheral_data_
 		tmp_ptr += sprintf(tmp_ptr, "%s", "qua nguong,");
 	}
     
-	if (tmp_ptr[tmp_ptr - ptr - 1] == ',')
+	if (ptr[tmp_ptr - ptr-1] == ',')
 	{
-		tmp_ptr[tmp_ptr - ptr - 1] = 0;
+		ptr[tmp_ptr - ptr-1] = 0;
 		tmp_ptr--;		// remove char ','
 	}
 	
@@ -1870,7 +1870,14 @@ static uint16_t gsm_build_sensor_msq(char *ptr, measure_input_perpheral_data_t *
                 }
                 else
                 {
+                    // dump hexa
                     total_length += sprintf((char *)(ptr + total_length), "%.1f,", msg->rs485[index].sub_register[sub_idx].value.float_val);
+//                    total_length += sprintf((char *)(ptr + total_length), "\"%.1f - 0x%02X%02X%02X%02X\",", 
+//                                                                                    msg->rs485[index].sub_register[sub_idx].value.float_val,
+//                                                                                    msg->rs485[index].sub_register[sub_idx].value.raw[0],
+//                                                                                    msg->rs485[index].sub_register[sub_idx].value.raw[1],
+//                                                                                    msg->rs485[index].sub_register[sub_idx].value.raw[2],
+//                                                                                    msg->rs485[index].sub_register[sub_idx].value.raw[3]);
                 }
 //                if (strlen((char*)msg->rs485[index].sub_register[sub_idx].unit))
 //                {

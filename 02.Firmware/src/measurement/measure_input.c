@@ -159,7 +159,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                     case MODBUS_MASTER_FUNCTION_READ_INPUT_REGISTER:
                     {
 //                        uint8_t result;
-
+                
                         modbus_master_reset(delay_modbus);
                         uint32_t halfword_quality = 1;
                         if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_FLOAT 
@@ -184,7 +184,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             }
                         }
                         register_value[slave_count].slave_addr = slave_addr;
-
+                        uint16_t estimated_reg = (30000 + register_addr + 1);
                         if (measure_input_485_error_code != MODBUS_MASTER_OK) // Read data error
                         {
 //                            DEBUG_ERROR("Modbus read input register failed code %d\r\n", measure_input_485_error_code);
@@ -241,7 +241,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
                             {
                                 // Net forward
-                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_fw_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].net_totalizer_fw_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
                                 {
                                     if (mb_net_totalizer_fw_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
                                     {
@@ -255,7 +255,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                 }
                                 
                                 // Net reverse
-                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reverse_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reverse_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
                                 {
                                     
                                     if (mb_net_totalizer_reverse_flow_index[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
@@ -270,7 +270,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                                 }
                                 
                                 // Net total
-                                if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
+                                if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].net_totalizer_reg) // If register == net  totalizer forward flow register, 30000 = read input reg
                                 {
                                     m_485_min_max[slave_count].net_index.type_float = current_flow_idx;    // SO NUOC
                                     if (mb_net_totalizer[slave_count] == INPUT_485_INVALID_FLOAT_VALUE)
@@ -289,7 +289,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             {
                                 for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
                                 {
-                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].fw_flow_reg) // If register == forward flow register, 30000 = read input reg
+                                    if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].fw_flow_reg) // If register == forward flow register, 30000 = read input reg
                                     {
                                         bool data_is_valid = false;
                                         float tmp = current_flow_idx;
@@ -346,7 +346,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 //                                            DEBUG_WARN("Max Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].max_forward_flow.type_float);
                                         }
                                     }
-                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg
+                                    if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg
                                         && (eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg == eeprom_cfg->rs485[slave_on_bus].fw_flow_reg)) // If register == reserve flow register
                                     {
                                         bool data_is_valid = false;
@@ -401,7 +401,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 //                                            DEBUG_WARN("Max resv Flow 485 value %.1f\r\n", m_485_min_max[slave_on_bus].max_reverse_flow.type_float);
                                         }
                                     }
-                                    else if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg
+                                    else if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg
                                         && (eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg != eeprom_cfg->rs485[slave_on_bus].fw_flow_reg)) // If register == reserve flow register
                                     {
                                         bool data_is_valid = false;
@@ -456,7 +456,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             {
                                 for (uint32_t slave_on_bus = 0; slave_on_bus < RS485_MAX_SLAVE_ON_BUS; slave_on_bus++)
                                 {
-                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].fw_flow_reg) // If register == forward flow register, 30000 = read input reg
+                                    if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].fw_flow_reg) // If register == forward flow register, 30000 = read input reg
                                     {
                                         bool data_is_valid = false;
                                         //Min-max
@@ -504,7 +504,7 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
 //                                            DEBUG_WARN("Max Fw Flow 485 value %.2f\r\n", m_485_min_max[slave_on_bus].max_forward_flow.type_float);
                                         }
                                     }
-                                    if ((30000 + register_addr + 1) == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
+                                    if (estimated_reg == eeprom_cfg->rs485[slave_on_bus].reserve_flow_reg) // If register == reserve flow register
                                     {
                                         bool data_is_valid = false;
                                         //Min-max
