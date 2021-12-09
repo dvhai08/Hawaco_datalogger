@@ -1170,17 +1170,17 @@ void measure_input_task(void)
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_max = reserve_flow_max_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reserve_flow_min = reserve_flow_min_in_cycle_send_web[counter_index];
                             // Sum counter
-                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum = m_pulse_counter_in_backup[counter_index].total_forward_index  -
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum = m_pulse_counter_in_backup[counter_index].total_forward  -
                                                                                                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_first_counter;
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum /= m_pulse_counter_in_backup[counter_index].k;
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum *= (3600.0f / diff_cycle_send_web);
                                                                                                     
-                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_first_counter = m_pulse_counter_in_backup[counter_index].total_forward_index;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_first_counter = m_pulse_counter_in_backup[counter_index].total_forward;
                             
                             
-                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum = m_pulse_counter_in_backup[counter_index].total_reverse_index  -
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum = m_pulse_counter_in_backup[counter_index].total_reverse  -
                                                                                                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_first_counter;
-                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_first_counter = m_pulse_counter_in_backup[counter_index].total_reverse_index;
+                            m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_first_counter = m_pulse_counter_in_backup[counter_index].total_reverse;
                             
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum /= m_pulse_counter_in_backup[counter_index].k;
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.reverse_flow_sum *= (3600.0f / diff_cycle_send_web);
@@ -1641,9 +1641,10 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             {
 //                DEBUG_INFO("[PWM] +++++++\r\n");
                 m_pulse_counter_in_backup[input->port].total_forward++;
-                m_pulse_counter_in_backup[input->port].total_forward++;
+                m_pulse_counter_in_backup[input->port].fw_flow++;
                 // Calculate total forward index
-                m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward / m_pulse_counter_in_backup[input->port].k + m_pulse_counter_in_backup[input->port].indicator;
+                m_pulse_counter_in_backup[input->port].total_forward_index = m_pulse_counter_in_backup[input->port].total_forward / m_pulse_counter_in_backup[input->port].k 
+                                                                            + m_pulse_counter_in_backup[input->port].indicator;
 
                 m_pulse_counter_in_backup[input->port].real_counter++;
                 m_pulse_counter_in_backup[input->port].reverse_counter = 0;
