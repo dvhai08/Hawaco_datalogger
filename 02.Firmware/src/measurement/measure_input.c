@@ -34,6 +34,7 @@
 #include "spi.h"
 #include "modbus_master.h"
 //#include "umm_malloc.h"
+#include "tim.h"
 
 #define VBAT_DETECT_HIGH_MV 9000
 #define STORE_MEASURE_INVERVAL_SEC 30
@@ -686,7 +687,7 @@ void measure_input_reset_counter(uint8_t index)
         m_pulse_counter_in_backup[0].real_counter = 0;
         m_pulse_counter_in_backup[0].reverse_counter = 0;
     }
-#if defined(DTG02) || defined(DTG02V2)
+#if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
     else
     {
         m_pulse_counter_in_backup[1].real_counter = 0;
@@ -728,14 +729,30 @@ void measure_input_save_all_data_to_flash(void)
             // On/off
             spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[0];
             spi_flash_store_data.on_off.name.input_on_off_0 = m_sensor_msq[j].input_on_off[1];
+#ifndef DTG02V3     // Chi co G2, G2V2 moi co them 2 input on/off 3-4
             spi_flash_store_data.on_off.name.input_on_off_1 = m_sensor_msq[j].input_on_off[2];
             spi_flash_store_data.on_off.name.input_on_off_2 = m_sensor_msq[j].input_on_off[3];
+#endif
             spi_flash_store_data.on_off.name.output_on_off_0 = m_sensor_msq[j].output_on_off[0];
             spi_flash_store_data.on_off.name.output_on_off_1 = m_sensor_msq[j].output_on_off[1];
             spi_flash_store_data.on_off.name.output_on_off_2 = m_sensor_msq[j].output_on_off[2];
             spi_flash_store_data.on_off.name.output_on_off_3 = m_sensor_msq[j].output_on_off[3];
 #endif
+            
+#ifdef DTG02V3
+            if (eeprom_cfg->output_4_20ma_enable)
+            {
+                spi_flash_store_data.output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
+                spi_flash_store_data.output_4_20ma_enable = 0;
+            }
+            else
+            {
+                spi_flash_store_data.output_4_20mA[0] = 0.0f;
+                spi_flash_store_data.output_4_20ma_enable = 1;
+            }
+#else
             spi_flash_store_data.output_4_20mA[0] = m_sensor_msq[j].output_4_20mA[0];
+#endif
 
             spi_flash_store_data.timestamp = m_sensor_msq[j].measure_timestamp;
             spi_flash_store_data.valid_flag = APP_FLASH_VALID_DATA_KEY;
@@ -765,7 +782,7 @@ void measure_input_save_all_data_to_flash(void)
     }
 }
 
-#ifdef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
 extern uint32_t last_time_monitor_vin_when_battery_low;
 #endif
 
@@ -803,7 +820,7 @@ void measure_input_task(void)
         ctx->peripheral_running.name.high_bat_detect = 0;
     }
 
-#ifndef DTG01
+#ifndef DTG01       // mean DTG2, G2V2, G2V3
     if (sys_ctx()->status.is_enter_test_mode == 0)
     {
         TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
@@ -815,8 +832,10 @@ void measure_input_task(void)
     // Get input and output on/off value
     m_measure_data.input_on_off[0] = LL_GPIO_IsInputPinSet(OPTOIN1_GPIO_Port, OPTOIN1_Pin) ? 1 : 0;
     m_measure_data.input_on_off[1] = LL_GPIO_IsInputPinSet(OPTOIN2_GPIO_Port, OPTOIN2_Pin) ? 1 : 0;
+#ifndef DTG02V3     // Chi co G2, G2V2 moi co 2 chan opto input 3,4
     m_measure_data.input_on_off[2] = LL_GPIO_IsInputPinSet(OPTOIN3_GPIO_Port, OPTOIN3_Pin) ? 1 : 0;
     m_measure_data.input_on_off[3] = LL_GPIO_IsInputPinSet(OPTOIN4_GPIO_Port, OPTOIN4_Pin) ? 1 : 0;
+#endif
     m_measure_data.output_on_off[0] = TRANS_1_IS_OUTPUT_HIGH();
     m_measure_data.output_on_off[1] = TRANS_2_IS_OUTPUT_HIGH();
     m_measure_data.output_on_off[2] = TRANS_3_IS_OUTPUT_HIGH();
@@ -827,7 +846,7 @@ void measure_input_task(void)
                                                             && (eeprom_cfg->meter_mode[1] != APP_EEPROM_METER_MODE_DISABLE);
     m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin) 
                                                             && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
-#else
+#else       // DTG01
     TRANS_OUTPUT(eeprom_cfg->io_enable.name.output0);
     m_measure_data.output_on_off[0] = TRANS_IS_OUTPUT_HIGH();
     m_measure_data.counter[MEASURE_INPUT_PORT_1].cir_break = LL_GPIO_IsInputPinSet(CIRIN0_GPIO_Port, CIRIN0_Pin) && (eeprom_cfg->meter_mode[0] != APP_EEPROM_METER_MODE_DISABLE);
@@ -887,9 +906,9 @@ void measure_input_task(void)
 
             //            DEBUG_INFO("ADC start\r\n");
             // ADC conversion
-#ifdef DTG02V2
+#if defined(DTG02V2) || defined(DTG02V3)
             last_time_monitor_vin_when_battery_low = 0;
-#endif
+#endif // defined(DTG02V2) || defined(DTG02V3)
             adc_start();
 
             if (m_this_is_the_first_time)
@@ -907,16 +926,37 @@ void measure_input_task(void)
 
             // Put data to msq
             adc_retval = adc_get_input_result();
-#ifdef DTG02V2
+#if defined(DTG02V2)
             if (adc_retval->bat_mv > 4150)
             {
                 LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
             }
-            else if (adc_retval->bat_mv < 3800)
+            else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
             {
                 LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // 
             }
-#endif
+#endif // defined(DTG02V2)
+
+
+#if defined(DTG02V3)
+            if (adc_retval->bat_mv > 4150)
+            {
+                sys_ctx()->status.need_charge = 0;
+                LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); // neu pin day thi ko sac nua
+                if (eeprom_cfg->output_4_20ma_enable == 0 || tim_is_pwm_active() == false)
+                {
+                    LL_GPIO_ResetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);
+                }
+                #warning "think about adc output and charge"
+            }
+            else if (adc_retval->bat_mv < 3800)     // pin yeu, sac thoi
+            {
+                sys_ctx()->status.need_charge = 1;
+                LL_GPIO_SetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin); 
+                LL_GPIO_SetOutputPin(SYS_5V_EN_GPIO_Port, SYS_5V_EN_Pin);
+            }
+#endif // defined(DTG02V2)
+            
 
             if (ctx->status.is_enter_test_mode == 0)
             {
@@ -1051,26 +1091,35 @@ void measure_input_task(void)
                 if (eeprom_cfg->io_enable.name.output_4_20ma_enable)
                 {
                     m_measure_data.output_4_20mA[0] = eeprom_cfg->output_4_20ma;
+#ifdef DTG02V3
+                    m_measure_data.output_4_20ma_enable = 1;
+#endif
                 }
                 else
                 {
-                    m_measure_data.output_4_20mA[0] = 0;
+                    m_measure_data.output_4_20mA[0] = 0.0f;
+#ifdef DTG02V3
+                    m_measure_data.output_4_20ma_enable = 0;
+#endif
                 }
 
                 uint32_t now = sys_get_ms();
+                // Doan nay dai vai, ngay xua vua lam vua phat sinh tai hien truong
+                // Nen ai ma doc code thi chiu kho nhe :D
                 // Calculate avg flow speed between 2 times measurement data
-                uint32_t diff = (uint32_t)(now - m_last_time_measure_data);
-                diff /= 1000;
+                uint32_t diff = (uint32_t)(now - m_last_time_measure_data);     
+                diff /= 1000; // Convert ms to s
                 static uint32_t m_last_time_measure_data_cycle_send_web;
 
                 // Copy backup data into current measure data
                 bool estimate_time_save_min_max_value = false;
                 uint32_t current_counter = app_rtc_get_counter();
                 uint32_t wakeup_counter = gsm_data_layer_get_estimate_wakeup_time_stamp();
-
+                
+                // Quet tat ca dau vao input
                 for (uint32_t counter_index = 0; counter_index < MEASURE_NUMBER_OF_WATER_METER_INPUT; counter_index++)
                 {
-                    if (diff)
+                    if (diff)       // De loai tru phep chia cho 0
                     {
                         // Forward direction
                         // speed = ((counter  forward - pre_counter forward)/k)/diff (hour)
@@ -1079,12 +1128,15 @@ void measure_input_task(void)
                         m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup /= m_pulse_counter_in_backup[counter_index].k;
 
 //                        DEBUG_VERBOSE("Diff forward%u - %.2f\r\n", counter_index, m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup);
+                        
+                        // Neu ma cho phep tinh toc do nuoc thi moi tinh
                         if (eeprom_cfg->io_enable.name.calculate_flow_speed)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup *= 3600.0f / (float)diff;
                         }
 //                        m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_sum += m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
 
+                        // Tuong tu cho chieu nguoc kim dong ho
                         // Reverse direction
                         m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup = (float)(m_pulse_counter_in_backup[counter_index].reverse_flow 
                                                                                                                 - m_pre_pulse_counter_in_backup[counter_index].reverse_flow);
@@ -1096,7 +1148,8 @@ void measure_input_task(void)
                         {
                             m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup *= 3600.0f / (float)diff;
                         }
-
+                        
+                        // tinh gia tri min-max trong 1 cycle send web
                         // min-max of forward/reserve direction flow speed
                         // If value is invalid =>> Initialize new value
                         // If min max value is invalid =>> Copy the first data
@@ -1104,16 +1157,16 @@ void measure_input_task(void)
                         {
                             fw_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
                             fw_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_forward_agv_cycle_wakeup;
-                            DEBUG_VERBOSE("Set MinFwFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
-                            DEBUG_VERBOSE("Set MaxFwFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
+//                            DEBUG_VERBOSE("Set MinFwFlow%u - %.2f\r\n", counter_index, fw_flow_max_in_cycle_send_web[counter_index]);
+//                            DEBUG_VERBOSE("Set MaxFwFlow%u - %.2f\r\n", counter_index, fw_flow_min_in_cycle_send_web[counter_index]);
                         }
 
                         if (reserve_flow_min_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE || reserve_flow_max_in_cycle_send_web[counter_index] == FLOW_INVALID_VALUE)
                         {
                             reserve_flow_min_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
                             reserve_flow_max_in_cycle_send_web[counter_index] = m_pulse_counter_in_backup[counter_index].flow_speed_reserve_agv_cycle_wakeup;
-                            DEBUG_VERBOSE("Set MaxRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_max_in_cycle_send_web[counter_index]);
-                            DEBUG_VERBOSE("Set MixRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_min_in_cycle_send_web[counter_index]);
+//                            DEBUG_VERBOSE("Set MaxRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_max_in_cycle_send_web[counter_index]);
+//                            DEBUG_VERBOSE("Set MixRsvFlow%u - %.2f\r\n", counter_index, reserve_flow_min_in_cycle_send_web[counter_index]);
                         }
 
                         // Compare old value and new value to determite new min-max value
@@ -1159,11 +1212,12 @@ void measure_input_task(void)
                         if (current_counter >= wakeup_counter)
                         {
                             float diff_cycle_send_web = (now - m_last_time_measure_data_cycle_send_web);
-                            diff_cycle_send_web /= 1000;
+                            diff_cycle_send_web /= 1000;        // convert ms to s
                             if (diff_cycle_send_web == 0)
                             {
                                 diff_cycle_send_web = 1;
                             }
+                            
                             // Pulse counter
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_max = fw_flow_max_in_cycle_send_web[counter_index];
                             m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.fw_flow_min = fw_flow_min_in_cycle_send_web[counter_index];
@@ -1217,7 +1271,8 @@ void measure_input_task(void)
                     m_pre_pulse_counter_in_backup[counter_index].fw_flow = 0;
                     m_pulse_counter_in_backup[counter_index].reverse_flow = 0;
                     m_pre_pulse_counter_in_backup[counter_index].reverse_flow = 0;
-
+                    
+                    // Neu ma can gui du lieu len web thi moi gui
                     if (m_pulse_counter_in_backup[counter_index].flow_avg_cycle_send_web.valid)
                     {
                         // Clean all data after 1 cycle send web, next time we will measure again
@@ -1569,7 +1624,7 @@ void measure_input_rs485_uart_handler(uint8_t data)
     modbus_memory_serial_rx(data);
 }
 
-static inline uint32_t get_diff_ms(measure_input_timestamp_t *begin, measure_input_timestamp_t *end, uint8_t isr_type)
+static inline uint32_t get_diff_ms_between_pulse(measure_input_timestamp_t *begin, measure_input_timestamp_t *end, uint8_t isr_type)
 {
     uint32_t ms;
     uint32_t prescaler = LL_RTC_GetSynchPrescaler(RTC);
@@ -1605,7 +1660,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
         m_end_pulse_timestamp[input->port].counter_pwm = app_rtc_get_counter();
         m_end_pulse_timestamp[input->port].subsecond_pwm = app_rtc_get_subsecond_counter();
 
-        m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port],
+        m_pull_diff[input->port] = get_diff_ms_between_pulse(&m_begin_pulse_timestamp[input->port],
                                                &m_end_pulse_timestamp[input->port],
                                                MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN);
         m_begin_pulse_timestamp[input->port].counter_dir = m_end_pulse_timestamp[input->port].counter_dir;
@@ -1679,7 +1734,7 @@ void measure_input_pulse_irq(measure_input_water_meter_input_t *input)
             m_end_pulse_timestamp[input->port].counter_dir = app_rtc_get_counter();
             m_end_pulse_timestamp[input->port].subsecond_dir = app_rtc_get_subsecond_counter();
 
-            m_pull_diff[input->port] = get_diff_ms(&m_begin_pulse_timestamp[input->port],
+            m_pull_diff[input->port] = get_diff_ms_between_pulse(&m_begin_pulse_timestamp[input->port],
                                                    &m_end_pulse_timestamp[input->port],
                                                    MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN);
 
@@ -1717,8 +1772,7 @@ void modbus_master_serial_write(uint8_t *buf, uint8_t length)
     {
         RS485_DIR_TX(); // Set TX mode
         i = 32;         // clock = 16Mhz =>> 1us = 16, delay at least 1.3us
-        while (i--)
-            ;
+        while (i--);
     }
 #if 1
     for (i = 0; i < length; i++)
