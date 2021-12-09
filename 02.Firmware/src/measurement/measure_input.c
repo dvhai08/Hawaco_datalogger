@@ -234,7 +234,14 @@ static void process_rs485(measure_input_modbus_register_t *register_value)
                             //							DEBUG_RAW("%u-0x%08X\r\n", eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].register_addr,
                             //													register_value[slave_count].sub_register[sub_reg_idx].value);
                             register_value[slave_count].sub_register[sub_reg_idx].data_type.name.type = eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type;
+                            
+                            
                             float current_flow_idx = register_value[slave_count].sub_register[sub_reg_idx].value.float_val;
+                            if (eeprom_cfg->rs485[slave_count].sub_register[sub_reg_idx].data_type.name.type == RS485_DATA_TYPE_INT32)
+                            {
+                                current_flow_idx = register_value[slave_count].sub_register[sub_reg_idx].value.int32_val;
+                            }
+                            
 //                            DEBUG_WARN("Flow set %.3f\r\n", current_flow_idx);
                             
                             // Get net totalizer forward and reverse value

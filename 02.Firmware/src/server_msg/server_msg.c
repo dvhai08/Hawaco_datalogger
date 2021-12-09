@@ -19,6 +19,52 @@ static app_eeprom_config_data_t *m_eeprom_config = NULL; //app_eeprom_read_confi
 static sys_ctx_t *m_ctx = NULL;// sys_ctx();
 static uint8_t process_flow_speed_enable(char *buffer);
 static bool poll_server = 0;
+
+/**
+	 {
+		"shared": {
+			"CycleSendWeb": 60,
+			"Cyclewakeup": 15,
+			"ID485_1": 8,
+			"ID485_2": 8,
+			"IMEI": "860262050125777",
+			"Input_J1": 1,
+			"Input_J2": 0,
+			"K_J1": 1,
+			"K_J2": 1,
+			"Link": "https://iot.wilad.vn/login",
+			"MeterIndicator_J1": 7649,
+			"MeterIndicator_J2": 7649,
+			"Output1": 0,
+			"Output2": 0,
+			"Output3": 0,
+			"Output4": 0,
+			"Output4_20": 0,
+			"Register_1_1": 30108,			// upto 4 register * 2 device
+			"Register_1_2": 30110,
+			"Register_2_1": 30112,
+			"Register_2_2": 30113,
+			"RS485": 1,
+			"SOS": "0916883454",
+			"Type": "G2",
+			"Type_1_1": "int32",		// int32, int16, float
+			"Type_1_2": "int32",
+			"Type_2_1": "float",
+			"Type_2_2": "int16",
+			"Unit_1_1": "m3/s",
+			"Unit_1_2": "jun",
+			"Unit_2_1": "kg",
+			"Unit_2_2": "lit",
+			"Update": 0,
+			"Version": "0.0.1",
+			"Warning": 1,
+			"Server":"http://123.com",
+			"Auto_config":12,		// hour
+            "NetFl_1":123124      // Thanh ghi so nuoc
+		}
+	}
+ */
+ 
 // "Server":"https://123.com" 
 static void process_server_addr_change(char *buffer)
 {
@@ -85,10 +131,10 @@ static void process_server_addr_change(char *buffer)
 static uint8_t process_output_config(char *buffer)
 {
 	uint8_t new_cfg = 0;
-	char *output1 = strstr(buffer, "Output1\":");
+	char *output1 = strstr(buffer, "\"Output1\":");
     if (output1 != NULL)
     {
-        uint8_t out1 = gsm_utilities_get_number_from_string(strlen("Output1\":"), output1) & 0x1;
+        uint8_t out1 = gsm_utilities_get_number_from_string(strlen("\"Output1\":"), output1) & 0x1;
         if (m_eeprom_config->io_enable.name.output0 != out1)
         {
             m_eeprom_config->io_enable.name.output0 = out1;
@@ -97,10 +143,10 @@ static uint8_t process_output_config(char *buffer)
         }
     }
 #if defined(DTG02) || defined(DTG02V2) || defined(DTG02V3)
-    char *output2 = strstr(buffer, "Output2\":");
+    char *output2 = strstr(buffer, "\"Output2\":");
     if (output2 != NULL)
     {
-        uint8_t out2 = gsm_utilities_get_number_from_string(strlen("Output2\":"), output2) ? 1 : 0;
+        uint8_t out2 = gsm_utilities_get_number_from_string(strlen("\"Output2\":"), output2) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.output1 != out2)
         {
             m_eeprom_config->io_enable.name.output1 = out2;
@@ -111,10 +157,10 @@ static uint8_t process_output_config(char *buffer)
     }
 	
 
-    char *output3 = strstr(buffer, "Output3\":");
+    char *output3 = strstr(buffer, "\"Output3\":");
     if (output3 != NULL)
     {
-        uint8_t out3 = gsm_utilities_get_number_from_string(strlen("Output3\":"), output3) ? 1 : 0;
+        uint8_t out3 = gsm_utilities_get_number_from_string(strlen("\"Output3\":"), output3) ? 1 : 0;
         if (m_eeprom_config->io_enable.name.output2 != out3)
         {
             m_eeprom_config->io_enable.name.output2 = out3;
@@ -184,7 +230,7 @@ uint8_t process_input_config(char *buffer)
         }
     }
     
-    char *output2 = strstr(buffer, "Output2\":");
+    char *output2 = strstr(buffer, "\"Output2\":");
     if (output2 != NULL)
     {
         char output_value[16];
@@ -799,49 +845,7 @@ static uint8_t process_pulse_config(char *buffer)
     return new_cfg;
 }
 
-/**
-	 {
-		"shared": {
-			"CycleSendWeb": 60,
-			"Cyclewakeup": 15,
-			"ID485_1": 8,
-			"ID485_2": 8,
-			"IMEI": "860262050125777",
-			"Input_J1": 1,
-			"Input_J2": 0,
-			"K_J1": 1,
-			"K_J2": 1,
-			"Link": "https://iot.wilad.vn/login",
-			"MeterIndicator_J1": 7649,
-			"MeterIndicator_J2": 7649,
-			"Output1": 0,
-			"Output2": 0,
-			"Output3": 0,
-			"Output4": 0,
-			"Output4_20": 0,
-			"Register_1_1": 30108,			// upto 4 register * 2 device
-			"Register_1_2": 30110,
-			"Register_2_1": 30112,
-			"Register_2_2": 30113,
-			"RS485": 1,
-			"SOS": "0916883454",
-			"Type": "G2",
-			"Type_1_1": "int32",		// int32, int16, float
-			"Type_1_2": "int32",
-			"Type_2_1": "float",
-			"Type_2_2": "int16",
-			"Unit_1_1": "m3/s",
-			"Unit_1_2": "jun",
-			"Unit_2_1": "kg",
-			"Unit_2_2": "lit",
-			"Update": 0,
-			"Version": "0.0.1",
-			"Warning": 1,
-			"Server":"http://123.com",
-			"Auto_config":12,		// hour
-		}
-	}
- */
+
 void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 {
     uint8_t has_new_cfg = 0;

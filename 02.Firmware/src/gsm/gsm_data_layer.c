@@ -89,7 +89,7 @@ static inline uint32_t build_device_id(uint32_t offset, char *ptr, char *imei)
 {
     uint32_t len = 0;
 #ifdef DTG01
-    len = sprintf((char *)(ptr + total_length), "\"ID\":\"G1-%s\",", imei);
+    len = sprintf((char *)(ptr + offset), "\"ID\":\"G1-%s\",", imei);
 #endif
     
 #ifdef DTG02    
@@ -451,7 +451,7 @@ void gsm_manager_tick(void)
 				uint32_t current_sec = app_rtc_get_counter();
 				if (current_sec >= ctx->status.next_time_get_data_from_server)
 				{
-                    DEBUG_INFO("Poll default config\r\n");
+//                    DEBUG_INFO("Poll default config\r\n");
                     // Estimate next time polling server config
 					ctx->status.next_time_get_data_from_server = current_sec/ 3600 + app_eeprom_read_config_data()->poll_config_interval_hour;
                     ctx->status.next_time_get_data_from_server *= 3600;
