@@ -49,7 +49,7 @@
 #define USB_RX_BUFFER_SIZE                  256
 #define ADC_MEASUREMENT_INVERVAL_MS         500
 #define RS232_IDLE_TIMEOUT_MS               10
-#define USB_WAIT_TX_DONT_TIMEOUT_MS         (150)
+#define USB_WAIT_TX_DONE_TIMEOUT_MS         (150)
 #define APP_USB_WAIT_TX_CPLT(x)             xSemaphoreTake(m_sem_usb_tx_cplt, x)
 #define APP_USB_TX_CPLT_DONE()              {   BaseType_t ctx_sw; xSemaphoreGiveFromISR(m_sem_usb_tx_cplt, &ctx_sw);  \
                                                 portYIELD_FROM_ISR(ctx_sw);   \
@@ -341,6 +341,7 @@ static bool wait_hid_complete(uint32_t timeout_ms)
     {
         if (uwTick - prev >= timeout_ms)
         {
+            LL_IWDG_ReloadCounter(IWDG);
             break;
         }
     }
@@ -362,7 +363,7 @@ void send_data_to_host(uint8_t *data, uint32_t length)
     {
         if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS((uint8_t*)p, 64))
         {
-            if (wait_hid_complete(USB_WAIT_TX_DONT_TIMEOUT_MS))
+            if (wait_hid_complete(USB_WAIT_TX_DONE_TIMEOUT_MS))
             {
                 DEBUG_VERBOSE("HID TX complete in %ums\r\n", uwTick - now);
             }
@@ -382,7 +383,7 @@ void send_data_to_host(uint8_t *data, uint32_t length)
         memcpy(tmp, p, remain);
         if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS(tmp, 64))
         {
-            if (wait_hid_complete(USB_WAIT_TX_DONT_TIMEOUT_MS))
+            if (wait_hid_complete(USB_WAIT_TX_DONE_TIMEOUT_MS))
             {
                 DEBUG_VERBOSE("HID TX complete in %ums\r\n", uwTick - now);
             }
@@ -413,7 +414,7 @@ void hid_rx_data_cb(uint8_t *buffer)
 
 void on_rs485_uart_cb(uint8_t data)
 {
-    if (data == 0)
+    if (data == 0)      // Only accept ascii code
     {
         return;
     }
