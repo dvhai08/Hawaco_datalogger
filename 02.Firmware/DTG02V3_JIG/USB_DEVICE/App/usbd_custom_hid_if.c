@@ -244,5 +244,3 @@ int8_t USBD_CUSTOM_HID_SendReport_FS(uint8_t *report, uint16_t len)
   * @}
   */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-

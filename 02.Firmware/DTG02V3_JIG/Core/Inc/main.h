@@ -90,6 +90,10 @@ void Error_Handler(void);
 #define VCC_LORA_GPIO_Port GPIOB
 #define RS485_DIR_Pin LL_GPIO_PIN_2
 #define RS485_DIR_GPIO_Port GPIOB
+#define MCU_OUT2_Pin LL_GPIO_PIN_12
+#define MCU_OUT2_GPIO_Port GPIOB
+#define MCU_OUT1_Pin LL_GPIO_PIN_13
+#define MCU_OUT1_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 void hid_tx_cplt_callback(uint8_t epnum);
@@ -102,5 +106,3 @@ void on_rs485_uart_cb(uint8_t data);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

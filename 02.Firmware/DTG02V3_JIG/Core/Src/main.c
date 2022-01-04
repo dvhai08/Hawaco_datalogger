@@ -54,6 +54,7 @@
 #define APP_USB_TX_CPLT_DONE()              {   BaseType_t ctx_sw; xSemaphoreGiveFromISR(m_sem_usb_tx_cplt, &ctx_sw);  \
                                                 portYIELD_FROM_ISR(ctx_sw);   \
                                             }
+#define JIG_TOGGLE_IO_MS                    50
 #define JIG_REQUEST_CMD                   "{\"test\" : 1}"
                                             
                                             
@@ -99,6 +100,10 @@ static lwrb_t m_ringbuffer_usb_rx;
 
 void hid_rx_data_cb(uint8_t *buffer);
 static void send_data_to_host(uint8_t *data, uint32_t length);
+
+static uint32_t m_last_slave_output[2];
+static uint32_t m_slave_output_toggle_count[2];
+static uint32_t m_rs485_pass = 10;
 /* USER CODE END 0 */
 
 /**
@@ -108,7 +113,7 @@ static void send_data_to_host(uint8_t *data, uint32_t length);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	DEBUG_INFO("DTG02V3\r\nBuild %s %s\r\n", __DATE__, __TIME__);
+	DEBUG_INFO("DTG02V3 JIG\r\nBuild %s %s\r\n", __DATE__, __TIME__);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -159,7 +164,6 @@ int main(void)
     // Start ADC conversion
     adc_start();
     uint32_t last_adc_tick;
-    uint32_t tx_seq = 0;
     
   /* USER CODE END 2 */
 
@@ -171,9 +175,24 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
       
-      uint32_t now = uwTick;
-      
-        // Check adc measurement interval
+        uint32_t now = uwTick;
+        
+        // Read MCU output1 - 2 from slave
+        uint32_t level = LL_GPIO_IsInputPinSet(MCU_OUT1_GPIO_Port, MCU_OUT1_Pin);
+        if (level != m_last_slave_output[0])
+        {
+            m_last_slave_output[0] = level;
+            m_slave_output_toggle_count[0]++;
+        }
+        
+        level = LL_GPIO_IsInputPinSet(MCU_OUT2_GPIO_Port, MCU_OUT2_Pin);
+        if (level != m_last_slave_output[1])
+        {
+            m_last_slave_output[1] = level;
+            m_slave_output_toggle_count[1]++;
+        }
+        
+        // Check ADC value and send data to PC
         if (now - last_adc_tick >= ADC_MEASUREMENT_INVERVAL_MS)
         {
             last_adc_tick = now;
@@ -201,51 +220,85 @@ int main(void)
                 }
             }        
             
-            // Send ADC testpoint value to PC
-            /*
-                {
-                    "3v3":123,
-                    "vps_tx":1234,
-                    "vps":3300,
-                    "vgsm":4200,
-                    "3v3_rtc":3300,
-                    "vcc_rf":1234,
-                    "1v8":3123,
-                    "4v2":1234
-                }
-             */
             memset(m_report_data, 0, sizeof(m_report_data));
             uint32_t len = 0;
             len += sprintf((char*)m_report_data+len, "%s", "{");
-//            len += sprintf((char*)m_report_data+len, "\"3v3\":%u,", m_adc_voltage[ADC_CHANNEL_3V3]);
-//            len += sprintf((char*)m_report_data+len, "\"vps_tx\":%u,", m_adc_voltage[ADC_CHANNEL_VPS_TX]);
-//            len += sprintf((char*)m_report_data+len, "\"vps\":%u,", m_adc_voltage[ADC_CHANNEL_VPS]);
-//            len += sprintf((char*)m_report_data+len, "\"1v8\":%u,", m_adc_voltage[ADC_CHANNEL_1V8]);
-//            len += sprintf((char*)m_report_data+len, "\"gsm\":%u,", m_adc_voltage[ADC_CHANNEL_VGSM]);
-//            len += sprintf((char*)m_report_data+len, "\"rtc\":%u,", m_adc_voltage[ADC_CHANNEL_3V3_RTC]);
-//            len += sprintf((char*)m_report_data+len, "\"vcc_rf\":%u,", m_adc_voltage[ADC_CHANNEL_VCC_RF]);
-//            len += sprintf((char*)m_report_data+len, "\"4v2\":%u,", m_adc_voltage[ADC_CHANNEL_4V2]);
-//            len += sprintf((char*)m_report_data+len, "\"vref\":%u,", m_adc_voltage[ADC_CHANNEL_VREF]);
-//            len += sprintf((char*)m_report_data+len, "\"io0\":%u,", LL_GPIO_IsInputPinSet(eposi_gpio0_GPIO_Port, eposi_gpio0_Pin));
-//            len += sprintf((char*)m_report_data+len, "\"seq\":%u", ++tx_seq);
+            /**
+             * 
+             *  {
+                    "OutputDigital0":"PASSED",
+                    "OutputDigital1":"FAILED"
+                }
+             */ 
+            if (m_slave_output_toggle_count[0] > 10)
+            {
+                len += sprintf((char*)m_report_data+len, "\"Outl\":\"%s\",", "PASSED");
+
+            }
+            else
+            {
+                len += sprintf((char*)m_report_data+len, "\"Outl\":\"%s\",", "FAILED");
+            }
+            
+            if (m_slave_output_toggle_count[1] > 10)
+            {
+                len += sprintf((char*)m_report_data+len, "\"Out2\":\"%s\",", "PASSED");
+
+            }
+            else
+            {
+                len += sprintf((char*)m_report_data+len, "\"Out2\":\"%s\"", "FAILED");
+            }
+            
+            for (uint32_t i = 0; i < ADC_MAX_CHANNEL; i++)
+            {
+                len += sprintf((char*)m_report_data+len, "\"ADC%u\":%u,", i, m_adc_voltage[i]);
+            }
+            
+            if (m_rs485_pass)
+            {
+                m_rs485_pass--;
+                len += sprintf((char*)m_report_data+len, "\"RS485\":\"%s\"", "PASSED");
+            }
+            else
+            {
+                len += sprintf((char*)m_report_data+len, "\"RS485\":\"%s\"", "FAILED");
+            }
             len += sprintf((char*)m_report_data+len, "%s", "}");
             
             send_data_to_host((uint8_t*)m_report_data, len);
             DEBUG_INFO("JIG =>>>>> PC : %s\r\n", (char*)m_report_data);
-            
-            // Send test command to test device
-            usart_rs232_send_data((uint8_t*)JIG_REQUEST_CMD, strlen((char*)JIG_REQUEST_CMD));
+
             
             LL_IWDG_ReloadCounter(IWDG);
         }
         
-        // If RS232 last time received data is less than 10ms =>> Complete packet received
+        // Forward RS232 packet to PC via USB
         if (m_rs232_rx.index && now - m_rs232_rx.rx_timestamp > RS232_IDLE_TIMEOUT_MS)
-        {
+        {   
+            // Send test cmd to slave            
+            usart_rs232_send_data((uint8_t*)JIG_REQUEST_CMD, strlen((char*)JIG_REQUEST_CMD));
+            
+            // Get unique id
+            static char m_last_device_id[12];
+            char *device_id =  strstr((char*)m_rs232_rx.data, "\"Unique_id\":\"");
+            if (device_id)
+            {
+                device_id += strlen("\"Unique_id\":\"");
+                // If new device attached to JIG =>> reset previous device data and id
+                if (memcmp(device_id, m_last_device_id, 12))        
+                {
+                    memcpy(m_last_device_id, device_id, 12);
+                    m_slave_output_toggle_count[0] = 0;
+                    m_slave_output_toggle_count[1] = 0;
+                }
+                m_rs485_pass = 10;
+            }
+            
+            // Forward data to PC
             static uint32_t rs232_count = 0;
             memset(m_report_data, 0, sizeof(m_report_data));
             uint32_t len = 0;
-            // Forward rs232 data to pcd
             len += snprintf((char*)m_report_data, sizeof(m_report_data) - 1, "%s", m_rs232_rx.data);
             DEBUG_WARN("RS232 =>>>>> PC : %s\r\n", (char*)m_report_data);
             send_data_to_host((uint8_t*)m_report_data, len);
@@ -257,14 +310,14 @@ int main(void)
             send_data_to_host((uint8_t*)m_report_data, len);
 
             memset(&m_rs232_rx, 0, sizeof(m_rs232_rx));
-            
         }
+                
+        // Read USB RX buffer and forward to slave
         uint8_t tmp;
         while (lwrb_read(&m_ringbuffer_usb_rx, &tmp, 1))
         {
             usart_rs232_send_data(&tmp, 1);
         }
-        
   }
   /* USER CODE END 3 */
 }
@@ -462,4 +515,3 @@ void assert_failed(uint8_t *file, uint32_t line)
 }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

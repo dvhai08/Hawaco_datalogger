@@ -137,4 +137,3 @@ void usbd_custom_hid_if_register_rx_callback(usbd_rx_callback_t callback);
 
 #endif /* __USBD_CUSTOM_HID_IF_H__ */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
