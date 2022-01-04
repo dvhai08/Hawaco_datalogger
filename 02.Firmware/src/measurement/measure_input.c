@@ -33,7 +33,7 @@
 #include "app_spi_flash.h"
 #include "spi.h"
 #include "modbus_master.h"
-//#include "umm_malloc.h"
+#include "jig.h"
 #include "tim.h"
 
 #define VBAT_DETECT_HIGH_MV 9000
@@ -833,7 +833,9 @@ void measure_input_task(void)
     }
 
 #ifndef DTG01       // mean DTG2, G2V2, G2V3
-    if (sys_ctx()->status.is_enter_test_mode == 0)
+    // If device is not enter test mode =>> Set output value = out_setting_in_flash
+    // Else toggle all output value
+    if (sys_ctx()->status.is_enter_test_mode == 0 && jig_is_in_test_mode() == 0)
     {
         TRANS_1_OUTPUT(eeprom_cfg->io_enable.name.output0);
         TRANS_2_OUTPUT(eeprom_cfg->io_enable.name.output1);

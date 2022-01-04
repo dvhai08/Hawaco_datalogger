@@ -106,6 +106,7 @@ void sys_config_low_power_mode(void);
 extern volatile uint32_t measure_input_turn_on_in_4_20ma_power;
 volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 volatile uint32_t last_time_monitor_vin_when_battery_low = 0;
+extern volatile pulse_isr_count_t pulse_count[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END 0 */
 
 /**
@@ -247,29 +248,30 @@ int main(void)
 	app_sync_polling_task();
 #else
       static volatile uint32_t m_last_tick = 0;
+      static uint32_t m_send_test_info_to_jig = 0;
+      
       if (sys_get_ms() - m_last_tick >= (uint32_t)1000)
-      {
-                
+      {       
 #if TEST_POWER_ALWAYS_TURN_OFF_GSM
-    if (!gsm_data_layer_is_module_sleeping())
-    {
-        gsm_change_state(GSM_STATE_SLEEP);
-    }
+            if (!gsm_data_layer_is_module_sleeping())
+            {
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
 #else       // chi xay ra voi dtg02
-    if (adc_get_input_result()->vin > 5000)
-    {
-      last_time_monitor_vin_when_battery_low = 0;
-    }
-    else if (adc_get_input_result()->vin < 5000 
-        && !gsm_data_layer_is_module_sleeping()
-        && last_time_monitor_vin_when_battery_low > (uint32_t)10)       // neu dien ap Vin < 16V =>> ko bat gsm. 15s delay cho adc start
-    {
-        last_time_monitor_vin_when_battery_low = 0;
-        LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);     // ko chon phep sac
-        gsm_change_state(GSM_STATE_SLEEP);
-    }
+            if (adc_get_input_result()->vin > 5000)
+            {
+              last_time_monitor_vin_when_battery_low = 0;
+            }
+            else if (adc_get_input_result()->vin < 5000 
+                && !gsm_data_layer_is_module_sleeping()
+                && last_time_monitor_vin_when_battery_low > (uint32_t)10)       // neu dien ap Vin < 16V =>> ko bat gsm. 15s delay cho adc start
+            {
+                last_time_monitor_vin_when_battery_low = 0;
+                LL_GPIO_ResetOutputPin(CHARGE_EN_GPIO_Port, CHARGE_EN_Pin);     // ko chon phep sac
+                gsm_change_state(GSM_STATE_SLEEP);
+            }
 #endif
-    
+        
           last_time_monitor_vin_when_battery_low++;
           m_last_tick = sys_get_ms();
           gsm_mnr_task(NULL);
@@ -290,7 +292,7 @@ int main(void)
 		LED2(0);
 #endif
 	}	
-	if (system->status.is_enter_test_mode)
+	if (system->status.is_enter_test_mode || jig_is_in_test_mode())
 	{
 		eeprom_cfg->io_enable.name.output_4_20ma_enable = 1;
 		if (eeprom_cfg->output_4_20ma < 1.0f)
@@ -301,6 +303,123 @@ int main(void)
 		ENABLE_INPUT_4_20MA_POWER(1);
         RS485_POWER_EN(1);
         usart_lpusart_485_control(1);
+        if (sys_get_ms() - m_send_test_info_to_jig >= (uint32_t)500)
+        {
+            m_send_test_info_to_jig = sys_get_ms();
+            LED1_TOGGLE();
+            LED2_TOGGLE();
+            TRANS_1_TOGGLE();
+            TRANS_2_TOGGLE();
+#ifndef DTG02V3 // Chi co G2, G2V2 moi co 2 chan opto input 3,4
+                TRANS_3_TOGGLE();
+                TRANS_4_TOGGLE();
+#endif      
+            // Send jig data
+            /**
+             *  {
+             *       "Unique_id":"1234",
+             *       "Flash":1/0,
+             *       "IMEI":"",
+             *       "Input420_0":12,   
+             *       "Input420_1":13,  
+             *       "Input420_2":14,  
+             *       "Input420_3":15,  
+             *  }
+             *
+             */
+             adc_input_value_t *adc_retval = adc_get_input_result();
+             static uint8_t last_cir_val[2];
+             static uint8_t last_input_io_val[2];
+             static uint32_t last_input_io_change_count[2];
+             uint8_t level;
+             
+             level = LL_GPIO_IsInputPinSet(CIRIN1_GPIO_Port, CIRIN1_Pin);
+             if (level != last_cir_val[MEASURE_INPUT_PORT_1])
+             {
+                 last_cir_val[MEASURE_INPUT_PORT_1] = level;
+                 pulse_count[MEASURE_INPUT_PORT_1].cir_count++;
+             }
+             
+             level = LL_GPIO_IsInputPinSet(CIRIN2_GPIO_Port, CIRIN2_Pin);
+             if (level != last_cir_val[MEASURE_INPUT_PORT_2])
+             {
+                 last_cir_val[MEASURE_INPUT_PORT_2] = level;
+                 pulse_count[MEASURE_INPUT_PORT_2].cir_count++;
+             }
+             
+             level = INPUT_ON_OFF_0();
+             if (level != last_input_io_val[0])
+             {
+                 last_input_io_val[0] = level;
+                 last_input_io_change_count[0]++;
+             }
+             
+             level = INPUT_ON_OFF_1();
+             if (level != last_input_io_val[1])
+             {
+                 last_input_io_val[1] = level;
+                 last_input_io_change_count[1]++;
+             }
+             
+             jig_print("{\"id\":\"%08X%08X%08X\",", LL_GetUID_Word0(), LL_GetUID_Word1(), LL_GetUID_Word2());
+             jig_print("\"Fl\":%u,", app_spi_flash_is_ok() ? 1 :  0);
+             jig_print("\"im\":\"%s\",", gsm_get_module_imei());
+             jig_print("\"420_1\":%.1f,", adc_retval->in_4_20ma_in[0]);
+             jig_print("\"420_2\":%.1f,", adc_retval->in_4_20ma_in[1]);
+             jig_print("\"420_3\":%.1f,", adc_retval->in_4_20ma_in[2]);
+             jig_print("\"420_4\":%.1f,", adc_retval->in_4_20ma_in[3]);
+             jig_print("\"bat\":%u,", adc_retval->bat_mv);
+             jig_print("\"Vin\":%u,", adc_retval->vin);
+             jig_print("\"T\":%d,", adc_retval->temp);
+             if (pulse_count[MEASURE_INPUT_PORT_1].cir_count > 10)
+             {
+                 jig_print("\"C1\":\"%s\",", "PASSED");
+             }
+             else
+             {
+                 jig_print("\"C1\":\"%s\",", "FAILED");
+             }
+             
+             if (pulse_count[MEASURE_INPUT_PORT_1].pwm_count > 10)
+             {
+                jig_print("\"P1\":\"%s\",", "PASSED");
+             }
+             else
+             {
+                 jig_print("\"P1\":\"%s\",", "FAILED");
+             }
+             if (pulse_count[MEASURE_INPUT_PORT_1].dir_count > 10)
+             {
+                jig_print("\"D1\":\"%s\",", "PASSED");
+             }
+             else
+             {
+                 jig_print("\"D1\":\"%s\",", "FAILED");
+             }
+             
+            // Input on/off
+             if (last_input_io_change_count[0] > 10)
+             {
+                 jig_print("\"IO1\":\"%s\",", "PASSED");
+             }
+             else
+             {
+                 jig_print("\"IO1\":\"%s\",", "FAILED");
+             }
+             
+             if (last_input_io_change_count[1] > 10)
+             {
+                jig_print("\"IO2\":\"%s\",", "PASSED");
+             }
+             else
+             {
+                 jig_print("\"IO2\":\"%s\",", "FAILED");
+             }
+             
+             jig_print("\"IOADC\":%u", adc_retval->analog_input_io);
+
+             jig_print("%s", "}");
+        }
 	}
     
     if (!eeprom_cfg->io_enable.name.rs485_en
@@ -392,7 +511,7 @@ int main(void)
                 m_last_blink = now;
                 if (do_factory_reset)
                 {
-                    LL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
+                    LED1_TOGGLE();
                 }
             }
         }

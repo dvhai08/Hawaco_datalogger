@@ -42,6 +42,9 @@ typedef struct
 {
     uint32_t last_exti;
 } input_ext_isr_t;
+
+
+
 extern volatile int32_t ota_update_timeout_ms;
 /* USER CODE END TD */
 
@@ -80,6 +83,7 @@ extern volatile uint8_t *jig_rs485_rx_buffer;
 extern volatile pulse_irq_t recheck_input_pulse[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 extern volatile uint32_t last_time_monitor_vin_when_battery_low;
 extern uint32_t sys_pulse_ms;
+volatile pulse_isr_count_t pulse_count[MEASURE_NUMBER_OF_WATER_METER_INPUT];
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -284,6 +288,7 @@ void EXTI4_15_IRQHandler(void)
 	  // DIR2
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+      pulse_count[MEASURE_INPUT_PORT_2].dir_count++;
     /* USER CODE END LL_EXTI_LINE_7 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_8) != RESET)
@@ -293,6 +298,7 @@ void EXTI4_15_IRQHandler(void)
 	  // PULSE1
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+      pulse_count[MEASURE_INPUT_PORT_1].pwm_count++;
     /* USER CODE END LL_EXTI_LINE_8 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_9) != RESET)
@@ -302,6 +308,7 @@ void EXTI4_15_IRQHandler(void)
 	  // DIR1
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_1].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_DIR_PIN;
+      pulse_count[MEASURE_INPUT_PORT_1].dir_count++;
     /* USER CODE END LL_EXTI_LINE_9 */
   }
   if (LL_EXTI_IsActiveFlag_0_31(LL_EXTI_LINE_14) != RESET)
@@ -311,6 +318,7 @@ void EXTI4_15_IRQHandler(void)
 	  // PULSE PWM2
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].tick = sys_pulse_ms;
 	  recheck_input_pulse[MEASURE_INPUT_PORT_2].isr_type = MEASURE_INPUT_NEW_DATA_TYPE_PWM_PIN;
+      pulse_count[MEASURE_INPUT_PORT_2].pwm_count++;
     /* USER CODE END LL_EXTI_LINE_14 */
   }
   /* USER CODE BEGIN EXTI4_15_IRQn 1 */

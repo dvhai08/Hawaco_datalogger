@@ -17,6 +17,11 @@ typedef struct
 void jig_start(void);
 
 /**
+ * @brief		Send data to jig
+ */
+void jig_print(const char *fmt,...);
+
+/**
  * @brief		Insert jig rx data
  * @param[in]	data New data bytes
  */

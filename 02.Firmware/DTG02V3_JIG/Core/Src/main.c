@@ -44,26 +44,26 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MAX_RS232_BUFFER_SIZE               512
+#define MAX_RS485_BUFFER_SIZE               512
 #define MAX_REPORT_BUFFER_SIZE              256
 #define USB_RX_BUFFER_SIZE                  256
 #define ADC_MEASUREMENT_INVERVAL_MS         500
-#define RS232_IDLE_TIMEOUT_MS               10
+#define RS485_IDLE_TIMEOUT_MS               10
 #define USB_WAIT_TX_DONE_TIMEOUT_MS         (150)
 #define APP_USB_WAIT_TX_CPLT(x)             xSemaphoreTake(m_sem_usb_tx_cplt, x)
 #define APP_USB_TX_CPLT_DONE()              {   BaseType_t ctx_sw; xSemaphoreGiveFromISR(m_sem_usb_tx_cplt, &ctx_sw);  \
                                                 portYIELD_FROM_ISR(ctx_sw);   \
                                             }
 #define JIG_TOGGLE_IO_MS                    50
-#define JIG_REQUEST_CMD                   "{\"test\" : 1}"
+#define JIG_REQUEST_CMD                   "{\"test\":1}"
                                             
                                             
 typedef struct
 {
-    uint8_t data[MAX_RS232_BUFFER_SIZE];
+    uint8_t data[MAX_RS485_BUFFER_SIZE];
     uint32_t index;
     uint32_t rx_timestamp;
-} rs232_rx_t;
+} rs485_rx_t;
 
 
 /* USER CODE END PD */
@@ -89,8 +89,9 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 void hid_tx_cplt_callback(uint8_t epnum);
 static uint32_t m_adc_voltage[ADC_MAX_CHANNEL];
+static uint32_t m_adc_resister_div[ADC_MAX_CHANNEL] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1};        // Hardware resister divider on ADC port
 static char m_report_data[MAX_REPORT_BUFFER_SIZE];
-static rs232_rx_t m_rs232_rx = 
+static rs485_rx_t m_rs485_rx = 
 {
     .index = 0
 };
@@ -205,11 +206,11 @@ int main(void)
                 {
                     if (prev_vref == 0)
                     {
-                        m_adc_voltage[i] = m_adc_voltage[i] *3300*ADC_RESISTOR_DIV/4096;
+                        m_adc_voltage[i] = m_adc_voltage[i] *3300*m_adc_resister_div[i]/4096;
                     }
                     else
                     {
-                        m_adc_voltage[i] = m_adc_voltage[i] *prev_vref*ADC_RESISTOR_DIV/4096; 
+                        m_adc_voltage[i] = m_adc_voltage[i] *prev_vref*m_adc_resister_div[i]/4096; 
                     }
                 }
                 else
@@ -224,10 +225,12 @@ int main(void)
             uint32_t len = 0;
             len += sprintf((char*)m_report_data+len, "%s", "{");
             /**
-             * 
+             *  Frame send to PC
              *  {
-                    "OutputDigital0":"PASSED",
-                    "OutputDigital1":"FAILED"
+                    "Outl":"PASSED",
+                    "Out2":"FAILED",
+                    "ADCx":1234,
+                    "RS485":"PASSED"
                 }
              */ 
             if (m_slave_output_toggle_count[0] > 10)
@@ -273,21 +276,23 @@ int main(void)
             LL_IWDG_ReloadCounter(IWDG);
         }
         
-        // Forward RS232 packet to PC via USB
-        if (m_rs232_rx.index && now - m_rs232_rx.rx_timestamp > RS232_IDLE_TIMEOUT_MS)
+        // Forward RS485 packet to PC via USB
+        if (m_rs485_rx.index && now - m_rs485_rx.rx_timestamp > RS485_IDLE_TIMEOUT_MS)
         {   
             // Send test cmd to slave            
-            usart_rs232_send_data((uint8_t*)JIG_REQUEST_CMD, strlen((char*)JIG_REQUEST_CMD));
+            usart_rs485_send_data((uint8_t*)JIG_REQUEST_CMD, strlen((char*)JIG_REQUEST_CMD));
             
             // Get unique id
-            static char m_last_device_id[12];
-            char *device_id =  strstr((char*)m_rs232_rx.data, "\"Unique_id\":\"");
+            static char m_last_device_id[13];
+            char *device_id =  strstr((char*)m_rs485_rx.data, "\"id\":\"");
             if (device_id)
             {
-                device_id += strlen("\"Unique_id\":\"");
+                device_id += strlen("\"id\":\"");
                 // If new device attached to JIG =>> reset previous device data and id
-                if (memcmp(device_id, m_last_device_id, 12))        
+                m_last_device_id[12] = 0;
+                if (strcmp(device_id, m_last_device_id))        
                 {
+                    DEBUG_INFO("New device %s attached\r\n", m_last_device_id);
                     memcpy(m_last_device_id, device_id, 12);
                     m_slave_output_toggle_count[0] = 0;
                     m_slave_output_toggle_count[1] = 0;
@@ -296,27 +301,27 @@ int main(void)
             }
             
             // Forward data to PC
-            static uint32_t rs232_count = 0;
+            static uint32_t rs485_count = 0;
             memset(m_report_data, 0, sizeof(m_report_data));
             uint32_t len = 0;
-            len += snprintf((char*)m_report_data, sizeof(m_report_data) - 1, "%s", m_rs232_rx.data);
-            DEBUG_WARN("RS232 =>>>>> PC : %s\r\n", (char*)m_report_data);
+            len += snprintf((char*)m_report_data, sizeof(m_report_data) - 1, "%s", m_rs485_rx.data);
+            DEBUG_WARN("RS485 =>>>>> PC : %s\r\n", (char*)m_report_data);
             send_data_to_host((uint8_t*)m_report_data, len);
             
-            // Add RS232 counter
+            // Add RS485 counter
             memset(m_report_data, 0, sizeof(m_report_data));
             len = 0;
-            len += snprintf((char*)m_report_data, sizeof(m_report_data) - 1, "{\"rs232_count\":%u}", ++rs232_count);
+            len += snprintf((char*)m_report_data, sizeof(m_report_data) - 1, "{\"rs485_count\":%u}", ++rs485_count);
             send_data_to_host((uint8_t*)m_report_data, len);
 
-            memset(&m_rs232_rx, 0, sizeof(m_rs232_rx));
+            memset(&m_rs485_rx, 0, sizeof(m_rs485_rx));
         }
                 
         // Read USB RX buffer and forward to slave
         uint8_t tmp;
         while (lwrb_read(&m_ringbuffer_usb_rx, &tmp, 1))
         {
-            usart_rs232_send_data(&tmp, 1);
+            usart_rs485_send_data(&tmp, 1);
         }
   }
   /* USER CODE END 3 */
@@ -410,11 +415,11 @@ void send_data_to_host(uint8_t *data, uint32_t length)
     
     uint8_t *p = data;
     uint32_t now = uwTick;
-    uint32_t remain = length % 64;
+    uint32_t remain = length % CUSTOM_HID_EPIN_SIZE;
     length -= remain;
-    for (uint32_t i = 0; i < (length)/64; i++)     // 64 = sizeof usb hid max transfer
+    for (uint32_t i = 0; i < (length)/CUSTOM_HID_EPIN_SIZE; i++)     // 64 = sizeof usb hid max transfer
     {
-        if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS((uint8_t*)p, 64))
+        if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS((uint8_t*)p, CUSTOM_HID_EPIN_SIZE))
         {
             if (wait_hid_complete(USB_WAIT_TX_DONE_TIMEOUT_MS))
             {
@@ -426,15 +431,15 @@ void send_data_to_host(uint8_t *data, uint32_t length)
         {
             DEBUG_ERROR("Send report error\r\n");
         }
-        p += 64;
+        p += CUSTOM_HID_EPIN_SIZE;
     }
     
     if (remain)
     {
-        uint8_t tmp[64];
+        uint8_t tmp[CUSTOM_HID_EPIN_SIZE];
         memset(tmp, 0, sizeof(tmp));
         memcpy(tmp, p, remain);
-        if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS(tmp, 64))
+        if (USBD_OK == USBD_CUSTOM_HID_SendReport_FS(tmp, CUSTOM_HID_EPIN_SIZE))
         {
             if (wait_hid_complete(USB_WAIT_TX_DONE_TIMEOUT_MS))
             {
@@ -452,7 +457,7 @@ void send_data_to_host(uint8_t *data, uint32_t length)
 void hid_rx_data_cb(uint8_t *buffer)
 {
     DEBUG_INFO("HID RX %s\r\n", buffer);
-    for (uint32_t i = 0; i < 64; i++)       // 64 = USB HID max rx buffer size
+    for (uint32_t i = 0; i < CUSTOM_HID_EPIN_SIZE; i++)       // 64 = USB HID max rx buffer size
     {
         if (buffer[i])
         {
@@ -467,15 +472,15 @@ void hid_rx_data_cb(uint8_t *buffer)
 
 void on_rs485_uart_cb(uint8_t data)
 {
-    if (data == 0)      // Only accept ascii code
+    if (data == 0)      // Only accept ascii character
     {
         return;
     }
 //    DEBUG_RAW("%c", data);
-    if (m_rs232_rx.index < MAX_RS232_BUFFER_SIZE)
+    if (m_rs485_rx.index < MAX_RS485_BUFFER_SIZE)
     {
-       m_rs232_rx.data[m_rs232_rx.index++] = data;
-       m_rs232_rx.rx_timestamp = uwTick;
+       m_rs485_rx.data[m_rs485_rx.index++] = data;
+       m_rs485_rx.rx_timestamp = uwTick;
     }
 }
 
@@ -489,11 +494,12 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-	NVIC_SystemReset();
-  while (1)
-  {
-  }
+    DEBUG_ERROR("Error_Handler\r\n");
+    __disable_irq();
+    NVIC_SystemReset();
+    while (1)
+    {
+    }
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -508,6 +514,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
+    DEBUG_ERROR("Assert failed on file %s, line %u\r\n", __FILE__, __LINE__);
 	NVIC_SystemReset();
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

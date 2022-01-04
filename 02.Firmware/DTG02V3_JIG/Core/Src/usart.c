@@ -95,7 +95,7 @@ static void delay(uint32_t count)
 {
     while (count--);
 }
-void usart_rs232_send_data(uint8_t *data, uint32_t length)
+void usart_rs485_send_data(uint8_t *data, uint32_t length)
 {
     LL_GPIO_ResetOutputPin(RS485_DIR_GPIO_Port, RS485_DIR_Pin);
     delay(0xFF);

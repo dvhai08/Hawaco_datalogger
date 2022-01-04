@@ -173,6 +173,13 @@ void Error_Handler(void);
 #define DIRIN2_Pin					PULSE_DIR2_Pin
 #define DIRIN2_GPIO_Port			PULSE_DIR2_GPIO_Port
 
+typedef struct
+{
+    uint32_t pwm_count;
+    uint32_t dir_count;
+    uint32_t cir_count;
+} pulse_isr_count_t;
+
 /**
  * @brief	Get systick in ms
  * @retval	System tick

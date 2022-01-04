@@ -20,7 +20,7 @@ static jig_rs485_buffer_t m_jig_buffer;
 volatile uint32_t jig_timeout_ms = JIG_DEFAULT_TIMEOUT_MS;
 static bool m_jig_in_test_mode = false;
 
-static void jig_print(const char *fmt,...)
+void jig_print(const char *fmt,...)
 {
 	int     n;
 
@@ -54,7 +54,7 @@ void jig_start(void)
 	m_jig_buffer.rx_idx = 0;
 	m_jig_buffer.tx_ptr = m_jig_buffer_tx;
 	m_jig_buffer.rx_ptr = m_jig_buffer_rx;
-#if 1	
+
 	RS485_POWER_EN(1);
 	usart_lpusart_485_control(1);
 	sys_delay_ms(200);
@@ -63,135 +63,26 @@ void jig_start(void)
 	{
 		// Reload watchdog
 		WRITE_REG(IWDG->KR, LL_IWDG_KEY_RELOAD);
-		jig_print("test_begin\r\n");
-		sys_delay_ms(100);
-		if (m_jig_buffer.rx_idx && strstr(m_jig_buffer.rx_ptr, "test_enter\r\n"))
+		if (m_jig_buffer.rx_idx && strstr(m_jig_buffer.rx_ptr, "{\"test\":1}"))
 		{
+            m_jig_buffer.rx_idx = 0;
 			m_jig_in_test_mode = true;
-			jig_timeout_ms = 100000000;
-			uint32_t count = 0;
-			uint32_t output_value;
-			while (1)
-			{
-				WRITE_REG(IWDG->KR, LL_IWDG_KEY_RELOAD);
-				sys_delay_ms(50);
-				LED1(1);
-#ifdef DTG01
-				LED2(1);
-#endif
-				sys_delay_ms(50);
-				LED1(0);
-#ifdef DTG01
-				LED2(0);
-#endif
-				// ADC test
-				adc_start();
-				adc_input_value_t *adc_result = adc_get_input_result();
-								
-				if (count % 25 == 0)
-				{
-					jig_print("Vbat: %.2f\r\n", adc_result->bat_mv);
-					jig_print("Vin24v: %u\r\n", adc_result->vin);
-#ifndef DTG01
-					for (uint32_t i = 0; i < 4; i++)
-#else
-					for (uint32_t i = 0; i < 1; i++)
-#endif
-					{
-						jig_print("Input4_20m[%u] = %.2f\r\n", i+1, adc_result->in_4_20ma_in[i]);
-					}
-				
-					jig_print("Temp: %u\r\n", adc_result->temp);
-				
-					measure_input_counter_t pulse_counter_in_backup[MEASURE_NUMBER_OF_WATER_METER_INPUT];
-					extern void measure_input_pulse_counter_poll();
-					measure_input_pulse_counter_poll();
-					app_bkup_read_pulse_counter(&pulse_counter_in_backup[0]);
-					for (uint32_t i = 0; i < MEASURE_NUMBER_OF_WATER_METER_INPUT; i++)
-					{
-						jig_print("Pulse[%u] value %u-%u\r\n", i+1, pulse_counter_in_backup[i].real_counter, 
-                                                                    pulse_counter_in_backup[i].reverse_counter);
-					}
-					
-					// Test input and outout
-					output_value++;
-					output_value %= 2;
-#ifdef DTG01
-					TRANS_OUTPUT(0);
-					sys_delay_ms(200);
-					TRANS_OUTPUT(1);
-					sys_delay_ms(200);
-#else
-					TRANS_1_OUTPUT(output_value);
-					TRANS_2_OUTPUT(output_value);
-                #ifndef DTG02V3
-                        TRANS_3_OUTPUT(output_value);
-                        TRANS_4_OUTPUT(output_value);
-                #endif
-                    
-					sys_delay_ms(1);
-					
-					if (INPUT_ON_OFF_0() == output_value)
-					{
-						jig_print("input1 = %u, pass\r\n", output_value);
-					}
-					else
-					{
-						jig_print("input1 = %u, fail\r\n", output_value);
-					}
-					
-					if (INPUT_ON_OFF_1() == output_value)
-					{
-						jig_print("input2 = %u, pass\r\n", output_value);
-					}
-					else
-					{
-						jig_print("input2 = %u, fail\r\n", output_value);
-					}
-    #ifndef DTG02V3					
-					if (INPUT_ON_OFF_2() == output_value)
-					{
-						jig_print("input3 = %u, pass\r\n", output_value);
-					}
-					else
-					{
-						jig_print("input3 = %u, fail\r\n", output_value);
-					}
-					
-					if (INPUT_ON_OFF_3() == output_value)
-					{
-						jig_print("input4 = %u, pass\r\n", output_value);
-					}
-					else
-					{
-						jig_print("input4 = %u, fail\r\n", output_value);
-					}
-    #endif
-					jig_print("-------------\r\n\r\n");
-#endif  // DTG01
-				}
-								
-								
-				if (count++ == 500)
-				{
-					NVIC_SystemReset();
-				}
-			}
 		}
 		else		// Exit test mode
 		{
-			__disable_irq();
-			jig_timeout_ms = 1;
-			__enable_irq();
-			sys_delay_ms(2);
+            break;
 		}
 	}
-//	umm_free(m_jig_buffer.rx_ptr);
-//	umm_free(m_jig_buffer.tx_ptr);
-	m_jig_buffer.rx_ptr = NULL;
-	m_jig_buffer.tx_ptr = NULL;
-#endif
-	RS485_POWER_EN(0);
+    if (m_jig_in_test_mode == false)
+    {
+        m_jig_buffer.rx_ptr = NULL;
+        m_jig_buffer.tx_ptr = NULL;
+        RS485_POWER_EN(0);
+    }
+    else
+    {
+        RS485_POWER_EN(1);
+    }
 }
 
 void jig_uart_insert(uint8_t data)

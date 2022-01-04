@@ -39,7 +39,7 @@ extern "C" {
 void MX_USART3_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void usart_rs232_send_data(uint8_t *data, uint32_t length);
+void usart_rs485_send_data(uint8_t *data, uint32_t length);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
