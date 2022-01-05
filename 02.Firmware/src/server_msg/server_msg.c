@@ -1036,6 +1036,7 @@ void server_msg_process_cmd(char *buffer, uint8_t *new_config)
 
 void server_msg_process_boardcast_cmd(char *buffer)
 {
+    uint8_t save_config = 0;
 	// Server addr changed
 	process_server_addr_change(buffer);
 	
@@ -1045,18 +1046,22 @@ void server_msg_process_boardcast_cmd(char *buffer)
 	// Process auto config interval
 	if (process_auto_get_config_interval(buffer))
 	{
-		app_eeprom_save_config();
+        save_config++;
 	}
 	
 	// Process low battery config
 	if (process_low_bat_config(buffer))
 	{
-		app_eeprom_save_config();
+        save_config++;
 	}
 	
 	// Process max sms in 1 day
 	if (process_max_sms_one_day_config(buffer))
 	{
-		app_eeprom_save_config();
+        save_config++;
 	}
+    if (save_config)
+    {
+		app_eeprom_save_config();
+    }
 }

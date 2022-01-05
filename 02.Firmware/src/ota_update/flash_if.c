@@ -3,20 +3,19 @@
 #include "app_debug.h"
 #include "ota_update.h"
 
-#define ABS_RETURN(x,y)               (((x) < (y)) ? (y) : (x))
-
+#define ABS_RETURN(x, y) (((x) < (y)) ? (y) : (x))
 
 void flash_if_init(void)
 {
-  /* Unlock the Program memory */
-  HAL_FLASH_Unlock();
+    /* Unlock the Program memory */
+    HAL_FLASH_Unlock();
 
-  /* Clear all FLASH flags */
-  __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
-                         FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
-                         FLASH_FLAG_NOTZEROERR);
-  /* Unlock the Program memory */
-  HAL_FLASH_Lock();
+    /* Clear all FLASH flags */
+    __HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_SIZERR |
+                           FLASH_FLAG_OPTVERR | FLASH_FLAG_RDERR | FLASH_FLAG_FWWERR |
+                           FLASH_FLAG_NOTZEROERR);
+    /* Unlock the Program memory */
+    HAL_FLASH_Lock();
 }
 
 uint32_t flash_if_erase(uint32_t start)
@@ -62,7 +61,7 @@ uint32_t flash_if_erase(uint32_t start)
 uint32_t flash_if_erase_ota_info_page()
 {
     flash_if_init();
-    
+
     FLASH_EraseInitTypeDef desc;
     uint32_t result = FLASH_IF_OK;
     uint32_t page_error;
@@ -90,7 +89,6 @@ uint32_t flash_if_write_ota_info_page(uint32_t *data, uint32_t nb_of_word)
     flash_if_write(OTA_INFO_START_ADDR, data, nb_of_word);
     return 0;
 }
-
 
 uint32_t flash_if_write(uint32_t destination, uint32_t *p_source, uint32_t length)
 {
